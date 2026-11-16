@@ -1,0 +1,7 @@
+[[31merror[39m] .work/tail.js: SyntaxError: Unexpected closing tag "body". It may happen when the tag has already been closed by another tag. For more info see https://www.w3.org/TR/html5/syntax.html#closing-elements-that-have-implied-end-tags (947:1)
+[[31merror[39m]   945 | startPolling();
+[[31merror[39m]   946 | </script>
+[[31merror[39m] > 947 | </body>
+[[31merror[39m]       | ^^^^^^^
+[[31merror[39m]   948 | </html>
+[[31merror[39m]   949 |

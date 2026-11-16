@@ -1,0 +1,21 @@
+W02 第 5 轮 API 实测原始输出（run-final.mjs @ 8091 新代码，2026-11-16）
+环境：node v22.23.2；三组一次性夹具 TEST-W02A/B/C（无 artifactPolicy，正式流程）；R11 用真实档案，测前备份、测后按字节还原
+注：结果文件首次落盘于 web/ 与 web/tmp-w02r5/，均被不明清理；本文件为当次控制台输出的原样存档（内容逐行一致）
+
+[fixture] b.reg.bin 实测 534 B（登记 490）
+[fixture] c.reg.bin 实测 480 B（登记 480）sha 7b214d7f ≠ 登记 91ef251e
+[gate] TEST-W02A 200 {"valid":true,"versionExempt":false,"policy":null,"drifted":[]}
+[gate] TEST-W02B 200 {"valid":false,"versionExempt":false,"policy":null,"drifted":[{"path":"...tmp-w02r5/b.reg.bin","why":"bytes","exists":true,"regBytes":490,"actBytes":534,"regSha":"1b6f3ce88d416a6beab47ed551ef440dfc2d4bd4cc5531782e5542e8d01bb3f7","actSha":null}]}
+[gate] TEST-W02C 200 {"valid":false,"versionExempt":false,"policy":null,"drifted":[{"path":"...tmp-w02r5/c.reg.bin","why":"sha","exists":true,"regBytes":480,"actBytes":480,"regSha":"91ef251e76bb7a8cd35862833acb9441de4cf7bb798b1d5bad716859d9317e5d","actSha":"7b214d7f67b996ffd58c9c5149b9cf7652186f423a67fae0cb9b714e9028b520"}]}
+[decide A approve] 200  {"ok":true,"status":"done","verified":true,"readBack":true}
+[persisted A] plan.status = done
+[decide TEST-W02B approve] 409 ARTIFACT_VERSION_DRIFT | 持久化 plan.status = awaiting | 本步骤「开发计划」的审批对象与提交登记版本不一致（b.reg.bin：实测 534 B ≠ 登记 490 B）。正式流程按提交登记的版本审批，材料在提交后发生过变化就不能继续按原版…
+[decide TEST-W02C approve] 409 ARTIFACT_VERSION_DRIFT | 持久化 plan.status = awaiting | 本步骤「开发计划」的审批对象与提交登记版本不一致（c.reg.bin：实测内容指纹与登记 sha256 不一致（大小 480 B 相同，内容已变化））。正式流程按提交登记的版本审批…
+[decision C approve] 409 ARTIFACT_VERSION_DRIFT | 本步骤「开发计划」的审批对象与提交登记版本不一致（c.reg.bin：实测内容指纹与登记 sha256 不一致（大小 480 B 相同，内容已变化））。正式流程…
+[gate R11] 200 {"valid":true,"versionExempt":true,"policy":"test-any-file","drifted":[{"path":"...web/app.css","why":"bytes","exists":true,"regBytes":80408,"actBytes":101786,"regSha":"selftest-placeholder","actSha":null}]}
+[decision R11 approve] 200  {"ok":true,"to":"done"} | 持久化 plan.status = done
+[restore] decision 测试后已按字节还原 R11 档案 + events
+[decide R11 approve] 200  {"ok":true,"status":"done","readBack":true,"verified":true} | 持久化 plan.status = done by = Leo（工作台）
+[restore] decide 测试后已按字节还原；sha256 前 0dd1e387c7908d92 后 0dd1e387c7908d92 一致 ✅
+[replay] 同 opId 重放 → 200 {"replay":true,"ok":true} | 重放前后 R11 sha256 0dd1e387 0dd1e387 未再写档案 ✅
+written → verify-w02-round5-api.json

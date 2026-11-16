@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Soda Office 第一阶段交付报告</title>
+<style>
+  :root { --ink:#1a1f28; --mut:#5b6472; --line:#e3e6eb; --acc:#0f6fff; --ok:#0a7d42; --bg:#fafbfc; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.75 "Segoe UI","Microsoft YaHei",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap { max-width:880px; margin:0 auto; padding:40px 28px 72px; }
+  h1 { font-size:26px; margin:0 0 4px; }
+  .sub { color:var(--mut); margin:0 0 28px; }
+  h2 { font-size:19px; margin:40px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:14px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#f0f3f7; white-space:nowrap; }
+  code { background:#eef1f5; border-radius:4px; padding:1px 6px; font:13px/1.6 Consolas,monospace; }
+  pre { background:#10141b; color:#dce3ee; border-radius:8px; padding:14px 16px; overflow-x:auto; }
+  pre code { background:none; color:inherit; padding:0; }
+  .ok { color:var(--ok); font-weight:600; }
+  ol li, ul li { margin:4px 0; }
+  .note { background:#f4f8ff; border-left:3px solid var(--acc); padding:10px 14px; border-radius:0 6px 6px 0; margin:14px 0; color:#333; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Soda Office 第一阶段交付报告</h1>
+<p class="sub">2026-11-12 · Task 1.1 – 1.4 全部完成，40 个测试全过。本报告给下一个接手的人，读完即可上手。</p>
+
+<h2>1. 做了什么</h2>
+<table>
+<tr><th>Task</th><th>交付</th><th>状态</th></tr>
+<tr><td>1.1 数据库层</td><td><code>src/db.js</code>：建表（agents / tasks / events）+ CRUD + 外键约束。驱动 node-sqlite3-wasm，零编译工具链</td><td class="ok">✅ 已验收</td></tr>
+<tr><td>1.2 Agent API</td><td><code>POST /api/agents/register</code>、<code>PATCH /api/agents/:id/status</code>、<code>GET /api/agents</code>（含 stale 判定）。口径：注册即首次心跳，状态更新即心跳</td><td class="ok">✅ 已验收</td></tr>
+<tr><td>1.3 任务 API</td><td><code>POST /api/tasks</code>、<code>POST /api/tasks/:id/claim</code>（原子领取）、<code>PATCH /api/tasks/:id/status</code>、<code>GET /api/tasks?status=</code>。并发安全靠单条条件 UPDATE（20 并发 5 轮压测 PASS）</td><td class="ok">✅ 已验收</td></tr>
+<tr><td>1.4 事件流</td><td><code>POST /api/events</code>、<code>GET /api/tasks/:id/events</code>（升序）、<code>GET /api/events</code>（倒序）。payload 落库为 JSON 字符串，所有出口还原为对象</td><td class="ok">✅ 本次完成</td></tr>
+</table>
+<p>做完这四块，Soda Office 具备了「看见 Agent 在干什么」的最小能力：Agent 注册 → 领任务 → 干活时上报事件 → 人查事件流。</p>
+
+<h2>2. API 清单</h2>
+<table>
+<tr><th>方法</th><th>路径</th><th>用途</th><th>成功</th><th>主要错误</th></tr>
+<tr><td>POST</td><td><code>/api/agents/register</code></td><td>注册 Agent（重名 409）</td><td>201</td><td>400 缺/空 name、409 重名</td></tr>
+<tr><td>GET</td><td><code>/api/agents</code></td><td>全量列表，附计算字段 <code>stale</code></td><td>200</td><td>—</td></tr>
+<tr><td>PATCH</td><td><code>/api/agents/:id/status</code></td><td>改状态并刷心跳</td><td>200</td><td>400 非法状态、404 无此 Agent</td></tr>
+<tr><td>POST</td><td><code>/api/tasks</code></td><td>建任务（默认 queued）</td><td>201</td><td>400 缺 title、404 assignee 不存在</td></tr>
+<tr><td>GET</td><td><code>/api/tasks?status=</code></td><td>任务列表（created_at 倒序，可按状态筛）</td><td>200</td><td>400 非法 status 筛选值</td></tr>
+<tr><td>POST</td><td><code>/api/tasks/:id/claim</code></td><td>原子领取（唯一 409 接口）</td><td>200 <code>{ok:true,task}</code></td><td>400 缺 agent_id、404、409 <code>{ok:false,reason:'not_queued'}</code></td></tr>
+<tr><td>PATCH</td><td><code>/api/tasks/:id/status</code></td><td>状态流转，可附 result_path</td><td>200</td><td>400 非法状态、404</td></tr>
+<tr><td>POST</td><td><code>/api/events</code></td><td>上报事件（task_id/agent_id 可 null）</td><td>201</td><td>400 非法 type/payload、404 引用不存在</td></tr>
+<tr><td>GET</td><td><code>/api/tasks/:id/events?limit=</code></td><td>该任务事件流，<b>时间升序</b></td><td>200 <code>{events}</code></td><td>404 无此任务</td></tr>
+<tr><td>GET</td><td><code>/api/events?limit=</code></td><td>全量最近事件，<b>时间倒序</b></td><td>200 <code>{events}</code></td><td>—</td></tr>
+</table>
+<div class="note">约定：错误统一 <code>{ error, code }</code>（claim 409 例外，按契约返回 <code>{ ok, reason }</code>）；时间戳一律 epoch 毫秒；limit 对事件查询默认 100/50、最大 1000（超过静默截断）。</div>
+
+<h2>3. 数据库 Schema</h2>
+<p>三张表，完整字段说明见 <code>docs/schema.md</code>。</p>
+<ul>
+<li><b>agents</b> — <code>id</code>(UUID PK) / <code>name</code> / <code>type</code>(默认 unknown) / <code>status</code>(working·idle·blocked·done) / <code>last_heartbeat</code> / <code>capabilities</code>(JSON 数组字符串) / <code>created_at</code></li>
+<li><b>tasks</b> — <code>id</code>(UUID PK) / <code>title</code> / <code>description</code> / <code>assignee</code>→agents / <code>status</code>(queued→claimed→running→done·failed·cancelled·blocked) / <code>claimed_at</code> / <code>created_at</code> / <code>result_path</code></li>
+<li><b>events</b> — <code>id</code>(AUTOINCREMENT) / <code>task_id</code>→tasks(可 null) / <code>agent_id</code>→agents(可 null) / <code>type</code>(start·step·cmd·end·blocked·error·note) / <code>payload</code>(JSON 字符串，默认 {}) / <code>created_at</code></li>
+</ul>
+<p>索引：<code>idx_tasks_status</code>、<code>idx_events_task_id</code>、<code>idx_events_agent_id</code>。连接打开即 <code>PRAGMA foreign_keys = ON</code>。</p>
+
+<h2>4. 测试覆盖</h2>
+<p><code>npm test</code> = <code>node --test test/</code>，共 <b>40 个测试，全过</b>：</p>
+<table>
+<tr><th>文件</th><th>数量</th><th>覆盖</th></tr>
+<tr><td><code>test/db.test.js</code></td><td>5</td><td>建表字段、插入/查询、文件持久化、非法输入拒收、外键真实生效</td></tr>
+<tr><td><code>test/api.agents.test.js</code></td><td>11</td><td>注册/重名/负路径、状态更新刷心跳、stale 判定（STALE_MS 可调）、错误形状统一</td></tr>
+<tr><td><code>test/api.tasks.test.js</code></td><td>12</td><td>建任务、原子领取（HTTP 与 DB 层各 10 并发，恰好 1 赢）、状态流转、列表筛选</td></tr>
+<tr><td><code>test/api.events.test.js</code></td><td>12</td><td>上报 201/400/404、null 引用（系统级事件）、升序/倒序、limit 生效与 1000 截断、中文嵌套 payload 往返无损、建任务→领取→start/step/end 全流程</td></tr>
+</table>
+
+<h2>5. 已知限制</h2>
+<ol>
+<li><b>无鉴权</b> — 任何能连到端口的人都能调所有接口。单机内网可用，公开部署前必须加。</li>
+<li><b>无实时推送</b> — 事件只能轮询拉取；WebSocket/SSE 留第二阶段。</li>
+<li><b>事件无清理机制</b> — events 表只增不减，长期跑会无限膨胀（limit 只保护查询，不保护存储）。</li>
+<li><b>单进程</b> — 内存库/文件库都是单连接同步驱动，没有多进程并发场景；换真并发驱动时 claim 的单条 UPDATE 语义仍成立，但其余代码未做压力验证。</li>
+<li><b>limit 静默截断</b> — 超过 1000 不报错只截断，调用方若不知情可能以为拿全了（任务书口径如此，记录在案）。</li>
+<li><b>前端、自然语言编排</b> — 均为第二阶段范围，本阶段未涉及。</li>
+</ol>
+
+<h2>接手 5 分钟上手</h2>
+<pre><code>npm install        # 唯一依赖 node-sqlite3-wasm
+npm test           # 40 个测试，全过即环境正常</code></pre>
+<p>起服务（一条命令，文件库落盘 <code>soda-office.db</code>，端口 3100）：</p>
+<pre><code>node --input-type=module -e "import { initializeDatabase } from './src/db.js'; import { startServer } from './src/server.js'; startServer({ port: 3100, db: initializeDatabase('soda-office.db') }); console.log('listening :3100');"</code></pre>
+<p>冒烟（注册 → 建任务 → 上报事件 → 查事件流）：</p>
+<pre><code>curl -s localhost:3100/api/agents/register -H 'content-type: application/json' -d '{"name":"demo"}'
+curl -s localhost:3100/api/tasks -H 'content-type: application/json' -d '{"title":"演示"}'
+curl -s localhost:3100/api/events -H 'content-type: application/json' -d '{"type":"note","payload":{"消息":"你好"}}'
+curl -s localhost:3100/api/events</code></pre>
+<p>要点：<code>startServer({ port, db })</code> 必须传 <code>db</code>（<code>initializeDatabase(path)</code> 创建，<code>:memory:</code> 或文件路径）；测试文件里每个用例都是现成的调用示例。</p>
+</div>
+</body>
+</html>

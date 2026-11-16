@@ -1,0 +1,8 @@
+[[31merror[39m] .work/tail.body.js: SyntaxError: Unexpected token, expected "}" (6:61)
+[[31merror[39m]   4 | // 页面 JS 异常计数（验收口径：window.__uiErrors === 0）
+[[31merror[39m]   5 | window.__uiErrors = 0;
+[[31merror[39m] > 6 | window.addEventListener('error', () => { window.__uiErrors++; });
+[[31merror[39m]     |                                                             ^
+[[31merror[39m]   7 |
+[[31merror[39m]   8 | /* ================= 工具 ================= */
+[[31merror[39m]   9 |

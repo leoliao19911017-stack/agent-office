@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>W02 第 4 轮验证报告 — 审批警告与审批规则同源（版本门禁）</title>
+<style>
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; max-width: 980px; margin: 24px auto; padding: 0 20px; color: #e8e6e3; background: #17181a; line-height: 1.65; }
+  h1 { font-size: 22px; border-bottom: 2px solid #4a5568; padding-bottom: 8px; color: #f0c674; }
+  h2 { font-size: 18px; color: #98c379; margin-top: 28px; }
+  h3 { font-size: 15px; color: #61afef; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13px; }
+  th, td { border: 1px solid #3a3d42; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #23252a; }
+  code { background: #23252a; color: #e5b95e; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .ok { color: #98c379; font-weight: 600; }
+  .bad { color: #e06c75; font-weight: 600; }
+  .warn { color: #e5b95e; font-weight: 600; }
+  .spec { background: #342C20; color: #E5B95E; border-radius: 8px; padding: 10px; font-size: 12px; line-height: 19px; display: inline-block; }
+  .meta { color: #9aa0a6; font-size: 13px; }
+  details { margin: 8px 0; } summary { cursor: pointer; color: #61afef; }
+</style>
+</head>
+<body>
+
+<h1>W02 第 4 轮验证报告 — 审批警告与审批规则同源（版本门禁）</h1>
+<p class="meta">日期：2026-11-16 ｜ 环境：http://127.0.0.1:8090 ｜ 方法：curl 直测服务端端点（version-gate / decide）+ CDP 直连 headless Chrome（1440×900 锁视口）getComputedStyle 实测渲染值。</p>
+<p>任务书三组验收数据：①大小一致 ②大小变化 ③内容变化但大小相同 —— 夹具 TEST-W02A/B/C（已生成、已测、已清理）；UI 正常基线另造 TEST-W02D（一致且未审批）。R11 用其真实档案只读核对，档案零改动（sha256 前后一致 <code>0dd1e387c7908d92</code>）。</p>
+
+<h2>一、改了什么</h2>
+<table>
+<tr><th>文件</th><th>改动</th><th>备份</th></tr>
+<tr><td><code>web/server.js</code></td><td>① <code>artifactVersionGateOf</code> 重写：逐条登记核对，why ∈ missing（文件不存在）/ noreg（登记缺字节数）/ bytes（实测≠登记字节）/ <b>sha（字节一致但内容指纹≠登记 sha256，系统已有快照字段，据此验证而非只看大小）</b>；<code>valid = drifted.length === 0</code> —— <b>删掉 <code>policy ? true</code> 旁路，test-any-file 只豁免产物类型，不再自动豁免版本一致性</b>。② 新增只读端点 <code>POST /api/office/version-gate</code>。③ decide/decision 端点写前重跑同一函数，409 拒绝（原有调用不变，valid 语义变严）</td><td><code>server.js.bak-w02r4</code></td></tr>
+<tr><td><code>web/app.js</code></td><td>① 新增 <code>versionGate</code> 状态 + <code>scheduleVersionGate()</code>（60s TTL、key 防晚到串台、失败保留旧值、pending 时不禁用——安全边界在服务端）。② 中央第 03 步产物区 hf-tag 按 why 分流（「大小不一致」/「内容不一致」），数字取同一判定。③ 右侧文件行只留简短摘要，数字与警示块逐字相同。④ 警示块（mmNote）为唯一完整版本差异说明；有警示时不再渲染「核对口径」段（压缩重复）。⑤ approve 按钮 disabled 消费同一判定，title 注明服务端同样拒绝。⑥ 未加任何新按钮</td><td><code>app.js.bak-w02r4</code></td></tr>
+<tr><td><code>web/app.css</code></td><td><b>0 行</b>（<code>.material-mismatch</code> 原有样式实测已符合规格，见下）</td><td>—</td></tr>
+</table>
+<p>三处同源结构：中央 hf-tag / 右侧 msz+警示块 / approve 禁用 → 前端消费 <code>version-gate</code> 端点；decide/decision → 服务端写前重跑 <code>artifactVersionGateOf</code>。同一产物 ID + 同一审批版本，同一判定函数。</p>
+
+<h2>二、验证了什么（全部为真实实测值）</h2>
+
+<h3>1. 服务端 version-gate 端点（curl）</h3>
+<table>
+<tr><th>夹具</th><th>场景</th><th>返回</th></tr>
+<tr><td>TEST-W02A</td><td>大小一致</td><td><code>{"valid":true,"drifted":[]}</code></td></tr>
+<tr><td>TEST-W02B</td><td>大小变化</td><td class="bad">valid:false，why <code>bytes</code>，regBytes 490 / actBytes 534</td></tr>
+<tr><td>TEST-W02C</td><td>同大小内容变</td><td class="bad">valid:false，why <b><code>sha</code></b>，regBytes 480 / actBytes 480，regSha <code>0bc3f2b8…</code> ≠ actSha <code>212efdbe…</code></td></tr>
+<tr><td>TEST-R11</td><td>真实档案只读</td><td class="bad">valid:false，why <code>bytes</code>，regBytes 80408 / actBytes 101786（policy test-any-file 原样上报，不再自动豁免版本）</td></tr>
+</table>
+
+<h3>2. 服务端 decide 端点（curl，审批以服务端返回与持久化为准）</h3>
+<table>
+<tr><th>夹具</th><th>结果</th></tr>
+<tr><td>A approve</td><td class="ok">HTTP 200 <code>{"ok":true,"status":"done","readBack":true}</code> —— 真实写回并读回确认</td></tr>
+<tr><td>B approve</td><td class="bad">HTTP 409 <code>ARTIFACT_VERSION_DRIFT</code>「实测 534 B ≠ 登记 490 B」</td></tr>
+<tr><td>C approve</td><td class="bad">HTTP 409「实测内容指纹与登记 sha256 不一致（大小 480 B 相同，内容已变化）」—— 同大小内容漂移被指纹拦下</td></tr>
+<tr><td>409 后档案</td><td>B/C 的 plan.status 均仍 <code>awaiting</code>（拒绝时未写档案）</td></tr>
+</table>
+
+<h3>3. 前端三处一致 + 样式（CDP getComputedStyle 实测）</h3>
+<p><b>TEST-W02C（内容不一致）：</b></p>
+<ul>
+<li>中央：hf-tag「内容不一致」title「大小相同（480 B）但内容指纹与登记不一致」；hf-val「实测 480 B / 登记 480 B」</li>
+<li>右侧：文件行「实测 480 B · 登记 480 B · 指纹不一致」；警示块含「（登记内容指纹 0bc3f2b8）」「已禁止按原版本通过，服务端同样会拒绝」</li>
+<li><code>.material-mismatch</code> 实测：background <b>rgb(52,44,32)</b>=#342C20 ｜ color <b>rgb(229,185,94)</b>=#E5B95E ｜ font-size <b>12px</b> ｜ line-height <b>19px</b> ｜ border-radius <b>8px</b> ｜ padding <b>10px</b> —— 六项全中规格<br>
+<span class="spec">材料与提交登记不一致：审批读取的是当前物理文件……（渲染样式示意，即页面实际样式）</span></li>
+<li>approve 按钮 <code>disabled:true</code> + 类 <code>btn-invalid-material</code>；「核对口径」段未渲染（压缩重复生效）</li>
+</ul>
+<p><b>TEST-W02B（大小不一致）：</b>中央 tag「登记 490 B ≠ 实测 534 B」/ 右侧「实测 534 B ≠ 登记 490 B」，样式与禁用同上。</p>
+<p><b>TEST-W02D（一致基线）：</b>无 hf-tag、无警示块、「核对口径：……两者并列以便对版本」段保留（唯一完整口径说明），approve 可用（<code>disabled:false</code>，无 btn-invalid-material）。</p>
+<p><b>TEST-R11（真实测试策略档案）：</b>中央「登记 78.5 KB ≠ 实测 99.4 KB」；警示块明确「本任务声明的测试策略（test-any-file）只豁免产物类型要求，不构成版本一致性例外」；approve 禁用。其 basis 只声明对象/类型例外、无版本例外 → 按其实际配置的例外规则执行 = 无版本例外 = 拒绝。</p>
+
+<h3>4. 无回归抽查</h3>
+<ul>
+<li>T-PRODUCT（plan awaiting 无产物）/ T-EASEDRAW（deliverable awaiting 无产物）：走「本步骤尚无登记产物——没有可审批的对象」分支，无审批按钮 —— 该分支在本轮备份 <code>app.js.bak-w02r4:1349</code> 中即存在，原有行为，非本轮引入。</li>
+<li>临时产物已全部清理：TEST-W02{A,B,C,D}.json、tmp-w02r4/ 目录、3 个一次性脚本。TEST-R11.json 及 .bak-w01 未动（sha256 <code>0dd1e387c7908d92</code> 测前测后一致）。</li>
+</ul>
+
+<h2>三、还差什么 / 需要 Leo 决策</h2>
+<ol>
+<li class="warn">TEST-R11 的 plan 步骤在新规则下被阻断（登记 78.5 KB ≠ 实测 99.4 KB，approve 会 409）。该档案自称「一次性，测完即删」，本轮只读核对未动它——是否删除、打回重提、或给它的 basis 补一句版本例外声明，由你拍板。</li>
+<li>真实任务 T-DAILY(req)/T-PRODUCT(plan)/T-EASEDRAW(deliverable) 的 awaiting 均无登记产物，暂无「有产物的真实审批」可抽查——真实链路的一致性由夹具 + R11 真实档案覆盖。</li>
+</ol>
+
+</body>
+</html>

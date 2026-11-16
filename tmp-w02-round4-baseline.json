@@ -1,0 +1,322 @@
+{
+ "base": "http://127.0.0.1:8090",
+ "task": "TEST-R11",
+ "step": "plan",
+ "when": "2026-11-15T20:59:00.858Z",
+ "viewports": [
+  {
+   "viewport": "1440x900",
+   "measure": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "inspOpenOverlay": false,
+    "insp": {
+     "x": 1112,
+     "y": 52,
+     "w": 328,
+     "h": 792,
+     "position": "static",
+     "overflow-y": "visible"
+    },
+    "inspBody": {
+     "clientW": 312,
+     "clientH": 748,
+     "scrollW": 312,
+     "scrollH": 1386,
+     "canScrollY": true,
+     "overflowXClipped": true,
+     "scrollTop": 0,
+     "overflow-x": "hidden",
+     "overflow-y": "auto",
+     "width": "327px",
+     "height": "747.812px",
+     "padding": "14px 16px 20px"
+    },
+    "decide": {
+     "x": 1129,
+     "y": 203,
+     "w": 280,
+     "h": 952,
+     "padding": "16px",
+     "border-radius": "10px",
+     "background-color": "rgb(36, 34, 30)"
+    },
+    "evSrc": {
+     "x": 1161,
+     "y": 381,
+     "w": 218,
+     "h": 76,
+     "font-size": "12px",
+     "line-height": "19px",
+     "color": "rgb(163, 176, 191)",
+     "margin-top": "12px",
+     "margin-bottom": "12px",
+     "textLen": 55,
+     "textHead": "核对口径：条目大小与点击预览读取的都是当前物理文件（实时实测），「登记」是提交时"
+    },
+    "executorTopInScroll": 1170,
+    "ioTopInScroll": 1307,
+    "artsTopInScroll": 1238,
+    "docOverflowX": false,
+    "bodyScrollable": false
+   },
+   "scrollTest": {
+    "scrollTop": 638,
+    "scrollTopMax": 638,
+    "executor": {
+     "text": "执行者",
+     "topInView": true,
+     "rect": {
+      "top": 532,
+      "bottom": 584
+     },
+     "view": {
+      "top": 96,
+      "bottom": 844
+     }
+    },
+    "arts": {
+     "text": "本步产物",
+     "topInView": true,
+     "rect": {
+      "top": 600,
+      "bottom": 653
+     },
+     "view": {
+      "top": 96,
+      "bottom": 844
+     }
+    },
+    "io": {
+     "text": "上下游",
+     "topInView": true,
+     "rect": {
+      "top": 669,
+      "bottom": 757
+     },
+     "view": {
+      "top": 96,
+      "bottom": 844
+     }
+    }
+   }
+  },
+  {
+   "viewport": "1280x800",
+   "measure": {
+    "viewport": {
+     "w": 1280,
+     "h": 800
+    },
+    "inspOpenOverlay": false,
+    "insp": {
+     "x": 952,
+     "y": 52,
+     "w": 328,
+     "h": 692,
+     "position": "static",
+     "overflow-y": "visible"
+    },
+    "inspBody": {
+     "clientW": 312,
+     "clientH": 648,
+     "scrollW": 312,
+     "scrollH": 1386,
+     "canScrollY": true,
+     "overflowXClipped": true,
+     "scrollTop": 638,
+     "overflow-x": "hidden",
+     "overflow-y": "auto",
+     "width": "327px",
+     "height": "647.812px",
+     "padding": "14px 16px 20px"
+    },
+    "decide": {
+     "x": 969,
+     "y": -435,
+     "w": 280,
+     "h": 952,
+     "padding": "16px",
+     "border-radius": "10px",
+     "background-color": "rgb(36, 34, 30)"
+    },
+    "evSrc": {
+     "x": 1001,
+     "y": -257,
+     "w": 218,
+     "h": 76,
+     "font-size": "12px",
+     "line-height": "19px",
+     "color": "rgb(163, 176, 191)",
+     "margin-top": "12px",
+     "margin-bottom": "12px",
+     "textLen": 55,
+     "textHead": "核对口径：条目大小与点击预览读取的都是当前物理文件（实时实测），「登记」是提交时"
+    },
+    "executorTopInScroll": 1170,
+    "ioTopInScroll": 1307,
+    "artsTopInScroll": 1238,
+    "docOverflowX": false,
+    "bodyScrollable": false
+   },
+   "scrollTest": {
+    "scrollTop": 738,
+    "scrollTopMax": 738,
+    "executor": {
+     "text": "执行者",
+     "topInView": true,
+     "rect": {
+      "top": 432,
+      "bottom": 484
+     },
+     "view": {
+      "top": 96,
+      "bottom": 744
+     }
+    },
+    "arts": {
+     "text": "本步产物",
+     "topInView": true,
+     "rect": {
+      "top": 500,
+      "bottom": 553
+     },
+     "view": {
+      "top": 96,
+      "bottom": 744
+     }
+    },
+    "io": {
+     "text": "上下游",
+     "topInView": true,
+     "rect": {
+      "top": 569,
+      "bottom": 657
+     },
+     "view": {
+      "top": 96,
+      "bottom": 744
+     }
+    }
+   }
+  },
+  {
+   "viewport": "1100x768",
+   "measure": {
+    "viewport": {
+     "w": 1100,
+     "h": 768
+    },
+    "inspOpenOverlay": false,
+    "insp": {
+     "x": 772,
+     "y": 52,
+     "w": 328,
+     "h": 660,
+     "position": "static",
+     "overflow-y": "visible"
+    },
+    "inspBody": {
+     "clientW": 312,
+     "clientH": 616,
+     "scrollW": 312,
+     "scrollH": 1386,
+     "canScrollY": true,
+     "overflowXClipped": true,
+     "scrollTop": 738,
+     "overflow-x": "hidden",
+     "overflow-y": "auto",
+     "width": "327px",
+     "height": "615.812px",
+     "padding": "14px 16px 20px"
+    },
+    "decide": {
+     "x": 789,
+     "y": -535,
+     "w": 280,
+     "h": 952,
+     "padding": "16px",
+     "border-radius": "10px",
+     "background-color": "rgb(36, 34, 30)"
+    },
+    "evSrc": {
+     "x": 821,
+     "y": -357,
+     "w": 218,
+     "h": 76,
+     "font-size": "12px",
+     "line-height": "19px",
+     "color": "rgb(163, 176, 191)",
+     "margin-top": "12px",
+     "margin-bottom": "12px",
+     "textLen": 55,
+     "textHead": "核对口径：条目大小与点击预览读取的都是当前物理文件（实时实测），「登记」是提交时"
+    },
+    "executorTopInScroll": 1170,
+    "ioTopInScroll": 1307,
+    "artsTopInScroll": 1238,
+    "docOverflowX": false,
+    "bodyScrollable": false
+   },
+   "scrollTest": {
+    "scrollTop": 770,
+    "scrollTopMax": 770,
+    "executor": {
+     "text": "执行者",
+     "topInView": true,
+     "rect": {
+      "top": 400,
+      "bottom": 452
+     },
+     "view": {
+      "top": 96,
+      "bottom": 712
+     }
+    },
+    "arts": {
+     "text": "本步产物",
+     "topInView": true,
+     "rect": {
+      "top": 468,
+      "bottom": 521
+     },
+     "view": {
+      "top": 96,
+      "bottom": 712
+     }
+    },
+    "io": {
+     "text": "上下游",
+     "topInView": true,
+     "rect": {
+      "top": 537,
+      "bottom": 625
+     },
+     "view": {
+      "top": 96,
+      "bottom": 712
+     }
+    }
+   }
+  }
+ ],
+ "pollTest": {
+  "setTo": 319,
+  "scrollTopMax": 638,
+  "samples": [
+   319,
+   319,
+   319,
+   319,
+   319,
+   319,
+   319,
+   319,
+   319,
+   319
+  ],
+  "drift": true
+ }
+}

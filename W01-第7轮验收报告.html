@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W01 第 7 轮验收报告｜审批操作固定右栏底部</title>
+<style>
+  :root { --bg:#141821; --panel:#1B2230; --line:#2C3A4E; --text:#E8EEF6; --muted:#9FB0C4; --ok:#5AD48B; --warn:#E0B341; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.75 "Segoe UI","Microsoft YaHei",system-ui,sans-serif; padding:32px 20px 60px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .meta { color:var(--muted); font-size:12.5px; margin-bottom:20px; }
+  .verdict { background:rgba(90,212,139,.08); border:1px solid rgba(90,212,139,.4); border-radius:10px; padding:14px 18px; margin:0 0 24px; }
+  .verdict b { color:var(--ok); }
+  h2 { font-size:17px; margin:28px 0 10px; border-left:3px solid var(--warn); padding-left:10px; }
+  table { border-collapse:collapse; width:100%; font-size:12.5px; background:var(--panel); border-radius:8px; overflow:hidden; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#222B3D; color:var(--muted); font-weight:600; white-space:nowrap; }
+  td.num { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .pass { color:var(--ok); font-weight:600; }
+  ul { padding-left:22px; } li { margin:6px 0; }
+  code { background:#232D40; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font-size:12px; }
+  .note { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin:10px 0; color:var(--muted); font-size:13px; }
+  details { margin:10px 0; } summary { cursor:pointer; color:var(--warn); }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>W01 第 7 轮验收报告｜审批操作固定右栏底部 + 详情独立滚动</h1>
+<div class="meta">2026-11-16 08:39 · 实例 http://127.0.0.1:8090（直读 web/ 磁盘文件，curl md5 比对一致） · 数据 TEST-R11 / plan（awaiting 全套长内容审批卡）</div>
+
+<div class="verdict">结论：<b>本轮未改任何代码——不需要改。</b>规格在前 6 轮迭代中已落进 <code>web/app.css / app.js / index.html</code>（6 个 .bak-w01* 备份对应 6 轮，末轮 05:38 验证收敛；其后 W02r4 改动经 diff 确认未触碰 W01 结构）。本轮用<b>独立脚本</b>在当前最新代码上重测，全部验证点通过。</div>
+
+<h2>实测数据（getBoundingClientRect / getComputedStyle · 三视口）</h2>
+<table>
+<tr><th>验证点</th><th>1440×900</th><th>1280×800</th><th>1100×768</th><th>判定</th></tr>
+<tr><td>#inspector 宽×高</td><td class="num">x1112,y52 · 328×792</td><td class="num">x952 · 328×692</td><td class="num">x772 · 328×660</td><td class="pass">✅ =100dvh−108</td></tr>
+<tr><td>.insp-head 高</td><td class="num">48px</td><td class="num">48px</td><td class="num">48px</td><td class="pass">✅</td></tr>
+<tr><td>#insp-body 计算样式</td><td colspan="3">flex-grow:1 · min-height:0 · overflow-y:auto · overflow-x:hidden（三视口同值）</td><td class="pass">✅</td></tr>
+<tr><td>#insp-foot 位置/高</td><td class="num">y780 · 64px</td><td class="num">y680 · 64px</td><td class="num">y648 · 64px</td><td class="pass">✅ 滚动区外</td></tr>
+<tr><td>foot 底边 ≤ 状态栏顶边</td><td class="num">844 ≤ 844</td><td class="num">744 ≤ 744</td><td class="num">712 ≤ 712</td><td class="pass">✅ 零越界</td></tr>
+<tr><td>foot 背景/边框/内边距</td><td colspan="3">#171C27 · border-top 1px #344253 · padding 12px 16px（三视口 computed 同值）</td><td class="pass">✅</td></tr>
+<tr><td>主操作「通过计划」</td><td class="num">86×36 · r8 · 全可见</td><td class="num">86×36 · 全可见</td><td class="num">86×36 · 全可见</td><td class="pass">✅ ≥86×36</td></tr>
+<tr><td>次操作「打回」</td><td class="num">58×36 · r8 · 全可见</td><td class="num">58×36</td><td class="num">58×36</td><td class="pass">✅ ≥58×36</td></tr>
+<tr><td>按钮间距</td><td class="num">8px</td><td class="num">8px</td><td class="num">8px</td><td class="pass">✅</td></tr>
+<tr><td>内容超高可滚到底</td><td class="num">1336&gt;680 · atBottom</td><td class="num">1336&gt;580</td><td class="num">1336&gt;548</td><td class="pass">✅</td></tr>
+<tr><td>滚动期间操作区钉住</td><td class="num">差&lt;0.5px</td><td class="num">✅</td><td class="num">✅</td><td class="pass">✅</td></tr>
+<tr><td>说明文字</td><td colspan="3">12px / 19px / #B3C0D2（.ev-src 实测；.ip-note/.rej-why/.ip-v/.ev-demand 同层收口）</td><td class="pass">✅</td></tr>
+<tr><td>横向溢出</td><td class="num">0</td><td class="num">0</td><td class="num">0</td><td class="pass">✅</td></tr>
+</table>
+
+<h2>行为验证</h2>
+<ul>
+  <li><b>轮询稳定性</b>：scrollTop=200 后 10×3s 采样（同步时间戳变化 10 次，证明轮询真实在跑），全部 =200，<b>最大漂移 0px</b>（规格 ≤2px）。机制：<code>withScroll()</code>（app.js:583）渲染前存、渲染后恢复。</li>
+  <li><b>无审批动作不显示操作区</b>：done 步骤实测 foot.hidden=true · display:none · 高 0 · 无按钮 · #insp-body 底边与面板底边重合（<b>无 64px 空占位</b>）。failed/门禁未到/等待前置分支 acts 为空。</li>
+  <li><b>中央不受右侧滚动影响</b>：三视口 #center scrollHeight==clientHeight（中央自身未超高、无可滚位置），滚右栏到底前后 center.scrollTop 恒 0；两栏为独立滚动容器，机制上互不牵连。</li>
+  <li><b>有审批动作即显示</b>：T-DAILY / req（awaiting）foot 显示「批准 · 开始编写」112.9×36 完整可见。</li>
+</ul>
+
+<h2>两点如实说明（非缺陷，未改）</h2>
+<div class="note">1. 高度非字面 <code>calc(100dvh-108px)</code>，而是等价 flex 链（html/body 100% → #frame flex:1 → topbar 52 + statusbar 56），三视口实测与 vh−108 精确相等（&lt;0.6px）。桌面 dvh≡vh；≤1099px 走 fixed 抽屉模式，改显式 height 反而破坏它。</div>
+<div class="note">2. <b>8080 上没有 Leo's Agent Office</b>：0.0.0.0:8080 serve 的是 goal-os 项目的 Soda AI Studio；127.0.0.1:8080 是卡片 API 服务。唯一实例在 <b>8090</b>。若此前"6 轮未修复"的观感来自访问非 8090 地址，看到的不是这份代码。</div>
+
+<h2>工件</h2>
+<ul>
+  <li>脚本 <code>verify-w01-round7.mjs</code> · 数值 <code>verify-w01-round7.json</code> · 截图 <code>verify-w01r7-{1440x900,1280x800,1100x768}-approval.png</code>（项目根）</li>
+  <li>前轮工件（verify-w01foot.* 等）保留未动</li>
+</ul>
+
+</div></body>
+</html>

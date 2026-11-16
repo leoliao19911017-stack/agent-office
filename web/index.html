@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Leo's Agent Office</title>
+<link rel="icon" href="data:,"><!-- 显式空 favicon：避免浏览器自动请求 /favicon.ico 产生 404 -->
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- ================= 顶栏 52px（R9） ================= -->
+<header id="topbar">
+  <span class="tb-logo">Leo's Agent Office</span>
+  <span class="tb-div"></span>
+  <span id="tb-task">—</span>
+  <button id="tb-decision" type="button" hidden title="点击查看待决策清单"></button>
+  <span class="tb-spacer"></span>
+  <input id="tb-search-input" type="search" placeholder="筛选需求…" hidden autocomplete="off">
+  <button id="tb-reqs-toggle" class="tb-icon" type="button" title="需求列表" aria-label="切换需求列表">
+    
+  </button>
+  <button id="tb-insp-toggle" class="tb-icon" type="button" title="步骤详情" aria-label="切换详情面板">
+    
+  </button>
+  <button id="tb-search" class="tb-icon" type="button" title="搜索需求" aria-label="搜索需求">
+    
+  </button>
+  <button id="tb-settings" class="tb-icon" type="button" title="设置" aria-label="设置">
+    
+  </button>
+  <div id="settings-pop" hidden>
+    <h4>设置</h4>
+    <div class="sp-row"><span>中台连接</span><b id="sp-conn">—</b></div>
+    <div class="sp-row"><span>自动刷新</span><span><b id="sp-poll">开</b> <button id="sp-poll-btn" class="btn btn-ghost" type="button">暂停</button></span></div>
+    <div class="sp-row"><span>轮询间隔</span><b>3 秒</b></div>
+    <div class="sp-row"><span>背景降噪</span><span><b id="sp-quiet">关</b> <button id="sp-quiet-btn" class="btn btn-ghost" type="button">开启</button></span></div>
+    <div class="sp-row"><button id="sp-refresh" class="btn btn-primary" type="button">立即刷新</button></div>
+    <!-- TASK-R6（评审 #4）：待确认操作与结果刷新后可回看，不再只活在内存里 -->
+    <div class="sp-ops-h">最近操作记录</div>
+    <div id="sp-ops" class="sp-ops"><div class="sp-ops-empty">还没有操作记录</div></div>
+  </div>
+</header>
+
+<!-- TASK-R2：数据异常横幅。读取失败不再伪装成空数据，如实挂出来 + 手动重试 -->
+<div id="data-banner" hidden></div>
+
+<!-- TASK-R2：待决策清单弹层（可处理 + 门禁未到，分开列） -->
+<div id="decision-pop" hidden></div>
+
+<!-- ================= 导航 + 三栏 ================= -->
+<div id="frame">
+  <nav id="rail" aria-label="主导航">
+    <div class="rail-logo" aria-hidden="true">L</div>
+    <button id="rail-reqs" class="rail-item" aria-current="page" title="需求">
+      
+      <span>工作台</span>
+    </button>
+    <div class="rail-spacer"></div>
+    <button id="rail-agents" class="rail-item" type="button" title="Agent 列表与工作明细">
+      
+      <span>Agents</span>
+    </button>
+    <button id="rail-skills" class="rail-item" type="button"><span>技能</span></button><button id="rail-files" class="rail-item" type="button"><span>文件</span></button>
+    <button id="rail-focus" class="rail-item" type="button" title="打开 EaseDraw 专注模式">
+      
+      <span>专注</span>
+    </button>
+  </nav>
+
+  <section id="page-workbench" class="workbench-page" aria-label="工作台">
+  <!-- 左：需求列表 248px -->
+  <aside id="reqs" aria-label="需求列表">
+    <div class="reqs-head">需求 · <b id="reqs-count">—</b><button id="btn-overview" type="button">全部需求</button></div>
+    <div id="reqs-list"></div>
+  </aside>
+
+  <!-- 中：交付链（自适应） -->
+  <main id="center">
+    <div id="center-chain"></div>
+    <div id="center-overview" hidden></div>
+  </main>
+
+  <!-- 右：Inspector 320px -->
+  <aside id="inspector" aria-label="步骤详情">
+    <div class="insp-head">步骤详情</div>
+    <div id="insp-body"></div>
+    <!-- W01：审批操作固定底栏——renderInspector 按步骤是否需要审批写入/隐藏 -->
+    <div id="insp-foot" hidden></div>
+  </aside>
+  </section>
+  <main id="page-agents" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">THE ATELIER</span><h1>Agents</h1></div><div id="agent-stats" aria-label="角色与实例统计"></div></header><p class="page-scope" id="agent-scope"></p><div id="agent-grid"></div></main>
+  <main id="page-skills" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">TOOLS & CRAFT</span><h1>技能</h1></div><p id="skill-count"></p></header><div class="skill-tools"><input id="skill-search" aria-label="搜索技能" placeholder="搜索技能名称或用途"><div class="skill-filter-rows"><div class="skill-filter-row"><span class="sfr-label">用途</span><div id="skill-cat-filters" class="chip-row" role="group" aria-label="按用途筛选"></div></div><div class="skill-filter-row"><span class="sfr-label">来源</span><div id="skill-filters" class="chip-row" role="group" aria-label="按来源筛选"></div></div></div></div><div class="skill-layout"><div class="skill-list-column"><div id="skill-list"></div><div id="skill-pagination" class="pagination"></div></div><aside id="skill-detail" class="skilldetail" aria-label="技能详情" hidden></aside></div></main>
+  <main id="page-files" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">COLLECTED WORK</span><h1>文件</h1></div><p id="file-count"></p></header><div id="file-toolbar" hidden><input id="file-search" type="search" placeholder="搜索文件名或路径…" aria-label="搜索文件"><select id="file-task" aria-label="按需求筛选"></select><select id="file-step" aria-label="按步骤筛选"></select><select id="file-type" aria-label="按类型筛选"></select><select id="file-agent" aria-label="按 Agent 筛选"></select><select id="file-sort" aria-label="排序"><option value="recent">最近更新</option><option value="name">名称</option><option value="demand">按需求</option></select><label class="file-only"><input type="checkbox" id="file-only-toggle" checked><span>只看有产物</span></label></div><div id="file-groups"></div></main>
+</div>
+<dialog id="step-files"><div class="picker-heading"><h3>选择产物</h3><button class="btn btn-ghost" data-close-picker>关闭</button></div><div id="step-file-list"></div></dialog>
+
+<!-- ================= 底部状态栏 56px（R9：Agent 状态条） ================= -->
+<footer id="statusbar">
+  <span id="sb-conn"><i class="dot"></i><span id="sb-conn-text">连接中…</span></span>
+  <span id="sb-agents">已配置 — · 在线 —</span>
+  <span id="sb-running">执行中 —</span>
+  <span id="sb-chips" aria-label="Agent 状态，点击进入 Agents 页"></span>
+  <span id="sb-sync">同步 —</span>
+</footer>
+
+<!-- ================= 文件预览弹层（R11：420px 抽屉 + 元数据区 + 重新校验） ================= -->
+<div id="file-view" role="dialog" aria-label="文件内容">
+  <div class="fv-panel">
+    <div class="fv-bar">
+      <span class="fv-name" id="fv-name">—</span>
+      <span class="fv-meta" id="fv-meta"></span>
+      <a id="fv-dl" class="btn btn-secondary" href="#" hidden download>打开原件</a>
+      <button id="fv-copy" class="btn btn-secondary" type="button">复制路径</button>
+      <button id="fv-revalidate" class="btn btn-secondary" type="button" hidden title="用真实文件元数据更新登记值，保留历史">重新校验</button>
+      <button id="fv-locate" class="btn btn-secondary" type="button" hidden title="回到登记这个文件的需求步骤">定位到步骤</button>
+      <button id="fv-close" type="button">关闭</button>
+    </div>
+    <div class="fv-path" id="fv-path"></div>
+    <div id="fv-detail" class="fv-detail" hidden></div>
+    <div id="fv-body"></div>
+  </div>
+</div>
+
+<!-- ================= 全局提示（R11/G03：统一 320px toast） ================= -->
+<div id="toast-root" aria-live="polite"></div>
+
+<!-- ================= 专注模式：覆盖式，关闭 display:none 保留 iframe ================= -->
+<div id="focus-panel" aria-label="专注模式">
+  <div class="fd-main">
+    <div class="fd-bar"><b>专注模式</b><span>· EaseDraw</span><button id="fd-close" type="button">关闭 ✕</button></div>
+    <iframe id="fd-frame" data-src="https://luckyandease.com/easedraw/" title="EaseDraw"></iframe>
+  </div>
+</div>
+
+<script src="offline-snapshot.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

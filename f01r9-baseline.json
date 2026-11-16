@@ -1,0 +1,132 @@
+{
+  "groupTitle": "R11 决策端点自测（一次性，测完即删） · 1 个产物（2 条登记）",
+  "rowRect": {
+    "x": 109,
+    "y": 306,
+    "w": 1239,
+    "h": 84,
+    "l": 109,
+    "right": 1348,
+    "top": 306,
+    "bottom": 390
+  },
+  "metaRect": {
+    "x": 979,
+    "y": 317,
+    "w": 190,
+    "h": 62,
+    "l": 979,
+    "right": 1169,
+    "top": 317,
+    "bottom": 379
+  },
+  "actionsRect": {
+    "x": 1185,
+    "y": 332,
+    "w": 150,
+    "h": 32,
+    "l": 1185,
+    "right": 1335,
+    "top": 332,
+    "bottom": 364
+  },
+  "mainRect": {
+    "x": 162,
+    "y": 326,
+    "w": 801,
+    "h": 44,
+    "l": 162,
+    "right": 963,
+    "top": 326,
+    "bottom": 370
+  },
+  "linesRect": {
+    "x": 1063,
+    "y": 317,
+    "w": 84.4,
+    "h": 40,
+    "l": 1063,
+    "right": 1147.4,
+    "top": 317,
+    "bottom": 357
+  },
+  "rowStyle": {
+    "backgroundColor": "rgb(21, 31, 45)",
+    "borderTopWidth": "1px",
+    "borderTopColor": "rgb(51, 66, 87)",
+    "borderTopStyle": "solid",
+    "borderRadius": "8px",
+    "minHeight": "68px",
+    "maxHeight": "none",
+    "height": "84px"
+  },
+  "metaStyle": {
+    "width": "190px",
+    "fontSize": "12px",
+    "lineHeight": "18px",
+    "color": "rgb(163, 176, 191)"
+  },
+  "linesStyle": {
+    "gap": "4px",
+    "rowGap": "4px"
+  },
+  "sizeSpans": [
+    {
+      "text": "实测 99.7 KB",
+      "title": "当前物理文件实测 102055 B",
+      "fontSize": "12px",
+      "lineHeight": "18px",
+      "color": "rgb(215, 225, 238)"
+    },
+    {
+      "text": "登记 78.5 KB ×2",
+      "title": "02 需求文档（TEST-R11） · 02:50 / 03 开发计划（TEST-R11） · 02:50 的原始字节数完全一致（80408 B），2 条登记合并展示共同登记值并标注登记数量；与实测 102055 B 不一致",
+      "fontSize": "12px",
+      "lineHeight": "18px",
+      "color": "rgb(215, 225, 238)"
+    }
+  ],
+  "tagText": "大小不一致",
+  "execText": "selftest",
+  "typeText": null,
+  "srcText": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css · 2 处登记",
+  "nameText": "app.css",
+  "titleAttr": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css\nR11 决策端点自测（一次性，测完即删） › 02 需求文档（selftest） · 登记 80408 B · 02:50\nR11 决策端点自测（一次性，测完即删） › 03 开发计划（selftest） · 登记 80408 B · 02:50",
+  "gapMetaToActions": 16,
+  "overlapMetaActions": false,
+  "regs": [
+    {
+      "id": "TEST-R11›doc",
+      "stepNo": 2,
+      "stepName": "需求文档",
+      "taskTitle": "R11 决策端点自测（一次性，测完即删）",
+      "by": "selftest",
+      "at": "2026-11-15T18:50:08.441Z",
+      "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+      "bytes": 80408,
+      "sha256": "selftest-placeholder"
+    },
+    {
+      "id": "TEST-R11›plan",
+      "stepNo": 3,
+      "stepName": "开发计划",
+      "taskTitle": "R11 决策端点自测（一次性，测完即删）",
+      "by": "selftest",
+      "at": "2026-11-15T18:50:08.441Z",
+      "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+      "bytes": 80408,
+      "sha256": "selftest-placeholder"
+    }
+  ],
+  "entityRefs": [
+    {
+      "vk": "sha:selftest-placeholder",
+      "refs": 2
+    }
+  ],
+  "actual": {
+    "exists": true,
+    "bytes": 102055
+  },
+  "totalRegs": 13
+}

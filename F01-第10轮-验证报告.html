@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>F01 第 10 轮验证报告｜两条历史登记独立保存与校验</title>
+<style>
+  :root { --bg:#0F1520; --panel:#182230; --line:#334257; --text:#F1ECE2; --meta:#B3C0D2; --accent:#78A8F5; --ok:#62C6A0; --warn:#E5B95E; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:32px 20px 64px; background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .sub { color:var(--meta); font-size:13px; margin-bottom:20px; }
+  .verdict { display:inline-block; padding:3px 12px; border-radius:6px; background:rgba(98,198,160,.15); color:var(--ok); font-weight:600; }
+  h2 { font-size:17px; margin:28px 0 10px; border-left:3px solid var(--accent); padding-left:10px; }
+  table { border-collapse:collapse; width:100%; margin:10px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:rgba(120,168,245,.08); color:var(--meta); font-weight:600; white-space:nowrap; }
+  code, pre { font-family:Cascadia Code,Consolas,monospace; font-size:12.5px; }
+  code { background:rgba(120,168,245,.1); padding:1px 5px; border-radius:4px; color:#D7E1EE; }
+  pre { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px; overflow-x:auto; color:#D7E1EE; line-height:1.8; }
+  .case { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin:10px 0; }
+  .case b { color:var(--accent); }
+  .tag { display:inline-block; padding:1px 8px; border-radius:6px; font-size:12px; height:20px; line-height:18px; }
+  .tag.warn { background:#3B3021; color:var(--warn); }
+  .tag.ok { background:rgba(98,198,160,.15); color:var(--ok); }
+  .note { color:var(--meta); font-size:12.5px; }
+  li { margin:4px 0; }
+  .num { color:var(--ok); font-weight:600; }
+</style>
+</head>
+<body><div class="wrap">
+<h1>F01 第 10 轮验证报告｜两条历史登记独立保存与校验</h1>
+<div class="sub">2026-11-16 10:00–10:32 ｜ 验证人：Lemate（claude）｜ 结论：<span class="verdict">通过</span>（数值全部来自 headless Edge CDP 的 getComputedStyle / getBoundingClientRect / scrollWidth 实测）</div>
+
+<h2>1. 验证缺口（为什么前 9 轮没过）</h2>
+<ul>
+<li><b>「登记版本不同」场景没有任何真实数据</b>：全库仅 TEST-R11 一条双登记实体（两条完全相同），<code>multiCount=0</code>——不同版本/不同时间的分行展示从未被真实渲染，历轮只做了算术推算。</li>
+<li><b>分行文本单行塞四要素超宽</b>：<code>02 78.5KB·指纹ab12cd34·11/15 02:50 ≠</code> ≈ 210px，190px 列必然截断。</li>
+<li><b>前端就地覆盖历史快照</b>：重校验处理器 <code>fvReg.f.bytes=d.after.bytes</code> 把实测值直接写进登记原件对象。</li>
+</ul>
+
+<h2>2. 改动清单（仅文件行这一处）</h2>
+<table>
+<tr><th>文件</th><th>改动</th></tr>
+<tr><td>web/app.js 重校验处理器</td><td>删除就地覆盖；<code>await tick()</code> 拉新档案后从档案重取登记渲染，展示始终是档案口径</td></tr>
+<tr><td>web/app.js fileButton</td><td>① 登记行挂 <code>data-regs</code>（原始ID/步骤/字节/版本标识/时间/history）；② 登记一致 → 汇总 ×2 + 可见「同版身份行」；③ 版本分叉 → 每版本行带自己身份行；④ 身份行放 dual 块外吃整列 190px（块内仅 ~106px 会截断）；⑤ 执行者/来源类型并单行 <code>.lf-row</code></td></tr>
+<tr><td>web/app.css 尾部</td><td>追加第 10 轮段：行内边距 10→6px（汇总态=96px 整）；.lf-row 布局；来源胶囊 20→18px</td></tr>
+</table>
+
+<h2>3. 实测数值（任务书 vs 实测）</h2>
+<table>
+<tr><th>指标</th><th>要求</th><th>实测</th></tr>
+<tr><td>元信息区宽</td><td>190px</td><td class="num">190px</td></tr>
+<tr><td>字号/行高</td><td>12px/18px</td><td class="num">12px / 18px</td></tr>
+<tr><td>文字色</td><td>#D7E1EE</td><td class="num">rgb(215,225,238)</td></tr>
+<tr><td>行间距</td><td>4px</td><td class="num">4px</td></tr>
+<tr><td>文件行最小高</td><td>68px</td><td class="num">68px（单登记行实测 68）</td></tr>
+<tr><td>内容较多扩展至</td><td>96px</td><td class="num">96px（双登记行实测 96，封顶 96）</td></tr>
+<tr><td>背景</td><td>#182230</td><td class="num">rgb(24,34,48)</td></tr>
+<tr><td>圆角</td><td>8px</td><td class="num">8px</td></tr>
+<tr><td>元信息与操作区</td><td>无重叠</td><td class="num">metaRight 1184 &lt; actionsLeft 1200（间距16px），15 行全查 0 重叠</td></tr>
+</table>
+
+<h2>4. 三种数据形态（真实渲染）</h2>
+<div class="case"><b>A. 登记完全相同（TEST-R11 · app.css → 允许汇总）</b>｜行高 96px<br>
+<span class="tag warn">大小不一致</span> <code>实测 102.5 KB</code> ｜ <code>登记 78.5 KB ×2</code> ｜ <code>02·03 同版 selfte 02:50</code><br>
+<span class="note">data-regs：TEST-R11›doc 与 TEST-R11›plan 均 80408B / sha:selftest-placeholder / 2026-11-15T18:50:08.441Z，四要素逐一相等 → 汇总</span></div>
+<div class="case"><b>B. 同版本不同登记时间（fixture-time.md → 必须分行）</b>｜lf-multi 行 96px<br>
+<code>02 133B·d4ada8·11/15 17:00 ✓</code> ｜ <code>03 133B·d4ada8·09:30 ✓</code><br>
+<span class="note">两条登记各自一行（指纹同、时间不同），行宽 162px 未截断</span></div>
+<div class="case"><b>C. 不同版本（fixture-ver.md → 两条登记两个版本行）</b>｜80px + 76px<br>
+<span class="tag warn">历史版本</span> <code>02 300B·9490ac·11/15 17:00</code>（V1 旧快照，history=1）<br>
+<code>✓ 124 B</code> ｜ <code>03 124B·f04311·09:30</code>（plan 登记的当前版）</div>
+
+<h2>5. 历史快照不变性</h2>
+<pre>fixture-time.md 追加 1 字节（133B→134B）→ 整页重读：
+  两条登记 data-regs 逐字节相同 → SNAPSHOT_IMMUTABLE=true（字节/指纹/时间不变，仅结论 ✓→≠）
+app.css 被本轮编辑（102034B→约104.9KB）：TEST-R11 登记仍 80408B / 78.5 KB ×2 —— 未被覆盖
+
+重新校验链路（点「重新校验」后档案实测）：
+  {"bytes":134,"sha":"5c26e4…","history":[{"bytes":133,"sha256":"d4ada83b…","snapshot":"重校验前登记值"}]}
+  页面 data-regs 如实反映 history:1，旧值留档，无前端覆盖路径</pre>
+
+<h2>6. 巡检与回归</h2>
+<ul>
+<li>15 个文件行全查：重叠 <span class="num">0</span> 行、96px 截断 <span class="num">0</span> 行、行高集合 {68,76,80,96} ⊆ [68,96]</li>
+<li>页面加载 <span class="num">0</span> JS 异常；<code>node --check app.js</code> 通过；工作台/Inspector 渲染路径未动</li>
+</ul>
+
+<h2>7. 遗留说明</h2>
+<ul>
+<li><b>验证夹具（测完即删）</b>：<code>office-data/tasks/TEST-F01R10.json</code> + <code>web/verify-assets/f01-r10/fixture-{time,ver}.md</code>——是「版本不同」场景唯一活数据，建议验收后删除</li>
+<li><b>并行修改</b>：10:01–10:13 另一 agent 亦在迭代本文件；本轮以其 10:12 版为基线增量修改，备份 <code>web/app.{js,css}.bak-f01r10</code></li>
+<li>证据：<code>web/verify-assets/f01-r10/</code>（probe-*.mjs、verify-final2.json、final-files.png）</li>
+</ul>
+</div></body></html>

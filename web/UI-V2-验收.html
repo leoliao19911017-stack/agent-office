@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TASK-5.1 UI-V2 验收报告（Agent 工位改造）</title>
+<style>
+  :root {
+    --bg:#0C1730; --card:#172845; --table:#101D35; --gold:#F4CD72;
+    --text:#F5F2E9; --sub:#C4D3E8; --dim:#9FB5CE;
+    --ok:#80D69F; --bad:#FF8B85; --run:#79C1F5; --warn:#E8A33D;
+    --code:#0B1526;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font:15px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:980px; margin:0 auto; padding:36px 24px 80px; }
+  h1 { font-size:26px; margin:.2em 0; }
+  h1 .k { color:var(--gold); font-size:13px; letter-spacing:.25em; display:block; }
+  h2 { font-size:20px; border-left:4px solid var(--gold); padding-left:12px; margin-top:2.4em; }
+  h3 { font-size:16px; margin-bottom:.4em; }
+  h3 .v { font-size:13px; color:var(--ok); border:1px solid var(--ok);
+    border-radius:99px; padding:1px 10px; margin-left:8px; vertical-align:2px; }
+  code, pre { font-family:Consolas,"Cascadia Mono",monospace; }
+  code { background:var(--code); border:1px solid #24365C; border-radius:4px;
+    padding:1px 6px; font-size:13px; color:#BFE3FF; }
+  pre { background:var(--code); border:1px solid #24365C; border-radius:8px;
+    padding:14px 16px; overflow:auto; font-size:13px; line-height:1.6; color:#D8E6F5; }
+  pre .c { color:#6E86A8; }  /* 注释 */
+  table { border-collapse:collapse; width:100%; background:var(--table);
+    border-radius:8px; overflow:hidden; font-size:14px; }
+  th,td { border:1px solid #24365C; padding:8px 12px; text-align:left; vertical-align:top; }
+  th { background:#1A2C50; color:var(--sub); font-weight:600; }
+  ul.meta { list-style:none; padding:0; color:var(--sub); }
+  ul.meta li { padding:2px 0; }
+  .note { background:#1A2C50; border-left:4px solid var(--warn);
+    border-radius:0 8px 8px 0; padding:10px 16px; color:var(--sub); font-size:14px; }
+  .ok-line { color:var(--ok); font-weight:600; }
+  .shot { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
+  .shot figure { margin:0; background:var(--card); border:1px solid #24365C;
+    border-radius:8px; padding:10px; font-size:13px; color:var(--sub); }
+  .shot figcaption b { color:var(--text); }
+  details { background:var(--card); border:1px solid #24365C; border-radius:8px;
+    padding:10px 16px; margin:10px 0; }
+  summary { cursor:pointer; color:var(--gold); font-weight:600; }
+  footer { margin-top:48px; color:var(--dim); font-size:13px; border-top:1px solid #24365C; padding-top:16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<p style="color:var(--gold);letter-spacing:.3em;font-size:13px;margin:0">LEO'S AGENT OFFICE · TASK-5.1</p>
+<h1>UI-V2 验收报告（Agent 工位改造）</h1>
+
+<ul class="meta">
+  <li><b>验收对象</b>：<code>http://127.0.0.1:8090</code>（Leo's Agent Office）</li>
+  <li><b>验收日期</b>：2026-11-13</li>
+  <li><b>改动文件</b>：<b>仅 <code>web/index.html</code></b>（重写 HTML 结构 + CSS + 前端 JS）。<code>web/server.js</code> 及 5 个 API 路由一行未动，Autoloop 未动，未生成新图片（复用 TASK-4.1 星月夜素材）。</li>
+  <li><b>验证方式</b>：headless Edge（Edg/157.0.4341.46）+ CDP 直连（<code>--remote-debugging-port=9222</code>，独立临时 profile，不碰用户浏览器），脚本 <code>web/verify-assets/verify-5.1.mjs</code>（零依赖，Node 24 原生 WebSocket），视口 1440×1000。</li>
+</ul>
+
+<h2>一、逐条验收（真实输出）</h2>
+
+<h3>1. 改名 Leo's Agent Office，旧品牌零残留 <span class="v">通过</span></h3>
+<pre>Runtime.evaluate → document.title
+"Leo's Agent Office"
+
+$ grep -c "Soda Agent 工作台\|SODA INTELLIGENCE" web/index.html
+0        （exit 1 = 无匹配）
+
+hero kicker（DOM 实读）: "LEO'S AGENT OFFICE"
+hero 副题: 「星夜之下，每位成员在自己的工位上赶路；需要你拍板的事，会亮成金星。」
+页脚: 「Leo's Agent Office · 数据来自 Agent Autoloop · 每 3 秒自动刷新」</pre>
+
+<h3>2. 工位卡数量 === 4 <span class="v">通过</span></h3>
+<pre>Runtime.evaluate → document.querySelectorAll('.workstation').length
+4</pre>
+
+<h3>3. 卡片数据与 /api/state 一致（三口径：API ↔ lastState ↔ DOM）<span class="v">通过</span></h3>
+<p>DOM 工位卡实读（verify-5.1.mjs 验收3 输出）：</p>
+<table>
+<tr><th>agent</th><th>名称</th><th>岗位</th><th>连接</th><th>工作</th><th>负载</th><th>今日</th><th>成本</th></tr>
+<tr><td>claude</td><td>Claude Code</td><td>开发</td><td>online</td><td>空闲</td><td>执行中 0 · 排队 0 · 重试 0</td><td>完成 3 项</td><td>累计成本 $2.27 · 15.6 万 Token</td></tr>
+<tr><td>codex</td><td>Codex</td><td>审查</td><td>online</td><td>空闲</td><td>执行中 0 · 排队 0 · 重试 0</td><td>完成 5 项</td><td>累计成本 $0 · 32.9 万 Token</td></tr>
+<tr><td>claude-readonly</td><td>Claude Code 只读</td><td>日报</td><td>online</td><td>空闲</td><td>执行中 0 · 排队 0 · 重试 0</td><td>完成 4 项</td><td>累计成本 $2.07 · 26.4 万 Token</td></tr>
+<tr><td>image-gen</td><td>Codex 生图</td><td>生图</td><td>online</td><td>空闲</td><td>执行中 0 · 排队 0 · 重试 0</td><td>完成 2 项</td><td>累计成本 $0 · 0 Token</td></tr>
+</table>
+<pre>/api/state 同刻 agents：
+[{id:"claude",doneToday:3,cost:2.27…,online:true},{id:"codex",doneToday:5,cost:0,…},
+ {id:"claude-readonly",doneToday:4,cost:2.0734,…},{id:"image-gen",doneToday:2,cost:0,…}]
+
+脚本逐项核对 name/doneToday/cost/running/queued/retrying：
+对比结果 issues = [] → 一致 ✅</pre>
+<p class="note">无数据字段显示「—」（<code>fmtCost</code> 对 null 返回 <code>—</code>）；image-gen 的 $0 是真实值非编造。整轮验证页面 JS 异常 / console.error：<b>（无）</b>。</p>
+
+<h3>4. 连接状态与工作状态计算代码（index.html:482-501 / 470-479）<span class="v">通过</span></h3>
+<pre><span class="c">// 心跳判宽：比 Autoloop 的心跳间隔宽裕一倍（约 1 分钟一跳，2 分钟没动静才算超时），避免误报</span>
+const HEARTBEAT_TTL = 120000;
+
+<span class="c">// 连接状态：只回答「这台机器连着吗」，和干不干活无关。</span>
+<span class="c">// online=true 不等于在干活——它只说明 worker 报过到；超过 TTL 没心跳算 stale（黄）。</span>
+function connectionOf(agent, now) {
+  if (!agent.online) return 'offline';
+  const seen = Date.parse(agent.seenAt);
+  if (!Number.isFinite(seen) || (now - seen) > HEARTBEAT_TTL) return 'stale';
+  return 'online';
+}
+
+<span class="c">// 工作状态：和连接状态独立，只看这个 Agent 名下的任务。</span>
+<span class="c">// retrying 优先级最高（需要人留意），琥珀色不是红色——自动重试还在进行就不算失败。</span>
+function workOf(totals) {
+  const t = totals || {};
+  if ((t.retrying || 0) > 0) return 'retrying';
+  if ((t.running || 0) > 0) return 'running';
+  if ((t.queued || 0) > 0) return 'queued';
+  return 'idle';
+}</pre>
+<pre>const ROLE = {
+  'claude': '开发',
+  'codex': '审查',
+  'claude-readonly': '日报',
+  'image-gen': '生图',
+};
+const USE_FALLBACK = { claude: 'Claude', codex: 'Codex', command: '命令行' };
+function roleOf(agent) {
+  return ROLE[agent.id] || USE_FALLBACK[agent.use] || '成员';
+}</pre>
+<p>两维度在卡面上物理分离：<code>.ws-conn</code>（连接点+文字）与 <code>.ws-work</code>（工作大字）。<code>HEARTBEAT_TTL === 120000</code> 精确，来源注释在代码里。</p>
+
+<h3>5. 点击工位卡 → 详情模态框 <span class="v">通过</span></h3>
+<pre>{
+  "agent": "claude",
+  "visible": true,
+  "name": "Claude Code",
+  "runRows": 3,
+  "agentRunsInState": 3,
+  "linkCount": 3,
+  "secs": ["当前任务", "今日与历史记录", "统计"],
+  "closedByEsc": true,
+  "closedByMask": true,
+  "steps": ["click前 hidden=true", "click后立即 hidden=false", "250ms后 hidden=false modalAgentId=claude"]
+}</pre>
+<ul>
+  <li>无新路由（单页）；三区块齐全：当前任务（最醒目）、今日与历史记录（3 行 === state 里该 agent 的 3 条）、统计。</li>
+  <li><code>link</code> 字段渲染成可点链接（<code>#m-body a[href*="://"]</code> 3 个，如 <code>claude://resume?…</code>）。</li>
+  <li>ESC 关闭 ✅、点遮罩关闭 ✅；打开期间随 3 秒轮询自动刷新内容。</li>
+</ul>
+
+<h3>6. 停中台 → 「中台离线」横幅 → 自动恢复 <span class="v">通过</span></h3>
+<pre>/api/state → running: 0, queued: 0, retrying: 0, cards: 0   （只在空闲窗口动手）
+中台 pid 41812（守护链：计划任务 agent-autoloop-56d82ec9 → wscript → background.js）
+
+$ powershell -NoProfile -Command "Stop-Process -Id 41812 -Force"
+
+[offline 模式] ✅ body.offline 出现，hub-text="中台离线"，
+  横幅="⚠ 中台离线，连不上中台服务。页面保持自动重询，恢复后自动刷新。"，display=block
+[截图] …shot-5.1-offline.png (185035 B)
+
+$ curl -s -w "\nHTTP %{http_code}\n" http://127.0.0.1:8090/api/state
+{"error":"中台不可达（http://127.0.0.1:3350）：ECONNREFUSED","code":"HUB_UNREACHABLE"}
+HTTP 502
+
+（守护进程 ~10 秒内拉起新中台 pid 20952）
+
+[recover 模式] ✅ 已恢复，hub-text="中台在线"
+[截图] …shot-5.1-recovered.png (171196 B)
+
+$ curl -s http://127.0.0.1:8090/api/health
+{"ok":true,"autoloop":true}</pre>
+<p>离线期间页面不白屏：工位区半透明置灰但保留最后一帧数据，横幅常驻直到恢复。</p>
+
+<h3>7. 「累计成本」标签 <span class="v">通过</span></h3>
+<pre>4 张卡有 .ws-cost，其中含「累计成本」的：4；正文其他出现：4 处</pre>
+<p><code>totals.usage.cost</code> 全部标注「累计成本」（累计值），未标「今日花费」。顶栏「今日 $4.34」来自 <code>spending.today</code>（真实的今日口径），两个数据源不冲突。</p>
+
+<h3>8. Hero 高度 112–150px <span class="v">通过</span></h3>
+<pre>Runtime.evaluate → document.querySelector('.office-hero').getBoundingClientRect()
+{ "height": 132, "top": 0, "width": 1440 }
+→ 在 112–150 区间 ✅</pre>
+<p>CSS 源：<code>.office-hero { min-height: 132px; … }</code>（星月夜背景保留，TASK-4.1 素材复用）。</p>
+
+<h2>二、布局与附加检查（实测）</h2>
+<pre>grid: gridTemplateColumns = "464px 464px"，gap = "20px"     → 2 列 ✅（.workstations）
+卡片: 4 张全部 h=264 w=464（min-height:264px 生效）→ 250–280 区间 ✅
+需要你关注区: attentionOpen=null（自动模式）, cards=0, retrying=0
+  → 折叠态「暂无需要你处理的事项」；有卡片或 retrying>0 时自动展开并高亮
+最近任务: h2="最近任务", 筛选=["全部 21","进行中 0","排队 0","重试 0","完成 21","失败 0"], 21 行
+卡片排序: 首帧排定后冻结座次（seatOrder），状态变化只变色不换位 ✅
+状态点: 静态（旧呼吸动画已删）✅   进度条: 无 ✅   装饰动画: 无 ✅</pre>
+<p>截图目检（多模态读图，非美化描述）：4 卡 2×2 齐整、五区信息完整、无重叠/破版；离线截图红幅文字与 DOM 实读一致。</p>
+
+<h2>三、截图清单（web/verify-assets/）</h2>
+<div class="shot">
+  <figure><figcaption><b>shot-5.1-main.png</b><br>全页（hero+关注区+工位+最近任务）<br>397,931 B</figcaption></figure>
+  <figure><figcaption><b>shot-5.1-workstations.png</b><br>工位区 2×2 特写<br>205,722 B</figcaption></figure>
+  <figure><figcaption><b>shot-5.1-modal.png</b><br>Claude Code 详情模态框打开态<br>277,415 B</figcaption></figure>
+  <figure><figcaption><b>shot-5.1-offline.png</b><br>中台停止：离线横幅<br>185,035 B</figcaption></figure>
+  <figure><figcaption><b>shot-5.1-recovered.png</b><br>守护拉起后自动恢复<br>171,196 B</figcaption></figure>
+</div>
+
+<h2>四、坑（如实记录）</h2>
+<details open><summary>1. 验收5 模态框前两次 visible:false（读数竞态）</summary>
+<p>与 <code>m-name</code> 已填充的读数矛盾。单独诊断脚本（click→hidden=false, display=flex, modalAgentId='claude'）证明模态框本身正常；第三次插桩运行 <code>visible:true</code> 且三步日志齐全。判定为「点击与 3 秒轮询 render() 重画」之间的读数竞态，非页面缺陷。</p></details>
+<details><summary>2. 系统 Node 20.19.2 无原生 WebSocket</summary><p>CDP 客户端连不上 → 全部验证改用 <code>C:/Tools/node24/node.exe</code>（v24.22.3）。</p></details>
+<details><summary>3. 截图路径 %20 编码</summary><p><code>new URL('.', import.meta.url).pathname</code> 把「Soda Intelligence」变 <code>Soda%20Intelligence</code> 导致 ENOENT → 改 <code>fileURLToPath()</code>。</p></details>
+<details><summary>4. window.__errs 不存在</summary><p>早版脚本引用了页面没有的全局错误收集器 → 改为 CDP <code>Runtime.exceptionThrown</code> + <code>console.error</code> 事件订阅。</p></details>
+<details><summary>5. git-bash taskkill //F 无效参数（TASK-4.1 同坑）</summary><p>杀中台改 PowerShell <code>Stop-Process -Force</code>。</p></details>
+
+<h2>五、遗留与建议</h2>
+<ul>
+  <li><b>未实测态</b>：本窗口恰逢全空闲（running/queued/retrying 均 0、无待答卡片），「执行中/重试中」卡面、关注区展开高亮、<code>link</code> 实际跳转只在代码层验证过，未在真实运行态截到图。建议下次有任务跑动时顺手补一张执行中截图（无需改代码）。</li>
+  <li><b>排序冻结边界</b>：Agent 增删时新卡追加尾部、消失的卡移除（rules.json 热载已覆盖）；成员超过 8 个前建议落实 TODO 里的紧凑模式（注释已留）。</li>
+  <li><b>顶栏「在线 N」口径</b>：按 connectionOf 统计；离线瞬间显示「成员 4 · 在线 4」是沿用最后一帧数据（by design，不闪零）。</li>
+  <li><code>web/server.js</code>、Autoloop、assets 零改动，TASK-4.1 的验收结论（对比度/字体/路由安全）继续有效。</li>
+</ul>
+
+<footer>TASK-5.1 · UI-V2 验收 · 证据全部来自 2026-11-13 实测（CDP + curl + 多模态截图目检）· 本文件与 UI-V2-验收.md 内容一致</footer>
+</div>
+</body>
+</html>

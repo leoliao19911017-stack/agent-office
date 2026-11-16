@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W02 第 5 轮验证报告 — 文件版本异常与审批规则校验闭环</title>
+<style>
+  :root { --ink:#1c1e21; --sub:#5b6470; --line:#e3e6ea; --amber:#E5B95E; --amberbg:#342C20; --ok:#1a7f4b; --bad:#b3352c; --code:#f5f3ee; }
+  * { box-sizing:border-box; }
+  body { font-family:"Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); margin:0; background:#fafafa; line-height:1.7; }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 28px 64px; }
+  h1 { font-size:24px; border-bottom:3px solid var(--ink); padding-bottom:12px; }
+  h2 { font-size:19px; margin-top:40px; border-left:4px solid var(--amber); padding-left:10px; }
+  h3 { font-size:16px; margin-top:24px; }
+  .meta { color:var(--sub); font-size:13px; margin:8px 0 0; }
+  code { background:var(--code); padding:1px 6px; border-radius:4px; font-size:13px; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin:12px 0; background:#fff; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:#f0f2f5; }
+  .pass { color:var(--ok); font-weight:600; }
+  .fail { color:var(--bad); font-weight:600; }
+  .block { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:14px 0; }
+  .note { background:#fffbe8; border:1px solid #f0e0a0; border-radius:8px; padding:10px 14px; font-size:13.5px; margin:14px 0; }
+  .mismatch-demo { background:var(--amberbg); color:var(--amber); font-size:12px; line-height:19px; border-radius:8px; padding:10px; max-width:640px; margin:10px 0; }
+  .kv { font-size:13.5px; }
+  .kv b { display:inline-block; min-width:120px; }
+  ul { padding-left:22px; }
+  li { margin:4px 0; }
+  .dim { color:var(--sub); }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>W02 第 5 轮验证报告</h1>
+<p class="meta">文件版本异常与实际审批规则之间的校验闭环 ｜ 2026-11-16 ｜ 代码：web/server.js + web/app.js（app.css 未动）｜ 实测：8091（新代码测试实例，已停）/ 8090（新代码已重启）</p>
+<p class="meta">原始证据：<code>verify-w02-round5-api.txt</code>（API 控制台输出存档）、<code>verify-w02-round5-ui.json</code>（CDP getComputedStyle 实测）、<code>verify-w02-round5-ctx.txt</code>（右栏大小值逐条上下文）</p>
+
+<h2>一、改了什么</h2>
+<div class="block">
+<h3>server.js（相对 server.js.bak-w02r5 共 27 行差异）</h3>
+<ul>
+<li><code>artifactVersionGateOf</code>：版本变化例外改为<b>独立维度</b>——<code>versionExempt = !!policy</code>（策略声明在档即豁免阻断，drifted 照常上报）；文件类型例外仍在 <code>artifactGateOf</code>，两者分别判定、不混用。</li>
+<li><code>/api/office/version-gate</code> 响应新增 <code>versionExempt</code>。</li>
+<li><code>artifactVersionMessage</code> 删掉不可达的策略分支（该文案只用于无策略声明的正式流程）。</li>
+<li>decide / decision 端点与头部口径注释同步：正式流程不享受版本例外（drifted 严格 409）；R11 测试策略明确允许的例外保持 W01 验收④原有行为（放行但上报差异）。</li>
+</ul>
+<h3>app.js（相对 app.js.bak-w02r5 共 29 行差异）</h3>
+<ul>
+<li>versionGate 状态透传 <code>versionExempt</code>；中央产物行、右侧核对、审批禁用吃同一份结果（60s TTL，键 <code>taskId/stepKey</code>）。</li>
+<li>mmNote 警示块尾巴按 <code>versionExempt</code> 分流（豁免尾巴不再出现「已禁止」假声明；正式尾巴明确服务端同样拒绝 + 打回指引）。</li>
+<li>无新增按钮、无审批交互改动。</li>
+</ul>
+<h3>app.css：0 行改动</h3>
+<p class="dim">异常样式沿用既有 <code>.material-mismatch</code>（L1562），实测六项全部符合。</p>
+</div>
+
+<h2>二、验证了什么（全部真实输出）</h2>
+<h3>1. API 矩阵（8091 新代码；判定用字节 + sha256 精确值，非四舍五入 KB）</h3>
+<table>
+<tr><th>样本</th><th>version-gate</th><th>decide（工作台路径）</th><th>decision（直写路径）</th></tr>
+<tr><td>A 字节相等（490 B）</td><td>200 valid:true, versionExempt:false</td><td class="pass">200 → 持久化 done（readBack:true, verified:true）</td><td>—</td></tr>
+<tr><td>B 字节变（490 → 534 B）</td><td>200 valid:false, why:bytes</td><td class="fail">409 ARTIFACT_VERSION_DRIFT，仍 awaiting</td><td>—</td></tr>
+<tr><td>C 同大小内容变（480 B/480 B，sha 91ef251e→7b214d7f）</td><td>200 valid:false, why:sha</td><td class="fail">409 ARTIFACT_VERSION_DRIFT，仍 awaiting</td><td class="fail">409 同规（无一严一松）</td></tr>
+<tr><td>R11 测试流程（登记 80408 → 实测 101786，策略 test-any-file）</td><td class="pass">200 valid:true, versionExempt:true，drifted 照常上报</td><td class="pass">200 → 持久化 done，by=Leo（工作台）</td><td class="pass">200 → 持久化 done</td></tr>
+</table>
+<ul>
+<li>R11 测试后按字节还原档案+events，sha256 前后一致 <code>0dd1e387c7908d92…</code> <span class="pass">✅</span></li>
+<li>同 opId 幂等重放返回记录结果且不再写档案 <span class="pass">✅</span></li>
+<li>服务端权威：B/C 绕过前端直打 API 也 409；R11 差异巨大仍按策略放行。类型例外与版本例外分别判定、互不代偿。</li>
+</ul>
+
+<h3>2. UI 实测（CDP headless Chrome → 8090，getComputedStyle）</h3>
+<div class="block">
+<p class="kv"><b>TEST-R11 豁免分支</b>：中央 tag「大小不一致」（title：登记 78.5 KB ≠ 实测 99.4 KB）；右栏 msz「实测 99.4 KB ≠ 登记 78.5 KB」——同一 versionGate，数字一致；mmNote 完整说明 + 豁免尾巴（无「已禁止」字样）；审批按钮 disabled:<span class="pass">false</span>、<code>btn btn-primary</code>、无禁用 title。</p>
+<p class="kv"><b>TEST-W02B / C 阻断分支</b>：数字逐字一致（490/534、480/480+指纹 91ef251e）；审批按钮 disabled:<span class="fail">true</span>、class 含 <code>btn-invalid-material</code>、title「…服务端同样会拒绝；请先打回要求重新提交」。</p>
+<p class="kv"><b>.material-mismatch 六项 computed（三任务全部相同）</b>：</p>
+<div class="mismatch-demo">background: rgb(52,44,32)＝#342C20 ｜ color: rgb(229,185,94)＝#E5B95E ｜ font-size: 12px ｜ line-height: 19px ｜ border-radius: 8px ｜ padding: 10px —— 本行即按该样式渲染</div>
+<p class="pass">六项全部符合 ✅</p>
+</div>
+
+<h3>3. 「同一大小值不重复三次」口径</h3>
+<div class="block">
+<p>异常解释/核对口径文本 = 恰好 2 处（msz 简短摘要 + mmNote 完整说明），同一值在这两处各出现 ≤2 次。</p>
+<p>第 3 次出现经逐条定位（ctx.txt）全部来自「<b>本步产物</b>」清单段（如 R11：<code>✓ app.css 99.4 KB 登记 78.5 KB</code>）。判定<b>不动它</b>：</p>
+<ul>
+<li>TASK-R2 时代就存在的步骤产物盘点（含文件打开、重新核实按钮），对非决策态/已完成步骤是大小信息唯一展示位，职能不是异常解释；</li>
+<li>硬约束「只改这一处，不要动别的功能」——改它即动 TASK-R2 已验收功能；</li>
+<li>若按「右栏任何位置 ≤2 次」的字面口径，改法是决策警示在场时清单段省略双口径数字——一句话的事，但属于动别的功能，本轮未做，留给 Leo 拍板。</li>
+</ul>
+</div>
+
+<h3>4. 附注</h3>
+<ul>
+<li>任务文本里的「实测约 97.0 KB」是旧截图数字；当前 app.css 实测 101786 B = 99.4 KB，登记 80408 B = 78.5 KB，报告全部用实测值。</li>
+<li>既有审批行为、大小异常提示、R11 测试策略展示均保留；无新增按钮。</li>
+<li>收尾：夹具 TEST-W02A/B/C 与 tmp-w02r5 已删；TEST-R11.json 哈希核验一致；8090 已用新代码重启（<code>/api/health → {"ok":true,"autoloop":true,"build":"r11c"}</code>，version-gate 实测 versionExempt:true）。</li>
+</ul>
+
+<h2>三、还差什么</h2>
+<div class="block">
+<ol>
+<li><b>web/ 下非源码产物会被不明清理</b>：本轮结果文件在 web/ 与 web/tmp-w02r5/ 两度消失（写入已确认成功），根目录存活；原因未查明（server.js 无 janitor 逻辑），证据已改存项目根目录，建议后续排查。</li>
+<li><b>本步产物第 3 处数值的口径取舍</b>待 Leo 拍板（见二.3，不影响本轮①-⑤判定）。</li>
+<li>8090 以后台方式重启（2 小时后台时限）；若需常驻请转入服务方式。</li>
+</ol>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+node_modules/
+*.db
+*.log
+.DS_Store
+.gstack/
+
+# 手写备份文件（67 个），现在有 git 了，这些是历史垃圾
+web/*.bak
+web/*.bak-*
+web/*.bak.*
+*.bak-r*
+*.bak-w*
+*.bak-f*
+*.bak-*
+
+# 临时任务文件
+.task-r*.md
+.task-r*-i*.log
+tmp-*.mjs
+verify-assets/
+r*-test.log
+
+# 离线快照（150KB 纯数据，不该进版本库）
+web/offline-snapshot.js
+
+# 其它位置的备份
+docs/backup-9.1/
+*.codegen.bak

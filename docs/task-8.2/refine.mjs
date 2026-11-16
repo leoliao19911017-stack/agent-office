@@ -1,0 +1,15 @@
+import fs from 'node:fs';
+const p='web/index.html';let h=fs.readFileSync(p,'utf8');
+h=h.replace("skillsData,lastFlow,skillPage", "skillsData,lastFlow?.tasks,skillPage");
+h=h.replace("opened.has(t.id)||!hub.children.length", "opened.has(t.id)||!hub.querySelector('.filegroup')");
+h=h.replace("'rail-reqs':'tasks'","'rail-reqs':'board'").replace("'rail-files':'files'","'rail-files':'folder'").replace("'rail-focus':'focus'","'rail-focus':'play'").replace("'tb-settings':'settings'","'tb-settings':'resize'").replace("'tb-reqs-toggle':'tasks'","'tb-reqs-toggle':'board'").replace("'tb-insp-toggle':'detail'","'tb-insp-toggle':'file'");
+h=h.replace('  renderCenter();\n  withScroll', "  withScroll(document.getElementById('center'), renderCenter);\n  withScroll");
+h=h.replace('金色只给「待拍板」和当前步骤','金色只给「待拍板」');
+h=h.replace('  .ad-dot.busy { background: var(--blue); }','  .ad-dot.busy { background: var(--green); }');
+h=h.replaceAll("${t.running || 0}","${t.running ?? '—'}").replaceAll("${t.queued || 0}","${t.queued ?? '—'}").replaceAll("${t.retrying || 0}","${t.retrying ?? '—'}").replaceAll("${t.done || 0}","${t.done ?? '—'}").replaceAll("${t.doneToday || 0}","${t.doneToday ?? '—'}");
+fs.writeFileSync(p,h);
+const v='docs/task-8.2/verify.mjs';let test=fs.readFileSync(v,'utf8');
+test=test.replace('selectStep(t.steps.find(s=>s.note).key)','selectStep(t.steps.find(s=>s.key===\'verify\').key)');
+test=test.replace("await page.locator('#rail-agents').click();", "await page.locator('#rail-agents').click();\nawait page.waitForFunction(()=>[...document.querySelectorAll('.ad-ava')].every(e=>e.complete));");
+test=test.replace("await page.locator('.library-file').first().click();", "await page.locator('.filegroup').last().locator('summary').click();\nif(!await page.locator('.library-file').first().isVisible())await page.locator('.filegroup').last().locator('summary').click();\nawait page.locator('.library-file').first().click();");
+fs.writeFileSync(v,test);

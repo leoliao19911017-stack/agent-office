@@ -1,0 +1,310 @@
+{
+ "when": "2026-11-16T02:05:53.241Z",
+ "api": [
+  {
+   "tag": "F1-formal-unchanged",
+   "taskId": "TEST-W01R8FB",
+   "gateHttp": 200,
+   "gate": {
+    "src": "own",
+    "policy": null,
+    "valid": true,
+    "versionExempt": false,
+    "drifted": []
+   },
+   "decideHttp": 200,
+   "decide": {
+    "ok": true,
+    "status": "done",
+    "code": null,
+    "msg": ""
+   },
+   "planStatus": "done"
+  },
+  {
+   "tag": "F2-formal-bytes-changed",
+   "taskId": "TEST-W01R8FB",
+   "gateHttp": 200,
+   "gate": {
+    "src": "own",
+    "policy": null,
+    "valid": false,
+    "versionExempt": false,
+    "drifted": [
+     {
+      "why": "bytes",
+      "regB": 54,
+      "actB": 98
+     }
+    ]
+   },
+   "decideHttp": 409,
+   "decide": {
+    "code": "ARTIFACT_VERSION_DRIFT",
+    "msg": "本步骤「开发计划」的审批对象与提交登记版本不一致（w01r8b-shared.md：实测 98 B ≠ 登记 54 B）。正式流程按提交登记的版本审批，材料在提交后发生过变化就不能"
+   },
+   "planStatus": "awaiting"
+  },
+  {
+   "tag": "F2b-formal-same-size-changed",
+   "taskId": "TEST-W01R8FB",
+   "gateHttp": 200,
+   "gate": {
+    "src": "own",
+    "policy": null,
+    "valid": false,
+    "versionExempt": false,
+    "drifted": [
+     {
+      "why": "sha",
+      "regB": 54,
+      "actB": 54
+     }
+    ]
+   },
+   "decideHttp": 409,
+   "decide": {
+    "code": "ARTIFACT_VERSION_DRIFT",
+    "msg": "本步骤「开发计划」的审批对象与提交登记版本不一致（w01r8b-shared.md：实测内容指纹与登记 sha256 不一致（大小 54 B 相同，内容已变化））。正式流程按提交登"
+   },
+   "planStatus": "awaiting"
+  },
+  {
+   "tag": "T1-test-unchanged",
+   "taskId": "TEST-W01R8TB",
+   "gateHttp": 200,
+   "gate": {
+    "src": "own",
+    "policy": "test-any-file",
+    "valid": true,
+    "versionExempt": true,
+    "drifted": []
+   },
+   "decideHttp": 200,
+   "decide": {
+    "ok": true,
+    "status": "done",
+    "code": null,
+    "msg": ""
+   },
+   "planStatus": "done"
+  },
+  {
+   "tag": "T2-test-bytes-changed",
+   "taskId": "TEST-W01R8TB",
+   "gateHttp": 200,
+   "gate": {
+    "src": "own",
+    "policy": "test-any-file",
+    "valid": true,
+    "versionExempt": true,
+    "drifted": [
+     {
+      "why": "bytes",
+      "regB": 54,
+      "actB": 98
+     }
+    ]
+   },
+   "decideHttp": 200,
+   "decide": {
+    "ok": true,
+    "status": "done",
+    "code": null,
+    "msg": ""
+   },
+   "planStatus": "done"
+  },
+  {
+   "tag": "T2b-test-same-size-changed",
+   "taskId": "TEST-W01R8TB",
+   "gateHttp": 200,
+   "gate": {
+    "src": "own",
+    "policy": "test-any-file",
+    "valid": true,
+    "versionExempt": true,
+    "drifted": [
+     {
+      "why": "sha",
+      "regB": 54,
+      "actB": 54
+     }
+    ]
+   },
+   "decideHttp": 200,
+   "decide": {
+    "ok": true,
+    "status": "done",
+    "code": null,
+    "msg": ""
+   },
+   "planStatus": "done"
+  },
+  {
+   "tag": "R11-real-as-is",
+   "gate": {
+    "src": "own",
+    "policy": "test-any-file",
+    "valid": true,
+    "versionExempt": true,
+    "drifted": [
+     {
+      "why": "bytes",
+      "regB": 80408,
+      "actB": 103351
+     }
+    ]
+   },
+   "decideHttp": 200,
+   "decide": {
+    "ok": true,
+    "status": "done",
+    "code": null,
+    "msg": ""
+   },
+   "planStatus": "done",
+   "appCssActual": 103351
+  }
+ ],
+ "page": {
+  "F3": {
+   "approveBtn": {
+    "disabled": true,
+    "invalidCls": true
+   },
+   "mismatch": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· w01r8b-shared.md：实测 98 B ≠ 登记 54 B（登记内容指纹 61db0369）正式流程按提交登记的版本审批：上述材料提交后发生过变化（或登记缺失版本标识），已禁止按原版本通过，服务端同样会拒绝。请先「打回」要求重新提交——重新登记后的档案才是新版本。",
+   "noteDraft": "F3 草稿：正式流程页面打开后文件再变化",
+   "fbErr": "本步骤「开发计划」的审批对象与提交登记版本不一致（w01r8b-shared.md：实测 98 B ≠ 登记 54 B）。正式流程按提交登记的版本审批，材料在提交后发生过变化就不能继续按原版本通过：请先「打回」要求重新提交，重新登记后的档案才是新版本",
+   "doneLine": null,
+   "stepCls": "track-node st-awaiting cur"
+  },
+  "F3net": [
+   {
+    "url": "/api/office/decision",
+    "status": 409
+   },
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   }
+  ],
+  "F3refresh": {
+   "approveBtn": {
+    "disabled": true,
+    "invalidCls": true
+   },
+   "mismatch": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· w01r8b-shared.md：实测 98 B ≠ 登记 54 B（登记内容指纹 61db0369）正式流程按提交登记的版本审批：上述材料提交后发生过变化（或登记缺失版本标识），已禁止按原版本通过，服务端同样会拒绝。请先「打回」要求重新提交——重新登记后的档案才是新版本。",
+   "noteDraft": "F3 草稿：正式流程页面打开后文件再变化",
+   "fbErr": null,
+   "doneLine": null,
+   "stepCls": "track-node st-awaiting cur"
+  },
+  "T3": {
+   "approveBtn": null,
+   "mismatch": null,
+   "noteDraft": null,
+   "fbErr": null,
+   "doneLine": "✓ 已通过 · 10:06",
+   "stepCls": "track-node st-done cur"
+  },
+  "T3net": [
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decision",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   }
+  ],
+  "T3refresh": {
+   "approveBtn": null,
+   "mismatch": null,
+   "noteDraft": null,
+   "fbErr": null,
+   "doneLine": null,
+   "stepCls": "track-node st-done cur"
+  },
+  "R11": {
+   "approveBtn": {
+    "disabled": false,
+    "invalidCls": false
+   },
+   "mismatch": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· app.css：实测 100.9 KB ≠ 登记 78.5 KB（登记内容指纹 selftest）本任务声明的测试策略（test-any-file）已入档：登记产物为占位产物，文件类型例外与版本变化例外分别判定——上述版本差异照常展示，但不阻断本测试流程的审批（服务端按同一规则放行）。",
+   "noteDraft": "",
+   "fbErr": null,
+   "doneLine": null,
+   "stepCls": "track-node st-awaiting cur"
+  },
+  "R11after": {
+   "approveBtn": null,
+   "mismatch": null,
+   "noteDraft": null,
+   "fbErr": null,
+   "doneLine": "✓ 已通过 · 10:06",
+   "stepCls": "track-node st-done cur"
+  },
+  "R11net": [
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decision",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   },
+   {
+    "url": "/api/office/decisions",
+    "status": 200
+   }
+  ]
+ },
+ "styles": {
+  "F3": {
+   "font": "12px",
+   "lh": "18px",
+   "bg": "rgb(59, 48, 33)",
+   "color": "rgb(229, 185, 94)",
+   "radius": "6px",
+   "pad": "8px 10px",
+   "rect": {
+    "w": 244,
+    "h": 214
+   }
+  },
+  "R11": {
+   "font": "12px",
+   "lh": "18px",
+   "bg": "rgb(59, 48, 33)",
+   "color": "rgb(229, 185, 94)",
+   "radius": "6px",
+   "pad": "8px 10px",
+   "rect": {
+    "w": 244,
+    "h": 214
+   }
+  }
+ },
+ "cleanup": {
+  "fixturesDeleted": true,
+  "tmpDeleted": true,
+  "r11Restored": true
+ }
+}

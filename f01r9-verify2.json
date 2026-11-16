@@ -1,0 +1,105 @@
+{
+  "fail": [],
+  "v2b": {
+    "snap": {
+      "cls": "library-file lf-multi",
+      "groupTitle": "R11 决策端点自测（一次性，测完即删） · 1 个产物（2 条登记）",
+      "rowH": 96,
+      "styles": {
+        "backgroundColor": "rgb(24, 34, 48)",
+        "minHeight": "96px",
+        "maxHeight": "96px",
+        "borderTopWidth": "1px",
+        "borderTopColor": "rgb(51, 66, 87)",
+        "borderRadius": "8px"
+      },
+      "metaStyle": {
+        "width": "190px"
+      },
+      "spans": [
+        {
+          "text": "02 90.8KB·selfte·02:50 ≠",
+          "title": "登记 TEST-R11 › 02 需求文档（R11 决策端点自测（一次性，测完即删））\n原始字节数 93000 B（90.8 KB）\n版本标识 sha:selftest-placeholder\n登记时间 2026-11-15T18:50:08.441Z（02:50）\n实测 104947 B（102.5 KB），与该条登记不一致\n登记原文只读，不随当前文件元数据更新",
+          "font": "12px/18px/rgb(215, 225, 238)"
+        },
+        {
+          "text": "03 78.5KB·selfte·02:50 ≠",
+          "title": "登记 TEST-R11 › 03 开发计划（R11 决策端点自测（一次性，测完即删））\n原始字节数 80408 B（78.5 KB）\n版本标识 sha:selftest-placeholder\n登记时间 2026-11-15T18:50:08.441Z（02:50）\n实测 104947 B（102.5 KB），与该条登记不一致\n登记原文只读，不随当前文件元数据更新",
+          "font": "12px/18px/rgb(215, 225, 238)"
+        }
+      ],
+      "tag": null,
+      "overlap": false,
+      "gap": 16
+    },
+    "backLines": [
+      "实测 102.5 KB",
+      "登记 78.5 KB ×2",
+      "02·03 同版 selfte 02:50"
+    ],
+    "backRegs": [
+      "TEST-R11›doc=80408",
+      "TEST-R11›plan=80408"
+    ]
+  },
+  "v2c": {
+    "snap": {
+      "groupTitle": "R11 决策端点自测（一次性，测完即删） · 2 个产物",
+      "rows": [
+        {
+          "vkey": "sha:f01r9-fake-version-0001",
+          "spans": [
+            {
+              "text": "实测 102.5 KB",
+              "title": "当前物理文件实测 104947 B（实测只进这一行，不回写登记原文）"
+            },
+            {
+              "text": "登记 78.5 KB",
+              "title": "02 需求文档（TEST-R11） · 02:50 的版本标识完全一致（80408 B · 内容指纹 f01r9-fa），与实测 104947 B 不一致"
+            },
+            {
+              "text": "02·指纹 f01r9- 02:50",
+              "title": "TEST-R11›doc：sha:f01r9-fake-version-0001 · 80408 B · 2026-11-15T18:50:08.441Z：本行登记的独立身份，与同一路径其他版本行各自核对"
+            }
+          ],
+          "tag": "大小不一致",
+          "h": 96,
+          "overlap": false,
+          "gap": 16
+        },
+        {
+          "vkey": "sha:selftest-placeholder",
+          "spans": [
+            {
+              "text": "实测 102.5 KB",
+              "title": "当前物理文件实测 104947 B（实测只进这一行，不回写登记原文）"
+            },
+            {
+              "text": "登记 78.5 KB",
+              "title": "03 开发计划（TEST-R11） · 02:50 的版本标识完全一致（80408 B · 内容指纹 selftest），与实测 104947 B 不一致"
+            },
+            {
+              "text": "03·指纹 selfte 02:50",
+              "title": "TEST-R11›plan：sha:selftest-placeholder · 80408 B · 2026-11-15T18:50:08.441Z：本行登记的独立身份，与同一路径其他版本行各自核对"
+            }
+          ],
+          "tag": "大小不一致",
+          "h": 96,
+          "overlap": false,
+          "gap": 16
+        }
+      ],
+      "totalRegs": 17,
+      "sumRefs": 17
+    },
+    "backLines": [
+      "实测 102.5 KB",
+      "登记 78.5 KB ×2",
+      "02·03 同版 selfte 02:50"
+    ],
+    "backRegs": [
+      "TEST-R11›doc=80408/selftest-placeholder",
+      "TEST-R11›plan=80408/selftest-placeholder"
+    ]
+  }
+}

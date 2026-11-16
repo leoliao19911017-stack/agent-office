@@ -1,0 +1,74 @@
+[
+ {
+  "taskId": "TEST-R11",
+  "center": {
+    "tag": "大小不一致",
+    "tagTitle": "登记 78.5 KB ≠ 实测 99.4 KB；登记原文保留、不自动更新，点开预览可核对",
+    "vals": ["实测 99.4 KB", "登记 78.5 KB"]
+  },
+  "right": {
+    "msz": "实测 99.4 KB ≠ 登记 78.5 KB",
+    "mismatchText": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· app.css：实测 99.4 KB ≠ 登记 78.5 KB（登记内容指纹 selftest）本任务声明的测试策略（test-any-file）已入档：登记产物为占位产物，文件类型例外与版本变化例外分别判定——上述版本差异照常展示，但不阻断本测试流程的审批（服务端按同一规则放行）。",
+    "mismatchStyle": {
+      "background": "rgb(52, 44, 32)",
+      "color": "rgb(229, 185, 94)",
+      "fontSize": "12px",
+      "lineHeight": "19px",
+      "borderRadius": "8px",
+      "padding": "10px"
+    },
+    "approveDisabled": false,
+    "approveClass": "btn btn-primary",
+    "approveTitle": "",
+    "kb99x": 6, "kb480": 0, "kb534": 0
+  }
+ },
+ {
+  "taskId": "TEST-W02C",
+  "center": {
+    "tag": "内容不一致",
+    "tagTitle": "大小相同（480 B）但内容指纹与登记不一致；登记原文保留、不自动更新，点开预览可核对",
+    "vals": ["实测 480 B", "登记 480 B"]
+  },
+  "right": {
+    "msz": "实测 480 B · 登记 480 B · 指纹不一致",
+    "mismatchText": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· c.reg.bin：实测 480 B · 登记 480 B · 内容指纹不一致（登记内容指纹 91ef251e）正式流程按提交登记的版本审批：上述材料提交后发生过变化（或登记缺失版本标识），已禁止按原版本通过，服务端同样会拒绝。请先「打回」要求重新提交——重新登记后的档案才是新版本。",
+    "mismatchStyle": {
+      "background": "rgb(52, 44, 32)",
+      "color": "rgb(229, 185, 94)",
+      "fontSize": "12px",
+      "lineHeight": "19px",
+      "borderRadius": "8px",
+      "padding": "10px"
+    },
+    "approveDisabled": true,
+    "approveClass": "btn btn-primary btn-invalid-material",
+    "approveTitle": "审批对象与提交登记的版本不一致，服务端同样会拒绝；请先打回要求重新提交",
+    "kb99x": 0, "kb480": 5, "kb534": 0
+  }
+ },
+ {
+  "taskId": "TEST-W02B",
+  "center": {
+    "tag": "大小不一致",
+    "tagTitle": "登记 490 B ≠ 实测 534 B；登记原文保留、不自动更新，点开预览可核对",
+    "vals": ["实测 534 B", "登记 490 B"]
+  },
+  "right": {
+    "msz": "实测 534 B ≠ 登记 490 B",
+    "mismatchText": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· b.reg.bin：实测 534 B ≠ 登记 490 B（登记内容指纹 1b6f3ce8）正式流程按提交登记的版本审批：上述材料提交后发生过变化（或登记缺失版本标识），已禁止按原版本通过，服务端同样会拒绝。请先「打回」要求重新提交——重新登记后的档案才是新版本。",
+    "mismatchStyle": {
+      "background": "rgb(52, 44, 32)",
+      "color": "rgb(229, 185, 94)",
+      "fontSize": "12px",
+      "lineHeight": "19px",
+      "borderRadius": "8px",
+      "padding": "10px"
+    },
+    "approveDisabled": true,
+    "approveClass": "btn btn-primary btn-invalid-material",
+    "approveTitle": "审批对象与提交登记的版本不一致，服务端同样会拒绝；请先打回要求重新提交",
+    "kb99x": 0, "kb480": 0, "kb534": 3
+  }
+ }
+]

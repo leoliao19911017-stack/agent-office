@@ -1,0 +1,318 @@
+{
+ "base": "http://127.0.0.1:8090",
+ "task": "TEST-R11",
+ "step": "plan",
+ "when": "2026-11-15T20:09:23.951Z",
+ "viewports": [
+  {
+   "viewport": "1440x900",
+   "measure": {
+    "viewport": {
+     "w": 1440,
+     "h": 900
+    },
+    "inspOpenOverlay": false,
+    "insp": {
+     "x": 1112,
+     "y": 52,
+     "w": 328,
+     "h": 792,
+     "position": "static",
+     "overflow-y": "visible"
+    },
+    "inspBody": {
+     "clientW": 312,
+     "clientH": 748,
+     "scrollW": 312,
+     "scrollH": 1033,
+     "canScrollY": true,
+     "overflowXClipped": true,
+     "scrollTop": 0,
+     "overflow-x": "auto",
+     "overflow-y": "auto",
+     "width": "327px",
+     "height": "747.812px",
+     "padding": "14px 16px 20px"
+    },
+    "decide": {
+     "x": 1129,
+     "y": 203,
+     "w": 280,
+     "h": 599,
+     "padding": "14px 14px 12px",
+     "border-radius": "10px",
+     "background-color": "rgb(36, 35, 31)"
+    },
+    "evSrc": {
+     "x": 1146,
+     "y": 542,
+     "w": 248,
+     "h": 115,
+     "font-size": "12px",
+     "line-height": "19.2px",
+     "color": "rgb(137, 150, 168)",
+     "margin-top": "8px",
+     "margin-bottom": "0px",
+     "textLen": 127,
+     "textHead": "本需求档案声明了测试策略（test-any-file）：任意登记产物均可作为审批"
+    },
+    "executorTopInScroll": 817,
+    "ioTopInScroll": 954,
+    "artsTopInScroll": 885,
+    "docOverflowX": false,
+    "bodyScrollable": false
+   },
+   "scrollTest": {
+    "scrollTop": 0,
+    "executor": {
+     "text": "执行者",
+     "topInView": false,
+     "rect": {
+      "top": 817,
+      "bottom": 869
+     },
+     "view": {
+      "top": 96,
+      "bottom": 844
+     }
+    },
+    "arts": {
+     "text": "本步产物",
+     "topInView": false,
+     "rect": {
+      "top": 885,
+      "bottom": 938
+     },
+     "view": {
+      "top": 96,
+      "bottom": 844
+     }
+    },
+    "io": {
+     "text": "上下游",
+     "topInView": false,
+     "rect": {
+      "top": 954,
+      "bottom": 1042
+     },
+     "view": {
+      "top": 96,
+      "bottom": 844
+     }
+    }
+   }
+  },
+  {
+   "viewport": "1280x800",
+   "measure": {
+    "viewport": {
+     "w": 1280,
+     "h": 800
+    },
+    "inspOpenOverlay": true,
+    "insp": {
+     "x": 920,
+     "y": 52,
+     "w": 360,
+     "h": 692,
+     "position": "fixed",
+     "overflow-y": "visible"
+    },
+    "inspBody": {
+     "clientW": 344,
+     "clientH": 648,
+     "scrollW": 344,
+     "scrollH": 1014,
+     "canScrollY": true,
+     "overflowXClipped": true,
+     "scrollTop": 0,
+     "overflow-x": "auto",
+     "overflow-y": "auto",
+     "width": "359px",
+     "height": "647.812px",
+     "padding": "14px 16px 20px"
+    },
+    "decide": {
+     "x": 937,
+     "y": 203,
+     "w": 312,
+     "h": 580,
+     "padding": "14px 14px 12px",
+     "border-radius": "10px",
+     "background-color": "rgb(36, 35, 31)"
+    },
+    "evSrc": {
+     "x": 954,
+     "y": 542,
+     "w": 280,
+     "h": 96,
+     "font-size": "12px",
+     "line-height": "19.2px",
+     "color": "rgb(137, 150, 168)",
+     "margin-top": "8px",
+     "margin-bottom": "0px",
+     "textLen": 127,
+     "textHead": "本需求档案声明了测试策略（test-any-file）：任意登记产物均可作为审批"
+    },
+    "executorTopInScroll": 746,
+    "ioTopInScroll": 883,
+    "artsTopInScroll": 814,
+    "docOverflowX": false,
+    "bodyScrollable": false
+   },
+   "scrollTest": {
+    "scrollTop": 0,
+    "executor": {
+     "text": "执行者",
+     "topInView": false,
+     "rect": {
+      "top": 798,
+      "bottom": 850
+     },
+     "view": {
+      "top": 96,
+      "bottom": 744
+     }
+    },
+    "arts": {
+     "text": "本步产物",
+     "topInView": false,
+     "rect": {
+      "top": 866,
+      "bottom": 919
+     },
+     "view": {
+      "top": 96,
+      "bottom": 744
+     }
+    },
+    "io": {
+     "text": "上下游",
+     "topInView": false,
+     "rect": {
+      "top": 935,
+      "bottom": 1023
+     },
+     "view": {
+      "top": 96,
+      "bottom": 744
+     }
+    }
+   }
+  },
+  {
+   "viewport": "1100x768",
+   "measure": {
+    "viewport": {
+     "w": 1100,
+     "h": 768
+    },
+    "inspOpenOverlay": true,
+    "insp": {
+     "x": 740,
+     "y": 52,
+     "w": 360,
+     "h": 660,
+     "position": "fixed",
+     "overflow-y": "visible"
+    },
+    "inspBody": {
+     "clientW": 344,
+     "clientH": 616,
+     "scrollW": 344,
+     "scrollH": 1014,
+     "canScrollY": true,
+     "overflowXClipped": true,
+     "scrollTop": 0,
+     "overflow-x": "auto",
+     "overflow-y": "auto",
+     "width": "359px",
+     "height": "615.812px",
+     "padding": "14px 16px 20px"
+    },
+    "decide": {
+     "x": 757,
+     "y": 203,
+     "w": 312,
+     "h": 580,
+     "padding": "14px 14px 12px",
+     "border-radius": "10px",
+     "background-color": "rgb(36, 35, 31)"
+    },
+    "evSrc": {
+     "x": 774,
+     "y": 542,
+     "w": 280,
+     "h": 96,
+     "font-size": "12px",
+     "line-height": "19.2px",
+     "color": "rgb(137, 150, 168)",
+     "margin-top": "8px",
+     "margin-bottom": "0px",
+     "textLen": 127,
+     "textHead": "本需求档案声明了测试策略（test-any-file）：任意登记产物均可作为审批"
+    },
+    "executorTopInScroll": 746,
+    "ioTopInScroll": 883,
+    "artsTopInScroll": 814,
+    "docOverflowX": false,
+    "bodyScrollable": false
+   },
+   "scrollTest": {
+    "scrollTop": 0,
+    "executor": {
+     "text": "执行者",
+     "topInView": false,
+     "rect": {
+      "top": 798,
+      "bottom": 850
+     },
+     "view": {
+      "top": 96,
+      "bottom": 712
+     }
+    },
+    "arts": {
+     "text": "本步产物",
+     "topInView": false,
+     "rect": {
+      "top": 866,
+      "bottom": 919
+     },
+     "view": {
+      "top": 96,
+      "bottom": 712
+     }
+    },
+    "io": {
+     "text": "上下游",
+     "topInView": false,
+     "rect": {
+      "top": 935,
+      "bottom": 1023
+     },
+     "view": {
+      "top": 96,
+      "bottom": 712
+     }
+    }
+   }
+  }
+ ],
+ "pollTest": {
+  "setTo": 0,
+  "samples": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "drift": true
+ }
+}

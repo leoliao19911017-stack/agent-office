@@ -1,0 +1,375 @@
+{
+ "base": "http://127.0.0.1:8090",
+ "task": "TEST-R11",
+ "step": "plan",
+ "when": "2026-11-16T00:39:26.435Z",
+ "viewports": [
+  {
+   "viewport": "1440x900",
+   "layout": {
+    "vp": {
+     "w": 1440,
+     "h": 900
+    },
+    "insp": {
+     "x": 1112,
+     "y": 52,
+     "w": 328,
+     "h": 792,
+     "bottom": 844,
+     "top": 52,
+     "width": "328px",
+     "display": "flex",
+     "flex-direction": "column",
+     "min-height": "0px",
+     "heightEqVhMinus108": true
+    },
+    "head": {
+     "x": 1113,
+     "y": 52,
+     "w": 327,
+     "h": 48,
+     "bottom": 100,
+     "top": 52,
+     "height": "48px"
+    },
+    "body": {
+     "x": 1113,
+     "y": 100,
+     "w": 327,
+     "h": 680,
+     "bottom": 780,
+     "top": 100,
+     "flex-grow": "1",
+     "min-height": "0px",
+     "overflow-y": "auto",
+     "overflow-x": "hidden"
+    },
+    "foot": {
+     "x": 1113,
+     "y": 780,
+     "w": 327,
+     "h": 64,
+     "bottom": 844,
+     "top": 780,
+     "hiddenAttr": false,
+     "height": "64px",
+     "padding": "12px 16px",
+     "background-color": "rgb(23, 28, 39)",
+     "border-top-width": "1px",
+     "border-top-style": "solid",
+     "border-top-color": "rgb(52, 66, 83)",
+     "display": "block"
+    },
+    "footBottomLEstatusTop": true,
+    "footBottom": 844,
+    "statusTop": 844,
+    "primary": {
+     "x": 1129,
+     "y": 794.5,
+     "w": 86,
+     "h": 36,
+     "bottom": 830.5,
+     "top": 794.5,
+     "min-width": "86px",
+     "min-height": "36px",
+     "border-radius": "8px"
+    },
+    "secondary": {
+     "x": 1223,
+     "y": 794.5,
+     "w": 58,
+     "h": 36,
+     "bottom": 830.5,
+     "top": 794.5,
+     "min-width": "58px",
+     "min-height": "36px",
+     "border-radius": "8px"
+    },
+    "btnGap": 8,
+    "btnsFullyVisible": true,
+    "btnLabels": [
+     "通过计划",
+     "打回"
+    ],
+    "contentTaller": true,
+    "scrollHeight": 1336,
+    "clientHeight": 680,
+    "noteStyle": {
+     "font-size": "12px",
+     "line-height": "19px",
+     "color": "rgb(179, 192, 210)"
+    },
+    "docOverflowX": 0
+   },
+   "scroll": {
+    "maxTop": 656,
+    "atBottom": true,
+    "footPinned": true,
+    "centerScrollable": false,
+    "centerSetTo": 0,
+    "centerAfterRightScroll": 0,
+    "centerUnaffected": true,
+    "overflowXBody": 0
+   }
+  },
+  {
+   "viewport": "1280x800",
+   "layout": {
+    "vp": {
+     "w": 1280,
+     "h": 800
+    },
+    "insp": {
+     "x": 952,
+     "y": 52,
+     "w": 328,
+     "h": 692,
+     "bottom": 744,
+     "top": 52,
+     "width": "328px",
+     "display": "flex",
+     "flex-direction": "column",
+     "min-height": "0px",
+     "heightEqVhMinus108": true
+    },
+    "head": {
+     "x": 953,
+     "y": 52,
+     "w": 327,
+     "h": 48,
+     "bottom": 100,
+     "top": 52,
+     "height": "48px"
+    },
+    "body": {
+     "x": 953,
+     "y": 100,
+     "w": 327,
+     "h": 580,
+     "bottom": 680,
+     "top": 100,
+     "flex-grow": "1",
+     "min-height": "0px",
+     "overflow-y": "auto",
+     "overflow-x": "hidden"
+    },
+    "foot": {
+     "x": 953,
+     "y": 680,
+     "w": 327,
+     "h": 64,
+     "bottom": 744,
+     "top": 680,
+     "hiddenAttr": false,
+     "height": "64px",
+     "padding": "12px 16px",
+     "background-color": "rgb(23, 28, 39)",
+     "border-top-width": "1px",
+     "border-top-style": "solid",
+     "border-top-color": "rgb(52, 66, 83)",
+     "display": "block"
+    },
+    "footBottomLEstatusTop": true,
+    "footBottom": 744,
+    "statusTop": 744,
+    "primary": {
+     "x": 969,
+     "y": 694.5,
+     "w": 86,
+     "h": 36,
+     "bottom": 730.5,
+     "top": 694.5,
+     "min-width": "86px",
+     "min-height": "36px",
+     "border-radius": "8px"
+    },
+    "secondary": {
+     "x": 1063,
+     "y": 694.5,
+     "w": 58,
+     "h": 36,
+     "bottom": 730.5,
+     "top": 694.5,
+     "min-width": "58px",
+     "min-height": "36px",
+     "border-radius": "8px"
+    },
+    "btnGap": 8,
+    "btnsFullyVisible": true,
+    "btnLabels": [
+     "通过计划",
+     "打回"
+    ],
+    "contentTaller": true,
+    "scrollHeight": 1336,
+    "clientHeight": 580,
+    "noteStyle": {
+     "font-size": "12px",
+     "line-height": "19px",
+     "color": "rgb(179, 192, 210)"
+    },
+    "docOverflowX": 0
+   },
+   "scroll": {
+    "maxTop": 756,
+    "atBottom": true,
+    "footPinned": true,
+    "centerScrollable": false,
+    "centerSetTo": 0,
+    "centerAfterRightScroll": 0,
+    "centerUnaffected": true,
+    "overflowXBody": 0
+   }
+  },
+  {
+   "viewport": "1100x768",
+   "layout": {
+    "vp": {
+     "w": 1100,
+     "h": 768
+    },
+    "insp": {
+     "x": 772,
+     "y": 52,
+     "w": 328,
+     "h": 660,
+     "bottom": 712,
+     "top": 52,
+     "width": "328px",
+     "display": "flex",
+     "flex-direction": "column",
+     "min-height": "0px",
+     "heightEqVhMinus108": true
+    },
+    "head": {
+     "x": 773,
+     "y": 52,
+     "w": 327,
+     "h": 48,
+     "bottom": 100,
+     "top": 52,
+     "height": "48px"
+    },
+    "body": {
+     "x": 773,
+     "y": 100,
+     "w": 327,
+     "h": 548,
+     "bottom": 648,
+     "top": 100,
+     "flex-grow": "1",
+     "min-height": "0px",
+     "overflow-y": "auto",
+     "overflow-x": "hidden"
+    },
+    "foot": {
+     "x": 773,
+     "y": 648,
+     "w": 327,
+     "h": 64,
+     "bottom": 712,
+     "top": 648,
+     "hiddenAttr": false,
+     "height": "64px",
+     "padding": "12px 16px",
+     "background-color": "rgb(23, 28, 39)",
+     "border-top-width": "1px",
+     "border-top-style": "solid",
+     "border-top-color": "rgb(52, 66, 83)",
+     "display": "block"
+    },
+    "footBottomLEstatusTop": true,
+    "footBottom": 712,
+    "statusTop": 712,
+    "primary": {
+     "x": 789,
+     "y": 662.5,
+     "w": 86,
+     "h": 36,
+     "bottom": 698.5,
+     "top": 662.5,
+     "min-width": "86px",
+     "min-height": "36px",
+     "border-radius": "8px"
+    },
+    "secondary": {
+     "x": 883,
+     "y": 662.5,
+     "w": 58,
+     "h": 36,
+     "bottom": 698.5,
+     "top": 662.5,
+     "min-width": "58px",
+     "min-height": "36px",
+     "border-radius": "8px"
+    },
+    "btnGap": 8,
+    "btnsFullyVisible": true,
+    "btnLabels": [
+     "通过计划",
+     "打回"
+    ],
+    "contentTaller": true,
+    "scrollHeight": 1336,
+    "clientHeight": 548,
+    "noteStyle": {
+     "font-size": "12px",
+     "line-height": "19px",
+     "color": "rgb(179, 192, 210)"
+    },
+    "docOverflowX": 0
+   },
+   "scroll": {
+    "maxTop": 788,
+    "atBottom": true,
+    "footPinned": true,
+    "centerScrollable": false,
+    "centerSetTo": 0,
+    "centerAfterRightScroll": 0,
+    "centerUnaffected": true,
+    "overflowXBody": 0
+   }
+  }
+ ],
+ "poll": {
+  "setTo": 200,
+  "samples": [
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200
+  ],
+  "min": 200,
+  "max": 200,
+  "maxDrift": 0,
+  "distinctSyncCount": 10,
+  "distinctSyncSample": [
+   "同步 08:39:33",
+   "同步 08:39:36",
+   "同步 08:39:39"
+  ]
+ },
+ "doneStep": {
+  "hiddenAttr": true,
+  "display": "none",
+  "rectH": 0,
+  "hasButtons": false,
+  "bodyFillsToInspectorBottom": true
+ },
+ "noObjStep": {
+  "hiddenAttr": false,
+  "label": "批准 · 开始编写",
+  "visible": true,
+  "rect": {
+   "w": 112.9,
+   "h": 36
+  }
+ }
+}

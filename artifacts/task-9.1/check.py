@@ -1,0 +1,30 @@
+from playwright.sync_api import sync_playwright
+import json
+from pathlib import Path
+out=Path('artifacts/task-9.1')
+with sync_playwright() as p:
+ b=p.chromium.launch(headless=True)
+ page=b.new_page(viewport={'width':1440,'height':900},device_scale_factor=1)
+ errors=[]
+ page.on('pageerror',lambda e:errors.append(str(e)))
+ page.goto('http://127.0.0.1:8090',wait_until='networkidle')
+ print('errors',errors)
+ print('initial',page.locator('#reqs-count').inner_text())
+ page.locator('#rail-agents').click()
+ page.wait_for_selector('#agent-grid .agent-card')
+ print('agents',page.locator('#agent-summary').inner_text())
+ page.screenshot(path=str(out/'agents.png'))
+ page.locator('.agent-select').first.click()
+ print('detail',len(page.locator('.agent-detail').inner_text()))
+ page.locator('#rail-skills').click()
+ page.wait_for_selector('.skill-row')
+ first=page.locator('.skill-row b').first.inner_text()
+ page.locator('[data-page="1"]').click()
+ second=page.locator('.skill-row b').first.inner_text()
+ page.locator('.skill-row').first.click()
+ print('skills',first,second,len(page.locator('#skill-detail').inner_text()))
+ page.screenshot(path=str(out/'skills.png'))
+ page.locator('#skill-search').fill('zzzznonexist987654')
+ print('empty',page.locator('#skill-list').inner_text())
+ print('errors',errors)
+ b.close()

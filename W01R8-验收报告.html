@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W01 第 8 轮验收报告｜测试例外与正式审批校验正确隔离</title>
+<style>
+  body{font-family:"Segoe UI","Microsoft YaHei",sans-serif;max-width:980px;margin:0 auto;padding:24px;color:#e8e4da;background:#1c1a17;line-height:1.65}
+  h1{font-size:22px;border-bottom:2px solid #E5B95E;padding-bottom:8px}
+  h2{font-size:17px;color:#E5B95E;margin-top:28px}
+  table{border-collapse:collapse;width:100%;font-size:13px;margin:10px 0}
+  th,td{border:1px solid #3a352d;padding:6px 9px;text-align:left;vertical-align:top}
+  th{background:#26221c;color:#E5B95E}
+  code{background:#26221c;padding:1px 5px;border-radius:4px;font-size:12.5px;color:#9ecbff}
+  .ok{color:#7fd48a;font-weight:600}.bad{color:#ff8f7a;font-weight:600}.warn{background:#3B3021;color:#E5B95E;border-radius:6px;padding:8px 10px;font-size:12px;line-height:18px}
+  .meta{font-size:13px;color:#b6ad9c}
+  ul{margin:6px 0}
+  details{margin:8px 0}summary{cursor:pointer;color:#9ecbff}
+</style>
+</head>
+<body>
+<h1>W01 第 8 轮验收报告｜测试例外与正式审批校验正确隔离</h1>
+<p class="meta">验收时间 2026-11-16 10:05:53(+08) · <span class="ok">47 PASS / 0 FAIL</span> · node 退出码 0<br>
+脚本 <code>verify-w01r8b.mjs</code>（独立端口 9342、夹具 TEST-W01R8FB/TB）· 控制台 <code>verify-w01r8b-console3.log</code> · 结果 <code>verify-w01r8b.json</code> · 截图 3 张<br>
+服务 8090 静态直读无重启 · TEST-R11.json 测前测后 sha256 <code>0dd1e387…646087</code> 未动</p>
+
+<h2>一、改动内容（只动这一处）</h2>
+<p><code>web/app.css</code> 的 <code>.material-mismatch</code> 内边距 6px 10px → <b>8px 10px</b>（任务书原文「内边距8px 10px」）。其余逻辑（server 409、前端收敛、草稿留存、R11 例外）本轮开始前已就位，未再改动。</p>
+
+<h2>二、6 组运行时验证（API + 档案 + 页面）</h2>
+<p>夹具同一物理文件、同一登记（54 B），唯一变量是任务级策略。正式=TEST-W01R8FB（无策略，kind:'plan'）；测试=TEST-W01R8TB（test-any-file+basis）。</p>
+<table>
+<tr><th>组</th><th>场景</th><th>version-gate</th><th>审批 API</th><th>档案 plan</th></tr>
+<tr><td>F1 正式</td><td>文件未变化</td><td>valid:true 无漂移</td><td class="ok">200</td><td>done</td></tr>
+<tr><td>F2 正式</td><td>内容变化 98B≠54B</td><td>valid:false why:bytes</td><td class="bad">409 ARTIFACT_VERSION_DRIFT</td><td>仍 awaiting</td></tr>
+<tr><td>F2b 正式</td><td>等长内容被改 54B=54B</td><td>valid:false why:sha</td><td class="bad">409</td><td>仍 awaiting</td></tr>
+<tr><td>T1 测试</td><td>文件未变化</td><td>valid:true exempt:true</td><td class="ok">200</td><td>done</td></tr>
+<tr><td>T2 测试</td><td>同 F2 漂移</td><td>valid:true 漂移照报</td><td class="ok">200（例外）</td><td>done</td></tr>
+<tr><td>T2b 测试</td><td>同 F2b 漂移</td><td>同上 why:sha</td><td class="ok">200（例外）</td><td>done</td></tr>
+</table>
+<h3>打开页面后文件再变化（headless Chrome CDP）</h3>
+<ul>
+<li><b>F3 正式</b>：打开时按钮可用 → 文件变 → 不刷新点通过 → 浏览器内 <code>POST /api/office/decision</code> 实测 <span class="bad">HTTP 409</span>；页面显示服务端报错、无成功提示；草稿「F3 草稿：正式流程页面打开后文件再变化」留存；主操作收敛 disabled+<code>btn-invalid-material</code>；档案仍 awaiting；刷新后 st-awaiting、警示在、按钮禁用，与服务端一致。</li>
+<li><b>T3 测试</b>：同场景漂移 → 浏览器内 <span class="ok">HTTP 200</span> →「✓ 已通过 · 09:57」；刷新后 st-done 一致。</li>
+<li><b>R11 真实档案</b>：警示块照报漂移（99.6 KB ≠ 78.5 KB）+ 例外尾注，主操作可用；API 与页面审批均 200/done；测后逐字节恢复基线。</li>
+</ul>
+
+<h2>三、统一样式实测（getComputedStyle × 2 处）</h2>
+<p><code>.material-mismatch</code>：font-size <b>12px</b> · line-height <b>18px</b> · background <b>rgb(59,48,33)</b>=#3B3021 · color <b>rgb(229,185,94)</b>=#E5B95E · border-radius <b>6px</b> · padding <b>8px 10px</b>（F3 / R11 两处一致）。磁盘与 8090 实发 md5 相同 <code>5243fe09…</code>。（10:05 验收时点值；10:09:50 复查时并行会话又改回 6px，见下节。）</p>
+<p>实渲染示例：<span class="warn">材料与提交登记不一致：实测 98 B ≠ 登记 54 B（登记内容指纹 61db0369）…</span></p>
+
+<h2>四、⚠ 需要仲裁：与并行会话的内边距冲突</h2>
+<p>另一会话同轮也在改此文件，其注释自称「按任务书原文…6px 10px」，与本任务书「内边距8px 10px」直接冲突。时间线：我 09:45 改 8px → 对方 09:52 改回 6px → 我 09:54 改 8px → 对方 ~10:00 又改 6px（我第二次跑实测得 6px）→ 我 10:05 再改 8px 并立即完成验收。<b>最新状态（10:09:50 复查）：对方又改回 6px，磁盘与 8090 实发均 6px 10px（md5 <code>8b0d49b9…</code>）；本报告实测数值基于 8px 版本，我停止回改。两份任务书必有一份旧版，请 Leo 拍板最终值；若定 6px 只需改一行 CSS，其余结论不受影响。</b></p>
+
+<h2>五、清理</h2>
+<p>夹具 TEST-W01R8FB/TB 与共享文件已删；TEST-R11.json 恢复 <code>0dd1e387…646087</code>；探测脚本已删。</p>
+</body>
+</html>

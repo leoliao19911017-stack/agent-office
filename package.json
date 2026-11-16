@@ -1,0 +1,14 @@
+{
+  "name": "soda-office",
+  "version": "0.1.0",
+  "description": "Soda Office — Agent 编排工作台（看见 / 调度 / 交接）",
+  "type": "module",
+  "scripts": {
+    "test": "node --no-warnings --test test/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {}
+}

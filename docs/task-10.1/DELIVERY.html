@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASK-10.1 交付报告 — 油画风资产接入</title>
+<style>
+:root{--bg:#141511;--card:#1e1f1a;--line:#2e2f28;--text:#e8e4d8;--muted:#9a988c;--amber:#e0b341;--blue:#5b8ff9;--ok:#7bc47f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font:14px/1.7 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--text);padding:32px 16px}
+.wrap{max-width:960px;margin:0 auto}
+h1{font-family:Georgia,"Songti SC",SimSun,serif;font-weight:600;font-size:26px;margin-bottom:4px}
+.meta{color:var(--muted);font-size:12.5px;margin-bottom:24px}
+h2{font-family:Georgia,"Songti SC",SimSun,serif;font-weight:600;font-size:18px;color:var(--amber);margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font:12.5px/1.6 Consolas,"Cascadia Code",monospace;overflow-x:auto;margin:10px 0}
+ol,ul{padding-left:22px}li{margin:6px 0}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:var(--card);color:var(--amber);font-family:Georgia,"Songti SC",serif;font-weight:600}
+code{font:12.5px Consolas,monospace;background:var(--card);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+.pass{color:var(--ok);font-weight:600}
+.note{color:var(--muted);font-size:12.5px}
+.check{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:8px;padding:12px 16px;margin-top:10px;font-size:13.5px}
+</style>
+</head>
+<body><div class="wrap">
+<h1>TASK-10.1 交付报告 — 油画风资产接入 Soda Office</h1>
+<p class="meta">2026-11-14 · 执行 Lemate(Claude Code) · 资产 Codex · <a href="DELIVERY.md" style="color:var(--blue)">MD 版</a></p>
+
+<h2>BACKUP</h2>
+<pre>web/index.html.bak-task10.1(234434 字节,改动前原件)</pre>
+
+<h2>CHANGED — 仅 web/index.html 一个文件</h2>
+<ol>
+<li><b>图标系统</b>:删 ICONS/icon() 死代码,新增 <code>iconPNG(name,size)</code>(onerror 隐藏降级 + 启动预加载 12 个),注入 10 处。米金色不跟随 currentColor,状态用 CSS:默认 opacity .82 / 悬停 1 / 选中 <code>brightness(1.12) sepia(.3) hue-rotate(175deg) saturate(1.5)</code>(米金→蓝金)。</li>
+<li><b>字体分层</b>:<code>--font-display</code>(Georgia/宋体系,weight 600)应用于大标题、.eyebrow、步骤编号、步骤卡标题、Inspector 步骤名、Agent 名、所有大数字;路径/技能名/key 走 <code>--font-mono</code>。变量复用 TASK-9.1。</li>
+<li><b>按钮三级</b>:primary 纯琥珀实心(不用底纹,见 ISSUES 2);secondary --card 底 + btn-frame.png 底纹;ghost 透明 hover 出底。</li>
+<li><b>空状态</b>:8 处换 empty-files/data/search 插画(160px、opacity .55),删 .empty-message 死样式。</li>
+<li><b>favicon</b>:<code>&lt;link rel="icon" href="data:,"&gt;</code> 消 /favicon.ico 404。</li>
+</ol>
+
+<h2>MEASURED — 2026-11-14 隔离 Chromium 实测(CDP)</h2>
+<table>
+<tr><th>项</th><th>结果</th></tr>
+<tr><td>控制台报错数</td><td><b>0</b>(清缓存 reload 后 6 秒,三通道收集)</td></tr>
+<tr><td>图标 loaded</td><td><b>12/12</b>(均 64×64),破图 0</td></tr>
+<tr><td>切页后图标仍在</td><td class="pass">是(四页往返 document.images 全部 naturalWidth&gt;0)</td></tr>
+<tr><td>标题 fontFamily</td><td><code>Georgia, "Songti SC", SimSun, "Noto Serif SC", serif</code></td></tr>
+<tr><td>正文 fontFamily</td><td><code>"Segoe UI", "Microsoft YaHei", system-ui, sans-serif</code>(无 Serif)</td></tr>
+<tr><td>轮询 10.5s 状态保持</td><td class="pass">是(hash / 选中步骤 / Inspector / 需求数 42 全保持)</td></tr>
+<tr><td>四页 scrollHeight/innerHeight</td><td>工作台 <b>545/545</b> · agents <b>545/545</b> · skills <b>545/545</b> · files <b>545/545</b></td></tr>
+<tr><td>空状态图</td><td>三张各自实证加载,naturalWidth 均 <b>320</b>(320×200)</td></tr>
+<tr><td>图标文件名调整</td><td>无(例外见 ISSUES 1)</td></tr>
+</table>
+
+<h2>SCREENSHOTS(docs/task-10.1/,1440×900@1.5x)</h2>
+<table>
+<tr><th>文件</th><th>说明</th></tr>
+<tr><td><code>01-workbench.png</code></td><td>工作台全景</td></tr>
+<tr><td><code>02-rail-detail.png</code></td><td>侧栏特写:选中蓝金 vs 未选中米金(AI 目检差异明显)</td></tr>
+<tr><td><code>03-agents.png</code></td><td>Agents 工位卡</td></tr>
+<tr><td><code>04-skills.png</code></td><td>技能页 + 分页 secondary 按钮(底纹)</td></tr>
+<tr><td><code>05-empty-search.png</code></td><td>搜索空状态插画</td></tr>
+<tr><td><code>06-files.png</code></td><td>文件库分组折叠</td></tr>
+<tr><td><code>07-buttons-3levels.png</code></td><td>设置弹层按钮三级(AI 目检协调)</td></tr>
+<tr><td><code>08-step-files-picker.png</code></td><td>步骤产物弹窗</td></tr>
+</table>
+
+<h2>ISSUES</h2>
+<ol>
+<li><b>icon-file.png、icon-play.png 缺</b>(不在 Codex 的 12 资产内):文件按钮用 folder 替代,播放/展开用 focus/chevron。补齐后无需改代码。</li>
+<li><b>主按钮不用底纹</b>:琥珀实心叠金纹理目检过花,按任务书授权改纯色;secondary 保留底纹。</li>
+<li><b>20px 下油画笔触不明显</b>,观感偏扁平线性——资产缩小后的特性,非代码问题;选中/未选中色差清晰。</li>
+<li>12 图标实测全 64×64 RGBA,符合规格。</li>
+<li>favicon 404 用 <code>data:,</code> 处理。</li>
+<li><b>环境备注</b>:本地 8090 静态服务偶发停顿(tfb≈52s 一次)致图片请求间歇失败;资产/服务端/页面三方验证无缺陷。git-bash 的 <code>curl -o /dev/null</code> 会假报 0 字节(exit 23),测量需写真实文件。</li>
+</ol>
+
+<div class="check">✅ 任务书九项验收全部通过:①报错 0 ②图标 12/12 ③切页仍在 ④Georgia ⑤正文无 Serif ⑥轮询不重置 ⑦四页 545/545 ⑧选中差异可辨(02 目检)⑨截图六类 8 张</div>
+</div></body></html>

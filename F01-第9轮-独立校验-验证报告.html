@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F01 第 9 轮 · 独立校验验证报告</title>
+<style>
+  :root { --bg:#0E141D; --panel:#182230; --line:#334257; --text:#D7E1EE; --muted:#8996A8; --green:#62C6A0; --amber:#E5B95E; --blue:#7FA8D9; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .meta { color:var(--muted); font-size:12.5px; margin-bottom:20px; }
+  h2 { font-size:17px; margin:32px 0 10px; padding-left:10px; border-left:3px solid var(--blue); }
+  h3 { font-size:14.5px; margin:20px 0 6px; color:var(--blue); }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 18px; margin:10px 0; }
+  table { width:100%; border-collapse:collapse; margin:10px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:#1D2A3B; color:var(--text); font-weight:600; white-space:nowrap; }
+  td.n { font-variant-numeric:tabular-nums; white-space:nowrap; }
+  code, .mono { font-family:Consolas,"Courier New",monospace; font-size:12.5px; color:#A9C4E8; background:#111823; padding:1px 5px; border-radius:4px; }
+  .ok { color:var(--green); font-weight:600; }
+  .warn { color:var(--amber); font-weight:600; }
+  ul { margin:6px 0; padding-left:22px; }
+  li { margin:3px 0; }
+  .evi { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; }
+  .evi img { height:150px; border:1px solid var(--line); border-radius:6px; }
+  .tag { display:inline-block; background:#263548; border-radius:6px; padding:0 8px; font-size:12px; line-height:20px; margin:0 4px 4px 0; }
+  footer { margin-top:40px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); padding-top:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>F01 第 9 轮 · 同一文件两条历史登记的独立校验</h1>
+<div class="meta">2026-11-16 10:00–10:30 · server.js 127.0.0.1:8090（build r11c）· Edge headless Edg/157.0.4341.60（CDP 9451）· 全部数值为 getComputedStyle / getBoundingClientRect / curl 实测</div>
+
+<h2>一、改了什么</h2>
+<div class="panel">
+  <ul>
+    <li><b>分组键升级</b>（app.js ~2815）：登记分组键从「字节数」升为「字节数 + 内容指纹」完整版本标识；汇总前提收紧为「版本标识完全一致」，title 明写指纹与核对口径。</li>
+    <li><b>抽屉逐条登记</b>（app.js ~2187）：新增「登记版本」「登记路径」逐条列出；登记值/登记时间此前已逐条。</li>
+    <li><b>app.css</b>：行背景 #182230；行末追加 <code>max-height:96px; overflow:hidden</code>。</li>
+  </ul>
+  <p style="margin:8px 0 4px"><span class="tag">并行协作</span>本轮期间其他 agent 在同区域持续落层（10:01 第10轮 · 10:12 第11轮 · 10:23 微调），沿用我的分组键并细化分行展示，<b>均未回滚</b>。验证针对组合后的最终代码（app.js <code>2a54fee2…</code> / app.css <code>90ed1fb6…</code>）。</p>
+</div>
+
+<h2>二、验证了什么（真实数值）</h2>
+
+<h3>V0 · 自然态：同版本 → 汇总</h3>
+<table>
+  <tr><th>项</th><th>实测值</th><th>规格</th></tr>
+  <tr><td>组头 / 汇总行</td><td class="n"><code>1 个产物（2 条登记）</code> · <code>登记 78.5 KB ×2</code></td><td>相同内容汇总 ✓</td></tr>
+  <tr><td>行高</td><td class="n">84px（min 68 / max 96）</td><td>68–96px ✓</td></tr>
+  <tr><td>背景 / 边框 / 圆角</td><td class="n">rgb(24,34,48) · 1px rgb(51,66,87) · 8px</td><td>#182230 · 1px #334257 · 8px ✓</td></tr>
+  <tr><td>元信息列 / 字号 / 行高 / 颜色 / 行距</td><td class="n">190px · 12px · 18px · rgb(215,225,238) · 4px</td><td>190px · 12px · 18px · #D7E1EE · 4px ✓</td></tr>
+</table>
+
+<h3>V1 · 数量不变 + 双侧独立读取</h3>
+<ul>
+  <li>聚合前后：登记数 = 实体引用合计 <b class="ok">13=13</b>（后续快照 17=17；增量来自并行自测任务 TEST-F01R10，API 实证，本特性无重复计数）</li>
+  <li>curl <code>/api/office/flow</code>：TEST-R11 恒 2 条 app.css 登记 = <code>80408 B / selftest-placeholder ×2</code>，与页面逐项一致</li>
+  <li>抽屉：登记版本/路径/值/时间/关联步骤全部逐条独立（TEST-R11›doc、TEST-R11›plan）</li>
+</ul>
+
+<h3>V2b · 大小不同 → 分行（bytes 80408→93000 原子变异，测后还原）</h3>
+<ul>
+  <li>两行独立登记 <code>02 90.8KB·selfte·02:50 ≠</code> / <code>03 78.5KB·selfte·02:50 ≠</code>——无 ×N、无汇总数字</li>
+  <li>每行 title 四要素：登记ID / 原始字节数（93000 B、80408 B 各自）/ 版本标识 / 登记时间 + 逐条比对结论</li>
+  <li>分行态样式仍在规格内（96px / #182230 / 边框圆角 / 190px / 12px/18px/#D7E1EE）；元信息→操作区间隙 <b class="ok">16px 无交叠</b>；还原后回到 ×2 汇总</li>
+</ul>
+
+<h3>V2c · 同字节异指纹 → 版本身份分叉（sha256 原子变异，测后还原）</h3>
+<ul>
+  <li>拆为 2 行实体：<code>data-vkey = sha:f01r9-fake-version-0001</code> 与 <code>sha:selftest-placeholder</code> 各自独立；每行「实测 + 登记 78.5 KB + 身份行」，无 ×2 合并</li>
+  <li>组头 <code>2 个产物</code>（app.js:3017 设计：实际发生合并才标注「（N 条登记）」）；同快照 17=17；还原后回到 <code>1 个产物（2 条登记）</code></li>
+</ul>
+
+<h3>V3 · 物理文件修改不覆盖历史登记</h3>
+<ul>
+  <li>物理文件 103351→103469 B：页面与服务端历史登记仍 <b class="ok">80408×2 / selftest-placeholder 不变</b></li>
+  <li>sha256 字节级还原一致；还原后实测回 103351 B，登记仍 78.5 KB ×2</li>
+</ul>
+
+<h3>V4 / A11</h3>
+<ul>
+  <li>getBoundingClientRect 全程无交叠（最小间隙 16px）；页面 JS 异常 <b class="ok">0 条</b></li>
+</ul>
+
+<div class="evi">
+  <img src="f01r9-row-merged.png" alt="汇总态">
+  <img src="f01r9-row-split.png" alt="分行态">
+  <img src="f01r9-drawer.png" alt="抽屉逐条登记">
+</div>
+<p class="meta">证据：f01r9-verify.json（首轮 33 过 / 8 项断言口径问题）· f01r9-verify2.json（<b class="ok">14/14 全过</b>）· 上述截图 · 备份 app.js.bak-f01r9 / app.css.bak-f01r9</p>
+
+<h2>三、还差什么 / 待决策</h2>
+<div class="panel">
+  <ul>
+    <li class="warn">app.js 验证完成后仍被并行编辑（10:01→10:12→10:23→2a54fee2）。终验锁定：停手后重跑 <code>node --experimental-websocket f01r9-verify2.mjs</code>（约 30 秒 / 14 项断言）。</li>
+    <li>TEST-R11 自测任务（标注"测完即删"）仍保留——它是 F01 展示与复验的载体，删除属破坏性操作，<b>待 Leo 拍板</b>（并行 agent 的 TEST-F01R10 同理）。</li>
+    <li>第 10/11 轮层是并行 agent 产出，本报告只验证组合行为；技能页 r11 层不在任务范围、未验证。</li>
+  </ul>
+</div>
+
+<footer>四条验证要求对应：①V1+V2c-4 ②V2b+V2c ③V3 ④V4 —— 全部通过实测闭环。</footer>
+</div>
+</body>
+</html>

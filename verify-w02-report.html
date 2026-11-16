@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>W02 验证报告 · 审批说明压缩 + 右侧独立滚动</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14130F; color: #E8E4DA; font: 14px/1.75 "Segoe UI", "Microsoft YaHei", sans-serif; padding: 40px 20px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  h2 { font-size: 17px; margin: 36px 0 12px; color: #E5B95E; border-bottom: 1px solid #3a3830; padding-bottom: 6px; }
+  h3 { font-size: 15px; margin: 22px 0 8px; color: #CFC9BB; }
+  .meta { color: #8B9AA8; font-size: 12.5px; background: #1D1B17; border-radius: 8px; padding: 10px 14px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0 6px; font-size: 13px; }
+  th, td { border: 1px solid #3a3830; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #24221E; color: #E5B95E; font-weight: 600; white-space: nowrap; }
+  td code, p code, li code { background: #2A2822; border-radius: 4px; padding: 1px 5px; font-size: 12px; color: #D8CCA8; }
+  .ok { color: #7DC98F; font-weight: 600; }
+  .note { background: #24221E; border-left: 3px solid #E5B95E; border-radius: 8px; padding: 12px 16px; margin: 12px 0; }
+  ul { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  b.num { color: #E5B95E; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>W02 验证报告：压缩审批说明视觉占用 + 右侧详情独立滚动</h1>
+<div class="meta">
+日期 2026-11-16 · 服务 http://127.0.0.1:8090（build r11c，静态文件按请求读盘）·
+场景 TEST-R11 需求（test-any-file）第 3 步「开发计划」（awaiting + expects=plan，即任务图1场景）·
+方法 CDP 直连 headless Chrome（精确视口 + getComputedStyle / getBoundingClientRect / scroll 尺寸 + 截图）·
+原始数据 <code>verify-w02-after.json</code> · 基线 <code>verify-w02-baseline.json</code> · 截图 6 张
+</div>
+
+<h2>一、改了什么（只改 web/app.css，三处，备份 app.css.bak-w02b）</h2>
+<table>
+<tr><th>选择器</th><th>改动后</th><th>原值</th></tr>
+<tr><td><code>#insp-body</code></td><td>增加 <code>overflow-x: hidden</code>（原已有 <code>overflow-y: auto</code>）</td><td>overflow-x 默认 auto</td></tr>
+<tr><td><code>.ip-decide</code></td><td><code>padding: 16px</code>；<code>background: #24221E</code></td><td><code>padding: 14px 14px 12px</code>；<code>#24231F</code></td></tr>
+<tr><td><code>.ev-src</code></td><td><code>margin: 12px 0</code>；<code>line-height: 19px</code>；<code>color: #A3B0BF</code></td><td><code>margin: 8px 0 0</code>；<code>1.6</code>（≈19.2px）；<code>var(--faint)</code>=#8996A8</td></tr>
+</table>
+<p>说明文字内容（app.js decideHtml 的 policyNote）一字未动；未改任何 JS / HTML / 其他 CSS。</p>
+
+<h2>二、验证了什么（全部为 CDP 实测真实数值）</h2>
+
+<h3>1. 右侧详情区几何与滚动（1440×900，桌面 in-flow 布局）</h3>
+<table>
+<tr><th>指标</th><th>实测值</th><th>规格</th><th>判定</th></tr>
+<tr><td>#inspector 宽×高</td><td><b class="num">328 × 792</b>（x=1112, y=52）</td><td>328 × 100vh−52−56 = 792</td><td class="ok">✅</td></tr>
+<tr><td>#insp-body overflow</td><td>x=<code>hidden</code>, y=<code>auto</code></td><td>同左</td><td class="ok">✅</td></tr>
+<tr><td>#insp-body client/scroll 高</td><td>748 / <b class="num">1074</b>（可滚 326px）</td><td>scrollH &gt; clientH</td><td class="ok">✅</td></tr>
+<tr><td>#insp-body 横向</td><td>scrollW 312 = clientW 312（零横向溢出）</td><td>不横向溢出</td><td class="ok">✅</td></tr>
+<tr><td>.ip-decide</td><td>x=<b class="num">1129</b>, y=<b class="num">203</b>, w=280, h=640, padding=<code>16px</code>, radius=<code>10px</code>, bg=<code>rgb(36,34,30)</code>=#24221E</td><td>x1129–1424 / y203–845；16px / 10px / #24221E</td><td class="ok">✅</td></tr>
+<tr><td>.ev-src</td><td>12px / 19px / <code>rgb(163,176,191)</code>=#A3B0BF / margin 12px·12px，全文 127 字完整换行</td><td>同左，不删减</td><td class="ok">✅</td></tr>
+<tr><td>文档级溢出</td><td>docOverflowX=false，bodyScrollable=false</td><td>外层不滚不争抢</td><td class="ok">✅</td></tr>
+</table>
+
+<h3>2. 三视口滚动到底，执行者 / 本步产物 / 上下游进入视口</h3>
+<table>
+<tr><th>视口</th><th>布局</th><th>scrollTop / max</th><th>执行者</th><th>本步产物</th><th>上下游</th></tr>
+<tr><td>1440×900</td><td>in-flow 328px</td><td><b class="num">326 / 326</b></td><td class="ok">✅</td><td class="ok">✅</td><td class="ok">✅</td></tr>
+<tr><td>1280×800</td><td>覆盖层 fixed 360px（insp-open）</td><td><b class="num">387 / 387</b></td><td class="ok">✅</td><td class="ok">✅</td><td class="ok">✅</td></tr>
+<tr><td>1100×768</td><td>覆盖层 fixed 360px（insp-open）</td><td><b class="num">419 / 419</b></td><td class="ok">✅</td><td class="ok">✅</td><td class="ok">✅</td></tr>
+</table>
+<p>三视口审批文字均无水平溢出（evSrc 宽 244–276px，全部在卡内换行）。</p>
+
+<h3>3. 轮询滚动保持（1440×900，10 × ~3.2 秒，不切换需求）</h3>
+<p>滚至中部 setTo=<b class="num">163</b>（max=326），10 个采样全部 <b class="num">163</b>，零重置零漂移（withScroll 在 innerHTML 重建间保住位置）。</p>
+
+<h3>4. 视觉复核（截图）</h3>
+<ul>
+<li><code>verify-w02-1440x900-top.png</code>（未滚动）：审批卡顶部对齐 y=203，说明文字完整换行、无横向溢出，纵向滚动条可见；执行者 / 本步产物 / 上下游按原顺序排在折叠线以下（offsetTop 858 / 926 / 995 &gt; clientH 748），决策卡底缘 843 贴近视口底 844。</li>
+<li><code>verify-w02-*-scrolled.png</code>（滚到底）：三区全部可见。</li>
+</ul>
+
+<h2>三、还差什么 / 如实说明</h2>
+<div class="note">
+<b>独立纵向滚动在改动前就已生效</b>（基线实测 scrollH=1033 &gt; clientH=748，<code>#insp-body</code> 本就是 flex 链上的 <code>overflow-y:auto</code>）。任务原文「若右侧没有独立滚动」是条件句；本次实际补齐的是其余规格差距项：<code>overflow-x:hidden</code>、行高 19px、颜色 #A3B0BF、段距 12px、卡内边距 16px、底色 #24221E。
+</div>
+<ul>
+<li>已知无害现象：1280/1100 视口测量时 decide.y 为负（−103 / −184），是上一视口滚动测试的残留 scrollTop 经轮询 withScroll 恢复、压过 selectTask 归零的既有竞态，与 W02 改动无关（反证滚动保持有效）。</li>
+<li>产物清单：<code>verify-w02.mjs</code>、<code>verify-w02-after.json</code>、<code>verify-w02-baseline.json</code>、<code>verify-w02-after.log</code>、6 张截图、本报告（md/html）。</li>
+</ul>
+</div>
+</body>
+</html>

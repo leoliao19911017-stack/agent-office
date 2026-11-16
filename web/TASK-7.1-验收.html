@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TASK-7.1 工作台三栏骨架（V2.0）验收报告</title>
+<style>
+  :root { --bg:#0E1117; --panel:#171D26; --card:#222B38; --line:#303C4D; --paper:#F1EADB; --ink:#20211C; --amber:#E0B341; --green:#6FD3A0; --blue:#5B8FF9; --red:#E4685D; --text:#DCE3EC; --muted:#8B98AB; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  h2 { font-size:17px; margin:36px 0 12px; color:var(--blue); border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:20px; }
+  .meta b.ok { color:var(--green); } .meta b.fix { color:var(--amber); }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin:10px 0; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:var(--muted); font-weight:600; white-space:nowrap; }
+  td.num { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  code { background:var(--panel); border:1px solid var(--line); border-radius:4px; padding:1px 6px; font:12px/1.6 Consolas,monospace; color:var(--green); }
+  .bug { background:rgba(224,179,65,.08); border:1px solid rgba(224,179,65,.45); border-radius:8px; padding:14px 18px; }
+  .bug h3 { margin:0 0 6px; font-size:14px; color:var(--amber); }
+  ul { padding-left:22px; } li { margin:4px 0; }
+  .pass { color:var(--green); font-weight:600; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-top:10px; }
+  .shot { background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .shot img { width:100%; display:block; }
+  .shot .cap { padding:8px 12px; font-size:12.5px; color:var(--muted); }
+  .todo { background:var(--panel); border-left:3px solid var(--blue); border-radius:0 8px 8px 0; padding:10px 16px; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>TASK-7.1 工作台三栏骨架（V2.0）验收报告</h1>
+  <div class="meta">
+    重写 <code>web/index.html</code> 为三栏工作台骨架 · 2026-11-13 ·
+    结论：<b class="ok">23 项验收全过 / 0 失败</b> · 另发现并修复 <b class="fix">1 个 CSS hidden 失效 bug</b> ·
+    服务 127.0.0.1:8090（后台常驻）
+  </div>
+
+  <h2>改了什么</h2>
+  <table>
+    <tr><th>文件</th><th>改动</th><th style="text-align:right">字节数</th></tr>
+    <tr><td><code>web/index.html</code></td><td>整页重写：顶栏 56 + 导航 60 + 需求列表 248 + 中央交付链自适应 + Inspector 320 + 底栏 28；≤1280 Inspector 收起、≤1024 需求列表/Inspector 二选一；EaseDraw 专注抽屉 720px 可拖 480–1000</td><td class="num">52112</td></tr>
+    <tr><td><code>web/server.js</code></td><td>仅新增 <code>POST /api/office/file-check</code>（statSync 核实产物存在性 + 实测字节，一次最多 200 条）；现有 /api/* 一律未动</td><td class="num">16247</td></tr>
+    <tr><td><code>web/verify-assets/verify-7.1.mjs</code></td><td>新增 CDP 验收脚本（零依赖，Node22+ 原生 WebSocket）</td><td class="num">14912</td></tr>
+  </table>
+  <ul>
+    <li><b>4 阶段投影</b>：定义{req,doc} / 生产{plan,brief,run} / 验证{deliverable,verify} / 交付{final}，未知 key 按比例落列；步骤卡按阶段成 4 列，阶段头带「已完成 x/x」计数。</li>
+    <li><b>待决策判定</b>：<code>status==='awaiting'</code> 或 <code>gate===true && status==='pending'</code>；顶栏琥珀胶囊 0 个时隐藏。</li>
+    <li><b>状态语义分开</b>：Agent 连接（心跳 120s → 在线/僵死/离线）与干活状态（执行中/排队/空闲）互不冒充。</li>
+    <li><b>轮询不重置 UI</b>：渲染幂等于 data+ui（taskId/stepKey/view/search），<code>withScroll</code> 保滚动位置，<code>ensureSelection</code> 优雅回退。</li>
+    <li><b>产物核验</b>：前端收集路径集合做指纹，变化才 POST file-check；实测字节替换登记字节；<code>exists:false</code> 标红「文件不存在」。</li>
+  </ul>
+
+  <h2>发现并修复的 bug（本轮验收截图揪出来的）</h2>
+  <div class="bug">
+    <h3>#settings-pop 的 display:flex 击穿了 hidden 属性</h3>
+    <p style="margin:6px 0">作者样式优先于 UA 样式：<code>hidden</code> 属性靠 UA 的 <code>display:none</code> 生效，而规则里的 <code>display:flex</code> 把它盖掉——设置弹层<b>从加载起永远悬浮在 Inspector 右上角，点外部关不掉</b>。属性探针显示 <code>hidden:true</code> 但 <code>computedDisplay:"flex"</code>，像素实测弹层区域 #171D26 深色。<code>#tb-decision</code> 胶囊同病（0 待决策时会留空琥珀壳）。</p>
+    <p style="margin:6px 0">修复：补 <code>#settings-pop[hidden]{display:none}</code> 与 <code>#tb-decision[hidden]{display:none}</code>。修复后像素复核弹层区域为纸色 #F1EADB，验收 23/0 重跑通过。</p>
+  </div>
+
+  <h2>验证了什么（真实输出）</h2>
+  <ul>
+    <li><span class="pass">验收①</span> 1440×900 单屏：需求列表 / 4 阶段 / 7 步骤卡 / Inspector 全部在视口内；4 列确认。</li>
+    <li><span class="pass">验收②</span> <code>scrollHeight=900 = innerHeight=900</code>，整页无纵向滚动条。</li>
+    <li><span class="pass">验收③</span> 概览行点击 → 回交付链 <code>view=chain taskId=OFFICE-V3</code>（数据仅 1 个需求，与需求卡同一 selectTask 路径）。</li>
+    <li><span class="pass">验收④</span> 步骤卡选中 → Inspector 显示 STEP 05 交付物 / Hermes / 3 个产物（50.9 KB、4.4 MB、3.7 MB 实测字节）/ ↑↓ 上下游。</li>
+    <li><span class="pass">验收⑤</span> 10.5 秒（≥3 轮轮询）后选中步骤/需求/Inspector 全部保持。</li>
+    <li><span class="pass">验收⑥</span> 专注抽屉 720px 滑出，iframe load 触发（luckyandease.com/easedraw/），关闭 display:none 保留 DOM，重开不重建。</li>
+    <li><span class="pass">异常</span> Runtime.exceptionThrown / console.error / <code>__uiErrors</code> 全 0。</li>
+    <li><span class="pass">标红分支</span> 注入 <code>exists:false</code> →「✗ index.html 文件不存在」出现，还原后消失（当时数据无天然缺失文件）。</li>
+  </ul>
+
+  <h2>截图（修复后重生成）</h2>
+  <div class="shots">
+    <div class="shot"><img src="verify-assets/v71-normal.png" alt="正常态"><div class="cap">正常态 · 77803 B</div></div>
+    <div class="shot"><img src="verify-assets/v71-step-selected.png" alt="选中步骤"><div class="cap">选中 STEP 05 · 77864 B</div></div>
+    <div class="shot"><img src="verify-assets/v71-focus-mode.png" alt="专注模式"><div class="cap">专注模式 EaseDraw · 802605 B</div></div>
+  </div>
+
+  <h2>还差什么</h2>
+  <div class="todo">
+    <ul style="margin:4px 0;padding-left:20px">
+      <li>数据只有 1 个需求（OFFICE-V3），多需求切换只能靠同路径的概览行点击间接验证；有第二个需求后建议复跑验收③。</li>
+      <li>梵高风皮肤、点击产物打开文件等是后续任务，本轮骨架不含。</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

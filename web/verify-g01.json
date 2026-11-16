@@ -1,0 +1,1390 @@
+{
+  "phase": "after",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-15T20:48:20.320Z",
+  "viewport": "1440x900",
+  "pages": {
+    "workbench": [
+      {
+        "sel": ".req-item .req-status",
+        "text": "待拍板",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#243249",
+        "contrast": 7.02,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 152,
+          "w": 51,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".req-item .req-status.t-active",
+        "text": "进行中",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#121925",
+        "contrast": 9.6,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 486,
+          "w": 51,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".req-item .req-status.t-delivered",
+        "text": "已交付",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#121925",
+        "contrast": 8.48,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 570,
+          "w": 51,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      {
+        "sel": ".req-item .req-stage",
+        "text": "02 生产 · 开发计划",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#243249",
+        "contrast": 7,
+        "mono": false,
+        "rect": {
+          "x": 142,
+          "y": 153,
+          "w": 97,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".req-item .req-line2",
+        "text": "待拍板\n        02 生产 · 开发计划",
+        "fontSize": "12px",
+        "lineHeight": "20px",
+        "color": "#F1ECE2",
+        "rawColor": "rgb(241, 236, 226)",
+        "bg": "#243249",
+        "contrast": 10.96,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 152,
+          "w": 195,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      }
+    ],
+    "agents": [
+      {
+        "sel": ".roster-head",
+        "text": "Agent连接健康执行状态上报新鲜度当前需求 / 最近动作",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 88,
+          "y": 260,
+          "w": 1320,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".agent-card .ag-ids",
+        "text": "lemate·lemate",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": true,
+        "rect": {
+          "x": 236,
+          "y": 306,
+          "w": 100,
+          "h": 16
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-idcol .agent-role",
+        "text": "Coding",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 183,
+          "y": 325,
+          "w": 277,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".sc-label",
+        "text": "中台注册角色",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#172131",
+        "contrast": 8.77,
+        "mono": false,
+        "rect": {
+          "x": 945,
+          "y": 108,
+          "w": 118,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-conn.ok",
+        "text": "在线",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#121925",
+        "contrast": 8.48,
+        "mono": false,
+        "rect": {
+          "x": 476,
+          "y": 313,
+          "w": 112,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      null,
+      {
+        "sel": ".ag-work.work-idle",
+        "text": "空闲",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E2EAF4",
+        "rawColor": "rgb(226, 234, 244)",
+        "bg": "#121925",
+        "contrast": 14.53,
+        "mono": false,
+        "rect": {
+          "x": 604,
+          "y": 559,
+          "w": 112,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-work.work-unknown",
+        "text": "未知",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E2EAF4",
+        "rawColor": "rgb(226, 234, 244)",
+        "bg": "#121925",
+        "contrast": 14.53,
+        "mono": false,
+        "rect": {
+          "x": 604,
+          "y": 313,
+          "w": 112,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-hb.ok",
+        "text": "刚刚",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E2EAF4",
+        "rawColor": "rgb(226, 234, 244)",
+        "bg": "#121925",
+        "contrast": 14.53,
+        "mono": false,
+        "rect": {
+          "x": 732,
+          "y": 313,
+          "w": 140,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      null,
+      {
+        "sel": ".ag-task",
+        "text": "上次上报已过期 · 11/15 00:08",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E2EAF4",
+        "rawColor": "rgb(226, 234, 244)",
+        "bg": "#121925",
+        "contrast": 14.53,
+        "mono": false,
+        "rect": {
+          "x": 888,
+          "y": 313,
+          "w": 505,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-task.hist",
+        "text": "上次上报已过期 · 11/15 00:08",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E2EAF4",
+        "rawColor": "rgb(226, 234, 244)",
+        "bg": "#121925",
+        "contrast": 14.53,
+        "mono": false,
+        "rect": {
+          "x": 888,
+          "y": 313,
+          "w": 505,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": "#agent-scope",
+        "text": "本页只列一线 Agent（3 个 Hermes 入口 + Codex）；",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 88,
+          "y": 200,
+          "w": 720,
+          "h": 36
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      null
+    ],
+    "agentsDetail": [
+      {
+        "sel": ".agent-detail .agent-kv",
+        "text": "角色ID（稳定）lemate",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 105,
+          "y": 402,
+          "w": 1271,
+          "h": 27
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".agent-detail .agent-kv span:first-child",
+        "text": "角色ID（稳定）",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 105,
+          "y": 406,
+          "w": 84,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".agent-detail .agent-kv span:last-child",
+        "text": "lemate",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 1340,
+          "y": 406,
+          "w": 36,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null
+    ],
+    "skills": [
+      {
+        "sel": "#skill-count",
+        "text": "匹配 222 / 222",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1239,
+          "y": 120,
+          "w": 77,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".sfr-label",
+        "text": "用途",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 180,
+          "y": 242,
+          "w": 34,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-row small",
+        "text": "Fast headless browser for QA testing",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 197,
+          "y": 368,
+          "w": 643,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-row .sk-tag",
+        "text": "claude",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#F1ECE2",
+        "rawColor": "rgb(241, 236, 226)",
+        "bg": "#26384F",
+        "contrast": 10.13,
+        "mono": false,
+        "rect": {
+          "x": 197,
+          "y": 414,
+          "w": 44,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-row .sk-cat",
+        "text": "类别 浏览器",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 782,
+          "y": 416,
+          "w": 58,
+          "h": 16
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-path",
+        "text": "C:/Users/Administrator/.claude/skill",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": true,
+        "rect": {
+          "x": 917,
+          "y": 652,
+          "w": 363,
+          "h": 36
+        },
+        "clipX": false,
+        "escX": false
+      }
+    ],
+    "files": [
+      {
+        "sel": "#file-count",
+        "text": "匹配 12 / 12 个产物（13 条登记）",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1213,
+          "y": 120,
+          "w": 180,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".file-only",
+        "text": "只看有产物",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1048,
+          "y": 197,
+          "w": 87,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-name",
+        "text": "app.css",
+        "fontSize": "14px",
+        "lineHeight": "22px",
+        "color": "#F1ECE2",
+        "rawColor": "rgb(241, 236, 226)",
+        "bg": "#151F2D",
+        "contrast": 14.09,
+        "mono": false,
+        "rect": {
+          "x": 162,
+          "y": 326,
+          "w": 46,
+          "h": 22
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-src",
+        "text": "C:/Users/Administrator/Desktop/Soda ",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#151F2D",
+        "contrast": 9,
+        "mono": true,
+        "rect": {
+          "x": 162,
+          "y": 352,
+          "w": 825,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-size",
+        "text": "实测 89.7 KB",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#151F2D",
+        "contrast": 9,
+        "mono": false,
+        "rect": {
+          "x": 1087,
+          "y": 319,
+          "w": 102,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-type",
+        "text": "历史归档",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 1003,
+          "y": 539,
+          "w": 62,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      {
+        "sel": ".fv-path",
+        "text": "C:/Users/Administrator/Desktop/Soda ",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": true,
+        "rect": {
+          "x": 1020,
+          "y": 48,
+          "w": 420,
+          "h": 26
+        },
+        "clipX": true,
+        "escX": false
+      },
+      {
+        "sel": ".fvd-row span",
+        "text": "执行者",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1045,
+          "y": 94,
+          "w": 36,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".fvd-row b",
+        "text": "selftest",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E2EAF4",
+        "rawColor": "rgb(226, 234, 244)",
+        "bg": "#0D111A",
+        "contrast": 15.56,
+        "mono": false,
+        "rect": {
+          "x": 1374,
+          "y": 93,
+          "w": 41,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".fvd-row b.warn",
+        "text": "大小不一致（02 需求文档：登记 78.5 KB ≠ 实测 89.7 K",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#0D111A",
+        "contrast": 10.28,
+        "mono": false,
+        "rect": {
+          "x": 1105,
+          "y": 309,
+          "w": 310,
+          "h": 20
+        },
+        "clipX": true,
+        "escX": false
+      },
+      {
+        "sel": ".lf-lines .lf-size",
+        "text": "实测 89.7 KB",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#151F2D",
+        "contrast": 9,
+        "mono": false,
+        "rect": {
+          "x": 1087,
+          "y": 319,
+          "w": 102,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-size.ok",
+        "text": "✓ 384 B",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#151F2D",
+        "contrast": 7.98,
+        "mono": false,
+        "rect": {
+          "x": 1003,
+          "y": 495,
+          "w": 42,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-exec",
+        "text": "selftest",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#151F2D",
+        "contrast": 9,
+        "mono": false,
+        "rect": {
+          "x": 1003,
+          "y": 359,
+          "w": 38,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-exec.na",
+        "text": "—",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#8996A8",
+        "rawColor": "rgb(137, 150, 168)",
+        "bg": "#151F2D",
+        "contrast": 5.52,
+        "mono": false,
+        "rect": {
+          "x": 1003,
+          "y": 517,
+          "w": 12,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      }
+    ]
+  },
+  "stress": {
+    "workbench": {
+      "cases": [
+        {
+          "sel": ".req-item .req-stage",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 136,
+            "h": 18
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".req-item .req-line2",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 195,
+            "h": 80
+          },
+          "clipX": true,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    },
+    "agents": {
+      "cases": [
+        {
+          "sel": ".agent-detail .agent-kv span:last-child",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 965,
+            "h": 18
+          },
+          "clipX": false,
+          "escX": false
+        },
+        {
+          "sel": ".ag-task",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 495,
+            "h": 40
+          },
+          "clipX": false,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    },
+    "skills": {
+      "cases": [
+        {
+          "sel": ".skill-row small",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 643,
+            "h": 18
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".skill-path",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 363,
+            "h": 90
+          },
+          "clipX": false,
+          "escX": false
+        },
+        {
+          "sel": ".skill-path",
+          "kind": "long-mix",
+          "found": true,
+          "rect": {
+            "w": 363,
+            "h": 36
+          },
+          "clipX": false,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    },
+    "files": {
+      "cases": [
+        {
+          "sel": ".library-file .lf-src",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 825,
+            "h": 18
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".fv-path",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 420,
+            "h": 26
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".fv-path",
+          "kind": "long-mix",
+          "found": true,
+          "rect": {
+            "w": 420,
+            "h": 26
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".fvd-row b",
+          "kind": "long-mix",
+          "found": true,
+          "rect": {
+            "w": 322,
+            "h": 20
+          },
+          "clipX": true,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    }
+  },
+  "geom": {
+    "workbench": {
+      "reqItems": [
+        94,
+        76,
+        76,
+        76,
+        76,
+        76,
+        76
+      ],
+      "agentCards": [],
+      "skillRows": [],
+      "fileRows": [],
+      "fileMainW": [],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "agents": {
+      "reqItems": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "agentCards": [
+        18,
+        74,
+        74,
+        74,
+        74
+      ],
+      "skillRows": [],
+      "fileRows": [],
+      "fileMainW": [],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "skills": {
+      "reqItems": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "agentCards": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "skillRows": [
+        124,
+        124,
+        124,
+        124,
+        124,
+        124,
+        124,
+        124,
+        124,
+        124,
+        124,
+        124
+      ],
+      "fileRows": [],
+      "fileMainW": [],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "files": {
+      "reqItems": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "agentCards": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "skillRows": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "fileRows": [
+        80,
+        86,
+        86,
+        86,
+        86,
+        86,
+        104,
+        86,
+        86,
+        86,
+        86,
+        86
+      ],
+      "fileMainW": [
+        825,
+        825,
+        825,
+        825,
+        825,
+        825,
+        825,
+        825,
+        825,
+        825,
+        825,
+        825
+      ],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    }
+  },
+  "workbenchExtra": {
+    "directTextNodes": 0
+  },
+  "geomDiff": {
+    "workbench": {
+      "reqItems": {
+        "base": [
+          94,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76
+        ],
+        "now": [
+          94,
+          76,
+          76,
+          76,
+          76,
+          76,
+          76
+        ],
+        "same": true
+      },
+      "agentCards": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "skillRows": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "fileRows": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "fileMainW": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "pageOverflowX": false
+    },
+    "agents": {
+      "reqItems": {
+        "base": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "now": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "same": true
+      },
+      "agentCards": {
+        "base": [
+          18,
+          74,
+          74,
+          74,
+          74
+        ],
+        "now": [
+          18,
+          74,
+          74,
+          74,
+          74
+        ],
+        "same": true
+      },
+      "skillRows": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "fileRows": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "fileMainW": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "pageOverflowX": false
+    },
+    "skills": {
+      "reqItems": {
+        "base": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "now": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "same": true
+      },
+      "agentCards": {
+        "base": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "now": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "same": true
+      },
+      "skillRows": {
+        "base": [
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124
+        ],
+        "now": [
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124,
+          124
+        ],
+        "same": true
+      },
+      "fileRows": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "fileMainW": {
+        "base": [],
+        "now": [],
+        "same": true
+      },
+      "pageOverflowX": false
+    },
+    "files": {
+      "reqItems": {
+        "base": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "now": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "same": true
+      },
+      "agentCards": {
+        "base": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "now": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "same": true
+      },
+      "skillRows": {
+        "base": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "now": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "same": true
+      },
+      "fileRows": {
+        "base": [
+          80,
+          86,
+          86,
+          86,
+          86,
+          86,
+          104,
+          86,
+          86,
+          86,
+          86,
+          86
+        ],
+        "now": [
+          80,
+          86,
+          86,
+          86,
+          86,
+          86,
+          104,
+          86,
+          86,
+          86,
+          86,
+          86
+        ],
+        "same": true
+      },
+      "fileMainW": {
+        "base": [
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825
+        ],
+        "now": [
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825,
+          825
+        ],
+        "same": true
+      },
+      "pageOverflowX": false
+    }
+  },
+  "shots": [
+    "verify-g01-p1-workbench.png",
+    "verify-g01-p2-agents.png",
+    "verify-g01-p3-skills.png",
+    "verify-g01-p4-files.png"
+  ]
+}

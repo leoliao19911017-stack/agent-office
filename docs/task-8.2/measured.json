@@ -1,0 +1,150 @@
+{
+  "default": {
+    "scrollHeight": 1000,
+    "innerHeight": 1000,
+    "inspectorBottom": 534.171875,
+    "drawerTop": 652,
+    "lastStepBottom": 281.78125,
+    "allLastStepBottom": 563.78125,
+    "frameBottom": 652,
+    "svgs": [
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      }
+    ],
+    "icons": 20
+  },
+  "poll": {
+    "before": {
+      "ui": {
+        "taskId": "OFFICE-V3",
+        "stepKey": "verify",
+        "view": "chain",
+        "search": ""
+      },
+      "open": true,
+      "scroll": [
+        0,
+        0,
+        0
+      ]
+    },
+    "after": {
+      "ui": {
+        "taskId": "OFFICE-V3",
+        "stepKey": "verify",
+        "view": "chain",
+        "search": ""
+      },
+      "open": true,
+      "scroll": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "max": {
+    "scrollHeight": 1000,
+    "innerHeight": 1000,
+    "inspectorBottom": 352.171875,
+    "drawerTop": 372,
+    "lastStepBottom": 65.78125,
+    "allLastStepBottom": 347.78125,
+    "frameBottom": 372,
+    "svgs": [
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      },
+      {
+        "box": "0 0 24 24",
+        "stroke": "1.6px"
+      }
+    ],
+    "icons": 20
+  },
+  "scrolledPoll": {
+    "before": [
+      182,
+      216,
+      252
+    ],
+    "after": [
+      182,
+      216,
+      252
+    ]
+  },
+  "dragHeight": 520,
+  "skills": {
+    "total": 222,
+    "firstPage": 8,
+    "secondPage": "222 条 · 2 / 28\n上一页\n下一页",
+    "renderedAcrossPages": 222
+  },
+  "files": 8,
+  "fileViewer": "# Agent Office 可视化与流程打通\n\n## 原始需求（Leo 原话）\n\n把 Agent Office 做成真正的办公室：7 个 Agent 名称/岗位/头像全部对应；主页像办公室而不像表格；文件管理和 Skill Hub 可用；并跑通完整工作流（需求文档→Ann确认→拆解→Ann确认→开发→测试报告）。\n\n---\n收到时间：2026-11-13T05:27:14.104Z\n",
+  "errors": []
+}

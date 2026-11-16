@@ -1,0 +1,344 @@
+{
+  "fail": [
+    "V2b-1 大小不同→逐条分行（实测 + 02/03 两条登记，无 ×N 合并） :: [\"02 90.8 KB·指纹selftest·02:50 ≠\",\"03 78.5 KB·指纹selftest·02:50 ≠\"]",
+    "V2b-3 分行 title 各带版本与核对结论 :: \"登记 TEST-R11 › 03 开发计划（R11 决策端点自测（一次性，测完即删））\\n原始字节数 80408 B（78.5 KB）\\n版本标识 sha:selftest-placeholder\\n登记时间 2026-11-15T18:50:08.441Z（02:50）\\n实测 103351 B（100.9 KB），与该条登记不一致\\n登记原文只读，不随当前文件元数据更新\"",
+    "V2c-1 字节同值指纹不同→不合并：2 行各 1 条登记、无 ×2 :: [[\"实测 100.9 KB\",\"登记 78.5 KB ×2\"]]",
+    "V2c-2 两行版本身份各自独立（vkey 不同） :: [\"sha:selftest-placeholder\"]",
+    "V2c-3 分行 title 写明各自指纹 :: [\"02 需求文档（TEST-R11） · 02:50 / 03 开发计划（TEST-R11） · 02:50 的版本标识完全一致（80408 B · 内容指纹 s\"]",
+    "V2c-4 数量不变：登记 13=引用 13，组头 2 个产物（2 条登记） :: {\"totalRegs\":13,\"sumRefs\":13,\"title\":\"R11 决策端点自测（一次性，测完即删） · 1 个产物（2 条登记）\"}",
+    "V2c-6 两行均不交叠 :: [0]",
+    "V2-截图 分行态截图已取（f01r9-row-split.png）"
+  ],
+  "v0": {
+    "groupTitle": "R11 决策端点自测（一次性，测完即删） · 1 个产物（2 条登记）",
+    "rowRect": {
+      "x": 109,
+      "y": 400,
+      "w": 579,
+      "h": 84,
+      "l": 109,
+      "right": 688,
+      "top": 400,
+      "bottom": 484
+    },
+    "metaRect": {
+      "x": 478,
+      "y": 411,
+      "w": 190,
+      "h": 62,
+      "l": 478,
+      "right": 668,
+      "top": 411,
+      "bottom": 473
+    },
+    "actionsRect": {
+      "x": 684,
+      "y": 426,
+      "w": 150,
+      "h": 32,
+      "l": 684,
+      "right": 834,
+      "top": 426,
+      "bottom": 458
+    },
+    "mainRect": {
+      "x": 162,
+      "y": 420,
+      "w": 300,
+      "h": 44,
+      "l": 162,
+      "right": 462,
+      "top": 420,
+      "bottom": 464
+    },
+    "linesRect": {
+      "x": 562,
+      "y": 411,
+      "w": 84.4,
+      "h": 40,
+      "l": 562,
+      "right": 646.4,
+      "top": 411,
+      "bottom": 451
+    },
+    "rowStyle": {
+      "backgroundColor": "rgb(24, 34, 48)",
+      "borderTopWidth": "1px",
+      "borderTopColor": "rgb(51, 66, 87)",
+      "borderTopStyle": "solid",
+      "borderRadius": "8px",
+      "minHeight": "68px",
+      "maxHeight": "96px",
+      "height": "84px"
+    },
+    "metaStyle": {
+      "width": "190px",
+      "fontSize": "12px",
+      "lineHeight": "18px",
+      "color": "rgb(163, 176, 191)"
+    },
+    "linesStyle": {
+      "gap": "4px",
+      "rowGap": "4px"
+    },
+    "sizeSpans": [
+      {
+        "text": "实测 100.9 KB",
+        "title": "当前物理文件实测 103351 B",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "rgb(215, 225, 238)"
+      },
+      {
+        "text": "登记 78.5 KB ×2",
+        "title": "02 需求文档（TEST-R11） · 02:50 / 03 开发计划（TEST-R11） · 02:50 的版本标识完全一致（80408 B · 内容指纹 selftest），2 条登记逐条核对为同一历史版本后才合并展示共同登记值并标注登记数量；与实测 103351 B 不一致",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "rgb(215, 225, 238)"
+      }
+    ],
+    "tagText": "大小不一致",
+    "execText": "selftest",
+    "typeText": null,
+    "srcText": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css · 2 处登记",
+    "nameText": "app.css",
+    "titleAttr": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css\nR11 决策端点自测（一次性，测完即删） › 02 需求文档（selftest） · 登记 80408 B · 02:50\nR11 决策端点自测（一次性，测完即删） › 03 开发计划（selftest） · 登记 80408 B · 02:50",
+    "gapMetaToActions": 16,
+    "overlapMetaActions": false,
+    "regs": [
+      {
+        "id": "TEST-R11›doc",
+        "stepNo": 2,
+        "stepName": "需求文档",
+        "taskTitle": "R11 决策端点自测（一次性，测完即删）",
+        "by": "selftest",
+        "at": "2026-11-15T18:50:08.441Z",
+        "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+        "bytes": 80408,
+        "sha256": "selftest-placeholder"
+      },
+      {
+        "id": "TEST-R11›plan",
+        "stepNo": 3,
+        "stepName": "开发计划",
+        "taskTitle": "R11 决策端点自测（一次性，测完即删）",
+        "by": "selftest",
+        "at": "2026-11-15T18:50:08.441Z",
+        "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+        "bytes": 80408,
+        "sha256": "selftest-placeholder"
+      }
+    ],
+    "entityRefs": [
+      {
+        "vk": "sha:selftest-placeholder",
+        "refs": 2
+      }
+    ],
+    "actual": {
+      "exists": true,
+      "bytes": 103351
+    },
+    "totalRegs": 13
+  },
+  "drawer": {
+    "rows": [
+      {
+        "k": "执行者",
+        "v": "selftest"
+      },
+      {
+        "k": "来源类型",
+        "v": "—"
+      },
+      {
+        "k": "登记版本",
+        "v": "02 需求文档：内容指纹 selftest；03 开发计划：内容指纹 selftest"
+      },
+      {
+        "k": "登记路径",
+        "v": "02 需求文档：C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css；03 开发计划：C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css"
+      },
+      {
+        "k": "引用登记",
+        "v": "2 条（同一物理文件同一版本，原始登记均保留）"
+      },
+      {
+        "k": "登记步骤",
+        "v": "R11 决策端点自测（一次性，测完即删） › 02 需求文档；R11 决策端点自测（一次性，测完即删） › 03 开发计划"
+      },
+      {
+        "k": "实测值",
+        "v": "100.9 KB"
+      },
+      {
+        "k": "测量时间",
+        "v": "10:05"
+      },
+      {
+        "k": "登记值",
+        "v": "02 需求文档：78.5 KB（80408 B）；03 开发计划：78.5 KB（80408 B）"
+      },
+      {
+        "k": "登记时间",
+        "v": "02 需求文档：02:50；03 开发计划：02:50"
+      },
+      {
+        "k": "校验状态",
+        "v": "大小不一致（02 需求文档：登记 78.5 KB ≠ 实测 100.9 KB；03 开发计划：登记 78.5 KB ≠ 实测 100.9 KB；2 条登记的版本标识完全一致（内容指纹 selftest），逐条核对确认同一历史版本后才合并展示共同登记值并标注登记数量；每条登记按真实登记ID分别核对，登记原文保留、不自动更新）"
+      }
+    ],
+    "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+    "hidden": false
+  },
+  "inv": {
+    "totalRegs": 13,
+    "sumRefs": 13,
+    "regCount": 2,
+    "entityRefs": [
+      {
+        "vk": "sha:selftest-placeholder",
+        "refs": 2
+      }
+    ],
+    "header": "R11 决策端点自测（一次性，测完即删） · 1 个产物（2 条登记）",
+    "fileCount": "匹配 12 / 12 个产物（13 条登记）"
+  },
+  "apiRegs": [
+    {
+      "id": "TEST-R11›doc",
+      "stepNo": 2,
+      "stepName": "需求文档",
+      "at": "2026-11-15T18:50:08.441Z",
+      "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+      "bytes": 80408,
+      "sha256": "selftest-placeholder"
+    },
+    {
+      "id": "TEST-R11›plan",
+      "stepNo": 3,
+      "stepName": "开发计划",
+      "at": "2026-11-15T18:50:08.441Z",
+      "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+      "bytes": 80408,
+      "sha256": "selftest-placeholder"
+    }
+  ],
+  "v2b": {
+    "h": 96,
+    "maxH": "96px",
+    "lines": [
+      "02 90.8 KB·指纹selftest·02:50 ≠",
+      "03 78.5 KB·指纹selftest·02:50 ≠"
+    ],
+    "titles": [
+      "登记 TEST-R11 › 02 需求文档（R11 决策端点自测（一次性，测完即删））\n原始字节数 93000 B（90.8 KB）\n版本标识 sha:selftest-placeholder\n登记时间 2026-11-15T18:50:08.441Z（02:50）\n实测 103351 B（100.9 KB），与该条登记不一致\n登记原文只读，不随当前文件元数据更新",
+      "登记 TEST-R11 › 03 开发计划（R11 决策端点自测（一次性，测完即删））\n原始字节数 80408 B（78.5 KB）\n版本标识 sha:selftest-placeholder\n登记时间 2026-11-15T18:50:08.441Z（02:50）\n实测 103351 B（100.9 KB），与该条登记不一致\n登记原文只读，不随当前文件元数据更新"
+    ],
+    "overlap": false,
+    "gap": 16,
+    "regs": [
+      "TEST-R11›doc=93000",
+      "TEST-R11›plan=80408"
+    ],
+    "backLines": [
+      "实测 100.9 KB",
+      "登记 78.5 KB ×2"
+    ],
+    "backRegs": [
+      "TEST-R11›doc=80408",
+      "TEST-R11›plan=80408"
+    ]
+  },
+  "v2c": {
+    "title": "R11 决策端点自测（一次性，测完即删） · 1 个产物（2 条登记）",
+    "rows": [
+      {
+        "vkey": "sha:selftest-placeholder",
+        "lines": [
+          "实测 100.9 KB",
+          "登记 78.5 KB ×2"
+        ],
+        "titles": [
+          "当前物理文件实测 103351 B",
+          "02 需求文档（TEST-R11） · 02:50 / 03 开发计划（TEST-R11） · 02:50 的版本标识完全一致（80408 B · 内容指纹 selftest），2 条登记逐条核对为同一历史版本后才合并展示共同登记值并标注登记数量；与实测 103351 B 不一致"
+        ],
+        "h": 0,
+        "overlap": false,
+        "gap": 0
+      }
+    ],
+    "totalRegs": 13,
+    "sumRefs": 13,
+    "backLines": [
+      "实测 100.9 KB",
+      "登记 78.5 KB ×2"
+    ],
+    "backRegs": [
+      "TEST-R11›doc=80408/selftest-placeholder",
+      "TEST-R11›plan=80408/selftest-placeholder"
+    ]
+  },
+  "v3": {
+    "actual": {
+      "exists": true,
+      "bytes": 103469
+    },
+    "regs": [
+      {
+        "id": "TEST-R11›doc",
+        "stepNo": 2,
+        "stepName": "需求文档",
+        "taskTitle": "R11 决策端点自测（一次性，测完即删）",
+        "by": "selftest",
+        "at": "2026-11-15T18:50:08.441Z",
+        "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+        "bytes": 80408,
+        "sha256": "selftest-placeholder"
+      },
+      {
+        "id": "TEST-R11›plan",
+        "stepNo": 3,
+        "stepName": "开发计划",
+        "taskTitle": "R11 决策端点自测（一次性，测完即删）",
+        "by": "selftest",
+        "at": "2026-11-15T18:50:08.441Z",
+        "path": "C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office/web/app.css",
+        "bytes": 80408,
+        "sha256": "selftest-placeholder"
+      }
+    ],
+    "lines": [
+      "实测 101.0 KB",
+      "登记 78.5 KB ×2"
+    ],
+    "api": [
+      {
+        "id": "doc",
+        "bytes": 80408,
+        "sha256": "selftest-placeholder"
+      },
+      {
+        "id": "plan",
+        "bytes": 80408,
+        "sha256": "selftest-placeholder"
+      }
+    ],
+    "expectBytes": 103469,
+    "drawer": {
+      "regVal": "02 需求文档：78.5 KB（80408 B）；03 开发计划：78.5 KB（80408 B）",
+      "ver": "02 需求文档：内容指纹 selftest；03 开发计划：内容指纹 selftest",
+      "act": "101.0 KB"
+    },
+    "back": {
+      "actual": {
+        "exists": true,
+        "bytes": 103351
+      },
+      "lines": [
+        "实测 100.9 KB",
+        "登记 78.5 KB ×2"
+      ]
+    }
+  }
+}

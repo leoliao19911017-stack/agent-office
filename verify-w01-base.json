@@ -1,0 +1,139 @@
+{
+ "base": "http://127.0.0.1:8090",
+ "task": "TEST-R11",
+ "step": "plan",
+ "longNameTest": false,
+ "when": "2026-11-15T20:27:49.158Z",
+ "viewports": [
+  {
+   "viewport": "1440x900",
+   "measure": {
+    "found": true,
+    "fileText": "·app.css87.1 KB · 类型 test-artifact",
+    "fileNameShown": "app.css",
+    "metaShown": "87.1 KB · 类型 test-artifact",
+    "file": {
+     "x": 1231,
+     "y": 291.9,
+     "w": 148,
+     "h": 56,
+     "min-height": "48px",
+     "padding": "8px",
+     "background-color": "rgb(27, 41, 58)",
+     "border": "1px solid rgb(52, 70, 95)",
+     "border-radius": "6px",
+     "border-color": "rgb(52, 70, 95)"
+    },
+    "fn": {
+     "x": 1250.8,
+     "y": 300.9,
+     "w": 119.2,
+     "h": 20,
+     "font-size": "13px",
+     "line-height": "20px",
+     "font-weight": "600",
+     "color": "rgb(241, 236, 226)",
+     "white-space": "nowrap",
+     "text-overflow": "ellipsis",
+     "overflow": "hidden"
+    },
+    "meta": {
+     "x": 1250.8,
+     "y": 322.9,
+     "w": 119.2,
+     "h": 16,
+     "font-size": "11px",
+     "line-height": "16px",
+     "color": "rgb(163, 176, 191)",
+     "white-space": "nowrap",
+     "text-overflow": "ellipsis",
+     "overflow": "hidden"
+    },
+    "txt": {
+     "x": 1250.8,
+     "y": 300.9,
+     "w": 119.2,
+     "h": 38,
+     "flex-direction": "column",
+     "row-gap": "2px",
+     "min-width": "0px"
+    },
+    "fnEllipsized": false,
+    "metaEllipsized": true,
+    "rowsOverlapY": false,
+    "verticalGap": 2,
+    "fileRightVsBodyRight": -70,
+    "inspBodyOverflowX": 0,
+    "inspOverflowX": 0,
+    "docOverflowX": 0,
+    "bodyOverflowX": 0,
+    "gapPx": "2px"
+   }
+  },
+  {
+   "viewport": "1280x800",
+   "measure": {
+    "found": true,
+    "fileText": "·app.css87.1 KB · 类型 test-artifact",
+    "fileNameShown": "app.css",
+    "metaShown": "87.1 KB · 类型 test-artifact",
+    "file": {
+     "x": 1039,
+     "y": 291.9,
+     "w": 180,
+     "h": 56,
+     "min-height": "48px",
+     "padding": "8px",
+     "background-color": "rgb(27, 41, 58)",
+     "border": "1px solid rgb(52, 70, 95)",
+     "border-radius": "6px",
+     "border-color": "rgb(52, 70, 95)"
+    },
+    "fn": {
+     "x": 1058.8,
+     "y": 300.9,
+     "w": 151.2,
+     "h": 20,
+     "font-size": "13px",
+     "line-height": "20px",
+     "font-weight": "600",
+     "color": "rgb(241, 236, 226)",
+     "white-space": "nowrap",
+     "text-overflow": "ellipsis",
+     "overflow": "hidden"
+    },
+    "meta": {
+     "x": 1058.8,
+     "y": 322.9,
+     "w": 151.2,
+     "h": 16,
+     "font-size": "11px",
+     "line-height": "16px",
+     "color": "rgb(163, 176, 191)",
+     "white-space": "nowrap",
+     "text-overflow": "ellipsis",
+     "overflow": "hidden"
+    },
+    "txt": {
+     "x": 1058.8,
+     "y": 300.9,
+     "w": 151.2,
+     "h": 38,
+     "flex-direction": "column",
+     "row-gap": "2px",
+     "min-width": "0px"
+    },
+    "fnEllipsized": false,
+    "metaEllipsized": false,
+    "rowsOverlapY": false,
+    "verticalGap": 2,
+    "fileRightVsBodyRight": -70,
+    "inspBodyOverflowX": 0,
+    "inspOverflowX": 0,
+    "docOverflowX": 0,
+    "bodyOverflowX": 0,
+    "gapPx": "2px"
+   }
+  }
+ ]
+}
