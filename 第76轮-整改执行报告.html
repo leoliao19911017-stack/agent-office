@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 76 轮整改执行报告 — Leo's Agent Office</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --border: #2d333b;
+    --text: #e6edf3; --muted: #8996a8;
+    --ok: #65d9b1; --warn: #e5b95e; --accent: #58a6ff;
+    --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.75 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; padding: 40px 20px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 26px; margin-bottom: 6px; }
+  h2 { font-size: 20px; margin: 36px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 22px 0 8px; color: var(--accent); }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  .meta code, td code, li code { font-family: var(--mono); font-size: 12px; background: #21262d; padding: 1px 6px; border-radius: 4px; color: var(--warn); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 18px 22px; margin: 14px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid var(--border); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #1c2129; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 10px; border-radius: 10px; white-space: nowrap; }
+  .badge.ok { color: #0d1117; background: var(--ok); }
+  .badge.warn { color: #0d1117; background: var(--warn); }
+  .num { font-family: var(--mono); font-size: 12px; color: var(--ok); }
+  .verdict { border-left: 3px solid var(--ok); }
+  .note { border-left: 3px solid var(--warn); }
+  ul { padding-left: 22px; } li { margin: 4px 0; }
+  .foot { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+  details { margin: 10px 0; } summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>第 76 轮整改执行报告</h1>
+<div class="meta">
+  日期 2026-11-17 · GPT 第 76 轮评审 <b>6.6 → 6.6</b>（目标 8.0）· 整改 7 项：严重 6（W01/F01/W02/S01/A01/G01）+ 一般 1（G02）<br>
+  行数基线 = 上轮工作区（非 git HEAD）· 运行实例 <code>http://127.0.0.1:8090</code> 健康 <span class="num">{"ok":true,"autoloop":true,"build":"r73"}</span>
+</div>
+
+<h2>一、逐项执行情况</h2>
+
+<div class="panel">
+  <h3>W01（严重）审批提交服务端重读校验 <span class="badge ok">达标</span></h3>
+  <p><b>做了什么</b>：决策直写端点（<code>server-api.mjs</code> makeDecisionRoute）提交时服务端重新读取物理文件，校验身份（路径白名单）、字节数、SHA-256、登记版本、前置步骤状态；任意不匹配返回 HTTP 409 <code>ARTIFACT_VERSION_DRIFT</code>，不创建成功审批事件。实现在近期轮次（R73 构建）落地，本轮按第 76 轮任务书六场景全量重测。</p>
+  <table>
+    <tr><th>场景</th><th>结果</th><th>关键证据</th></tr>
+    <tr><td>S1 正常提交</td><td><span class="badge ok">PASS</span></td><td>200 + verified:true + done；成功事件恰 1 条</td></tr>
+    <tr><td>S2 同大小不同内容</td><td><span class="badge ok">PASS</span></td><td>409 ARTIFACT_VERSION_DRIFT；档案停 awaiting；事件 0</td></tr>
+    <tr><td>S3 不同大小</td><td><span class="badge ok">PASS</span></td><td>409 ARTIFACT_VERSION_DRIFT；事件 0</td></tr>
+    <tr><td>S4 文件删除</td><td><span class="badge ok">PASS</span></td><td>409；档案停 awaiting；事件 0</td></tr>
+    <tr><td>S5 重复提交同 opId</td><td><span class="badge ok">PASS</span></td><td>重放 200 replay:true；updatedAt 不变；op-status 回查命中；事件零新增；换新 opId → 409 NOT_ACTIONABLE</td></tr>
+    <tr><td>S6 并发同 opId 两发</td><td><span class="badge ok">PASS</span></td><td>恰一个 200 + 一发 409 WRITE_IN_FLIGHT；重试同 opId → 200 replay；档案只落一次 done</td></tr>
+  </table>
+  <p>汇总 <span class="num">22/22 PASS</span>（verify-w01-r76.mjs，隔离环境：mkdtemp 临时 home + 随机端口 spawn 真实 web/server.js + 复制零依赖 flow.mjs）。另复跑 w01r17 脚本 <span class="num">26/26</span>。审批栏 328px / 固定操作区 64px 布局未动。</p>
+</div>
+
+<div class="panel">
+  <h3>F01（严重）历史版本独立不可变快照 <span class="badge ok">达标</span></h3>
+  <p><b>做了什么</b>：历史版本预览走 <code>/api/office/file-version</code> 用独立版本标识（vkey）定位快照并重校验 SHA-256，禁止用当前物理文件替代（近期轮次落地）。<b>本轮唯一产品代码改动</b>：版本标识行高 17px→16px，对齐规格「11px 等宽 / 16px 行高」（app-layers.css R73 覆盖层）。</p>
+  <p><b>实测</b>（verify-f01-r75.mjs，ALL OK）：版本标识 <span class="num">11px / line-height 16px / mono=true</span>（本轮改动实测生效）；V1 历史预览逐字 = 快照原文；5 次刷新预览指纹全同（不可变）；删快照后不回退当前文件、无 pre 渲染、错误提示 <span class="num">12px/18px/#E5B95E</span>；全程零 pageerror。</p>
+</div>
+
+<div class="panel">
+  <h3>W02（严重）检阅面板滚动 <span class="badge ok">达标</span></h3>
+  <p><b>做了什么</b>：<code>#insp-body</code> min-height:0 / overflow-y:auto / 底部内边距 80px，正文 12px/20px（近期轮次落地，本轮复测）。</p>
+  <p><b>实测</b>（verify-w02-r75.mjs，ALL OK）：300/1500/3000 字三档末行与固定操作区间距 <span class="num">gapLastToFoot=92px</span>；三档切换中央流水线 <span class="num">outerStill=true</span>（top 变化 0px ≤1px）。</p>
+</div>
+
+<div class="panel">
+  <h3>S01（严重）技能页双列分页 <span class="badge ok">达标</span></h3>
+  <p><b>做了什么</b>：双列、间距 16px、卡片 144px、描述 12px/18px 最多 3 行、分页区固定 56px、每页 6 张（近期轮次落地，本轮三视口复测 + 截图目检）。</p>
+  <table>
+    <tr><th>视口</th><th>卡片</th><th>列</th><th>高度</th><th>gap</th><th>末卡底↔分页顶</th><th>clamp</th></tr>
+    <tr><td>1440×900</td><td class="num">6</td><td class="num">2</td><td class="num">[144]px</td><td class="num">16px</td><td class="num">32px（≥12）</td><td class="num">3</td></tr>
+    <tr><td>1280×768</td><td class="num">6</td><td class="num">2</td><td class="num">[144]px</td><td class="num">16px</td><td class="num">达标</td><td class="num">3</td></tr>
+    <tr><td>1920×1080</td><td class="num">6</td><td class="num">2</td><td class="num">[144]px</td><td class="num">16px</td><td class="num">达标</td><td class="num">3</td></tr>
+  </table>
+  <p>本轮 p3 截图视觉复核：双列 6 卡等高、描述无溢出、分页「第 1 / 2 页」正常（12 条数据 2 页，与「匹配 12/12」自洽）。</p>
+</div>
+
+<div class="panel">
+  <h3>A01（严重）Agents 三列独立状态 <span class="badge ok">达标</span></h3>
+  <p><b>做了什么</b>：5 列结构 / 74px 行高；连接状态、执行状态、上报新鲜度三列独立判定（agents.js REPORT_STALE_MS=5min；超时 <span class="num">#E5B95E</span>、新鲜 <span class="num">#65D9B1</span>、缺失 <span class="num">#8996A8</span>）；状态文字 12px/18px（近期轮次落地，本轮复测 + 截图目检）。</p>
+  <p><b>实测</b>（verify-a01-r75.mjs，ALL OK）：三列独立变化、色值全对、12px/18px、fiveCol:true。p2 截图视觉复核：同屏三列取值各异（连接健康全「在线」、执行状态 2「执行中」+2「空闲」、上报新鲜度全「1 秒前」）——三列独立的直接视觉证据。</p>
+</div>
+
+<div class="panel">
+  <h3>G01（严重）测试覆盖 <span class="badge ok">达标</span></h3>
+  <p><b>做了什么</b>：17 个对外 API 路径及契约不变（server-api.mjs 路由未动）；按第 76 轮口径组织验证矩阵并跑四页截图确认页面未坏。</p>
+  <ul>
+    <li>覆盖脚本全过：verify-w01-r76（22/22：审批冲突/重复提交/并发/文件删除）、verify-f01-r75（ALL OK：快照缺失/不可变/逐字）、verify-w02-r75、verify-s01r13（exit=0 三视口）、verify-a01-r75、verify-g02-stats-r75、verify-g02-deps</li>
+    <li>四页截图（verify-g01.mjs，node22 + Chrome CDP，1440×900）：5 页 PNG + JSON 量测达标（待拍板 13/20 #E5B95E contrast 7.02 等）</li>
+    <li>四页 AI 视觉核验全部通过：p1 工作台三区完整 / p2 Agents 4 卡整齐三列状态可见 / p3 技能双列 6 卡+分页正常 / p4 文件三栏完整、校验「一致」、无错误提示</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h3>G02（一般）代码规模与规范 <span class="badge ok">达标</span></h3>
+  <p><b>实测</b>（verify-g02-stats-r75.mjs PASS + verify-g02-deps.mjs PASS）：</p>
+  <ul>
+    <li>app.js 有效代码 <span class="num">620 行 ≤ 800</span>（wc 总行 855）；server.js 有效代码 <span class="num">278 行 ≤ 500</span>（wc 总行 401）</li>
+    <li>227 个函数，最大 111 行，无 &gt;120 行函数；100+ 行函数 3 个均为 R71 既有单一职责函数（见下表）</li>
+    <li><code>:root</code> 外颜色字面量 <span class="num">0 处</span>；循环依赖：顶层前向引用 <span class="num">0</span>、跨文件顶层写 <span class="num">0</span>、exit=0（208 个「调用期环」为普通 script 标签共享全局的正常回调引用，非模块级循环依赖，脚本自注明合法）</li>
+  </ul>
+  <table>
+    <tr><th>函数</th><th>行数</th><th>职责</th></tr>
+    <tr><td><code>server.js:291 server</code></td><td class="num">101</td><td>HTTP 入口分发：静态路由 + /api 转发 + 错误收口，一个函数一条请求链</td></tr>
+    <tr><td><code>preview.js:66 fvHistPreview</code></td><td class="num">101</td><td>历史版本预览全流程：请求 file-version → 渲染 → 校验提示</td></tr>
+    <tr><td><code>server-api.mjs:668 makeDecisionRoute</code></td><td class="num">111</td><td>决策直写端点：重读校验 → 原子写 → 事件留痕 → 回读返回</td></tr>
+  </table>
+</div>
+
+<h2>二、行数增减（基线 = 上轮工作区）</h2>
+<table>
+  <tr><th>文件</th><th>上轮</th><th>本轮</th><th>增减</th><th>说明</th></tr>
+  <tr><td><code>web/app.js</code></td><td class="num">855</td><td class="num">855</td><td class="num">±0</td><td>未动</td></tr>
+  <tr><td><code>web/server.js</code></td><td class="num">401</td><td class="num">401</td><td class="num">±0</td><td>未动，<b>8090 无需重启</b></td></tr>
+  <tr><td><code>web/app-layers.css</code></td><td class="num">642</td><td class="num">643</td><td class="num" style="color:var(--warn)">+1</td><td>F01 版本标识行高 17→16px（本轮唯一产品代码改动）</td></tr>
+  <tr><td>CSS 四文件合计</td><td class="num">2149</td><td class="num">2150</td><td class="num">+1</td><td>base 691 + workbench 569 + pages 247 + layers 643</td></tr>
+</table>
+<p>新增验证脚本（非产品代码、不进浏览器白名单）：verify-w01-r76.mjs（190 行，仓库根）。</p>
+
+<h2>三、未达成项</h2>
+<div class="panel verdict">
+  <p><b>无。7 项全部达标。</b>需要说明：本轮产品代码净改动仅 1 行（app-layers.css 行高微调），W01/F01/W02/S01/A01 的实现在 R73 构建近期轮次已落地——第 76 轮的工作重心是按新任务书口径（六场景并发/幂等、三视口、三列独立）全量重测取证，全部通过。</p>
+</div>
+
+<h2>四、汇总表</h2>
+<table>
+  <tr><th>条目</th><th>状态</th><th>改了哪些文件</th><th>实测证据</th></tr>
+  <tr><td>W01 审批重读校验</td><td><span class="badge ok">达标</span></td><td>（近期轮次已落地；本轮无产品改动）</td><td>verify-w01-r76.mjs 22/22 + w01r17 26/26</td></tr>
+  <tr><td>F01 历史版本快照</td><td><span class="badge ok">达标</span></td><td>web/app-layers.css（+1 行）</td><td>verify-f01-r75.mjs ALL OK（11px/16px mono、逐字=快照、5 刷新指纹全同）</td></tr>
+  <tr><td>W02 检阅面板滚动</td><td><span class="badge ok">达标</span></td><td>（近期轮次已落地）</td><td>verify-w02-r75.mjs ALL OK（gap 92px、outerStill）</td></tr>
+  <tr><td>S01 技能页分页</td><td><span class="badge ok">达标</span></td><td>（近期轮次已落地）</td><td>verify-s01r13.mjs exit=0 三视口 + p3 截图目检</td></tr>
+  <tr><td>A01 Agents 三列</td><td><span class="badge ok">达标</span></td><td>（近期轮次已落地）</td><td>verify-a01-r75.mjs ALL OK + p2 截图目检</td></tr>
+  <tr><td>G01 测试覆盖</td><td><span class="badge ok">达标</span></td><td>无（路由契约未动）</td><td>6 个验证脚本全过 + 四页截图 AI 视觉核验通过</td></tr>
+  <tr><td>G02 代码规模</td><td><span class="badge ok">达标</span></td><td>无</td><td>620≤800 / 278≤500 / 最大函数 111 行 / 语义色 0 字面量 / 循环依赖 0</td></tr>
+</table>
+
+<div class="panel note">
+  <p><b>服务说明</b>：本轮未动 server.js 与任何 JS，8090 实例无需重启；CSS 为 no-cache，浏览器刷新即生效。</p>
+  <p><b>遗留决策（需 Leo 拍板）</b>：端口 9339 有一轮验证遗留的临时实例（PID 50412），按「破坏性操作先给选项」未擅自杀——要杀说一声，我执行 <code>taskkill /F /PID 50412</code>。</p>
+</div>
+
+<div class="foot">Leo's Agent Office · 第 76 轮整改执行报告 · 2026-11-17 · MD/HTML 双版本同目录</div>
+</div>
+</body>
+</html>

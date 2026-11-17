@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W01 第 9 轮验收报告：测试例外策略与正式审批校验的隔离验证</title>
+<style>
+  :root { --bg:#161512; --card:#1E1C18; --line:#3A362E; --text:#E8E4DA; --muted:#9B958A; --amber:#E5B95E; --green:#6FD3A0; --red:#E07A6B; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:36px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  h3 { font-size:15px; margin:20px 0 8px; color:var(--amber); }
+  .meta { color:var(--muted); font-size:12.5px; margin-bottom:20px; }
+  .verdict { display:inline-block; background:rgba(111,211,160,.12); color:var(--green); border:1px solid var(--green); border-radius:6px; padding:4px 12px; font-weight:600; margin:8px 0 4px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:16px 20px; margin:12px 0; }
+  code { background:#26231E; border-radius:4px; padding:1px 6px; font:12.5px/1.6 Consolas,monospace; color:#D8C9A3; }
+  pre { background:#211F1A; border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; }
+  pre code { background:none; padding:0; color:#D8C9A3; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#26231E; color:var(--amber); font-weight:600; white-space:nowrap; }
+  td.ok { color:var(--green); font-weight:600; white-space:nowrap; }
+  td.bad { color:var(--red); font-weight:600; white-space:nowrap; }
+  .spec-table td:nth-child(3) { font-family:Consolas,monospace; color:#D8C9A3; }
+  ul { padding-left:22px; } li { margin:5px 0; }
+  .note { border-left:3px solid var(--amber); background:rgba(229,185,94,.07); padding:10px 14px; border-radius:0 6px 6px 0; margin:12px 0; font-size:13px; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; margin:12px 0; }
+  .shots figure { margin:0; }
+  .shots img { width:100%; border:1px solid var(--line); border-radius:8px; display:block; }
+  .shots figcaption { font-size:12px; color:var(--muted); margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>W01 第 9 轮验收报告</h1>
+<div class="meta">测试例外策略与正式审批校验的隔离验证 · 2026-11-16 14:52 · 脚本 <code>verify-w01r9.mjs</code> · 服务 <code>127.0.0.1:8090</code>（r11c）· headless Chrome CDP 1440×900</div>
+<div class="verdict">✓ 43 PASS / 0 FAIL · 全部通过</div>
+
+<h2>一、改了什么（本轮唯一改动）</h2>
+<div class="card">
+<p><code>web/app.css</code> 第 726 行区域——审批面板失败提示 <code>.ip-decide .fb.err</code> 由纯红字改为任务书规格块样式：</p>
+<pre><code>.ip-decide .fb.err {
+  font-size: 12px; line-height: 18px;
+  background: #3B3021; color: #E5B95E;
+  border-radius: 6px; padding: 10px;
+}</code></pre>
+<ul>
+  <li>作用域仅 <code>.ip-decide</code>（审批卡）；<code>fb err</code> 全工程只有 <code>app.js:1253</code> 一处使用，不影响文件大小信息（<code>.ip-file .fb</code>）和 toast。</li>
+  <li><b>未动</b> <code>.material-mismatch</code>：该警示块由并行 W02 第 10 轮任务书持有（现为 #342C20/8px/12px），与本任务书规格（#3B3021/6px/10px）冲突，沿用第 8 轮报告记录<b>待 Leo 仲裁</b>。本轮把规格落在字面意义上的「失败提示」上，避免继续互相覆盖。</li>
+  <li>服务端/前端隔离逻辑前几轮已就位，本轮未改，仅复验。</li>
+</ul>
+</div>
+
+<h2>二、验证了什么（真实输出）</h2>
+
+<h3>2.1 任务书 6 组隔离矩阵（API 响应 ↔ 档案步骤状态）</h3>
+<p>夹具：TEST-W01R9F（正式，kind='plan'）与 TEST-W01R9T（test-any-file，kind='test-artifact'）<b>登记同一个共享文件同一份 bytes=54/sha256</b>，唯一变量是策略声明。</p>
+<table>
+<tr><th>组</th><th>需求</th><th>场景</th><th>version-gate</th><th>decide HTTP</th><th>档案 plan</th></tr>
+<tr><td>1</td><td>正式</td><td>未修改</td><td>valid:true 无漂移</td><td class="ok">200</td><td>done</td></tr>
+<tr><td>2</td><td>正式</td><td>改内容·变字节(54→98)</td><td>valid:false why:<b>bytes</b></td><td class="bad">409</td><td>awaiting</td></tr>
+<tr><td>3</td><td>正式</td><td>改内容·等字节(54=54)</td><td>valid:false why:<b>sha</b></td><td class="bad">409</td><td>awaiting</td></tr>
+<tr><td>4</td><td>测试</td><td>未修改</td><td>valid:true exempt:true</td><td class="ok">200</td><td>done</td></tr>
+<tr><td>5</td><td>测试</td><td>改内容·变字节（同第 2 组漂移）</td><td>valid:true 漂移照报</td><td class="ok">200</td><td>done</td></tr>
+<tr><td>6</td><td>测试</td><td>改内容·等字节</td><td>valid:true why:sha 照报</td><td class="ok">200</td><td>done</td></tr>
+</table>
+<ul>
+  <li>隔离断言：正式需求两个修改场景均被服务端 409 阻止、档案停在 awaiting——<b>例外没有扩大到普通需求</b>。</li>
+  <li>等长改写通过 sha256 内容指纹检出（why:sha），不是只比 KB 大小。</li>
+  <li>R11 真实档案：漂移照报（登记 80408 → 实测 113463，因 app.css 本轮 +7 行）+ versionExempt:true → 200，随后逐字节恢复（sha256 = 基线 <code>0dd1e387…646087</code>）。</li>
+</ul>
+
+<h3>2.2 页面（CDP 实测，三方一致）</h3>
+<div class="card">
+<ul>
+  <li><b>F3 正式流程·页面打开后文件再变化</b>：浏览器内 <code>/api/office/decision</code> 真实 HTTP <b>409</b> → 失败提示出现、无成功提示；备注草稿原样留存；主操作收敛为 disabled + btn-invalid-material；警示块按登记/实测原始字节叙述；档案仍 awaiting；<b>刷新后</b>仍 st-awaiting、警示在、按钮禁用、无假成功。</li>
+  <li><b>T3 测试流程·同样的打开后漂移</b>：例外放行 → HTTP 200 → 页面显示「✓ 已通过」（由服务端 verified 驱动）→ 刷新后 st-done、通过按钮不再渲染。</li>
+  <li><b>R11 现状</b>：证据区可见「· 测试策略 test-any-file 生效（任意登记产物可批）」，警示块尾部「不阻断本测试流程的审批」，主操作可用，页面审批 200。</li>
+</ul>
+</div>
+<div class="shots">
+  <figure><img src="verify-w01r9-F3-after409.png" alt="F3 409 后页面"><figcaption>F3 正式流程 409 后：失败提示（规格样式）+ 警示块 + 按钮禁用 + 草稿留存</figcaption></figure>
+  <figure><img src="verify-w01r9-T3-exception-pass.png" alt="T3 例外放行"><figcaption>T3 测试流程例外放行：✓ 已通过（服务端 verified 驱动）</figcaption></figure>
+  <figure><img src="verify-w01r9-R11-exception.png" alt="R11 例外现状"><figcaption>R11 真实档案：漂移照报 + test-any-file 证据区 + 主操作可用</figcaption></figure>
+</div>
+
+<h3>2.3 失败提示计算样式（getComputedStyle 实测，F3 场景）</h3>
+<table class="spec-table">
+<tr><th>属性</th><th>任务书规格</th><th>实测值</th></tr>
+<tr><td>font-size</td><td>12px</td><td>12px</td></tr>
+<tr><td>line-height</td><td>18px</td><td>18px</td></tr>
+<tr><td>background</td><td>#3B3021</td><td>rgb(59, 48, 33)</td></tr>
+<tr><td>color</td><td>#E5B95E</td><td>rgb(229, 185, 94)</td></tr>
+<tr><td>border-radius</td><td>6px</td><td>6px</td></tr>
+<tr><td>padding</td><td>10px</td><td>10px</td></tr>
+</table>
+<p>元素实测渲染尺寸 244×146 px（1440×900 视口）。</p>
+
+<h2>三、还差什么</h2>
+<div class="note">
+<ol>
+  <li><b>.material-mismatch 规格冲突仍未仲裁</b>：本任务书要求 #3B3021/6px/10px，W02 第 10 轮任务书要求 #342C20/8px/12px（当前磁盘为后者，信息性实测 rgb(52,44,32)/8px/12px）。两轮均如实落自己的规格对象，未再互相覆盖。<b>需要 Leo 拍板最终归属。</b></li>
+  <li>R11 档案的登记 sha256 字段是历史占位值（"selftest"），漂移判定依赖 bytes 比对；若后续要求 R11 也严格 sha 校验，需重新登记（非本轮范围）。</li>
+</ol>
+</div>
+
+<h2>清理确认</h2>
+<p>夹具任务（TEST-W01R9F/T）与共享文件目录已删除；TEST-R11.json 恢复后 sha256 与基线逐字节一致（<code>0dd1e387…646087</code>）。</p>
+
+</div>
+</body>
+</html>

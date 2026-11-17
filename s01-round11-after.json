@@ -1,0 +1,675 @@
+{
+ "phase": "after",
+ "base": "http://127.0.0.1:8090",
+ "when": "2026-11-16T05:33:56.341Z",
+ "viewports": {
+  "1440x900": {
+   "default": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "chinese-documentation",
+       "left": 182,
+       "bottom": 732,
+       "width": 550.5
+      },
+      {
+       "text": "chinese-git-workflow",
+       "left": 748.5,
+       "bottom": 732,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 756,
+      "left": 180,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "24px",
+     "listPaddingBottom": "0px",
+     "cardBottomToLineTop": 24,
+     "lineBottomToControlTop": 12,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 12 页",
+     "btnDisabled": [
+      true,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 180,
+      "y": 726,
+      "width": 1136,
+      "height": 74
+     },
+     "pngW": 1136,
+     "pngH": 74,
+     "lineGroups": [
+      {
+       "y0": 30,
+       "y1": 30,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 43,
+       "y1": 43,
+       "x0": 1068,
+       "x1": 1126,
+       "core": 55,
+       "soft": 59,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "page2": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "doodle-anim",
+       "left": 182,
+       "bottom": 732,
+       "width": 550.5
+      },
+      {
+       "text": "dynamic-art-signature",
+       "left": 748.5,
+       "bottom": 732,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 756,
+      "left": 180,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "24px",
+     "listPaddingBottom": "0px",
+     "cardBottomToLineTop": 24,
+     "lineBottomToControlTop": 12,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 2 / 12 页",
+     "btnDisabled": [
+      false,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 180,
+      "y": 726,
+      "width": 1136,
+      "height": 74
+     },
+     "pngW": 1136,
+     "pngH": 74,
+     "lineGroups": [
+      {
+       "y0": 30,
+       "y1": 30,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 43,
+       "y1": 43,
+       "x0": 9,
+       "x1": 1126,
+       "core": 110,
+       "soft": 118,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilter": {
+    "dom": {
+     "cardCount": 13,
+     "card0": {
+      "border": [
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 1,
+     "lastRow": [
+      {
+       "text": "skillify",
+       "left": 182,
+       "bottom": 732,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": null,
+     "pagRect": {
+      "top": 756,
+      "left": 180,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "24px",
+     "listPaddingBottom": "0px",
+     "cardBottomToLineTop": 24,
+     "lineBottomToControlTop": 12,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 1 页",
+     "btnDisabled": [
+      true,
+      true
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 180,
+      "y": 726,
+      "width": 1136,
+      "height": 74
+     },
+     "pngW": 1136,
+     "pngH": 74,
+     "lineGroups": [
+      {
+       "y0": 30,
+       "y1": 30,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilterChip": {
+    "label": "浏览器",
+    "count": 13
+   }
+  },
+  "1280x800": {
+   "default": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "chinese-documentation",
+       "left": 102,
+       "bottom": 632,
+       "width": 550.5
+      },
+      {
+       "text": "chinese-git-workflow",
+       "left": 668.5,
+       "bottom": 632,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 656,
+      "left": 100,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "24px",
+     "listPaddingBottom": "0px",
+     "cardBottomToLineTop": 24,
+     "lineBottomToControlTop": 12,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 12 页",
+     "btnDisabled": [
+      true,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 100,
+      "y": 626,
+      "width": 1136,
+      "height": 74
+     },
+     "pngW": 1136,
+     "pngH": 74,
+     "lineGroups": [
+      {
+       "y0": 30,
+       "y1": 30,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 43,
+       "y1": 43,
+       "x0": 1068,
+       "x1": 1126,
+       "core": 55,
+       "soft": 59,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "page2": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "doodle-anim",
+       "left": 102,
+       "bottom": 632,
+       "width": 550.5
+      },
+      {
+       "text": "dynamic-art-signature",
+       "left": 668.5,
+       "bottom": 632,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 656,
+      "left": 100,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "24px",
+     "listPaddingBottom": "0px",
+     "cardBottomToLineTop": 24,
+     "lineBottomToControlTop": 12,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 2 / 12 页",
+     "btnDisabled": [
+      false,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 100,
+      "y": 626,
+      "width": 1136,
+      "height": 74
+     },
+     "pngW": 1136,
+     "pngH": 74,
+     "lineGroups": [
+      {
+       "y0": 30,
+       "y1": 30,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 43,
+       "y1": 43,
+       "x0": 9,
+       "x1": 1126,
+       "core": 110,
+       "soft": 118,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilter": {
+    "dom": {
+     "cardCount": 13,
+     "card0": {
+      "border": [
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)",
+       "rgba(0, 0, 0, 0)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 1,
+     "lastRow": [
+      {
+       "text": "skillify",
+       "left": 102,
+       "bottom": 632,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": null,
+     "pagRect": {
+      "top": 656,
+      "left": 100,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "24px",
+     "listPaddingBottom": "0px",
+     "cardBottomToLineTop": 24,
+     "lineBottomToControlTop": 12,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 1 页",
+     "btnDisabled": [
+      true,
+      true
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 100,
+      "y": 626,
+      "width": 1136,
+      "height": 74
+     },
+     "pngW": 1136,
+     "pngH": 74,
+     "lineGroups": [
+      {
+       "y0": 30,
+       "y1": 30,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilterChip": {
+    "label": "浏览器",
+    "count": 13
+   }
+  }
+ },
+ "shots": [
+  "s01-round11-after-1440x900-default.png",
+  "s01-round11-after-1440x900-page2.png",
+  "s01-round11-after-1440x900-oddFilter.png",
+  "s01-round11-after-1280x800-default.png",
+  "s01-round11-after-1280x800-page2.png",
+  "s01-round11-after-1280x800-oddFilter.png"
+ ]
+}

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W02 第 12 轮验证报告｜审批说明压缩与滚动区验证</title>
+<style>
+  :root { --bg:#141922; --card:#1B2330; --line:#2A3546; --text:#E8EDF4; --muted:#91A0B4; --ok:#65D9B1; --warn:#E5B95E; --accent:#7AB8FF; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:36px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); color:var(--accent); }
+  h3 { font-size:14.5px; margin:20px 0 8px; color:var(--text); }
+  .meta { color:var(--muted); font-size:12.5px; margin-bottom:20px; }
+  .meta b { color:var(--text); font-weight:600; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 16px; font-size:12.5px; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#202A3A; color:var(--muted); font-weight:600; white-space:nowrap; }
+  td.num { font-family:Consolas,monospace; white-space:nowrap; }
+  .ok { color:var(--ok); font-weight:600; }
+  .warn { color:var(--warn); font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin:12px 0; }
+  .verdict { background:rgba(101,217,177,.08); border:1px solid rgba(101,217,177,.35); }
+  code { font-family:Consolas,monospace; background:#232D3D; padding:1px 5px; border-radius:4px; font-size:12px; color:#C9D8EC; }
+  ul { margin:8px 0; padding-left:22px; }
+  li { margin:4px 0; }
+  .diff-old { color:var(--muted); text-decoration:line-through; }
+  .diff-new { color:var(--ok); font-weight:600; }
+  .shot { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-top:10px; }
+  .shot figure { margin:0; }
+  .shot img { width:100%; border:1px solid var(--line); border-radius:8px; }
+  .shot figcaption { font-size:11.5px; color:var(--muted); margin-top:5px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>W02 第 12 轮验证报告｜进一步压缩右侧审批说明并验证滚动区域</h1>
+<div class="meta">
+日期 <b>2026-11-16</b> · 分支 <b>master</b>（工作区未提交） · 改动 <b>web/app.css、web/app.js</b> ·
+验证对象 <b>TEST-R11 / plan</b>（policy + 版本漂移的最长面板场景） ·
+探针 <code>w02r12-verify.mjs</code>（headless Chrome + CDP 实测）
+</div>
+
+<h2>一、改了什么（3 处，未动其他功能）</h2>
+<table>
+<tr><th>#</th><th>位置</th><th>改动</th></tr>
+<tr><td>1</td><td><code>app.css:372-376</code></td><td><code>#insp-body</code> padding <span class="diff-old">14px 16px 24px</span> → <span class="diff-new">12px 16px 24px</span>（顶部 14→12，直接改基础规则）</td></tr>
+<tr><td>2</td><td><code>app.css:1832-1850</code>（末尾追加层）</td><td>说明文字五选择器 → <span class="diff-new">12px / 19px / #B8C5D6</span>（源顺序压回 G01 r10 层的 12/18/#B3C0D2）；段落四选择器 <span class="diff-new">margin: 12px 0</span></td></tr>
+<tr><td>3</td><td><code>app.js:1377-1383</code></td><td>删「类型要求」行内 <code>.ev-policy</code> chip；<b>policyNote 成为测试策略唯一说明处</b>（声明+含义+依据全文可见，信息无损）</td></tr>
+</table>
+<p style="font-size:12.5px;color:var(--muted)">滚动链结构（head 48px / body min-height:0 + overflow-y:auto / foot 64px）W01 层已在位，本轮未动；备注草稿持久化（office.notes.v1）原有机制未动。</p>
+
+<h2>二、验证了什么（baseline → after，真实数值）</h2>
+
+<h3>2.1 三视口布局与档位（after 实测）</h3>
+<table>
+<tr><th>指标</th><th>1440×900</th><th>1280×800</th><th>1100×768</th></tr>
+<tr><td>head 高 / foot 高</td><td class="num">48px / 64px</td><td class="num">48px / 64px</td><td class="num">48px / 64px</td></tr>
+<tr><td>foot 可见 / 滚动时钉底</td><td class="ok">true / true</td><td class="ok">true / true</td><td class="ok">true / true</td></tr>
+<tr><td>#insp-body padding</td><td class="num">12/16/24/16</td><td class="num">12/16/24/16</td><td class="num">12/16/24/16</td></tr>
+<tr><td>min-height / overflow-y / overflow-x</td><td class="num">0px / auto / hidden</td><td class="num">0px / auto / hidden</td><td class="num">0px / auto / hidden</td></tr>
+<tr><td>横向溢出</td><td class="ok num">0</td><td class="ok num">0</td><td class="ok num">0</td></tr>
+<tr><td>滚底 maxTop</td><td class="num">561</td><td class="num">661</td><td class="num">693</td></tr>
+<tr><td>滚底最后一块完整可见</td><td class="ok">true</td><td class="ok">true</td><td class="ok">true</td></tr>
+<tr><td>最后一块底边 ↔ foot 顶边</td><td class="ok num">24.3px ≥16</td><td class="ok num">24.3px ≥16</td><td class="ok num">24.3px ≥16</td></tr>
+<tr><td>mm 警示块滚底可读 / 与 foot 重叠</td><td class="ok">true / false</td><td class="ok">true / false</td><td class="ok">true / false</td></tr>
+</table>
+
+<h3>2.2 说明文字档位（policyNote 段实测）</h3>
+<table>
+<tr><th>属性</th><th>baseline</th><th>after</th><th>任务书</th></tr>
+<tr><td>font-size</td><td class="num">12px</td><td class="num">12px</td><td class="ok">12px ✅</td></tr>
+<tr><td>line-height</td><td class="num">18px</td><td class="diff-new num">19px</td><td class="ok">19px ✅</td></tr>
+<tr><td>color</td><td class="num">#B3C0D2</td><td class="diff-new num">rgb(184,197,214) = #B8C5D6</td><td class="ok">#B8C5D6 ✅</td></tr>
+<tr><td>margin-top / bottom</td><td class="num">12px / 12px</td><td class="num">12px / 12px</td><td class="ok">段落间距 12px ✅</td></tr>
+</table>
+
+<h3>2.3 测试策略说明去重（业务信息无损）</h3>
+<table>
+<tr><th>口径</th><th>baseline</th><th>after</th></tr>
+<tr><td>.ev-policy chip 数</td><td class="num">1</td><td class="ok num">0</td></tr>
+<tr><td>policyNote 段数</td><td class="num">1</td><td class="ok num">1（全文保留含依据）</td></tr>
+<tr><td>正文「test-any-file」出现次数</td><td class="num">2（重复）</td><td class="ok num">1</td></tr>
+<tr><td>「类型要求」行</td><td>类型要求plan · 测试策略 test-any-file 生效（…）</td><td class="ok">类型要求plan</td></tr>
+</table>
+<p style="font-size:12.5px;color:var(--muted)">mmNote / mmTail 独有判定口径未动，不删审批证据。</p>
+
+<h3>2.4 连续 10 次硬刷新（1440×900，先填备注）</h3>
+<div class="card">
+<ul>
+<li>10 次 <code>Page.reload{ignoreCache:true}</code>：scrollTop 全 0，<span class="ok">最大偏差 0px</span>（≤2px 达标）</li>
+<li>备注「W02r12-刷新留存验证-…」<span class="ok">逐字保留 10/10</span>；审批按钮 / 任务选中保持 10/10</li>
+<li>滚动位置不跨刷新持久化为<b>有意决策</b>：version-gate（60s TTL）异步到达改变内容高度，恢复值钳位可能偏差 &gt;2px；恒 0 稳定且字面达标</li>
+<li><span class="warn">探针缺陷声明</span>：localStorage 键名误写 <code>office.notes</code>（实为 <code>office.notes.v1</code>，app.js:295）→ lsSaved:false 是探针的坑；备注扛过 10 次硬刷新即持久化生效的行为证据</li>
+</ul>
+</div>
+
+<h3>2.5 3s 轮询滚动稳定（附证）</h3>
+<p>scrollTop=200，10 次采样：tops 全 200，<span class="ok">maxDrift 0px</span>；审批态 / 任务选中全程保持。</p>
+
+<h2>三、还差什么</h2>
+<div class="card">
+<ol>
+<li><b class="warn">C 盘 100% 满（剩 ~224MB / 478GB）</b>。已清自己历轮探针临时 Chrome profile ~3GB（Temp 21G→18G）；Temp 另有 <b>~6GB 非我创建</b>大文件待 Leo 拍板：<code>v16-payload-*</code>（1.3G×2）、<code>v16-stage</code>（1.1G）、<code>dy-upgrade-20261012 / 20261011</code>（879M×2）、<code>dist_0557.tgz</code> + <code>_dist_decoded.gz</code>（~1.4G）。</li>
+<li>滚动位置跨刷新恢复未实现（见 2.4 理由）；需要「刷新后回到原滚动位」请另立任务。</li>
+<li><code>.ev-policy</code> CSS 规则（app.css:1495/:1639）随 chip 删除成死代码，按最小改动原则保留。</li>
+</ol>
+</div>
+
+<h2>滚底截图（after，三视口）</h2>
+<div class="shot">
+<figure><img src="w02r12-after-1440x900-bottom.png" alt="1440x900 滚底"><figcaption>1440×900 滚底（maxTop 561）</figcaption></figure>
+<figure><img src="w02r12-after-1280x800-bottom.png" alt="1280x800 滚底"><figcaption>1280×800 滚底（maxTop 661）</figcaption></figure>
+<figure><img src="w02r12-after-1100x768-bottom.png" alt="1100x768 滚底"><figcaption>1100×768 滚底（maxTop 693）</figcaption></figure>
+</div>
+
+<div class="card verdict">
+<b>结论：</b>任务书全部验收项达标——三视口规则说明可滚动至最后一行且不被固定操作区遮挡（间距 24.3px ≥16px）、档位 12px/19px/#B8C5D6/段落 12px 就位、重复测试策略说明合并为一处且信息无损、10 次刷新滚动偏差 0px 且备注不清空。
+</div>
+
+</div>
+</body>
+</html>

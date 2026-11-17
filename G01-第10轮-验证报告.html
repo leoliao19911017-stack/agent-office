@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G01｜第10轮验证报告：四页辅助文字字号和对比度统一</title>
+<style>
+  :root { --bg:#0D111A; --card:#182230; --line:#334257; --meta:#B3C0D2; --meta-strong:#E2EAF4; --ink:#F1ECE2; --ok:#62C6A0; --warn:#E5B95E; --blue:#6C9EF1; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--meta); font: 14px/22px "Segoe UI", "Microsoft YaHei", sans-serif; padding: 32px 20px 64px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { color: var(--ink); font-size: 22px; line-height: 32px; margin-bottom: 6px; }
+  .sub { color: var(--meta); font-size: 12px; line-height: 18px; margin-bottom: 24px; }
+  .sub code { color: var(--meta-strong); }
+  h2 { color: var(--ink); font-size: 16px; line-height: 24px; margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { color: var(--meta-strong); font-size: 13px; line-height: 20px; margin: 18px 0 8px; }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 10px 0 6px; }
+  th, td { padding: 7px 12px; text-align: left; font-size: 12px; line-height: 18px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--meta-strong); background: #1D2A3B; font-weight: 600; }
+  td { color: var(--meta); }
+  td code { color: var(--meta-strong); font-family: Consolas, "Cascadia Mono", monospace; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  .ok { color: var(--ok); font-weight: 600; }
+  .warn { color: var(--warn); }
+  .note { background: var(--card); border: 1px solid var(--line); border-left: 3px solid var(--blue); border-radius: 6px; padding: 12px 16px; font-size: 12px; line-height: 19px; margin: 12px 0; }
+  .note strong { color: var(--meta-strong); }
+  ul { margin: 8px 0 8px 20px; }
+  li { font-size: 12px; line-height: 20px; margin: 4px 0; }
+  li code { color: var(--meta-strong); font-family: Consolas, monospace; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+  .sw { display: flex; align-items: center; gap: 6px; font-size: 11px; line-height: 16px; color: var(--meta); }
+  .sw i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 10px 16px; margin: 10px 0; }
+  summary { color: var(--meta-strong); font-size: 13px; line-height: 20px; cursor: pointer; }
+  footer { margin-top: 40px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 11px; line-height: 18px; color: #8996A8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>G01｜第10轮验证报告：四页辅助文字字号和对比度统一</h1>
+<p class="sub">日期 2026-11-16 · 改动文件 <code>web/app.css</code>（仅追加 :1732-1766 一个层，35 行，改前备份 <code>web/app.css.bak-g01r10</code>）· 服务 8090 在线实测（build r11c，<code>Network.setCacheDisabled</code> 禁缓存加载）· 探针 <code>g01-round10-probe.mjs</code>（CDP headless Chrome，TreeWalker 全 DOM 文本节点逐个 <code>getComputedStyle</code> + <code>getBoundingClientRect</code>，1440×900 / 1280×800 双视口）</p>
+
+<h2>一、任务口径（档位）</h2>
+<div class="swatches">
+  <span class="sw"><i style="background:#B3C0D2"></i>辅助正文 #B3C0D2</span>
+  <span class="sw"><i style="background:#E2EAF4"></i>重要元数据 #E2EAF4</span>
+  <span class="sw"><i style="background:#0D111A"></i>页面背景 #0D111A</span>
+  <span class="sw"><i style="background:#182230"></i>卡片背景 #182230</span>
+  <span class="sw"><i style="background:#334257"></i>边框 #334257</span>
+</div>
+<table>
+  <tr><th>档</th><th>字号/行高/颜色</th><th>说明</th></tr>
+  <tr><td>辅助正文</td><td>12px / 18px / #B3C0D2</td><td>四页普通辅助文字</td></tr>
+  <tr><td>重要元数据</td><td>13px / 20px / #E2EAF4</td><td>实例标识、状态值、路径色</td></tr>
+  <tr><td>短标签</td><td>11px / 16px</td><td>仅单行短标签，不得用于多行说明</td></tr>
+  <tr><td>文件路径</td><td>12px 等宽 / 18px</td><td>单行截断，保留完整路径查看方式（title/预览抽屉）</td></tr>
+  <tr><td>对比度</td><td>普通文字 ≥ 4.5:1</td><td>页面背景 #0D111A、卡片 #182230、边框 #334257</td></tr>
+</table>
+<div class="note"><strong>补充档（本轮明示）：12px/18px/#E2EAF4 = 高度锁死行内的元数据数值。</strong><code>.lf-lines</code>/<code>.lf-reg</code>/<code>.hf-val</code> 受 F01 r9/r10 的 96px 行高上限 + <code>overflow:hidden</code> 约束，升 13/20 会裁内容（= 新增不可访问截断），且任务同时要求"不得缩小卡片"，故字号保 12/18、仅把颜色统一到 #E2EAF4（重要元数据色）。</div>
+
+<h2>二、改了什么（web/app.css :1732-1766）</h2>
+<table>
+  <tr><th>选择器</th><th>改动</th><th>覆盖关系</th></tr>
+  <tr><td><code>.rail-item</code></td><td>→ 12/18/#B3C0D2</td><td>压 :181（12/19.2/#A3B0BF）；hover/--text、aria-current/--blue 状态规则特异性更高不受影响</td></tr>
+  <tr><td><code>.ss-note</code></td><td>→ 12/18/#B3C0D2</td><td>压 :867（12.5/1.6/#A3B0BF）</td></tr>
+  <tr><td><code>.handoff-file .hf-val</code></td><td>色 → #E2EAF4</td><td>压 :900（#D7E1EE，F01 r4 规格）</td></tr>
+  <tr><td><code>#insp-body .ip-note/.rej-why/.ip-sec .ip-v/.ev-demand/.ev-src</code></td><td>→ 12/18/#B3C0D2</td><td><strong>取代 W02 r10 的 12/19/#B8C5D6</strong>（本轮口径更新，源顺序在后）</td></tr>
+  <tr><td><code>.ip-decide .pre</code></td><td>→ 12/18/#B3C0D2</td><td>压 :716（12/1.7→20.4px/#A3B0BF）</td></tr>
+  <tr><td><code>.ip-file</code>、<code>.ip-file .fm</code>、<code>.ev-file .fm</code></td><td>→ 12/18/#B3C0D2</td><td>压 :392（12.5px）、:944（13/20/#A3B0BF）</td></tr>
+  <tr><td><code>.ip-link .arr</code></td><td>→ 12/18/#B3C0D2</td><td>压 :457/:547（13/20.8/#A3B0BF）</td></tr>
+  <tr><td><code>.ip-link .ls</code></td><td>色 → #E2EAF4（13/20 已有）</td><td>压 :460 基准色；k-done/k-awaiting/k-running/k-failed 状态色特异性更高不受影响</td></tr>
+  <tr><td><code>.skill-path</code> + <code>.skilldetail .skill-path</code></td><td>→ 12/18（色 #E2EAF4 沿用）</td><td><strong>取代 G01 r4 :1607 的 13/20</strong>；:1761 同特异性压回 :1608 的 20px</td></tr>
+  <tr><td><code>.fv-path</code></td><td>→ 12/18（色 #E2EAF4 沿用）</td><td>取代 G01 r4 :1607 的 13/20</td></tr>
+  <tr><td><code>.lf-tag.hist</code></td><td>色 → #B3C0D2</td><td>压 :1376（#B2BFD1，12/18 已有）</td></tr>
+  <tr><td><code>.library-file .lf-lines .lf-size</code></td><td>色 → #E2EAF4</td><td><strong>取代 F01 r4 :1582 的 #D7E1EE</strong>；12/18 不动（96px 预算）</td></tr>
+  <tr><td><code>.library-file .lf-size.lf-reg</code></td><td>色 → #E2EAF4</td><td><strong>取代 F01 r11 :1730 的 #D7E1EE</strong>；12/18 不动</td></tr>
+</table>
+<h3>刻意不动（豁免口径）</h3>
+<ul>
+  <li><code>#fv-body pre</code> 12.5px/1.7 等宽 —— 文件<strong>内容</strong>预览，非辅助文字（G01 r4 :1601 已有豁免先例）</li>
+  <li>表单控件（输入框/下拉/按钮文字）、品牌语义色（状态绿 #62C6A0 / 金 #E5B95E / 蓝 #78A8F5 / 红系）</li>
+  <li><code>.lf-exec.na</code> 的「—」占位 #8996A8（诚实弱化档，对比度 5.34 ≥ 4.5，非真实文字）</li>
+  <li>死代码 <code>.req-prog</code>/<code>.sc-row2</code>（app.js 0 引用）不加规则</li>
+</ul>
+
+<h2>三、改前基线违规（g01-round10-baseline.json，1440×900）</h2>
+<table>
+  <tr><th>页</th><th>违规节点（mark × 数量）</th><th>实测值</th></tr>
+  <tr><td>图1</td><td><code>button.rail-item</code>×4、<code>p.ss-note</code>、<code>span.hf-val</code>×4、<code>i.fm</code>×2、<code>p.ev-src</code>×2、<code>div.ip-v</code>、<code>span.arr</code>×2、<code>span.ls</code>、<code>p.ip-note</code></td><td>12/19.2/#A3B0BF、12.5/20/#A3B0BF、12/18/#D7E1EE、13/20/#A3B0BF、12/19/#B8C5D6、13/20.8/#A3B0BF 等</td></tr>
+  <tr><td>图2</td><td><code>button.rail-item</code>×4</td><td>12/19.2/#A3B0BF</td></tr>
+  <tr><td>图3</td><td><code>button.rail-item</code>×4、<code>p.skill-path</code>（13/20 路径档不符）</td><td>12/19.2/#A3B0BF</td></tr>
+  <tr><td>图4</td><td><code>span.lf-size(.lf-reg)</code>×9 12/18/#D7E1EE、<code>i.lf-tag.hist</code> #B2BFD1、<code>span.lf-exec.na</code>×2「—」、<code>div.fv-path</code> 13/20</td><td>共 12-13 项</td></tr>
+</table>
+
+<h2>四、改后实测抽样（getComputedStyle 真实数值，每页 ≥5）</h2>
+
+<h3>图1 工作台（1440×900）</h3>
+<table>
+  <tr><th>元素</th><th>字号/行高/颜色</th><th>对比度</th></tr>
+  <tr><td><code>.req-stage</code>「02 生产 · 开发计划」</td><td>12/18/#B3C0D2</td><td>7.00</td></tr>
+  <tr><td><code>.req-status.t-awaiting</code>「待拍板」</td><td>13/20/#E5B95E（状态金）</td><td>7.02</td></tr>
+  <tr><td><code>p.ss-note</code>（步骤说明正文）</td><td>12/18/#B3C0D2</td><td>8.69</td></tr>
+  <tr><td><code>span.hf-val</code>「实测 133 B」</td><td>12/18/#E2EAF4（高度锁死数值档）</td><td>13.21</td></tr>
+  <tr><td><code>p.ip-note</code>（右侧说明正文）</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+  <tr><td><code>div.ip-v</code>「selftest」</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+  <tr><td><code>p.ev-src</code>（核对口径正文）</td><td>12/18/#B3C0D2</td><td>8.61</td></tr>
+  <tr><td><code>span.ls.k-done</code>「完成」</td><td>13/20/#62C6A0（状态绿）</td><td>8.48</td></tr>
+  <tr><td><code>button.rail-item</code>「Agents」</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+  <tr><td><code>button.rail-item</code>「工作台」（aria-current 选中态）</td><td>12/18/#6C9EF1（状态蓝，特异性更高不受本轮影响）</td><td>5.73</td></tr>
+</table>
+
+<h3>图2 Agents（1440×900）</h3>
+<table>
+  <tr><th>元素</th><th>字号/行高/颜色</th><th>对比度</th></tr>
+  <tr><td><code>i.ag-ids</code>「lemate·lemate」（实例标识）</td><td>13/20/#E2EAF4 等宽</td><td>15.56</td></tr>
+  <tr><td><code>span.agent-role</code>（名册角色）</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+  <tr><td><code>p.agent-role</code>（明细角色说明）</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+  <tr><td><code>div.agent-kv</code>「角色ID（稳定）」/「lemate」/「实例ID」</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+  <tr><td><code>button.rail-item</code>「Agents」</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+</table>
+
+<h3>图3 技能（1440×900）</h3>
+<table>
+  <tr><th>元素</th><th>字号/行高/颜色</th><th>对比度</th></tr>
+  <tr><td><code>p.skill-path</code>（路径）</td><td>12/18/#E2EAF4 等宽，单行截断</td><td>14.53</td></tr>
+  <tr><td><code>small</code>（技能摘要正文，补测 <code>g01-round10-skillcount.mjs</code>）</td><td>12/18/#B3C0D2</td><td>8.69</td></tr>
+  <tr><td><code>span.sfr-label</code>「用途」/「来源」</td><td>12/18/#B3C0D2</td><td>10.24</td></tr>
+  <tr><td><code>header.page-heading</code> 内「匹配 222 / 222」</td><td>12/18/#B3C0D2</td><td>10.24</td></tr>
+  <tr><td><code>em.sk-cat</code>「类别 浏览器」</td><td>11/16/#B3C0D2（短标签档，单行）</td><td>8.69</td></tr>
+  <tr><td><code>button.rail-item</code>「文件」（未选中）</td><td>12/18/#B3C0D2</td><td>9.56</td></tr>
+</table>
+
+<h3>图4 文件（1440×900，列表 + 预览抽屉）</h3>
+<table>
+  <tr><th>元素</th><th>字号/行高/颜色</th><th>对比度</th></tr>
+  <tr><td><code>span.lf-src</code>（列表路径，等宽截断）</td><td>12/18/#E2EAF4</td><td>13.21</td></tr>
+  <tr><td><code>div.fv-path</code>（抽屉路径，等宽）</td><td>12/18/#E2EAF4</td><td>14.53</td></tr>
+  <tr><td><code>span.lf-size.lf-reg</code>「02 133B·d4ada8·11/15」</td><td>12/18/#E2EAF4（高度锁死数值档）</td><td>13.21</td></tr>
+  <tr><td><code>span.lf-exec</code>「selftest」</td><td>12/18/#B3C0D2</td><td>8.69</td></tr>
+  <tr><td><code>i.lf-type</code>「历史归档」</td><td>12/18/#B3C0D2</td><td>8.69</td></tr>
+  <tr><td><code>i.lf-tag.hist</code>「历史版本」</td><td>12/18/#B3C0D2</td><td>6.76</td></tr>
+  <tr><td><code>div.fvd-row</code>（元数据行）</td><td>12/18/#B3C0D2（标签）/13/20/#E2EAF4（值）</td><td>10.24 / 15.56</td></tr>
+</table>
+
+<h2>五、全量结论（双视口）</h2>
+<table>
+  <tr><th>检查</th><th>1440×900</th><th>1280×800</th></tr>
+  <tr><td>全 DOM 档位审计（6 页态）</td><td>128+60+80+152+135+165 = 720 节点，<span class="ok">0 违规</span></td><td>135+60+80+152+135+165 = 727 节点，<span class="ok">0 违规</span></td></tr>
+  <tr><td>1280 图1 左列表补测（等 DOM 稳定后重测）</td><td>—</td><td>128 节点 <span class="ok">0 违规</span>，req 行高 [76×8] 稳定</td></tr>
+  <tr><td>文本互相重叠（行间 overlap 检查）</td><td class="ok">无</td><td class="ok">无</td></tr>
+  <tr><td>页面横向溢出</td><td class="ok">无</td><td class="ok">无</td></tr>
+  <tr><td>卡片高度 vs 基线</td><td>reqItems/agentCards/skillRows/fileRows/fileMainW <strong>逐项相同</strong></td><td>同左</td></tr>
+  <tr><td>新增截断（clipX/escX 集合 diff 基线）</td><td class="ok">0 新增，0 消失（等宽路径/190px 列按钮的既有省略号原样保留）</td><td>同左</td></tr>
+  <tr><td>最低对比度</td><td>全量最低 <code>span.tn-no</code> 11/16/#8996A8 C=4.73 ≥ 4.5；辅助正文区间 6.76–15.56</td><td>同量级</td></tr>
+</table>
+<p>文件行高预算（F01 r9/r10 的 96px 上限）未破坏：fileRows = [96,80,76,96,68…] 与基线完全一致。</p>
+
+<h2>六、跨任务冲突决策（本轮覆盖，均有注释落在 CSS :1734-1740）</h2>
+<ol>
+  <li><strong>W02 r10</strong>：<code>#insp-body</code> 正文 12/19/#B8C5D6 → 12/18/#B3C0D2（本轮任务口径"普通辅助文字统一"更新之；W02 的 13/20 状态字号规格未动）</li>
+  <li><strong>G01 r4</strong>：<code>.skill-path</code>/<code>.fv-path</code> 13/20 → 12/18（本轮明确"文件路径 12px 等宽"）</li>
+  <li><strong>F01 r4/r11</strong>：数值色 #D7E1EE → #E2EAF4（统一重要元数据色，对比度更高；F01 的 12/18 字号、单行截断、96px 预算、.ok 完成绿全部保留）</li>
+</ol>
+
+<h2>七、证据文件（repo 根目录）</h2>
+<ul>
+  <li><code>g01-round10-probe.mjs</code> / <code>g01-round10-recheck1280.mjs</code> / <code>g01-round10-skillcount.mjs</code>（探针）</li>
+  <li><code>g01-round10-baseline.json</code> / <code>g01-round10-after.json</code>（全量节点数据 + 几何 diff）</li>
+  <li><code>g01-round10-recheck-1280-workbench.json</code>（1280 图1 补测）</li>
+  <li><code>g01-round10-after-{1440x900,1280x800}-p{1..4}-*.png</code>（8 张截图）</li>
+  <li><code>web/app.css.bak-g01r10</code>（改前备份）</li>
+</ul>
+
+<footer>G01 r10 · 验证口径：getComputedStyle / getBoundingClientRect 实测，无估算值 · 2026-11-16</footer>
+</div>
+</body>
+</html>

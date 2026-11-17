@@ -1,0 +1,319 @@
+{
+  "phase": "after",
+  "viewports": {
+    "1440x900": {
+      "cardCount": 20,
+      "countText": "匹配 222 / 222",
+      "first6": [
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 323,
+          "left": 182,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 323,
+          "left": 748.5,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 483,
+          "left": 182,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 483,
+          "left": 748.5,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 643,
+          "left": 182,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 643,
+          "left": 748.5,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        }
+      ],
+      "allHeights": [
+        144
+      ],
+      "list": {
+        "gap": "16px",
+        "cols": 2,
+        "colWidths": [
+          550.5,
+          550.5
+        ]
+      },
+      "summaries": [
+        {
+          "text": "Fast headless browser fo",
+          "lines": 1,
+          "h": 40,
+          "scrollH": 40,
+          "clientH": 40,
+          "clamped": false,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "AI HOT (aihot.virxact.co",
+          "lines": 11,
+          "h": 40,
+          "scrollH": 200,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "漫画：把一篇文章讲的机制做成黑白漫画分镜——你写",
+          "lines": 7,
+          "h": 40,
+          "scrollH": 120,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "文章抓取：把一篇文章转成干净的 Markdown",
+          "lines": 8,
+          "h": 40,
+          "scrollH": 140,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "改写（总结）：把一篇文章读透、重组成一份和风格无",
+          "lines": 9,
+          "h": 40,
+          "scrollH": 160,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "全文翻译：把一篇外文文章（多为英文 X 长文、网",
+          "lines": 8,
+          "h": 40,
+          "scrollH": 140,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        }
+      ],
+      "title0": {
+        "fs": "14px",
+        "lh": "20px",
+        "ws": "nowrap",
+        "lineRects": 1
+      },
+      "gapSummaryToTags": 24,
+      "metaOverlaps": false,
+      "hScroll": false,
+      "docW": 1440,
+      "winW": 1440,
+      "distinctCols": 2
+    },
+    "1280x800": {
+      "cardCount": 20,
+      "countText": "匹配 222 / 222",
+      "first6": [
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 323,
+          "left": 102,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 323,
+          "left": 668.5,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 483,
+          "left": 102,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 483,
+          "left": 668.5,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 643,
+          "left": 102,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        },
+        {
+          "h": 144,
+          "w": 550.5,
+          "top": 643,
+          "left": 668.5,
+          "pad": "16px",
+          "radius": "8px",
+          "bg": "rgb(24, 34, 48)"
+        }
+      ],
+      "allHeights": [
+        144
+      ],
+      "list": {
+        "gap": "16px",
+        "cols": 2,
+        "colWidths": [
+          550.5,
+          550.5
+        ]
+      },
+      "summaries": [
+        {
+          "text": "Fast headless browser fo",
+          "lines": 1,
+          "h": 40,
+          "scrollH": 40,
+          "clientH": 40,
+          "clamped": false,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "AI HOT (aihot.virxact.co",
+          "lines": 11,
+          "h": 40,
+          "scrollH": 200,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "漫画：把一篇文章讲的机制做成黑白漫画分镜——你写",
+          "lines": 7,
+          "h": 40,
+          "scrollH": 120,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "文章抓取：把一篇文章转成干净的 Markdown",
+          "lines": 8,
+          "h": 40,
+          "scrollH": 140,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "改写（总结）：把一篇文章读透、重组成一份和风格无",
+          "lines": 9,
+          "h": 40,
+          "scrollH": 160,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        },
+        {
+          "text": "全文翻译：把一篇外文文章（多为英文 X 长文、网",
+          "lines": 8,
+          "h": 40,
+          "scrollH": 140,
+          "clientH": 40,
+          "clamped": true,
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2"
+        }
+      ],
+      "title0": {
+        "fs": "14px",
+        "lh": "20px",
+        "ws": "nowrap",
+        "lineRects": 1
+      },
+      "gapSummaryToTags": 24,
+      "metaOverlaps": false,
+      "hScroll": false,
+      "docW": 1280,
+      "winW": 1280,
+      "distinctCols": 2
+    }
+  }
+}

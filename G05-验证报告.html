@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G05 验证报告｜四个导航入口的页面切换</title>
+<style>
+  :root { --bg:#0f141b; --card:#161e28; --line:#243040; --txt:#dbe4f0; --meta:#8ba0b8; --blue:#78A9EF; --ok:#4cc38a; --warn:#e5484d; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:1080px; margin:0 auto; padding:32px 24px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:36px 0 12px; border-left:3px solid var(--blue); padding-left:10px; }
+  .meta { color:var(--meta); font-size:12.5px; margin-bottom:20px; }
+  .verdict { background:rgba(76,195,138,.08); border:1px solid var(--ok); border-radius:8px; padding:14px 16px; margin:16px 0; }
+  .verdict b { color:var(--ok); }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--card); color:var(--meta); font-weight:600; white-space:nowrap; }
+  tr:nth-child(even) td { background:rgba(255,255,255,.015); }
+  code { background:#1c2735; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font:12px/1.5 Consolas,monospace; color:#a8c7f0; }
+  .mono { font-family:Consolas,monospace; font-size:12.5px; color:#a8c7f0; }
+  .ok { color:var(--ok); } .warn { color:var(--warn); }
+  ul { margin:8px 0; padding-left:22px; } li { margin:4px 0; }
+  .shot { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:12px; margin:14px 0; }
+  .shot figure { margin:0; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .shot img { width:100%; border-radius:4px; border:1px solid var(--line); }
+  .shot figcaption { font-size:11.5px; color:var(--meta); margin-top:6px; word-break:break-all; }
+  details { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin:10px 0; }
+  summary { cursor:pointer; color:var(--blue); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>G05 验证报告｜恢复四个导航入口的页面切换</h1>
+  <div class="meta">严重程度：致命 ｜ 验证时间：2026-11-16 22:41–23:10 ｜ 环境：http://127.0.0.1:8090（正式口，最终验证轮 PID 3244）+ Playwright 1.65.1 / 系统 Chrome headless 1440×900</div>
+
+  <div class="verdict"><b>✅ 验收通过</b>（65+9+9 项断言全绿，四张截图 sha256 两两不同）。四个导航的路由与切换代码本身无缺陷，<b>本轮对应用代码零改动</b>；「四张截图逐像素相同」的根因是 app.js 被 G04 启动护栏整体中止（模块 404 → 导航处理器从未绑定），两段历史见下。</div>
+
+  <h2>一、根因：不是导航代码，是启动中止</h2>
+  <table>
+    <tr><th>逻辑</th><th>位置</th></tr>
+    <tr><td><code>route()</code> 路由分发（hash→page、容器显隐、aria-current、document.title、renderModules）</td><td class="mono">web/app.js:1243</td></tr>
+    <tr><td><code>window.addEventListener('hashchange', route)</code></td><td class="mono">web/app.js:1255</td></tr>
+    <tr><td>点击委托 <code>routes[b.id]</code>（rail-reqs/agents/skills/files → hash）</td><td class="mono">web/app.js:1310-1311</td></tr>
+    <tr><td>选中态样式（#182230 / 1px #78A9EF / 13px）</td><td class="mono">web/app.css:571</td></tr>
+    <tr><td>备注草稿 decisionNotes / saveNoteDraft / restoreNotes（localStorage <code>office.notes.v1</code>）</td><td class="mono">web/decision-ops.js:21,30,39</td></tr>
+    <tr><td>备注框 #ip-decide-note / #ip-resubmit-note（oninput 即存草稿）</td><td class="mono">web/approval.js:384,136</td></tr>
+  </table>
+  <ul>
+    <li><b>G04 时期（已修复）</b>：老 8090 进程对 G02 拆分脚本返回 404，app.js 顶部 G04 护栏 <code>throw</code> 中止。当日留存的 verify-g01r4-*.png 四张 sha256 完全一致即为该时期产物，G04 轮已修复并重启。</li>
+    <li><b>本轮验证中途（并行会话瞬时态，已自愈）</b>：22:31–22:33 另一会话执行「G02 第4轮拆分」，index.html 新增引用 decision-ops.js / preview.js / agents.js，当时运行中的 8090 老进程（PID 20036）静态白名单不含这三个文件 → 404 → G04 护栏再次中止。实测 pageerror：<span class="mono">[G04] 前端模块加载不完整，app.js 中止执行：decision-ops.js 缺 submitDecision；…</span>。22:41 前后该会话重启 8090（PID 20036→3244），三文件恢复 200。<b>G05 未改动并行会话的任何文件。</b></li>
+  </ul>
+
+  <h2>二、实测结果（getComputedStyle / sha256 真实数值）</h2>
+  <h3>A. 四导航逐个点击（61 PASS / 0 FAIL）</h3>
+  <table>
+    <tr><th>断言</th><th>工作台</th><th>Agents</th><th>技能</th><th>文件</th></tr>
+    <tr><td>hash</td><td class="mono">#/</td><td class="mono">#/agents</td><td class="mono">#/skills</td><td class="mono">#/files</td></tr>
+    <tr><td>document.title</td><td>工作台 · Leo's Agent Office</td><td>Agents · Leo's Agent Office</td><td>技能 · Leo's Agent Office</td><td>文件 · Leo's Agent Office</td></tr>
+    <tr><td>body.dataset.page</td><td>workbench</td><td>agents</td><td>skills</td><td>files</td></tr>
+    <tr><td>aria-current 唯一</td><td>rail-reqs</td><td>rail-agents</td><td>rail-skills</td><td>rail-files</td></tr>
+    <tr><td>页面容器显隐</td><td>仅 workbench 显示</td><td>仅 agents 显示</td><td>仅 skills 显示</td><td>仅 files 显示</td></tr>
+    <tr><td>h1</td><td>—（三栏工作台）</td><td>Agents</td><td>技能</td><td>文件</td></tr>
+    <tr><td>数据行 &gt; 0</td><td>需求 8 条</td><td>Agent 卡片 5 张</td><td>技能行 20 行</td><td>文件行 14 行</td></tr>
+  </table>
+
+  <h3>B. 选中态 / 未选中态（四页全部一致）</h3>
+  <ul>
+    <li>选中：<code>background rgb(24,34,48)</code>（=#182230）、<code>border 1px rgb(120,169,239)</code>（=1px #78A9EF）、<code>font-size 13px</code></li>
+    <li>未选中：<code>background rgba(0,0,0,0)</code>、<code>border rgba(0,0,0,0)</code>、<code>font-size 12px</code></li>
+  </ul>
+
+  <h3>C. 四张截图两两不同（sha256 前 16 位）</h3>
+  <table>
+    <tr><th>截图</th><th>sha256[:16]</th><th>大小</th></tr>
+    <tr><td>g05-shot-1-workbench.png</td><td class="mono">4e22b22771dc2446</td><td>208,397 B</td></tr>
+    <tr><td>g05-shot-2-agents.png</td><td class="mono">88b1c1fbc1237074</td><td>142,970 B</td></tr>
+    <tr><td>g05-shot-3-skills.png</td><td class="mono">5a792c5badb550d1</td><td>159,204 B</td></tr>
+    <tr><td>g05-shot-4-files.png</td><td class="mono">5772390630e35cc5</td><td>155,274 B</td></tr>
+  </table>
+  <details><summary>展开四张验收截图</summary>
+    <div class="shot">
+      <figure><img src="verify-assets/g05/g05-shot-1-workbench.png" alt="工作台"><figcaption>1 工作台 · 4e22b22771dc2446</figcaption></figure>
+      <figure><img src="verify-assets/g05/g05-shot-2-agents.png" alt="Agents"><figcaption>2 Agents · 88b1c1fbc1237074</figcaption></figure>
+      <figure><img src="verify-assets/g05/g05-shot-3-skills.png" alt="技能"><figcaption>3 技能 · 5a792c5badb550d1</figcaption></figure>
+      <figure><img src="verify-assets/g05/g05-shot-4-files.png" alt="文件"><figcaption>4 文件 · 5772390630e35cc5</figcaption></figure>
+    </div>
+  </details>
+
+  <h3>D. 刷新四页：路由 + 选中态保持（4/4 PASS）</h3>
+  <p>每页 reload 后 hash、dataset.page、aria-current 唯一指向均恢复正确。</p>
+
+  <h3>E. 审批备注不因导航/刷新丢失（两条路径均实测）</h3>
+  <ul>
+    <li><b>机制路径</b>：saveNoteDraft('g05-probe-key','G05机制验证值') → 切技能页再回 → decisionNotes.get 逐字保留；reload 后经 restoreNotes 从 localStorage 恢复，逐字保留。</li>
+    <li><b>真实备注框路径</b>（TEST-R11 · plan 步 · awaiting）：#ip-decide-note 输入「G05真实备注框存续测试」（12 字）→ 计数器 12/500 实时更新（草稿已落）→ 切 Agents：#page-workbench.hidden=true 且备注框不可见（DOM 保留正是存续机制）→ 切回工作台：备注<b>逐字保留</b> → <b>reload 后</b>：路由 / 选中任务 TEST-R11 / 备注值<b>逐字恢复</b>（localStorage office.notes.v1）→ 测试草稿已清理。</li>
+  </ul>
+
+  <h3>F. 稳定性</h3>
+  <p>全程 <code>pageerror = 0</code>、<code>console.error = 0</code>（最终正式口轮次）。</p>
+
+  <h2>三、改动清单</h2>
+  <ul>
+    <li><b>应用代码：零改动。</b>G05 所述四导航的事件绑定与视图切换逻辑在现有代码中已完整正确，症状根因（启动中止）已由 G04 轮修复 + 并行会话重启 8090 消除。</li>
+    <li>验收工装（非应用代码）：新增 web/verify-g05.mjs（沿用并修正一处失效选择器 #center-chain .phase → .track-node）；临时验证口 tmp-g05-static.mjs（8091 静态+反代，验证中途 8090 重启窗口期不中断用）已停止并删除。</li>
+    <li>证据归档：verify-assets/g05/（四截图 + 两份最终日志 + 验收脚本副本）。</li>
+  </ul>
+
+  <h2>四、还差什么</h2>
+  <ul>
+    <li>G05 本身：无遗留。</li>
+    <li class="warn">风险提示（不属 G05）：并行会话「G02 第4轮拆分」的验证报告尚未出现；其本轮改动含 server.js 静态白名单——<b>今后再改 server.js 静态映射必须重启 8090 才生效</b>（本次 404 事故即源于此）。</li>
+  </ul>
+</div>
+</body>
+</html>

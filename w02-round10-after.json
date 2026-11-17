@@ -1,0 +1,333 @@
+{
+ "phase": "after",
+ "base": "http://127.0.0.1:8090",
+ "task": "TEST-R11",
+ "step": "plan",
+ "when": "2026-11-16T04:58:50.745Z",
+ "viewports": [
+  {
+   "viewport": "1440x900",
+   "innerWidth": 1440,
+   "innerHeight": 900,
+   "inspector": {
+    "x": 1112,
+    "y": 52,
+    "w": 328,
+    "h": 792,
+    "bottom": 844,
+    "flex-direction": "column",
+    "position": "static"
+   },
+   "head": {
+    "x": 1113,
+    "y": 52,
+    "w": 327,
+    "h": 48,
+    "bottom": 100,
+    "height": "48px",
+    "box-sizing": "border-box"
+   },
+   "body": {
+    "x": 1113,
+    "y": 100,
+    "w": 327,
+    "h": 680,
+    "bottom": 780,
+    "flex-grow": "1",
+    "flex-shrink": "1",
+    "min-height": "0px",
+    "overflow-y": "auto",
+    "overflow-x": "hidden",
+    "padding-bottom": "24px"
+   },
+   "bodyRect": {
+    "x": 1113,
+    "y": 100,
+    "w": 327,
+    "h": 680,
+    "bottom": 780
+   },
+   "foot": {
+    "x": 1113,
+    "y": 780,
+    "w": 327,
+    "h": 64,
+    "bottom": 844,
+    "hiddenAttr": false,
+    "height": "64px",
+    "display": "block",
+    "box-sizing": "border-box"
+   },
+   "footVisibleInView": true,
+   "footPinnedWhileScrolled": true,
+   "bodyOverlapsFoot": false,
+   "scroll": {
+    "scrollHeight": 1285,
+    "clientHeight": 680,
+    "maxTop": 605,
+    "overflowX": 0,
+    "mmReadableAtBottom": true,
+    "mmBottomMinusClientBottom": -444.4,
+    "mmReachableFromTop": true
+   },
+   "evSrc": {
+    "x": 1148,
+    "y": -14.4,
+    "w": 244,
+    "h": 114,
+    "bottom": 99.6,
+    "font-size": "12px",
+    "line-height": "19px",
+    "color": "rgb(184, 197, 214)",
+    "margin-top": "12px",
+    "margin-bottom": "12px"
+   },
+   "evSrcText": "本需求档案声明了测试策略（test-any-file）：任意登记产物均可作为审批对象。依据：R11 决策端点自测档案（verify-r11-ui.mjs 创建，一次性、测完即删）：app.css 仅作决策端点与审批面板的占位产物，非真实开发计划；按测试…",
+   "mm": {
+    "x": 1148,
+    "y": 131.6,
+    "w": 244,
+    "h": 204,
+    "bottom": 335.6,
+    "background-color": "rgb(52, 44, 32)",
+    "color": "rgb(229, 185, 94)",
+    "border-radius": "8px",
+    "padding": "12px",
+    "font-size": "12px",
+    "line-height": "18px",
+    "margin-top": "12px",
+    "margin-bottom": "12px"
+   },
+   "mmText": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· app.css：实测 103.5 KB ≠ 登记 78.5 KB（登记内容指纹 selftest）登记产物为占位产物，文件类型例外与版本变化例外分别判定——上述版本差异照常展示，但不阻断本测试流程的审批（服务端按同一规则放行）。",
+   "chipText": "· 测试策略 test-any-file 生效（任意登记产物可批）",
+   "otherRuleParas": {
+    "font-size": "12px",
+    "line-height": "19px",
+    "color": "rgb(184, 197, 214)"
+   }
+  },
+  {
+   "viewport": "1280x800",
+   "innerWidth": 1280,
+   "innerHeight": 800,
+   "inspector": {
+    "x": 952,
+    "y": 52,
+    "w": 328,
+    "h": 692,
+    "bottom": 744,
+    "flex-direction": "column",
+    "position": "static"
+   },
+   "head": {
+    "x": 953,
+    "y": 52,
+    "w": 327,
+    "h": 48,
+    "bottom": 100,
+    "height": "48px",
+    "box-sizing": "border-box"
+   },
+   "body": {
+    "x": 953,
+    "y": 100,
+    "w": 327,
+    "h": 580,
+    "bottom": 680,
+    "flex-grow": "1",
+    "flex-shrink": "1",
+    "min-height": "0px",
+    "overflow-y": "auto",
+    "overflow-x": "hidden",
+    "padding-bottom": "24px"
+   },
+   "bodyRect": {
+    "x": 953,
+    "y": 100,
+    "w": 327,
+    "h": 580,
+    "bottom": 680
+   },
+   "foot": {
+    "x": 953,
+    "y": 680,
+    "w": 327,
+    "h": 64,
+    "bottom": 744,
+    "hiddenAttr": false,
+    "height": "64px",
+    "display": "block",
+    "box-sizing": "border-box"
+   },
+   "footVisibleInView": true,
+   "footPinnedWhileScrolled": true,
+   "bodyOverlapsFoot": false,
+   "scroll": {
+    "scrollHeight": 1285,
+    "clientHeight": 580,
+    "maxTop": 705,
+    "overflowX": 0,
+    "mmReadableAtBottom": true,
+    "mmBottomMinusClientBottom": -444.4,
+    "mmReachableFromTop": false
+   },
+   "evSrc": {
+    "x": 988,
+    "y": -114.4,
+    "w": 244,
+    "h": 114,
+    "bottom": -0.4,
+    "font-size": "12px",
+    "line-height": "19px",
+    "color": "rgb(184, 197, 214)",
+    "margin-top": "12px",
+    "margin-bottom": "12px"
+   },
+   "evSrcText": "本需求档案声明了测试策略（test-any-file）：任意登记产物均可作为审批对象。依据：R11 决策端点自测档案（verify-r11-ui.mjs 创建，一次性、测完即删）：app.css 仅作决策端点与审批面板的占位产物，非真实开发计划；按测试…",
+   "mm": {
+    "x": 988,
+    "y": 31.6,
+    "w": 244,
+    "h": 204,
+    "bottom": 235.6,
+    "background-color": "rgb(52, 44, 32)",
+    "color": "rgb(229, 185, 94)",
+    "border-radius": "8px",
+    "padding": "12px",
+    "font-size": "12px",
+    "line-height": "18px",
+    "margin-top": "12px",
+    "margin-bottom": "12px"
+   },
+   "mmText": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· app.css：实测 103.5 KB ≠ 登记 78.5 KB（登记内容指纹 selftest）登记产物为占位产物，文件类型例外与版本变化例外分别判定——上述版本差异照常展示，但不阻断本测试流程的审批（服务端按同一规则放行）。",
+   "chipText": "· 测试策略 test-any-file 生效（任意登记产物可批）",
+   "otherRuleParas": {
+    "font-size": "12px",
+    "line-height": "19px",
+    "color": "rgb(184, 197, 214)"
+   }
+  },
+  {
+   "viewport": "1100x768",
+   "innerWidth": 1100,
+   "innerHeight": 768,
+   "inspector": {
+    "x": 772,
+    "y": 52,
+    "w": 328,
+    "h": 660,
+    "bottom": 712,
+    "flex-direction": "column",
+    "position": "static"
+   },
+   "head": {
+    "x": 773,
+    "y": 52,
+    "w": 327,
+    "h": 48,
+    "bottom": 100,
+    "height": "48px",
+    "box-sizing": "border-box"
+   },
+   "body": {
+    "x": 773,
+    "y": 100,
+    "w": 327,
+    "h": 548,
+    "bottom": 648,
+    "flex-grow": "1",
+    "flex-shrink": "1",
+    "min-height": "0px",
+    "overflow-y": "auto",
+    "overflow-x": "hidden",
+    "padding-bottom": "24px"
+   },
+   "bodyRect": {
+    "x": 773,
+    "y": 100,
+    "w": 327,
+    "h": 548,
+    "bottom": 648
+   },
+   "foot": {
+    "x": 773,
+    "y": 648,
+    "w": 327,
+    "h": 64,
+    "bottom": 712,
+    "hiddenAttr": false,
+    "height": "64px",
+    "display": "block",
+    "box-sizing": "border-box"
+   },
+   "footVisibleInView": true,
+   "footPinnedWhileScrolled": true,
+   "bodyOverlapsFoot": false,
+   "scroll": {
+    "scrollHeight": 1285,
+    "clientHeight": 548,
+    "maxTop": 737,
+    "overflowX": 0,
+    "mmReadableAtBottom": true,
+    "mmBottomMinusClientBottom": -444.4,
+    "mmReachableFromTop": false
+   },
+   "evSrc": {
+    "x": 808,
+    "y": -138.4,
+    "w": 244,
+    "h": 114,
+    "bottom": -24.4,
+    "font-size": "12px",
+    "line-height": "19px",
+    "color": "rgb(184, 197, 214)",
+    "margin-top": "12px",
+    "margin-bottom": "12px"
+   },
+   "evSrcText": "本需求档案声明了测试策略（test-any-file）：任意登记产物均可作为审批对象。依据：R11 决策端点自测档案（verify-r11-ui.mjs 创建，一次性、测完即删）：app.css 仅作决策端点与审批面板的占位产物，非真实开发计划；按测试…",
+   "mm": {
+    "x": 808,
+    "y": 7.6,
+    "w": 244,
+    "h": 204,
+    "bottom": 211.6,
+    "background-color": "rgb(52, 44, 32)",
+    "color": "rgb(229, 185, 94)",
+    "border-radius": "8px",
+    "padding": "12px",
+    "font-size": "12px",
+    "line-height": "18px",
+    "margin-top": "12px",
+    "margin-bottom": "12px"
+   },
+   "mmText": "材料与提交登记不一致：审批读取的是当前物理文件，下列材料与提交登记的版本对不上（「登记」是提交时快照，含字节与内容指纹）——· app.css：实测 103.5 KB ≠ 登记 78.5 KB（登记内容指纹 selftest）登记产物为占位产物，文件类型例外与版本变化例外分别判定——上述版本差异照常展示，但不阻断本测试流程的审批（服务端按同一规则放行）。",
+   "chipText": "· 测试策略 test-any-file 生效（任意登记产物可批）",
+   "otherRuleParas": {
+    "font-size": "12px",
+    "line-height": "19px",
+    "color": "rgb(184, 197, 214)"
+   }
+  }
+ ],
+ "poll": {
+  "setTo": 200,
+  "tops": [
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200,
+   200
+  ],
+  "min": 200,
+  "max": 200,
+  "maxDrift": 0,
+  "pollCount": 10,
+  "stillApprovalAll": true,
+  "stillTaskAll": true
+ }
+}

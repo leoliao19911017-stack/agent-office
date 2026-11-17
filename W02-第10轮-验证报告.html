@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W02 第 10 轮验证报告｜右侧审批内容拥挤及滚动遮挡修复</title>
+<style>
+  :root { --bg:#151A23; --card:#1D2532; --line:#344253; --txt:#F1ECE2; --meta:#B3C0D2; --amber:#E5B95E; --green:#62C6A0; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--txt); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:6px; }
+  .sub { color:var(--meta); font-size:13px; margin-bottom:24px; }
+  h2 { font-size:17px; margin:28px 0 12px; padding-left:10px; border-left:3px solid var(--amber); }
+  h3 { font-size:14px; margin:18px 0 8px; color:var(--amber); }
+  ul { padding-left:20px; } li { margin:4px 0; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--card); color:var(--meta); font-weight:600; white-space:nowrap; }
+  tr:nth-child(even) td { background:#19202C; }
+  code { font-family:Cascadia Code,Consolas,monospace; font-size:12px; color:var(--amber); background:#12161F; padding:1px 5px; border-radius:4px; }
+  .ok { color:var(--green); font-weight:600; }
+  .meta { color:var(--meta); }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; margin:10px 0; font-size:13px; }
+  .amber { color:var(--amber); }
+  .files { font-size:12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>W02 第 10 轮验证报告｜右侧审批内容拥挤及滚动遮挡修复</h1>
+  <div class="sub">一般级 · 前 9 轮未彻底修复 · 2026-11-16 · 探针 w02-round10-probe.mjs（CDP 9477 headless Chrome，基线/after 双相位）</div>
+
+  <div class="box">
+    环境：8090（build r11c，静态文件 per-request 读盘，CSS/JS 改动免重启）｜复现数据：TEST-R11 / plan（test-any-file + 登记版本漂移 → 异常块真实渲染）<br>
+    备份：<code>web/app.css.bak-w02r10</code>、<code>web/app.js.bak-w02r10</code>（改动前快照）<br>
+    证据（仓库根）：<code>w02-round10-baseline.json</code>、<code>w02-round10-after.json</code>、6 张截图 <code>w02-round10-{baseline,after}-{1440x900,1280x800,1100x768}-bottom.png</code>
+  </div>
+
+  <h2>一、改了什么（4 处，web/ 两文件）</h2>
+  <h3>app.css（3 处）</h3>
+  <ul>
+    <li><code>#insp-body</code> 底部内边距 20px → <b>24px</b>（:374）。flex:1 / min-height:0 / overflow-y:auto / overflow-x:hidden 为存量已达标项，未动。</li>
+    <li><code>.material-mismatch</code> 统一为规格块（~:1565）：background <b>#342C20</b>、color <b>#E5B95E</b>、border-radius <b>8px</b>、padding <b>12px</b>、font-size 12px、line-height 18px、margin 12px 0；<code>.invalid-material</code> 同规格统一。中央/文件库的 <code>.hf-tag.mism</code>、<code>.lf-tag.mism</code> 是标签不是异常说明块，超出「这一处」范围未动。</li>
+    <li>W01 收口段（~:1685）追加 <code>#insp-body .ev-src</code>，规则正文统一 <b>12px / 19px / #B8C5D6</b>、段落间距 12px。作用域选择器 (1,2,0) 压过 G01 早层；全局 <code>--meta</code>（#B3C0D2）未动，其他页面不受影响。</li>
+  </ul>
+  <h3>app.js（1 处：合并重复说明句）</h3>
+  <ul>
+    <li>~:1392 mmTail 豁免分支改三元：policyNote 已渲染（<code>gate.policy &amp;&amp; gate.expects</code>）时，豁免尾巴去掉重复的「本任务声明的测试策略（test-any-file）已入档：」前缀句；无 expects 边界保留全句；正式（非豁免）分支一字未动。</li>
+  </ul>
+
+  <h2>二、验证了什么（getComputedStyle / getBoundingClientRect 实测）</h2>
+  <h3>1. 样式前后对比（三视口一致）</h3>
+  <table>
+    <tr><th>项</th><th>基线</th><th>改后</th><th>规格</th></tr>
+    <tr><td>#insp-body padding-bottom</td><td>20px</td><td><b>24px</b></td><td class="ok">✅ 24px</td></tr>
+    <tr><td>.ev-src color</td><td>rgb(179,192,210)</td><td><b>rgb(184,197,214)</b> = #B8C5D6</td><td class="ok">✅</td></tr>
+    <tr><td>.ev-src font / line-height</td><td>12px / 18px</td><td>12px / <b>19px</b></td><td class="ok">✅</td></tr>
+    <tr><td>.ev-src margin-top/bottom</td><td>8px / 0px</td><td><b>12px / 12px</b></td><td class="ok">✅ 段落间距 12px</td></tr>
+    <tr><td>.material-mismatch background</td><td>rgb(59,48,33)</td><td><b>rgb(52,44,32)</b> = #342C20</td><td class="ok">✅</td></tr>
+    <tr><td>.material-mismatch color</td><td>rgb(229,185,94) = #E5B95E</td><td>不变</td><td class="ok">✅</td></tr>
+    <tr><td>.material-mismatch border-radius</td><td>6px</td><td><b>8px</b></td><td class="ok">✅</td></tr>
+    <tr><td>.material-mismatch padding</td><td>8px 10px</td><td><b>12px</b></td><td class="ok">✅</td></tr>
+    <tr><td>.material-mismatch margin-top/bottom</td><td>8px</td><td><b>12px</b></td><td class="ok">✅</td></tr>
+  </table>
+
+  <h3>2. 布局与滚动（三视口全过）</h3>
+  <table>
+    <tr><th>视口</th><th>head</th><th>foot</th><th>body 压 foot</th><th>maxTop</th><th>异常块滚到底可读</th><th>横向溢出</th></tr>
+    <tr><td>1440×900</td><td>48px</td><td>64px 可见</td><td>否</td><td>605</td><td class="ok">true</td><td class="ok">0px</td></tr>
+    <tr><td>1280×800</td><td>48px</td><td>64px 可见</td><td>否</td><td>705</td><td class="ok">true</td><td class="ok">0px</td></tr>
+    <tr><td>1100×768</td><td>48px</td><td>64px 可见</td><td>否</td><td>737</td><td class="ok">true</td><td class="ok">0px</td></tr>
+  </table>
+  <ul>
+    <li>异常块起始可达（mmReachableFromTop=true）：滚 mm 顶部对齐 body 顶部可实现。</li>
+    <li>foot 滚动中钉住：footPinnedWhileScrolled=true（滚动前后 foot 底边位移 &lt;0.5px）。</li>
+    <li>顶部 48px / 底部 64px 为存量已达标，本轮实测确认未被破坏。</li>
+  </ul>
+
+  <h3>3. 滚动稳定性（1440×900，scrollTop=200，10 次数据刷新）</h3>
+  <ul>
+    <li>tops：[200 ×10]，maxDrift = <b class="ok">0px</b>（要求 ≤2px）</li>
+    <li>pollCount = 10（10 个不同同步时间戳 = 轮询真实在跑）；stillApprovalAll / stillTaskAll = true</li>
+  </ul>
+
+  <h3>4. 重复句合并 + 内容零裁切</h3>
+  <ul>
+    <li>改后 mmText 中「测试策略（test-any-file）」0 次、「已入档」0 次（基线各重复 1 次）；该信息由 policyNote 段唯一陈述。</li>
+    <li>5 条独有事实全保留：登记产物为占位产物 / 文件类型例外与版本变化例外分别判定 / 版本差异照常展示 / 不阻断本测试流程的审批 / 服务端按同一规则放行。</li>
+    <li>policyNote 段与 chip「· 测试策略 test-any-file 生效（任意登记产物可批）」均在 DOM。</li>
+    <li>零裁切：只改 padding 与合并重复句，未新增 max-height/截断；<code>.material-mismatch</code> 保留 overflow-wrap:anywhere。</li>
+  </ul>
+
+  <h3>5. 目检（analyze_image，底态截图）</h3>
+  <ul>
+    <li>1440×900：底部深色操作条 +「通过计划」「打回」按钮完整可见；异常块在操作条上方完整可读；无横向溢出。</li>
+    <li>1100×768（最小视口）：同上三项确认，异常块下方备注输入框与 0/500 计数完整可见。</li>
+  </ul>
+
+  <h2>三、还差什么</h2>
+  <ul>
+    <li>无未完成项。已知非问题：异常块内「实测 103.5 KB」较基线 103.2 KB 变化，是本轮 CSS 改动物理文件被服务端实时测量所致——TEST-R11 登记版本漂移场景为刻意保留的展示数据，非回归。</li>
+    <li>回滚：<code>cp web/app.css.bak-w02r10 web/app.css &amp;&amp; cp web/app.js.bak-w02r10 web/app.js</code></li>
+  </ul>
+</div>
+</body>
+</html>

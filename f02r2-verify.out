@@ -1,0 +1,77 @@
+== A. API 地面真值 ==
+PASS  A1 F01R10 登记历史版 300B/9490ac36（夹具未动）  | 300B 9490ac36
+PASS  A2 F01R10 登记当前版 124B/f0431173  | 124B f0431173
+PASS  A3 磁盘 fixture-ver.md = 124B/f0431173（API 回 sha256）  | 124B f0431173
+PASS  A4 磁盘 fixture-time.md = 133B/d4ada83b  | 133B d4ada83b
+PASS  A5 F02R2 doc 登记历史版快照留档（len1/sha1 与登记一致）  | 153B 73ed854b hist=1
+PASS  A6 F02R2 plan 登记当前版=磁盘现状  | 145B 1a7caeb2
+PASS  A7 磁盘 fixture-snap.md = len2/sha2（V2 当前内容）  | 145B 1a7caeb2
+PASS  A8 Node 核对：快照原文 sha256 = 登记指纹（夹具自洽）  | node-sha=73ed854b
+PASS  A9 F01R10 旧快照留档与登记指纹不符（15B/≠9490ac36 → 不可用态是唯一诚实答案）  | snap=15B/43615f79 reg=300B/9490ac36
+== B. 点 300B 历史登记 ==
+PASS  B1 版本选择绑定登记ID+指纹（TEST-F01R10›doc · sha:9490ac36）  | TEST-F01R10›doc sha:9490ac3615296…
+PASS  B2 历史行带 lf-hist 类  | lf-size lf-reg lf-hist
+PASS  B3 无 <pre>（不展示文件内容）  | hasPre=false
+PASS  B4 无 V2 当前内容冒充
+PASS  B5 无失配快照冒充（旧快照标签不上屏）
+PASS  B6 提示字号 12px  | 12px
+PASS  B7 提示行高 18px  | 18px
+PASS  B8 提示颜色 #E5B95E  | rgb(229, 185, 94)
+PASS  B9 提示内边距 12px（四边实测）  | 12px/12px/12px/12px
+PASS  B10 登记ID 行 = TEST-F01R10›doc  | TEST-F01R10›doc
+PASS  B11 登记字节行 = 300 B（300 B）  | 300 B（300 B）
+PASS  B12 保存原言行明示快照失配（15B/43615f79 ≠ 9490ac36）  | 有快照留档但核对不上：快照 15 B · 指纹 43615f79 ≠ 登记版本 指纹 9490ac36，不能冒充历史原文，不可预览
+PASS  B13 明示不可预览
+PASS  B14 提示指认磁盘内容属另一条登记（TEST-F01R10›plan）
+PASS  B15 定位入口绑定所选登记（goto=TEST-F01R10|doc）  | TEST-F01R10|doc
+PASS  B16 详情「预览核对」= warn 且明说未预览内容  | warnRows=[预览核对]
+== C. 点 124B 当前登记 ==
+PASS  C1 绑定登记ID+指纹（TEST-F01R10›plan · sha:f0431173）  | TEST-F01R10›plan sha:f043117389651…
+PASS  C2 当前行带 lf-cur 类  | lf-size lf-reg lf-cur
+PASS  C3 预览内容 124 B（与登记一致）  | 实测 124 B
+PASS  C4 预览内容 sha256=f0431173…（与登记一致）  | f0431173896513c5…
+PASS  C5 预览是 V2 当前内容
+PASS  C6 定位入口换成所选登记（goto=TEST-F01R10|plan）  | TEST-F01R10|plan
+PASS  C7 match 分支不加「预览核对」行
+== D. 点 153B 历史登记（快照与登记指纹一致）==
+PASS  D1 绑定登记ID+指纹（TEST-F02R2›doc）  | TEST-F02R2›doc sha:73ed854bb7046…
+PASS  D2 预览=快照原文 153 B（与登记一致）  | 实测 153 B
+PASS  D3 预览 sha256=73ed854b…（指纹核对一致才上屏）  | 73ed854bb7046512…
+PASS  D4 展示的是快照 V1 原文（非磁盘当前内容）
+PASS  D5 提示明说按指纹核对一致后展示历史快照留档
+PASS  D6 提示样式同规格（12px/18px/#E5B95E/内边距 12px）  | 12px/18px/rgb(229, 185, 94)/12px
+PASS  D7 详情「预览核对」非 warn 且明说已展示核对一致的历史原文
+PASS  D8 同路径 145B 当前登记正常预览（145 B/1a7caeb2）  | 实测 145B/1a7caeb2
+== E. 交替切换 10 次 + 刷新 5 次 ==
+PASS  E1 hist 态正确（无 pre、无 V2/失配快照冒充）  | fvHint=hist hasPre=false
+PASS  E2 cur 态正确（内容指纹=所选登记）  | fvHint=null 124B f0431173
+PASS  E3 刷新后 聚合仍 2 物理文件  | rows=2
+PASS  E3 刷新后 历史登记仍 4 条  | regs=4
+PASS  E3 刷新后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  E3 hist 态正确（无 pre、无 V2/失配快照冒充）  | fvHint=hist hasPre=false
+PASS  E4 cur 态正确（内容指纹=所选登记）  | fvHint=null 124B f0431173
+PASS  E5 刷新后 聚合仍 2 物理文件  | rows=2
+PASS  E5 刷新后 历史登记仍 4 条  | regs=4
+PASS  E5 刷新后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  E5 hist 态正确（无 pre、无 V2/失配快照冒充）  | fvHint=hist hasPre=false
+PASS  E6 cur 态正确（内容指纹=所选登记）  | fvHint=null 124B f0431173
+PASS  E7 刷新后 聚合仍 2 物理文件  | rows=2
+PASS  E7 刷新后 历史登记仍 4 条  | regs=4
+PASS  E7 刷新后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  E7 hist 态正确（无 pre、无 V2/失配快照冒充）  | fvHint=hist hasPre=false
+PASS  E8 cur 态正确（内容指纹=所选登记）  | fvHint=null 124B f0431173
+PASS  E9 刷新后 聚合仍 2 物理文件  | rows=2
+PASS  E9 刷新后 历史登记仍 4 条  | regs=4
+PASS  E9 刷新后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  E9 hist 态正确（无 pre、无 V2/失配快照冒充）  | fvHint=hist hasPre=false
+PASS  E10 cur 态正确（内容指纹=所选登记）  | fvHint=null 124B f0431173
+PASS  E-final 刷新后 聚合仍 2 物理文件  | rows=2
+PASS  E-final 刷新后 历史登记仍 4 条  | regs=4
+PASS  E-final 刷新后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  E 计数：切换 10 次、刷新 5 次  | clicks=10 reloads=5
+== F. 版本选择状态色 ==
+PASS  F1 当前版本行 .lf-cur 色 = #65D9B1  | lf-size lf-reg lf-cur rgb(101, 217, 177)
+PASS  F2 历史版本行 .lf-hist 色 = #AFC0D5  | lf-size lf-reg lf-hist rgb(175, 192, 213)
+PASS  G1 全程无页面 JS 异常
+
+结果：69 通过 / 0 失败

@@ -1,0 +1,51 @@
+== A. 4 条登记逐一 file-version（SHA-256+字节复算） ==
+PASS  A0 flow 与夹具登记一致（300B/8243f36a、124B/f0431173、133B×2/d4ada83b）  | doc=300B/8243f36a
+PASS  A1 doc›fixture-ver.md（300B 历史） available:true source=snapshot  | HTTP 200 snapshot
+PASS  A1 doc›fixture-ver.md（300B 历史） 返回内容 SHA-256 = 登记保存值  | 8243f36a35d4… vs 登记 8243f36a35d4…
+PASS  A1 doc›fixture-ver.md（300B 历史） 返回内容字节数 = 登记保存值  | 300 B vs 登记 300 B
+PASS  A1 doc›fixture-ver.md（300B 历史） 内容逐字节 = 快照留档  | 相等=true
+PASS  A2 plan›fixture-ver.md（124B 当前） available:true source=disk-current  | HTTP 200 disk-current
+PASS  A2 plan›fixture-ver.md（124B 当前） 返回内容 SHA-256 = 登记保存值  | f04311738965… vs 登记 f04311738965…
+PASS  A2 plan›fixture-ver.md（124B 当前） 返回内容字节数 = 登记保存值  | 124 B vs 登记 124 B
+PASS  A2 plan›fixture-ver.md（124B 当前） 内容逐字节 = 磁盘现状  | 相等=true
+PASS  A3 doc›fixture-time.md（133B） available:true source=disk-current  | HTTP 200 disk-current
+PASS  A3 doc›fixture-time.md（133B） 返回内容 SHA-256 = 登记保存值  | d4ada83ba873… vs 登记 d4ada83ba873…
+PASS  A3 doc›fixture-time.md（133B） 返回内容字节数 = 登记保存值  | 133 B vs 登记 133 B
+PASS  A3 doc›fixture-time.md（133B） 内容逐字节 = 磁盘现状  | 相等=true
+PASS  A4 plan›fixture-time.md（133B） available:true source=disk-current  | HTTP 200 disk-current
+PASS  A4 plan›fixture-time.md（133B） 返回内容 SHA-256 = 登记保存值  | d4ada83ba873… vs 登记 d4ada83ba873…
+PASS  A4 plan›fixture-time.md（133B） 返回内容字节数 = 登记保存值  | 133 B vs 登记 133 B
+PASS  A4 plan›fixture-time.md（133B） 内容逐字节 = 磁盘现状  | 相等=true
+PASS  A5 vkey 双确认：拿 plan 指纹问 doc 登记 → HTTP 409  | HTTP 409 vkey-mismatch
+PASS  A6 登记不存在 → HTTP 404  | HTTP 404 reg-not-found
+== B. API 新旧交替 20 次 ==
+PASS  B1 API 交替 20 次（10×旧+10×新）全部逐字节一致，无串版  | 20/20
+== C. UI 历史登记预览（hist-saved） ==
+PASS  C1 所点行身份 = TEST-F01R10›doc · sha:8243f36a（行内绑定该登记指纹）  | TEST-F01R10›doc sha:8243f36a35d40a…
+PASS  C2 pre 页内 WebCrypto 实测 = 300B / sha256=8243f36a…（=登记保存指纹）  | 300B 8243f36a35d4…
+PASS  C3 pre 内容逐字节 = 快照留档原文（而非磁盘当前 124B 文件）  | 相等=true
+PASS  C4 提示明示来源：服务端+页内双重核对一致
+== D. UI 新旧交替 20 轮 ×2 击 ==
+PASS  D1 UI 交替 20 轮（40 击）：每次 pre 逐字节 = 所点版本（旧 300B/8243f36a，新 124B/f0431173）  | 20/20 轮
+== E. 同会话删快照 → 明确失败 ==
+PASS  E0 删前：同条登记 hist-saved 成功（300B 快照上屏）
+PASS  E1 删快照后 API → available:false reason=no-snapshot（不回内容）  | HTTP 200 no-snapshot text=undefined
+PASS  E2 同会话再点 → data-fv-hint=hist、无 <pre>（明确失败，非缓存旧成功）  | hint=hist pre=false
+PASS  E3 正文无当前文件内容（不冒充）、无旧快照内容（不上屏）  | 含V2=false 含快照正文=false
+PASS  E4 服务端核对行 = no-snapshot  | file-version：不可用（no-snapshot）
+PASS  E5 保存原文行明示服务端实测无留档  | 未保存——服务端实测该登记已无保存原文或快照留档，历史原文不可预览
+PASS  E6 登记身份仍 = TEST-F01R10›doc（登记未丢）  | TEST-F01R10›doc
+PASS  E7 .fv-hint 样式 = 12px / 18px / #E5B95E  | {"f":"12px","l":"18px","c":"rgb(229, 185, 94)"}
+PASS  E7 .fv-hint 内边距 12px 四边（背景 #3B3021）  | 12px/12px/12px/12px bg=rgb(59, 48, 33)
+== F. 删除后刷新重进 ==
+PASS  F1 刷新(ignoreCache)后仍明确失败：hist、无 pre、无 V2 冒充  | hint=hist
+PASS  F2 .fv-hint 样式 = 12px / 18px / #E5B95E  | {"f":"12px","l":"18px","c":"rgb(229, 185, 94)"}
+PASS  F2 .fv-hint 内边距 12px 四边（背景 #3B3021）  | 12px/12px/12px/12px bg=rgb(59, 48, 33)
+== G. 恢复快照 ==
+PASS  F3 删快照后（删的是快照不是登记） 聚合 = 2 物理文件 / 4 条登记（登记不因物理去重丢失）  | rows=2 regs=4｜F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  G1 恢复后 hist-saved 复原：pre=300B/8243f36a 且逐字节=快照  | 300B 8243f36a
+PASS  G3 TEST-F01R10.json 逐字节还原（=重建版）
+PASS  G4 页面 JS 异常 = 0  | 0
+PASS  G2 终态 聚合 = 2 物理文件 / 4 条登记（登记不因物理去重丢失）  | rows=2 regs=4｜F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+
+总计: 42 PASS / 0 FAIL

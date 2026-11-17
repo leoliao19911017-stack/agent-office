@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G02 第 5 轮验证报告 — CSS 变量化 + 拆分</title>
+<style>
+  :root { --bg:#0d111a; --card:#161d29; --line:#253044; --ink:#d6e0ed; --muted:#8b99ad; --ok:#65d9b1; --amber:#e5b95e; --link:#78a9ef; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { font-size:22px; border-bottom:1px solid var(--line); padding-bottom:12px; }
+  h2 { font-size:17px; color:var(--link); margin-top:32px; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--card); color:var(--muted); font-weight:600; white-space:nowrap; }
+  code { background:var(--card); padding:1px 6px; border-radius:4px; font-size:12.5px; color:var(--ok); }
+  .verdict { background:#15271f; border:1px solid #24503f; color:var(--ok); padding:12px 16px; border-radius:8px; margin:16px 0; }
+  .warn { background:#2a2317; border:1px solid #5a4a26; color:var(--amber); padding:12px 16px; border-radius:8px; margin:16px 0; }
+  .muted { color:var(--muted); }
+  li { margin:4px 0; }
+</style>
+</head>
+<body><div class="wrap">
+<h1>G02 第 5 轮验证报告 — CSS 颜色变量化 + app.css 按职责拆分</h1>
+<p class="muted">2026-11-17 · 任务书条目 G02（一般级）第 5 轮</p>
+
+<div class="verdict">结论：<b>完成</b>。静态结构、受控色快照、四页 DOM 断言三路证据闭环；回归门禁 G07 19/19、g02-flows + server-core 18/18 全过。</div>
+
+<h2>一、改动清单（7 处）</h2>
+<table>
+<tr><th>#</th><th>文件</th><th>改动</th></tr>
+<tr><td>1</td><td><code>web/app.css</code></td><td>删除（2073 行，CRLF）。拆为 4 文件：app-base 687 / app-workbench 561 / app-pages 247 / app-layers 590 行（LF，全部 ≤800）。加载顺序即覆盖顺序 base→workbench→pages→layers</td></tr>
+<tr><td>2</td><td>4 CSS 内容</td><td>11 种高频硬编码色 167 处 → <code>var()</code>：新增 <code>--meta #B3C0D2 / --meta-strong #D6E0ED / --meta-hi #E2EAF4 / --meta-num #D7E1EE / --amber-bg #3B3021 / --ok #65D9B1</code> 六变量 + 复用既有 <code>--amber/--muted/--card/--faint/--bg</code>；:1527/:1877 散置 <code>:root</code> 覆盖块删除、值前移文件头；残留 11 色各 1 处全在 app-base.css <code>:root</code> 定义行</td></tr>
+<tr><td>3</td><td><code>web/index.html</code></td><td>单 link 换 4 link（行 8-12）</td></tr>
+<tr><td>4</td><td><code>web/server.js</code></td><td>STATIC_APP 白名单换 4 CSS（13 文件）；AGENT_AUTOLOOP_HOME 读取 4→1 常量；任务档案路径 6 处拼接→<code>taskFileOf()</code>；BUILD_VERSION r11d→r71</td></tr>
+<tr><td>5</td><td><code>web/app.js</code></td><td>全局 click 委托回调（约 130 行）拆出 <code>handleAction(el,pop)</code>；1375→1380 行</td></tr>
+<tr><td>6</td><td>测试夹具引用跟随</td><td><code>test/g07-harness.mjs</code> REAL_FILE、<code>test/g07-routes.test.js</code> 3 处、<code>test/g02-flows.test.js</code> 5 处：app.css → app-base.css</td></tr>
+<tr><td>7</td><td><b>server.js 缺陷修复</b></td><td>r5 收口时 <code>taskFileOf</code> 误写成自递归 <code>(taskId) =&gt; taskFileOf(taskId)</code>——读任务档案的路由全部栈溢出（500/404）。已修为真实 join 拼接 + 第 6 处（:978）一并收口</td></tr>
+</table>
+<p class="muted">一次性脚本：scripts/g02-css-split.mjs（拆分）、g02-css-snapshot.mjs（色快照）、g02-r5-domcheck.mjs（DOM 断言）、g02-r5-screens.mjs（四页截图）。</p>
+
+<h2>二、三路验证证据</h2>
+<h3>1. 静态结构</h3>
+<ul>
+<li>四文件括号平衡：{} 342/276/92/208</li>
+<li>行数 687/561/247/590，全部 ≤800 上限</li>
+<li>11 色 var() 替换 167 处，残留各 1 处 = 变量定义行（正确终态）</li>
+</ul>
+<h3>2. 动态受控色快照（1440×900 四页 8 属性 getComputedStyle）</h3>
+<ul>
+<li>拆分前后共有元素<b>计算色 100% 一致</b>，仅 link 元素 +3/页（预期）</li>
+<li>终态 2178 条，10 条非 link 差异全归因 app.css 历史登记 miss 翻转（数据层现象非样式回归）</li>
+</ul>
+<h3>3. 四页 DOM 断言（g02-r5-domcheck.mjs）</h3>
+<ul>
+<li>4 CSS 全加载（cssRules 可读）：324/261/89/205 条规则，合计 879</li>
+<li>容器真实渲染：工作台 8 卡 / Agents 5 卡 / 技能 20 项 / 文件 4 组</li>
+<li>body 背景 rgb(13,17,26) = <code>--bg</code> 变量生效；截图 verify-assets/g02/screenshot-p1..p4.png</li>
+</ul>
+
+<h2>三、回归门禁（修复 taskFileOf 后实测）</h2>
+<table>
+<tr><th>套件</th><th>结果</th><th>耗时</th><th>日志</th></tr>
+<tr><td>G07 五文件（A/B/C/R/D 全类）</td><td><b>19/19 pass, 0 fail</b></td><td>21.4s</td><td>verify-assets/g07-r71-run3.log</td></tr>
+<tr><td>g02-flows + g02-server-core</td><td><b>18/18 pass, 0 fail</b></td><td>—</td><td>verify-assets/g02-r5-g0xflows.log</td></tr>
+</table>
+<p>过程如实记录：复跑第一次 28 失败（夹具 ENOENT，改动 6 修复）；第二次 11 失败（500/404/超时，根因即改动 7 自递归）；routes 单文件 3/3 定位根因，修后全量 19/19。19 用例 ≥ 任务书 16 场景门禁。</p>
+
+<h2>四、行数前后对比</h2>
+<table>
+<tr><th>文件</th><th>前</th><th>后</th></tr>
+<tr><td>app.js</td><td>1375</td><td>1380（+5）</td></tr>
+<tr><td>app.css</td><td>2073</td><td><b>0</b>（拆四文件 687+561+247+590=2085）</td></tr>
+<tr><td>server.js</td><td>1145</td><td>1150（+5）</td></tr>
+<tr><td>files.js</td><td>467</td><td>467（不变）</td></tr>
+</table>
+
+<h2>五、需要 Leo 决策</h2>
+<div class="warn">
+<ol>
+<li><b>重启 8090</b>：server.js 改了 STATIC_APP 白名单/常量/BUILD_VERSION r71，现役进程仍是旧 build r11d——旧白名单对新 4 CSS 返回 404，重启前正式口页面无样式。按约定不自行杀进程，等你拍板。</li>
+<li>本轮全部改动未 commit，随整批待定。</li>
+</ol>
+</div>
+</div></body>
+</html>

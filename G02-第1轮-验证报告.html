@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G02｜拆分超长JS函数并建立核心逻辑回归测试 — 第1轮验证报告</title>
+<style>
+  :root{
+    --bg:#0f1521;--panel:#161e2e;--panel2:#1c2739;--line:#2a3750;
+    --txt:#f1ece2;--dim:#9aa7bd;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--accent:#7dd3fc;
+    --mono:"Cascadia Code","Consolas","JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:14px/1.75 "Segoe UI","Microsoft YaHei",sans-serif;padding:32px 16px 64px}
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:24px;margin-bottom:6px}
+  h2{font-size:19px;margin:40px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:15.5px;margin:24px 0 10px;color:var(--accent)}
+  .meta{color:var(--dim);font-size:13px;margin-bottom:18px}
+  .meta b{color:var(--txt)}
+  .verdict{background:linear-gradient(135deg,#14532d,#166534);border:1px solid #16a34a;border-radius:10px;padding:14px 20px;margin:18px 0;font-size:15px}
+  .verdict .big{font-size:18px;font-weight:700}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);color:var(--dim);font-weight:600;white-space:nowrap}
+  td{background:var(--panel)}
+  td code,li code,p code{font-family:var(--mono);font-size:12.5px;background:#0b111c;border:1px solid var(--line);border-radius:4px;padding:1px 6px;color:#a5d6ff}
+  pre{background:#0b111c;border:1px solid var(--line);border-radius:8px;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.7;overflow-x:auto;margin:12px 0;color:#c9d6ea}
+  pre .ok{color:var(--ok)}pre .bad{color:var(--bad)}pre .dim{color:var(--dim)}
+  ul,ol{padding-left:24px;margin:8px 0}
+  li{margin:4px 0}
+  .pill{display:inline-block;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:600;vertical-align:1px}
+  .pill.ok{background:#052e16;color:var(--ok);border:1px solid #16a34a}
+  .pill.warn{background:#422006;color:var(--warn);border:1px solid #d97706}
+  .note{background:var(--panel);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:12px 16px;margin:12px 0;color:var(--dim);font-size:13px}
+  .shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin:14px 0}
+  .shots figure{background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .shots img{width:100%;display:block}
+  .shots figcaption{padding:8px 12px;font-size:12.5px;color:var(--dim)}
+  .decide{background:#1e1b4b;border:1px solid #4338ca;border-radius:10px;padding:14px 20px;margin:14px 0}
+  .decide h3{margin-top:0;color:#a5b4fc}
+  footer{margin-top:48px;color:var(--dim);font-size:12px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>G02｜拆分超长 JS 函数并建立核心逻辑回归测试 — 第 1 轮验证报告</h1>
+<div class="meta">
+  日期 <b>2026-11-16</b> ｜ 严重程度 <b style="color:var(--bad)">严重</b> ｜ 范围 <b>仅 G02</b>：图1 审批渲染、图4 文件库渲染（<code>web/</code>），不改现有 API、DOM 行为、业务状态模型
+</div>
+
+<div class="verdict">
+  <span class="big">✅ 结论：通过</span><br>
+  四个验收维度全部达标：静态统计 exit=0 ／ 39 个新回归用例全过 ／ 17 条 API 结构零变化 ／ 四页截图回归无异常。
+</div>
+
+<h2>一、改了什么</h2>
+
+<h3>1. 模块拆分 <span class="pill ok">app.js 3388 → 2121 行 · server.js 1547 → 1127 行</span></h3>
+<p>前端沿用经典 <code>&lt;script&gt;</code> 顺序加载（非 ES modules，file:// 场景无模块），按 index.html 加载顺序拆出四个模块，共享同一全局词法环境：</p>
+
+<table>
+<tr><th>新文件</th><th>行数</th><th>职责</th><th>关键函数</th></tr>
+<tr><td><code>web/shared.js</code></td><td>223</td><td>共享工具</td><td><code>esc</code> <code>fmtBytes</code> <code>fmtTime</code> <code>ago</code> <code>api</code> <code>physKey</code> <code>versionKeyOf</code> <code>taskStatus</code> 等 18 个</td></tr>
+<tr><td><code>web/version.js</code></td><td>235</td><td>版本校验</td><td><code>dedupFiles</code> <code>buildFileEntities</code> <code>entityCheckState</code> <code>fvVersionGate</code> <code>resolveFileReg</code> <code>scheduleVersionGate</code> 等 12 个</td></tr>
+<tr><td><code>web/approval.js</code></td><td>689</td><td>审批视图</td><td><code>decideHtml</code>(93行) <code>submitDecision</code>(80行) <code>reconcilePendingDecision</code>(56行) <code>applyDecisionOutcome</code> <code>renderDecisionPop</code> 等 25 个</td></tr>
+<tr><td><code>web/files.js</code></td><td>431</td><td>文件视图</td><td><code>fileButton</code>(75行) <code>renderFiles</code>(39行) <code>physButton</code>(62行) <code>fileSourceSemantics</code> <code>fileGroupsHtml</code> 等 31 个</td></tr>
+<tr><td><code>web/server-core.mjs</code></td><td>459</td><td>服务端核心（server.js 拆出）</td><td><code>computeDecisions</code> <code>execFlowWriteAndVerify</code> <code>artifactVersionGateOf</code> <code>approvalFilesOfRec</code> <code>createDecisionCore</code> 等 24 个导出</td></tr>
+</table>
+
+<ul>
+  <li><code>index.html</code> 加载顺序：<code>offline-snapshot.js → shared.js → version.js → approval.js → files.js → app.js</code></li>
+  <li>拆分保真：逐函数搬运核对（19 项一致性检查脚本 exit=0），不是表面剪切</li>
+  <li>回滚点：<code>web/app.js.bak-g02</code>、<code>web/server.js.bak-g02</code>、<code>web/index.html.bak-g02</code></li>
+</ul>
+
+<h3>2. 回归测试 <span class="pill ok">4 文件 + 1 vm 装载器 · 39 个用例</span></h3>
+<table>
+<tr><th>文件</th><th>行数</th><th>用例</th><th>覆盖</th></tr>
+<tr><td><code>test/g02-approval.test.js</code></td><td>243</td><td>16</td><td>审批成功 / 失败 / 重复提交锁 / 打回 / 弹层 / 结果归位 / outcome 应用</td></tr>
+<tr><td><code>test/g02-version.test.js</code></td><td>184</td><td>7</td><td>物理键归一 / 版本键 / 去重合并 / 实体构建 / 六态校验 / 版本门禁 / 登记解析</td></tr>
+<tr><td><code>test/g02-files.test.js</code></td><td>19</td><td>1</td><td>文件来源语义五分支（含历史归档）</td></tr>
+<tr><td><code>test/g02-server-core.test.js</code></td><td>482</td><td>15</td><td>决策分诊 / 写回五结论 / 审批对象 / 文件收集 / 版本门禁 / 防御臂</td></tr>
+<tr><td><code>test-support/g02-vm.mjs</code></td><td>95</td><td>—</td><td>node:vm 复刻浏览器全局环境与 index.html 装载顺序（置于 test/ 外防误收集）</td></tr>
+</table>
+<p>浏览器四模块是普通 <code>&lt;script&gt;</code> 共享全局，测试用 <code>node:vm</code> 同一 context 按真实顺序装载；app.js 拥有、被拆出模块调用期取用的状态以桩提供（口径见 g02-vm.mjs 注释）。</p>
+
+<h3>3. 唯一 disclosed 构建配置改动</h3>
+<p><code>package.json</code> 测试脚本一行：<code>"test": "node --no-warnings --test test/"</code>（使 <code>npm test</code> 收集 test/ 目录）。其余功能代码零改动。</p>
+
+<h2>二、验证了什么（真实输出）</h2>
+
+<h3>1. 静态统计 <span class="pill ok">verify-g02-stats.mjs 在 web/ 下运行 · exit=0</span></h3>
+<pre>app.js: 2121 行 / 上限 2200 <span class="ok">✅</span>
+server.js: 1127 行 / 上限 1200 <span class="ok">✅</span>
+decideHtml: 93 行（approval.js:298-390）≤100 <span class="ok">✅</span>
+fileButton: 75 行（files.js:160-234）≤100 <span class="ok">✅</span>
+renderFiles: 39 行（files.js:315-353）≤100 <span class="ok">✅</span>
+<span class="ok">✅ 静态统计通过：入口行数达标，110 个函数全部 ≤100 行</span></pre>
+
+<h3>2. 测试 <span class="pill ok">最终 npm test · 2026-11-16</span></h3>
+<pre># tests 48
+# pass 39
+# fail 9
+# duration_ms 508.0073</pre>
+<ul>
+  <li><b>39/39 G02 用例全过</b>：approval 16 + version 7 + files 1 + server-core 15</li>
+  <li>9 个失败全部是<b>既有</b>环境问题（<code>No such built-in module: node:sqlite</code>）：仓库 engines 要求 Node ≥22.5.0，本机 v20.19.2，与 G02 无关，拆分前同样失败</li>
+  <li>覆盖率（server-core.mjs）：<b>行 100.00% / 分支 92.34% / 函数 100.00%</b>，满足「核心模块分支 ≥90%」</li>
+  <li>诚实声明：浏览器四模块经 vm 字符串装载，c8/内置覆盖率无法归因到源文件，其行为回归由 24 个 vm 用例保证（断言真实运行产物），不是覆盖率数字</li>
+</ul>
+
+<h3>3. API 响应结构 <span class="pill ok">17 条路由逐一 curl 实测</span></h3>
+<table>
+<tr><th>路由</th><th>实测</th></tr>
+<tr><td>GET /api/health</td><td>200 <code>{ok,autoloop,build}</code></td></tr>
+<tr><td>GET /api/state</td><td>200 <code>{seq,now,timezone,spending,totals,cards,recentCards,timers,sources,lines,pauses,skipped,elsewhere,agents,channels,runs,hasMore,nextBefore,unrouted}</code></td></tr>
+<tr><td>GET /api/office/hermes</td><td>200 <code>{generatedAt,agents}</code></td></tr>
+<tr><td>GET /api/office/files</td><td>200 <code>{generatedAt,tasks,readError}</code></td></tr>
+<tr><td>GET /api/office/skills</td><td>200 <code>{generatedAt,roots,skills,readError}</code></td></tr>
+<tr><td>GET /api/office/flow</td><td>200 <code>{generatedAt,tasks,errors}</code></td></tr>
+<tr><td>GET /api/office/decisions</td><td>200 <code>{generatedAt,items,blocked,rejected,errors}</code></td></tr>
+<tr><td>GET /api/office/op-status</td><td>200 <code>{found}</code></td></tr>
+<tr><td>GET file / file-version / file-download（缺参）</td><td>400 <code>{error,code}</code></td></tr>
+<tr><td>POST /api/office/file-check</td><td>200 <code>{results}</code>（纯 statSync 只读）</td></tr>
+<tr><td>POST /api/office/version-gate（TEST-F01R10/doc 有效调用）</td><td>200 <code>{src:'own',valid:true,drifted:1,versionExempt:true}</code></td></tr>
+<tr><td>POST file-revalidate / decide / resubmit / decision（空体）</td><td>400 <code>{error,code}</code></td></tr>
+</table>
+<p>16 条既有路由结构零变化（新增 0、删除 0、改参 0）；op-status 为本轮前已存在的第 17 条，一并核验。</p>
+
+<h3>4. 服务与四页截图回归</h3>
+<p><b>8090 无需重启</b>：运行中实例（PID 20036，<code>node server.js</code>）启动于 2026-11-16 20:24:31，晚于 server.js（20:08:07）与 server-core.mjs（19:55:46）的最后修改——已在跑拆分后代码。files.js（20:32:10）是浏览器侧静态文件，按请求从磁盘直出，vm 测试 + 截图已验证。重启是破坏性操作，留给 Leo 拍板。</p>
+
+<p><b>playwright-core 无头 Chrome 1600×900，四页各截图，每页 console/pageerror 均为 0 条</b>（p1 另有复测图，共 6 张 PNG 于 <code>g02-shots/</code>）。实测样式数值（getBoundingClientRect / getComputedStyle）：</p>
+<table>
+<tr><th>对象</th><th>实测值</th></tr>
+<tr><td>左侧导航</td><td>x0 y52 56×792，bg <code>rgb(18,25,37)</code>，display flex</td></tr>
+<tr><td>body 字体</td><td><code>"Segoe UI","Microsoft YaHei"</code> 13px，色 <code>rgb(241,236,226)</code></td></tr>
+<tr><td>p1 工作台中央栏</td><td>x304 y52 968×792，flex-direction column，overflow-y auto</td></tr>
+<tr><td>p4 文件页主区</td><td>x56 y52 1544×792；28 个按钮；首按钮 65×32 @ (1397,336)，display block，font-size 13px，text-align center，cursor pointer，border-radius 0px</td></tr>
+<tr><td>前端模块哨兵</td><td><code>modErr</code> 键为 <code>[]</code>（5 个数据通道全部 ok）</td></tr>
+</table>
+
+<div class="shots">
+  <figure><img src="g02-shots/p1-workbench.png" alt="p1 工作台"><figcaption>p1 工作台</figcaption></figure>
+  <figure><img src="g02-shots/p2-agents.png" alt="p2 Agents"><figcaption>p2 Agents</figcaption></figure>
+  <figure><img src="g02-shots/p3-skills.png" alt="p3 技能"><figcaption>p3 技能</figcaption></figure>
+  <figure><img src="g02-shots/p4-files.png" alt="p4 文件"><figcaption>p4 文件</figcaption></figure>
+</div>
+
+<p><b>四页视觉核验</b>（截图送图像模型描述复核，均无 undefined / NaN / 空白 / 错位 / 加载失败）：</p>
+<ul>
+  <li><b>p1 工作台</b>：需求卡片 8 张带 待拍板/进行中/已交付 标签与进度条；中央 TEST-F01R10 七步流程 01→07、当前步 03 高亮、产物实测/登记字节数并列；右侧 STEP 03 待确认面板含「通过计划/打回」；状态栏「API 连接正常」</li>
+  <li><b>p4 文件</b>：匹配 14/14 产物（17 条登记），按需求分组可折叠；条目含路径、登记次数、哈希短码 ✓/≠ 校验、历史归档标签；app.css「大小不一致」为业务态提示非渲染错误</li>
+  <li><b>p2 Agents</b>：4 个一线 Agent 状态表 + 3 张统计卡（中台 7 / 一线 4 / 在线 4）；个别「未知/—」是数据缺失的正常展示</li>
+  <li><b>p3 技能</b>：222/222 两列卡片网格，筛选标签、分页 1/12 正常</li>
+</ul>
+
+<h2>三、还差什么</h2>
+<ol>
+  <li><b>分支覆盖率的口径限制</b>（诚实声明）：92.34% 分支覆盖仅对 server-core.mjs 量化成立；浏览器四模块无归因覆盖率，靠 24 个 vm 行为用例兜底。若要量化前端模块覆盖率需引入 Playwright+c8 级联改造，超出 G02 范围</li>
+  <li><b>9 个既有测试失败</b>：Node v20.19.2 无 <code>node:sqlite</code>，需升级 Node ≥22.5.0 才能跑通，与本任务无关</li>
+</ol>
+
+<div class="decide">
+  <h3>待 Leo 决策</h3>
+  <ol>
+    <li>是否仍要重启 8090（技术上不需要，现实例已运行拆分后代码）</li>
+    <li>临时产物去留：<code>web/tmp-g02-*.mjs</code>（API 检查/截图脚本）、<code>web/verify-g02-stats.mjs</code>（可留作常态静态检查）、<code>g02-shots/</code>（6 张截图）、三个 <code>.bak-g02</code> 回滚备份</li>
+    <li>是否提交（未收到提交指令，未做任何 git 写操作）</li>
+  </ol>
+</div>
+
+<footer>G02 第 1 轮验证报告 · 2026-11-16 · 生成于本地 Claude Code 会话 · 数据均为当日实测</footer>
+</div>
+</body>
+</html>

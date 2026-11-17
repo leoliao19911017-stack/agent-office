@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W01 第 15 轮验证报告 — 审批校验验收</title>
+<style>
+  :root { --ink:#1f2430; --sub:#5b6472; --line:#e3e6ec; --ok:#1a7f4e; --bad:#b3452e; --hl:#E5B95E; --hlbg:#3B3021; --code:#f5f3ee; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:#fafafa; }
+  .wrap { max-width:980px; margin:0 auto; padding:40px 28px 72px; }
+  h1 { font-size:24px; margin:0 0 6px; }
+  h2 { font-size:18px; margin:40px 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); }
+  h3 { font-size:15px; margin:24px 0 8px; }
+  .meta { color:var(--sub); font-size:13px; }
+  .meta b { color:var(--ink); }
+  .banner { margin:18px 0; padding:14px 18px; border-radius:10px; background:#e8f4ec; color:var(--ok); font-weight:600; }
+  .warn { margin:18px 0; padding:14px 18px; border-radius:10px; background:#fdf3e4; color:#8a6215; }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:14px; background:#fff; }
+  th,td { border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top; }
+  th { background:#f0f2f6; font-weight:600; white-space:nowrap; }
+  code { background:var(--code); padding:1px 6px; border-radius:4px; font-size:13px; font-family:Consolas,"Courier New",monospace; }
+  .pass { color:var(--ok); font-weight:600; }
+  ul { padding-left:22px; } li { margin:4px 0; }
+  .fb-demo { font-size:12px; line-height:18px; background:var(--hlbg); color:var(--hl); border-radius:6px; padding:12px; max-width:560px; }
+  details { margin:10px 0; } summary { cursor:pointer; font-weight:600; }
+  pre { background:#14181f; color:#d6deeb; padding:14px 16px; border-radius:8px; overflow:auto; font-size:12.5px; line-height:1.6; }
+  footer { margin-top:56px; color:var(--sub); font-size:12px; border-top:1px solid var(--line); padding-top:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>W01 第 15 轮验证报告 — 审批校验验收（页面恢复后复核）</h1>
+  <p class="meta">
+    任务：<b>W01｜恢复页面后重新完成审批校验验收</b>（严重） · 日期：<b>2026-11-16</b> ·
+    服务：<code>http://127.0.0.1:8090</code>（build r11d） ·
+    脚本：<code>verify-w01r15.mjs</code>（35 项检查）+ 探针 <code>w01r15-probe.mjs</code>
+  </p>
+  <div class="banner">结果：35 / 35 PASS · TEST-R11 档案按基线 sha256 恢复 · 一次性夹具全部清理</div>
+
+  <h2>一、任务书症状核实：「右侧审批内容完全没有渲染」不属实</h2>
+  <p>headless Chrome（CDP 直连）实测当前页面：</p>
+  <ul>
+    <li>模块全部加载：<code>esc / api / scheduleVersionGate / decideHtml / renderFiles</code> 全为 <code>function</code></li>
+    <li><code>__uiErrors = 0</code>，CDP 捕获 JS 异常 0 条</li>
+    <li>需求列表渲染 8~11 条；选 TEST-R11/plan 后右侧面板 body 3345 字符、审批按钮可用、<code>.material-mismatch</code> 在位</li>
+  </ul>
+  <p>本轮未发现任何渲染缺陷，未做渲染侧修改。</p>
+
+  <h2>二、改了什么（唯一代码改动）</h2>
+  <p><code>web/app.css</code> 的 <code>.ip-decide .fb.err</code>（审批失败反馈）：<code>padding: 10px → 12px</code>，并补注释说明规格来源。其余规格值实测原本已达标，未动。</p>
+  <ul>
+    <li>备份：<code>web/app.css.bak-w01r15</code></li>
+    <li>未改任何 JS / 服务端 / 其他功能</li>
+  </ul>
+  <p>失败反馈实际渲染效果（即任务书规格）：</p>
+  <div class="fb-demo">本步骤「开发计划」的审批对象与提交登记版本不一致（w01r15-shared.md：实测内容指纹与登记 sha256 不一致）。正式流程按提交登记的版本审批……</div>
+
+  <h2>三、验证了什么（真实输出）</h2>
+
+  <h3>3.1 页面样式实测（getComputedStyle / getBoundingClientRect）</h3>
+  <table>
+    <tr><th>项</th><th>规格值</th><th>实测值</th></tr>
+    <tr><td>font-size</td><td>12px</td><td><code>12px</code></td></tr>
+    <tr><td>line-height</td><td>18px</td><td><code>18px</code></td></tr>
+    <tr><td>background</td><td>#3B3021</td><td><code>rgb(59, 48, 33)</code></td></tr>
+    <tr><td>color</td><td>#E5B95E</td><td><code>rgb(229, 185, 94)</code></td></tr>
+    <tr><td>padding</td><td>12px</td><td><code>12px</code>（本轮改动项）</td></tr>
+    <tr><td>getBoundingClientRect</td><td>—</td><td>244 × 168 px</td></tr>
+  </table>
+
+  <h3>3.2 任务书五个场景</h3>
+  <table>
+    <tr><th>场景</th><th>操作</th><th>结果</th></tr>
+    <tr><td><b>S1 正常审批</b><br>（正式 F1）</td><td>POST /api/office/decision</td><td class="pass">200 verified:true to:done；档案 done；事件恰好 +1 条 written(from awaiting)</td></tr>
+    <tr><td rowspan="3"><b>S2 文件内容变更</b><br>（正式 F2）</td><td>变字节 81B→104B 后审批</td><td class="pass">409 ARTIFACT_VERSION_DRIFT，gate why:"bytes"（reg 81 / act 104）</td></tr>
+    <tr><td>等字节改内容后审批</td><td class="pass">409，why:"sha"（内容指纹不漏检）</td></tr>
+    <tr><td>失败后档案 / 事件</td><td class="pass">仍 awaiting；事件零新增（46→46）</td></tr>
+    <tr><td><b>S3 登记版本变更</b><br>（正式 F2）</td><td>登记更新为物理现值后再审</td><td class="pass">gate valid:true drifted:[] → 200 done（版本核对以登记为基准）</td></tr>
+    <tr><td rowspan="2"><b>S4 重复点击 / 提交</b></td><td>/decision 重复 POST（已 done）</td><td class="pass">409 NOT_ACTIONABLE，不二次写入</td></tr>
+    <tr><td>/decide 同 opId 重放</td><td class="pass">200 replay:true；TT 档案 sha 前后一致；页面成功后按钮消失</td></tr>
+    <tr><td><b>S5 API 写入失败</b></td><td>非法 action / step / 404 需求 / reject 缺理由</td><td class="pass">[400,400,404,400]；事件零新增（50→50）</td></tr>
+    <tr><td rowspan="3"><b>S6 页面端</b><br>（headless CDP 真实点击）</td><td>漂移落盘后点「通过」</td><td class="pass">真实 HTTP decision POST = 409（服务端兜底）；失败反馈 + 样式实测（3.1）；按钮转禁用；档案停 awaiting；事件零新增</td></tr>
+    <tr><td>刷新页面</td><td class="pass">无 done-line、仍待拍板，与服务端一致</td></tr>
+    <tr><td>TEST-R11（例外放行）</td><td class="pass">漂移照报 + versionExempt:true 不阻断 → 200 done → 按钮消失；全程 JS 异常 0</td></tr>
+  </table>
+
+  <h3>3.3 测试数据恢复核对（P0）与清理（P3）</h3>
+  <ul>
+    <li>TEST-R11.json sha256 = <code>0dd1e387c790…</code>（基线一致）<span class="pass">✓</span></li>
+    <li>TEST-F01R10：plan=awaiting，2 条登记（133B / 124B）与物理文件 bytes+sha 全一致<span class="pass">✓</span></li>
+    <li>跑后：F1/F2/T 夹具与 tmp-w01r15/ 已删；R11 从快照恢复并复验 sha = 基线<span class="pass">✓</span></li>
+  </ul>
+
+  <h3>3.4 测试例外隔离口径</h3>
+  <p><code>test-any-file</code> 策略仅按声明生效：versionExempt=true 时漂移照报不阻断（T 夹具实测 <code>exempt:true, drifted:"sha"</code>）；无策略的正式需求 F1/F2 严格 bytes+sha256 双核验。</p>
+
+  <details>
+    <summary>展开：S6-1 失败反馈真实文案（409 服务端兜底）</summary>
+    <pre>本步骤「开发计划」的审批对象与提交登记版本不一致（w01r15-shared.md：实测内容指纹与登记 sha256 不一致（大小 81 B 相同，内容已变化））。
+正式流程按提交登记的版本审批，材料在提交后发生过变化就不能继续按原版本通过：请先「打回」要求重新提交，重新登记后的档案才是新版本</pre>
+  </details>
+
+  <h2>四、还差什么</h2>
+  <ul>
+    <li>无未完成项，35/35 PASS。</li>
+    <li>说明 1：decision-events.jsonl 为追加式审计日志，本轮留下真实成功事件（与历轮做法一致）；档案侧已恢复基线；失败路径事件增量为 0。</li>
+    <li>说明 2：前 14 轮失败原因无法从当前状态复现——审批链路完整可用，「未渲染」症状在当前环境不存在。</li>
+  </ul>
+
+  <footer>
+    证据：控制台 35 项 PASS 全量输出 · 机器可读 <code>verify-assets/w01r15-out.json</code> · 备份 <code>web/app.css.bak-w01r15</code>
+  </footer>
+</div>
+</body>
+</html>

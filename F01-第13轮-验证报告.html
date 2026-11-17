@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F01 第 13 轮验证报告 — 历史登记版本信息两行布局</title>
+<style>
+:root{--bg:#0f141b;--card:#171e28;--line:#242e3c;--txt:#d7dee8;--dim:#8b98a9;--cur:#65D9B1;--hist:#B3C0D2;--unver:#E5B95E;--acc:#5aa9e6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif;padding:32px 20px}
+.wrap{max-width:1080px;margin:0 auto}
+h1{font-size:22px;margin-bottom:6px}
+h2{font-size:17px;margin:30px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h3{font-size:15px;margin:18px 0 8px;color:var(--acc)}
+.meta{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 18px;margin:14px 0;font-size:13px}
+.meta b{color:var(--cur)}
+p{margin:8px 0}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top}
+th{background:#1c2532;color:var(--acc);font-weight:600}
+tr:nth-child(even) td{background:#141b25}
+code,.mono{font-family:"Cascadia Code",Consolas,monospace;font-size:12.5px;color:#a8d5f2}
+.vrow-demo{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.demo-row{display:flex;align-items:center;gap:6px;height:36px;font-family:"Cascadia Code",monospace;font-size:12px;line-height:18px}
+.demo-no{flex:none;width:28px;text-align:center}
+.demo-body{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.demo-body span{white-space:nowrap}
+.c-cur{color:var(--cur)}.c-hist{color:var(--hist)}.c-unver{color:var(--unver)}
+.ok{color:var(--cur);font-weight:600}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;border:1px solid}
+.tag.cur{color:var(--cur);border-color:var(--cur)}
+.tag.hist{color:var(--hist);border-color:var(--hist)}
+.tag.unver{color:var(--unver);border-color:var(--unver)}
+ul{margin:8px 0 8px 22px}
+li{margin:4px 0}
+.shot{display:flex;gap:14px;flex-wrap:wrap;margin:12px 0}
+.shot figure{flex:1;min-width:320px}
+.shot img{width:100%;border:1px solid var(--line);border-radius:6px}
+.shot figcaption{font-size:12px;color:var(--dim);margin-top:6px;text-align:center}
+footer{margin-top:34px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>F01 第 13 轮验证报告 — 历史登记版本信息两行布局</h1>
+
+<div class="meta">
+时间：2026-11-16（本地）｜结果：<b>112 / 112 PASS</b>（f01r13-verify.mjs，Edge headless CDP 实测 getComputedStyle / getBoundingClientRect + API 地面真值 + node 复刻 physKey/fmtTime 比对）<br>
+证据：<code>verify-assets/f01-r13/</code>（results.json + 2 张截图）｜回滚点：<code>web/app.js.bak-f01r13</code>、<code>web/app.css.bak-f01r13</code>
+</div>
+
+<h2>一、问题（前 12 轮失败根因）</h2>
+<p>文件页（图4）F01 需求分组右侧的历史登记被压缩在窄区内，版本号、短指纹与时间挤在一行，难以区分先后。r12 已把聚合口径修对（2 物理文件 / 4 条登记），但每条登记仍是单行 24px 紧凑条，四要素（版本号/大小/指纹/时间）+ 校验状态没有分层。</p>
+
+<h2>二、改动（只改登记行的呈现布局，其余功能零改动）</h2>
+<h3>web/app.js（2 处渲染 + 1 处分色）</h3>
+<table>
+<tr><th>#</th><th>位置</th><th>内容</th></tr>
+<tr><td>1</td><td><code>physButton.lineOf</code>（lf-phys 主行）</td><td>分色三分支：无实测可比对或登记缺字节 → <span class="tag unver">lf-unver</span>；登记字节=磁盘实测 → <span class="tag cur">lf-cur</span>；实测已知但不等 → <span class="tag hist">lf-hist</span>。行内结构改为两行布局 DOM</td></tr>
+<tr><td>2</td><td><code>fileButton</code>（lf-multi 主行）</td><td>新增 <code>regRowOf</code> / <code>vRowHtml</code>：登记分叉逐条分行渲染（同版本多登记场景，如 fixture-time.md），结构与 lf-phys 完全一致；汇总行/身份行仍走原 <code>lineOf</code></td></tr>
+<tr><td>3</td><td>两处共用 DOM</td><td>左列 <code>lf-vno</code>（28px 版本编号，补零两位）+ 右列 <code>lf-vbody</code> 两行：第一行「字节·指纹6位·✓/≠」，第二行时间（分钟精度）。<code>data-reg-vkey / data-task-id / data-step-key / data-regs</code> 点击身份与 title 全部保留，不合并登记、不减少信息</td></tr>
+</table>
+
+<h3>web/app.css（文件末尾追加 r13 层，7 条）</h3>
+<ul>
+<li><code>.lf-size.lf-reg.lf-vrow</code>：flex 两列，高 36px，条间 gap 6px，12px 等宽字体（Cascadia Code）行高 18px</li>
+<li><code>.lf-vno</code> 宽 28px 居中；<code>.lf-vbody</code> 纵向两行，溢出省略</li>
+<li>三色：<code>.lf-cur</code> #65D9B1 / <code>.lf-hist</code> #B3C0D2 / <code>.lf-unver</code> #E5B95E</li>
+<li>覆盖技巧：r12 在 :1812 有 (0,5,0) 的 height:24px 压制，r13 主规则取同特异性 (0,5,0) 靠源顺序取胜</li>
+</ul>
+
+<h2>三、四条验证要求 × 实测（1440px 与 1280px 各测一遍）</h2>
+
+<h3>① 四要素与原始数据逐项一致（API 地面真值比对）</h3>
+<p>页面实际渲染效果（配色与真实页面一致）：</p>
+<div class="vrow-demo">
+<div class="demo-row c-cur"><span class="demo-no">02</span><span class="demo-body"><span>133B·d4ada8 ✓</span><span>11/15 17:00</span></span></div>
+<div class="demo-row c-cur"><span class="demo-no">03</span><span class="demo-body"><span>133B·d4ada8 ✓</span><span>09:30</span></span></div>
+<div class="demo-row c-cur"><span class="demo-no">03</span><span class="demo-body"><span>124B·f04311 ✓</span><span>09:30</span></span></div>
+<div class="demo-row c-hist"><span class="demo-no">02</span><span class="demo-body"><span>300B·9490ac ≠</span><span>11/15 17:00</span></span></div>
+</div>
+<table>
+<tr><th>文件</th><th>页面实测（编号｜第一行｜第二行）</th><th>分色</th><th>API 原始数据</th></tr>
+<tr><td>fixture-time.md</td><td class="mono">02｜133B·d4ada8 ✓｜11/15 17:00</td><td><span class="tag cur">lf-cur</span></td><td><code>TEST-F01R10›doc</code> 133B sha d4ada83b… 2026-11-15T09:00Z→本地 17:00，磁盘实测 133B 相等</td></tr>
+<tr><td>fixture-time.md</td><td class="mono">03｜133B·d4ada8 ✓｜09:30</td><td><span class="tag cur">lf-cur</span></td><td><code>TEST-F01R10›plan</code> 133B 同 sha 2026-11-16T01:30Z→本地 09:30，相等</td></tr>
+<tr><td>fixture-ver.md</td><td class="mono">03｜124B·f04311 ✓｜09:30</td><td><span class="tag cur">lf-cur</span></td><td><code>TEST-F01R10›plan</code> 124B sha f0431173… 09:30，磁盘实测 124B 相等</td></tr>
+<tr><td>fixture-ver.md</td><td class="mono">02｜300B·9490ac ≠｜11/15 17:00</td><td><span class="tag hist">lf-hist</span></td><td><code>TEST-F01R10›doc</code> 300B（history:1）sha 9490ac36… 11/15 17:00，实测 124B ≠ 300B → 历史色</td></tr>
+</table>
+<p>字节、指纹6位、时间（分钟精度，本地时区）全部与 <code>/api/office/flow</code> 直读值逐项相等。</p>
+
+<h3>② getBoundingClientRect 文本不重叠</h3>
+<ul>
+<li>第一行 rect {top:124, bottom:142}，第二行 rect {top:142, bottom:160} —— <span class="ok">tm.top = l1.bottom 严丝合缝，Δtop = 18px 整</span>（4/4 条 × 2 视口全过）</li>
+<li>左右列：vno.right = 1031 &lt; vbody.left = 1037（1440px）；871 &lt; 877（1280px）—— 版本编号列与信息列不重叠</li>
+<li>文本无截断：scrollWidth = clientWidth = 88 ≤ 容器宽</li>
+<li>条间距：第二条 top − 第一条 bottom = <span class="ok">6px</span>（两文件均 = 6）</li>
+</ul>
+
+<h3>③ 布局规格实测（getComputedStyle）</h3>
+<table>
+<tr><th>项</th><th>规格</th><th>实测</th></tr>
+<tr><td>单条登记高度</td><td>36px</td><td>4/4 条 itRect.height = 36，computed "36px"</td></tr>
+<tr><td>左列版本编号宽</td><td>28px</td><td>vnoRect.width = 28，computed "28px"</td></tr>
+<tr><td>条间距</td><td>6px</td><td>computed gap "6px"，渲染间距 6</td></tr>
+<tr><td>字体</td><td>12px 等宽 18px 行高</td><td>12px / 18px / "Cascadia Code", monospace</td></tr>
+<tr><td>当前版本色</td><td>#65D9B1</td><td>rgb(101, 217, 177) ×3 条</td></tr>
+<tr><td>历史版本色</td><td>#B3C0D2</td><td>rgb(179, 192, 210) ×1 条（300B）</td></tr>
+<tr><td>不可核验色</td><td>#E5B95E</td><td>规则级探针 rgb(229, 185, 94)（F01 数据齐全未触发，临时挂 lf-unver 行量完即删）</td></tr>
+</table>
+
+<h3>④ 1280 / 1440 无水平溢出，2 物理文件 4 条登记</h3>
+<ul>
+<li>1440px：docScrollW = 1440 = winW；1280px：docScrollW = 1280 = winW —— <span class="ok">零水平溢出</span></li>
+<li>F01 组头：<code>F01 两条历史登记独立保存验证（两完即删） · 2 个产物（4 条登记）</code>；组内主行 <b>2</b>、登记行 <b>4</b></li>
+<li>顶部总量：<code>匹配 14 / 14 个产物（17 条登记）</code> 口径不变</li>
+</ul>
+
+<div class="shot">
+<figure><img src="verify-assets/f01-r13/f01r13-1440-f01.png" alt="1440px 下 F01 分组"><figcaption>1440px — F01 分组两行布局</figcaption></figure>
+<figure><img src="verify-assets/f01-r13/f01r13-1280-f01.png" alt="1280px 下 F01 分组"><figcaption>1280px — 同布局无溢出</figcaption></figure>
+</div>
+
+<h2>四、回归与清扫</h2>
+<ul>
+<li>R11 app.css 行及其余 12 主行：0 条 lf-vrow（新布局只在登记分叉/多版本场景生效，汇总行原样）</li>
+<li>主行高：F01 两行均 92px ∈ [80,128]（2×36+6=78 内容 + 上下 padding）</li>
+<li>点击身份不回退：点 300B 行 → 登记面板「300 B」；点 124B/133B 行 → 面板含对应字节数（嵌套 span 走 <code>closest('[data-reg-vkey]')</code> 委托）</li>
+<li>全程页面 JS 异常 0 条；headless Edge 已关；截图为抽屉关闭的干净态</li>
+</ul>
+
+<footer>F01 第 13 轮 ｜ Agent Office 文件页 ｜ web/app.js + web/app.css ｜ 112/112 PASS</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 79 轮整改执行报告 · Leo's Agent Office</title>
+<style>
+:root{--bg:#0d111a;--card:#151d2b;--line:#243044;--txt:#d6e0ed;--muted:#8b99ad;--ok:#65d9b1;--amber:#e5b95e;--link:#78a9ef}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.7 "Cascadia Code",Consolas,"Microsoft YaHei",monospace;padding:32px 16px}
+main{max-width:980px;margin:0 auto}
+h1{font-size:22px;margin:0 0 4px}
+h2{font-size:17px;border-bottom:1px solid var(--line);padding-bottom:8px;margin-top:40px}
+h3{font-size:14px;color:var(--link)}
+.meta{color:var(--muted);font-size:12px;margin-bottom:20px}
+.verdict{background:#16342a;border:1px solid var(--ok);color:var(--ok);border-radius:8px;padding:12px 16px;margin:16px 0}
+.warn{background:#3b3021;border:1px solid var(--amber);color:var(--amber);border-radius:8px;padding:12px 16px;margin:16px 0}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:6px 10px;text-align:left;vertical-align:top}
+th{background:var(--card);color:var(--muted);font-weight:600}
+td code,p code,li code{background:#1c2739;border-radius:4px;padding:1px 5px;font-size:12px;color:var(--ok)}
+.ok{color:var(--ok)}
+details{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 16px;margin:10px 0}
+summary{cursor:pointer;color:var(--link);font-weight:600}
+.small{font-size:12px;color:var(--muted)}
+a{color:var(--link)}
+</style>
+</head>
+<body><main>
+<h1>第 79 轮整改执行报告 · Leo's Agent Office</h1>
+<p class="meta">2026-11-17 · 评审起点 6.6（目标 8.0）· 任务书 7 条：0 致命 / 6 严重（W01/F01/W02/S01/A01/G01）/ 1 一般（G02）</p>
+
+<div class="verdict">结论：<b>7/7 达标</b>。W01 为本轮唯一产品代码改动项（内容级核对证据贯通服务端→UI）；F01 为 R78 改动因 8090 未重启而未生效，本轮重启后在线取证达标；W02/S01/A01/G01/G02 为复验取证轮。净改动：<b>JS +35 行（5 文件）、CSS +10 行（1 文件）、无新增浏览器加载文件</b>，app.js / server.js 零改动。</div>
+
+<h2>W01（严重）审批文件内容级核对证据</h2>
+<p><b>评审痛点（连续 25 轮）</b>：审批面板只展示「实测 X · 登记 Y」两个大小数字——大小相等不等于内容相等，无法证明内容级核对真的发生过。</p>
+<p><b>方案</b>：服务端 version-gate 的通过分支本就现算文件 SHA-256（此前算完即丢）。本轮把这份现算结果作为 <code>verified[]</code> 贯通到 UI——审批面板与中央链路对核对通过的文件展示「指纹 ▁▁▁▁▁▁▁▁ ✓」绿色标签，语义 = <b>大小与内容双一致</b>。老档案无登记指纹时 <code>shaMatch=null</code>（大小过、内容级核对缺位），如实回空不装懂。</p>
+<table>
+<tr><th>文件</th><th>改动</th></tr>
+<tr><td>web/server-core.mjs</td><td><code>artifactVersionGateOf</code> 通过分支新增 <code>verified.push({path, exists, regBytes, actBytes, regSha, actSha, shaMatch})</code>；shaMatch=登记带指纹时真比对结果，无登记指纹为 null</td></tr>
+<tr><td>web/server-api.mjs</td><td>version-gate 响应体加 <code>verified</code> 字段（+1 行）</td></tr>
+<tr><td>web/version.js</td><td><code>scheduleVersionGate</code> 缓存透传 <code>verified</code>（+2 行）</td></tr>
+<tr><td>web/approval.js</td><td>归一透传；<code>decideFileEntryHtml</code> 渲染 <code>.msha</code>「指纹 ✓」标签；核对口径文案补 SHA-256 双一致说明</td></tr>
+<tr><td>web/render.js</td><td>中央链路渲染 <code>.hf-tag.shaok</code> 标签（title 说明双一致语义）</td></tr>
+<tr><td>web/app-layers.css</td><td>R79 层：两标签均 12px/18px、<code>var(--ok)</code>(#65D9B1)，与异常标签同一规范</td></tr>
+</table>
+<details open><summary>实测 10/10（verify-w01-r79.mjs，隔离栈 + 真浏览器）</summary>
+<ul>
+<li>API：<code>verified[0].shaMatch===true</code>、<code>regSha===登记 sha256</code></li>
+<li>审批 <code>.msha</code>：文本匹配 <code>/^指纹 [0-9a-f]{8} ✓$/</code>、前缀=登记 sha256 前 8 位、色 <code>rgb(101,217,177)</code>、12px/18px</li>
+<li>中央 <code>.hf-tag.shaok</code>：同口径</li>
+<li>核对口径段落含「SHA-256」「指纹 ✓」；全程零 pageerror / 零 console.error</li>
+<li>8090 在线实测：响应结构含 <code>verified</code> 数组；隔离夹具 <code>{"status":200,"valid":true,"verifiedN":1,"shaMatch":true,"actShaEqReg":true,"regShaPrefix":"acc0dfdd"}</code></li>
+<li>回归：verify-w01-r76 22/22、verify-w01r17 26/26——既有行为零回归</li>
+</ul></details>
+
+<h2>F01（严重）历史版本预览 404 语义</h2>
+<p>R78 已改代码但 8090 跑旧进程未生效。本轮<b>重启 8090（PID 26540 → 46088）</b>，在线重跑 verify-f01-r75：<span class="ok">ALL OK</span>（V1 逐字=快照、页内复算 SHA=登记值、删快照后明确失败不冒充、样式全中、零 pageerror）。</p>
+
+<h2>W02 / S01 / A01（严重）复验</h2>
+<ul>
+<li><b>W02</b> verify-w02-r75 <span class="ok">ALL OK</span>（8090 实数据，gapLastToFoot=92px、外层无滚动）</li>
+<li><b>S01</b> verify-s01r13 三视口全过：末卡底↔分页顶 32px / 32px / 147px，标签全在框内、零重叠</li>
+<li><b>A01</b> verify-a01-r75 <span class="ok">ALL OK</span>（Agents 三列状态 4 组断言）</li>
+</ul>
+
+<h2>G01（严重）契约 + 测试 + 覆盖率 + 视觉回归</h2>
+<table>
+<tr><th>项</th><th>实测</th></tr>
+<tr><td>17 条 API 路由</td><td>派发表 server-api.mjs:871-888 逐条清点 = /api/health + /api/state + 15 条 /api/office/* 共 <b>17 条</b>，路径/方法与 R78 完全一致；仅 version-gate 响应体新增 <code>verified</code> 增量字段，零路由增删改</td></tr>
+<tr><td>全量测试</td><td><span class="ok">237/237</span>（hermes node v22）；四页×四类用例在位 ≥16</td></tr>
+<tr><td>覆盖率</td><td>server-core.mjs 行 100% / 分支 <b>92.44%</b>（≥90%；审批与文件版本判定全在本文件）</td></tr>
+<tr><td>A/B 视觉回归 1440×900</td><td>基线取自真实 .bak-r79 备份，after=终态：<b>几何零偏差</b>，唯一差异 = agents 第 9 行相对时间「22 秒前」→「42 秒前」（时间 tick）；geom/stress/workbenchExtra/viewport 数据块逐字节相等</td></tr>
+<tr><td>1280×768 补测</td><td>新增 verify-g01-r79-1280.mjs <span class="ok">7/7</span>：四页无横向滚动；<code>.msha</code> 未逃逸右栏（right=1187&lt;1280, h=18）、<code>.hf-tag.shaok</code> 未逃逸中栏（w=92）</td></tr>
+<tr><td>四页截图</td><td>verify-g01-p1-workbench / p2-agents / p3-skills / p4-files PNG，页面完整非空白</td></tr>
+</table>
+
+<h2>G02（一般）结构红线</h2>
+<table>
+<tr><th>指标</th><th>要求</th><th>实测</th></tr>
+<tr><td>app.js 有效行</td><td>≤800</td><td class="ok">620（原始 855，未动）</td></tr>
+<tr><td>server.js 有效行</td><td>≤500</td><td class="ok">278（原始 401，未动）</td></tr>
+<tr><td>函数最长</td><td>≤120</td><td class="ok">111</td></tr>
+<tr><td>语义色变量重复</td><td>0</td><td class="ok">0（新徽标用 var(--ok) 零硬编码）</td></tr>
+<tr><td>循环依赖</td><td>0</td><td class="ok">0</td></tr>
+<tr><td>删测试</td><td>禁止</td><td class="ok">未删，237/237</td></tr>
+</table>
+
+<h2>行数对比（R79 前基线 = .bak-r79 备份实测 wc -l）</h2>
+<table>
+<tr><th>文件</th><th>R79 前</th><th>R79 后</th><th>Δ</th></tr>
+<tr><td>web/app.js</td><td>855（有效 620）</td><td>855</td><td>0</td></tr>
+<tr><td>web/server.js</td><td>401（有效 278）</td><td>401</td><td>0</td></tr>
+<tr><td>web/server-api.mjs</td><td>920</td><td>921</td><td>+1</td></tr>
+<tr><td>web/server-core.mjs</td><td>442</td><td>450</td><td>+8</td></tr>
+<tr><td>web/version.js</td><td>235</td><td>237</td><td>+2</td></tr>
+<tr><td>web/approval.js</td><td>391</td><td>406</td><td>+15</td></tr>
+<tr><td>web/render.js</td><td>586</td><td>595</td><td>+9</td></tr>
+<tr><td>web/preview.js</td><td>440</td><td>440</td><td>0</td></tr>
+<tr><td>CSS 四件合计</td><td>2150</td><td>2160</td><td>+10</td></tr>
+</table>
+<p class="small">净增 35 行 JS + 10 行 CSS；新增两个验证脚本为 node 侧运行，不进浏览器加载链，STATIC_APP 白名单与 server.js 零改动。</p>
+
+<h2>服务进程（已处理，知会）</h2>
+<div class="warn">本轮改了服务端模块（server-core.mjs / server-api.mjs），<b>8090 已重启：旧 PID 26540 → 新 PID 46088</b>。重启后全部在线验证均打在新代码上；四页 http://127.0.0.1:8090 正常显示（verify-g01 四页截图为证）。</div>
+
+<h2>未做到 / 口径限制（诚实申报）</h2>
+<ol>
+<li><b>server-api.mjs 分支覆盖率未出工具化数字</b>：coverage 只统计进程内 import，server-api 以子进程运行不被插桩。沿 R78 人工矩阵 23/25=92%；本轮新增条件 <code>Array.isArray(g.verified)</code> 已在实测覆盖真分支。达标证据以 server-core.mjs 92.44% 分支为准。</li>
+<li><b>1280×768 未做 A/B 双相位像素 diff</b>：verify-g01.mjs 视口硬编码 1440×900；窄视口以专用补测脚本覆盖（7/7）。像素级窄视口 A/B 需先给脚本加视口参数，不在本轮范围。</li>
+<li><b>老档案无登记指纹的文件</b>：<code>shaMatch=null</code>，UI 不展示「指纹 ✓」——如实缺位（登记时未存指纹无法事后比对），不是遗漏。</li>
+</ol>
+
+<h2>本轮新增工件</h2>
+<ul>
+<li>web/verify-w01-r79.mjs —— W01 内容级证据 10 项验证</li>
+<li>web/verify-g01-r79-1280.mjs —— 1280×768 补测 7 项</li>
+<li>web/verify-w01-r79-1280.png、verify-w01-r79-panel.png —— 取证截图</li>
+<li>web/*.bak-r79（5 件）—— 改动前备份（A/B 基线取自这里），留回滚</li>
+</ul>
+
+<h2>遗留待拍板（未动）</h2>
+<ul>
+<li>9339 端口临时实例 PID 50412 杀否</li>
+<li>R72-R79 整批未 commit 改动提交否</li>
+</ul>
+</main></body></html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G06 第3轮验证报告 — 复验连接失败、请求超时及重新连接后的状态恢复</title>
+<style>
+  :root { --bg:#101418; --card:#171d24; --line:#242c36; --text:#D7DEE8; --faint:#8996A8;
+          --ok:#65D9B1; --off:#E5B95E; --code:#1b232d; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  .sub { color:var(--faint); font-size:13px; margin-bottom:20px; }
+  .verdict { background:linear-gradient(135deg,#15241f,#122019); border:1px solid #2a4a3d; border-radius:10px; padding:16px 20px; margin-bottom:20px; }
+  .verdict b { color:var(--ok); font-size:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:20px; margin-bottom:16px; }
+  h2 { font-size:16px; margin-bottom:12px; color:#fff; }
+  h3 { font-size:14px; margin:14px 0 8px; }
+  p, li { color:var(--text); }
+  ul { padding-left:20px; }
+  code { background:var(--code); border:1px solid var(--line); border-radius:4px; padding:1px 6px; font:12px/1.5 Consolas,monospace; color:#c8d3e0; }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin:8px 0; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#1c242e; color:#fff; font-weight:600; white-space:nowrap; }
+  td.c-ok { color:var(--ok); white-space:nowrap; }
+  td.c-off { color:var(--off); white-space:nowrap; }
+  .pill { display:inline-block; border-radius:99px; padding:0 10px; font-size:12px; line-height:20px; }
+  .pill.ok { background:rgba(101,217,177,.12); color:var(--ok); border:1px solid rgba(101,217,177,.35); }
+  .pill.off { background:rgba(229,185,94,.12); color:var(--off); border:1px solid rgba(229,185,94,.35); }
+  .meta { color:var(--faint); font-size:12px; }
+  .zero { color:var(--ok); font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>G06 第3轮验证报告</h1>
+  <div class="sub">复验连接失败、请求超时及重新连接后的状态恢复 · 2026-11-17 · web/ 前端 · 严重程度：严重</div>
+
+  <div class="verdict">
+    <b>65 / 65 PASS</b>（旧套件 T0–T4：43/43 ｜ 新增 T5 状态保全：22/22）· pageerror 全程 0 · <span class="zero">本轮应用代码零改动</span>
+    <div class="meta">任务书口径：模拟 API 500 / 超时 / 无效 JSON / 网络断开，8000ms 后不再无限空白；恢复后 30s 内数据重现，路由 / 需求选中 / 草稿不丢失</div>
+  </div>
+
+  <div class="card">
+    <h2>一、改了什么</h2>
+    <p><b>应用代码零改动。</b>G06 实现（2026-11-16 落地）在当前工作区原样存在且有效：</p>
+    <ul>
+      <li><code>web/shared.js</code> api()：2xx + 无效 JSON/空响应抛 <code>isDataError</code>（与 <code>isHttpError</code>、超时、网络错误四类可区分），不再把 null 伪装成成功</li>
+      <li><code>web/app.js</code>：initPhase 四态、首轮 8000ms 超时、退避链 2s→4s→8s→封顶 30s（成功清零回 3s）、失败轮 <code>[G06]</code> console.error、恢复「已重新连接」</li>
+      <li><code>web/app.css</code>：<code>#sb-conn.ok</code> #65D9B1 / <code>.off</code> #E5B95E / 12px / 18px</li>
+    </ul>
+    <p>本轮新增 <code>web/verify-g06r3.mjs</code>（T5 场景）——此前两轮缺的正是「断网→恢复全周期中路由/选中/草稿不丢失」这条实证。</p>
+  </div>
+
+  <div class="card">
+    <h2>二、T0–T4 四类故障注入（verify-g06.mjs，43/43 PASS）</h2>
+    <table>
+      <tr><th>场景</th><th>注入方式</th><th>底栏实测</th><th>颜色/字号（getComputedStyle）</th><th>关键断言</th></tr>
+      <tr><td>T0 基线</td><td>无（真实 8090）</td><td class="c-ok">已连接</td><td class="c-ok">rgb(101,217,177)=#65D9B1<br>12px / 18px</td><td>8 行真实数据；横幅隐藏；console.error=0</td></tr>
+      <tr><td>T1 health 500</td><td>fulfill 500</td><td class="c-off">连接失败 · internal error</td><td class="c-off">rgb(229,185,94)=#E5B95E<br>12px / 18px</td><td>state/flow 未拦截，数据仍渲染 8 行；导航保留</td></tr>
+      <tr><td>T2 首轮超时</td><td>/api/state 挂 10s</td><td class="c-off">数据获取失败 · 请求超时</td><td class="c-off">#E5B95E</td><td>8000ms 首轮超时生效，非无限等待；解除后恢复真实数据</td></tr>
+      <tr><td>T3 无效 JSON</td><td>200 + 坏体</td><td class="c-off">数据获取失败 · 响应不是有效 JSON</td><td class="c-off">#E5B95E</td><td>api() 抛 {isDataError:true, isHttpError:false}——不伪装成功</td></tr>
+      <tr><td>T4 断网 60s</td><td>/api/** 全 abort</td><td class="c-off">连接失败 · 网络错误（0–60s 七次采样全一致）</td><td class="c-off">#E5B95E</td><td>rows=0 无伪造空数据；无空白无误报；解除后 <b>15s</b> 恢复 +「已重新连接」</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>三、T5 状态保全（verify-g06r3.mjs，22/22 PASS，本轮新增）</h2>
+    <p class="meta">场景：选中需求 TEST-R11（plan 待拍板）→ #ip-decide-note 真实输入草稿 → 切到文件页 → 运行中断网（不刷新）→ 解除恢复</p>
+    <table>
+      <tr><th>阶段</th><th>断言</th><th>实测</th></tr>
+      <tr><td rowspan="2">基线</td><td>选中落档 office.ui.v2</td><td>taskId=TEST-R11，存档一致</td></tr>
+      <tr><td>草稿落档 office.notes.v1</td><td>key=TEST-R11/plan，全文一致</td></tr>
+      <tr><td rowspan="5">断网后</td><td>底栏失败态</td><td class="c-off">连接失败 · 网络错误 · rgb(229,185,94)/12px</td></tr>
+      <tr><td><b>路由不丢</b></td><td>hash 仍 #/files、page=files、文件页可见</td></tr>
+      <tr><td>无整页空白</td><td>body 高 900px</td></tr>
+      <tr><td><b>选中不被覆盖</b></td><td>office.ui.v2 仍=TEST-R11（失败轮不拿空态覆写存档）</td></tr>
+      <tr><td><b>草稿不清除</b></td><td>office.notes.v1 原文一致</td></tr>
+      <tr><td rowspan="2">恢复</td><td>底栏 + 耗时</td><td class="c-ok">已连接，实测 1.8s（短断网退避未涨满；断言上限 35s）</td></tr>
+      <tr><td>不踢路由 + 真实数据</td><td>仍 #/files，「匹配 14/14 个产物（17 条登记）」</td></tr>
+      <tr><td rowspan="3">恢复后<br>切回工作台</td><td>选中仍是原需求</td><td>ui.taskId=TEST-R11；.req-item.sel 同一任务</td></tr>
+      <tr><td>草稿三档完好</td><td>内存 Map ✓ / localStorage ✓ / <b>textarea 值=草稿原文</b> ✓</td></tr>
+      <tr><td>全程</td><td>pageerror = 0</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>四、还差什么</h2>
+    <ul>
+      <li>无遗留缺陷。代码未提交（工作区含多轮未提交改动，待 Leo 拍板，与 G06 首轮口径一致）。</li>
+      <li>8090 仍是旧 build r11d 进程（PID 32372），静态文件 per-request 读盘，本轮验证即该进程上的真实行为。</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

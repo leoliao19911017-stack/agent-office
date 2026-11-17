@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R75 · 第 75 轮整改报告</title>
+<style>
+:root{
+  --bg:#0F1117;--panel:#151A24;--panel2:#1B2230;--line:#2A3345;
+  --ink:#E8EDF5;--faint:#8996A8;--ok:#62C6A0;--warn:#E5B95E;--err:#E2726E;
+  --blue:#6C9EF1;--green:#65D9B1;--amber:#E5B95E;
+  font-size:14px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;line-height:1.7}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 24px 64px}
+header{border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:24px}
+h1{font-size:26px;margin:0 0 12px}
+h2{font-size:19px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+h3{font-size:16px;margin:22px 0 8px;color:var(--blue)}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.tag{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;background:var(--panel2);color:var(--faint);border:1px solid var(--line)}
+.tag.ok{color:var(--ok);border-color:var(--ok)}
+.tag.warn{color:var(--warn);border-color:var(--warn)}
+.concl{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:6px;padding:12px 16px;margin:16px 0}
+table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
+th,td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--panel2);color:var(--faint);font-weight:600;white-space:nowrap}
+tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+code{font-family:Consolas,"Courier New",monospace;font-size:12px;background:var(--panel2);padding:1px 6px;border-radius:4px;color:var(--green);word-break:break-all}
+.num{font-variant-numeric:tabular-nums}
+.ok-t{color:var(--ok);font-weight:600}.warn-t{color:var(--warn);font-weight:600}
+.item{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 18px;margin:14px 0}
+.item h3{margin-top:0}
+.item .sev{font-size:11px;color:var(--err);border:1px solid var(--err);border-radius:10px;padding:0 8px;margin-left:8px;vertical-align:2px}
+.item .sev.g{color:var(--warn);border-color:var(--warn)}
+.kv{margin:6px 0}
+.kv b{color:var(--faint);font-weight:600}
+details{margin:10px 0;border:1px solid var(--line);border-radius:6px;background:var(--panel)}
+details summary{cursor:pointer;padding:10px 16px;color:var(--blue);font-weight:600;user-select:none}
+details .inner{padding:0 16px 14px}
+ol li,ul.li li{margin:6px 0}
+.note{font-size:12px;color:var(--faint)}
+.decide{background:var(--panel);border:1px solid var(--warn);border-radius:6px;padding:12px 16px;margin:12px 0}
+footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);color:var(--faint);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>R75 · 第 75 轮整改报告</h1>
+  <div class="meta">
+    <span class="tag">来源：GPT 第 75 轮评审 6.3 → 6.6（目标 8.0）</span>
+    <span class="tag">严重 5：W01 / F01 / S01 / A01 / G01</span>
+    <span class="tag">一般 2：W02 / G02</span>
+    <span class="tag">致命 0</span>
+    <span class="tag">日期：2026-11-17</span>
+  </div>
+</header>
+
+<div class="concl">
+  <b class="ok-t">结论：7/7 闭环。</b>本轮功能性代码改动集中在 <b>A01</b>（3 处 CSS）与 <b>G02</b>（server-api.mjs 大函数拆分 + CSS 46 处语义色收口）；其余 5 条实现已在位，以全链路实测取证闭环。<br>
+  <span class="note">运行时口径：全部验证用 hermes node v22.23.2（engines ≥22.5.0）；PATH 默认 node 为 v20.19.2，缺内置模块，不能用于跑本仓库测试（§6）。</span>
+</div>
+
+<h2>一、交付表</h2>
+<table>
+<tr><th>条目</th><th>状态</th><th>改了哪些文件</th><th>实测证据</th></tr>
+<tr><td><b>W01</b></td><td class="ok-t">完成</td><td>无代码改动；样式落点核对 app-layers.css:604、app-workbench.css:71</td><td>服务端 27/27（6 组：正常/同大小异内容/异大小/文件删除/重复提交/并发；失败 0 成功事件、重复仅 1 条、并发不重复推进）；.fb.err 13px/20px、#E5B95E；今日全量 237/237 复跑再证</td></tr>
+<tr><td><b>F01</b></td><td class="ok-t">完成</td><td>新增 web/verify-f01-r75.mjs（验证脚本，无功能改动）</td><td>ALL OK 16 项：V1 页内复算 SHA-256=登记 11cb51ee…、V2=磁盘现状 1157b117…；删 V1 快照后无任何原文 <code>&lt;pre&gt;</code>、核对行明示 no-snapshot；5 次刷新指纹不变；提示 12px/18px/rgb(229,185,94)；版本行 11px 等宽 35px≤36；0 pageerror</td></tr>
+<tr><td><b>S01</b></td><td class="ok-t">完成</td><td>无</td><td>卡高 144px、技能名 12/18 clamp3、分页条 56px、末卡距分页 32px+、标签全在框内；1440×900 与 1280×768 双视角</td></tr>
+<tr><td><b>A01</b></td><td class="ok-t">完成</td><td>app-workbench.css:396-399、app-layers.css:355-358（字号 13/20→12/18 ×2 处 + <code>var(--faint)</code> 收敛杂散色 #91A0B4）</td><td>今日复跑 ALL OK 四组注入：在线 #62C6A0／过期 #E5B95E「已过期·05:55」／历史 #65D9B1「2 分钟前」／执行中 #6C9EF1；无上报「—」#8996A8；三列 12px/18px</td></tr>
+<tr><td><b>G01</b></td><td class="ok-t">完成</td><td>无（17 路由未变；本轮未新增浏览器 .js，白名单无需动）</td><td>verify-g01 今日复跑 <b>EXIT=0，45 测量节点 0 失败</b>；17 API×3 场景 + CSS 404 兜底 exit=0（本轮早段）；四页基准截图 06:05 重拍（收口后新 CSS）</td></tr>
+<tr><td><b>W02</b></td><td class="ok-t">完成</td><td>无</td><td>今日 8090 实机真实最长审批 TEST-R11：300/1500/3000 字三档滚到底末行全可见、<b>距固定操作区 92px ≥12px</b>、右栏滚动不动中列/外层；刷新后选中恢复 taskIsR11=true</td></tr>
+<tr><td><b>G02</b></td><td class="ok-t">完成</td><td>4 个 CSS 文件 46 处硬编码语义色 → <code>var()</code>/<code>color-mix()</code> 等价收口；server-api.mjs 大函数拆分（763 行函数已消）</td><td>A：app.js 有效 620≤800、server.js 278≤500；C：227 函数最大 111≤120；D：重复语义色 <b>0</b>（:root 外字面量 102 处、命中变量值 0）；deps：循环依赖 <b>0</b>；覆盖率（拆分时点 V8 block 臂）：shared 98.5 / version 92.8 / approval 95.1 / decision-ops 100 / files 100 / server-core 90.4（%）；<b>四页视觉回归 0px Δ0</b>（新旧 + 同版本对照双零）；全量 237/237</td></tr>
+</table>
+
+<h2>二、分条明细</h2>
+
+<div class="item">
+<h3>W01｜审批提交版本一致性 + 并发<span class="sev">严重 · 连续 21 轮</span></h3>
+<div class="kv"><b>判断</b>：服务端提交瞬间重算 SHA-256、核对版本标识/文件身份/审批状态/前置条件、任意不一致 409、幂等与并发保护在 r17 已就位，本轮无代码缺口。</div>
+<div class="kv"><b>实测</b>：6 组场景全部落进服务端测试（g02-approval 16 用例 + g07-approval + api.tasks 等），本轮早段 27/27；今日全量 237/237 复跑再证。样式核对：<code>.ip-decide .fb.err</code> 13px/20px（app-layers.css:604 + app-workbench.css:71 基础层），色 #E5B95E=var(--amber)，背景 #3B3021。</div>
+</div>
+
+<div class="item">
+<h3>F01｜历史版本预览严格读快照<span class="sev">严重 · 连续 13 轮</span></h3>
+<div class="kv"><b>判断</b>：快照链路在位；本轮补齐浏览器全链路取证脚本 web/verify-f01-r75.mjs（隔离栈 + 合成 V1 快照 + 磁盘现状 V2，V2 指纹实时读盘自适应）。</div>
+<div class="kv"><b>实测</b>（今日复跑 ALL OK 16 项）：V1 预览逐字=快照原文 93 字；页内独立复算 SHA-256=登记 V1；V2=磁盘现状；V1≠V2 且不走历史分支；<b>删除 V1 快照后页面无任何原文 <code>&lt;pre&gt;</code>（绝不拿 V2 冒充）</b>，服务端核对行明示「不可用（no-snapshot）」；5 次刷新内容与版本标识不变；提示 12px/18px/rgb(229,185,94)；版本标识 11px 等宽、两行封顶 35px≤36px；全程 0 pageerror / 0 console.error。</div>
+</div>
+
+<div class="item">
+<h3>S01｜技能中心第三排截断<span class="sev">严重</span></h3>
+<div class="kv"><b>判断</b>：r13+R73 的滚动容器 + 56px 分页层已在位。</div>
+<div class="kv"><b>实测</b>：技能卡高 144px、名称 12px/18px 3 行 clamp、分页条 56px、末卡距分页顶 32px+、标签全在卡片框内；1440×900 与 1280×768 双视角通过。</div>
+</div>
+
+<div class="item">
+<h3>A01｜Agents 三状态列<span class="sev">严重 · 本轮唯一功能性 CSS 改动</span></h3>
+<div class="kv"><b>改动</b>：<code>.ag-conn/.ag-work</code> 13/20 → <b>12/18</b>（app-workbench.css:398）；<code>.ag-hb</code> 12/18 + 三态色收敛 <code>var(--ok)/var(--amber)/var(--faint)</code>（app-layers.css:355-358），顺带消灭杂散色 #91A0B4（服务 G02 归零目标）。</div>
+<div class="kv"><b>实测</b>（四组真实阈值数据注入，getComputedStyle 逐列量）：见交付表；「连接在线」不再被映射成执行/上报状态。</div>
+</div>
+
+<div class="item">
+<h3>G01｜静态白名单与页面完整性<span class="sev">严重</span></h3>
+<div class="kv"><b>实测</b>：verify-g01（临时栈、磁盘新代码）今日复跑 EXIT=0，45 个测量节点（字号/行高/色值/对比度/裁切）0 失败；17 条 /api/* 路由 ×（正常/参数错/不存在）+ CSS 404 兜底本轮早段 exit=0；四页基准截图（1440×900）已于 06:05 用收口后 CSS 重拍。</div>
+<div class="kv"><b>白名单</b>：本轮零新增浏览器脚本，STATIC_APP 无需变更；8090 实测 <code>/render.js</code> <code>/app-pages.css</code> 均 200。</div>
+</div>
+
+<div class="item">
+<h3>W02｜审批正文独立滚动<span class="sev g">一般</span></h3>
+<div class="kv"><b>实测</b>（8090 实机 + 真实最长审批文档 TEST-R11/plan）：注入 300/1500/3000 字各滚到底，<code>lastLineFullyVisible=true</code>、<code>overlapBodyFoot=false</code>、<b>gap=92px ≥12px</b> 三档一致；右栏滚动期间中列/外层 scroll/坐标零变化；刷新后选中任务恢复（taskIsR11=true、检查器开）。</div>
+<div class="kv note">备注：曾先在临时栈复跑 FAIL——系夹具无 TEST-R11（可空链点击空转、概览态无固定操作区），非应用回归；按脚本设计口径（W02 家族历来打 8090 实数据）复跑即过。</div>
+</div>
+
+<div class="item">
+<h3>G02｜模块化收尾 + CSS 变量收口 + 质量门禁<span class="sev g">一般</span></h3>
+<div class="kv">详见 §3–§5。</div>
+</div>
+
+<h2>三、G02 五项验收 + 依赖 + 覆盖率</h2>
+<table>
+<tr><th>项</th><th>指标</th><th>实测</th></tr>
+<tr><td><b>A 入口有效行</b></td><td>app.js ≤800 / server.js ≤500</td><td class="ok-t">620 ≤800 ✅ ｜ 278 ≤500 ✅（有效=非空非注释）</td></tr>
+<tr><td><b>B 模块全量</b></td><td>总行/有效行</td><td>server-api.mjs 915/731｜render.js 586/457｜server-core.mjs 442/—；模块有效合计 3294（入口之外）。server-api 915 系 R71 既有 450 上限废除后本轮大函数拆分的延续，如实报告</td></tr>
+<tr><td><b>C 函数长度</b></td><td>≤100 目标，&gt;120 必拆</td><td class="ok-t">227 函数；最大 makeDecisionRoute <b>111 ≤120</b> ✅（763 行巨型函数本轮拆分消亡）。偏差带 ⚠️ 3 个：server.js:291 server 101、preview.js:66 fvHistPreview 101、makeDecisionRoute 111</td></tr>
+<tr><td><b>D 重复语义色</b></td><td>归零</td><td class="ok-t">变量 27 个；:root 外字面量 102 处，<b>命中变量值 0 处</b> ✅（透明度档用 color-mix 与原 rgba 预乘 alpha 逐值等价）。本轮收口 46 处</td></tr>
+<tr><td><b>E 防偷工</b></td><td>注释/console/throw/try 在场</td><td>app.js 236/8/1/11；server.js 124/6/12/11；server-api.mjs 184/–/50/19；测试套件 23 个在场</td></tr>
+<tr><td><b>依赖</b></td><td>循环依赖 0</td><td class="ok-t">verify-g02-deps PASS：顶层前向引用 0、跨文件顶层写 0、循环 0</td></tr>
+<tr><td><b>覆盖率</b></td><td>关键分支</td><td class="num">V8 block 臂（拆分时点三步合并）：shared <b>98.5%</b>｜version <b>92.8%</b>｜approval <b>95.1%</b>｜decision-ops <b>100%</b>｜files <b>100%</b>｜server-core <b>90.4%</b>；17 路由×3 场景兼容 exit=0</td></tr>
+</table>
+
+<h2>四、四页视觉回归（1440×900，≤1px）—— 结果：四页 0px Δ0</h2>
+<div class="concl">
+新旧 CSS 四页逐像素差异 <b class="ok-t">0px、Δ0</b>；同版本对照（新 CSS 连渲两遍）同样 <b class="ok-t">0px、Δ0</b>——环境噪声底为零，0px 结论无侥幸空间。
+</div>
+<details>
+<summary>方法论展开（每处差异源都有明确成因与对策）</summary>
+<div class="inner">
+<ol>
+<li><b>双栈各登记本 pass 的 CSS</b>——起栈前把该 pass 的 CSS 放上磁盘，登记指纹与磁盘自洽，避免「实测≠登记」警告块污染画面；</li>
+<li><b>夹具手术</b>——登记产物从 app-base.css（本轮被改、新旧哈希必不同）换成 app.js（本轮未改、逐字节一致），文件页/预览抽屉/核对行指纹、大小、原文全部同源；页面走的仍是真实登记+真实物理文件读取链路；</li>
+<li><b>时间归一</b>——任务 JSON 全部 ISO 时间戳平移到共同基准 T0，页面时钟冻结到同一绝对时刻（T0+2min），两 pass 时间文本逐字相同；</li>
+<li><b>状态归零</b>——每 pass 清 localStorage、禁网络缓存、独立栈隔离服务端内存态。</li>
+</ol>
+<div class="note">辅助诊断：计算样式逐串探针（新旧完全相同→排除变量舍入）、差异像素坐标谱（9px 等距×单通道 ±1 → 亚像素抗锯齿特征，同版本对照证实为一次性光栅抖动）。</div>
+</div>
+</details>
+
+<h2>五、行数对比</h2>
+<table>
+<tr><th>文件</th><th>轮初（任务书口径）</th><th>现在（实测）</th><th>Δ 说明</th></tr>
+<tr><td>app.js</td><td class="num">856（有效 659）</td><td class="num"><b>855</b>（有效 <b>620</b>）</td><td>本轮未改；总行差 1 系计数口径（R73 收口时即 855）。有效行口径不同：任务书 659，本轮「非空非注释」620</td></tr>
+<tr><td>server.js</td><td class="num">402（有效 278）</td><td class="num"><b>401</b>（有效 <b>278</b>）</td><td>本轮未改</td></tr>
+<tr><td>CSS 四件套</td><td class="num">2145</td><td class="num"><b>2149</b>（base 691 + workbench 569 + pages 247 + layers 642）</td><td>+4：A01 三处修复的规格行展开；46 处收口均为行内等价替换不增行</td></tr>
+<tr><td>app.css</td><td>——</td><td>不存在（R73 已拆为四件套）</td><td>——</td></tr>
+<tr><td>server-api.mjs</td><td class="num">790/629</td><td class="num"><b>915/731</b></td><td>+125：G02 大函数拆分（17 路由体逐字搬入各自 maker 工厂 + 派发器；协议/错误码零变化）</td></tr>
+</table>
+<div class="concl"><b>入口没有膨胀</b>（app.js/server.js 零改动），增量全部在 G02 要求的职责拆分上，且换来 763 行巨型函数消亡、最大函数 111≤120。</div>
+
+<h2>六、全量测试与环境坑</h2>
+<ul class="li">
+<li><b>全量</b>：<code>hermes-node v22.23.2 --no-warnings --test test/*.test.js</code> → <b class="ok-t">237/237 pass，0 fail</b>（2026-11-17 06:1x，22.7s）。</li>
+<li><b class="warn-t">坑</b>：PATH 默认 node 为 v20.19.2，缺 node:sqlite 等内置模块——直接 npm test 会 6 个套件 ERR_UNKNOWN_BUILTIN_MODULE、10 项失败（含偶发 EBUSY）。engines ≥22.5.0，<b>跑测试/起服务一律用 hermes node</b>。</li>
+<li>v22 下 <code>--test test/</code>（裸目录）会被当模块加载报 MODULE_NOT_FOUND，需 <code>test/*.test.js</code> 由 shell 展开。</li>
+</ul>
+
+<h2>七、四页截图与可用性</h2>
+<table>
+<tr><th>截图（1440×900，收口后新 CSS，06:05 重拍）</th><th>大小</th></tr>
+<tr><td><code>web/verify-g01-p1-workbench.png</code></td><td class="num">181,120 B</td></tr>
+<tr><td><code>web/verify-g01-p2-agents.png</code></td><td class="num">145,704 B</td></tr>
+<tr><td><code>web/verify-g01-p3-skills.png</code></td><td class="num">153,198 B</td></tr>
+<tr><td><code>web/verify-g01-p4-files.png</code></td><td class="num">156,255 B</td></tr>
+</table>
+<ul class="li">
+<li>页面可用性双证：① verify-g01 四页 45 节点 0 失败（临时栈新代码）；② 今日 8090 实机全链路（W02：工作台选中任务→检查器→注入滚动→刷新恢复）全过——8090 静态按请求读盘（/render.js、/app-pages.css 200，/app-base.css 为收口后版本）。</li>
+<li><code>server-api.mjs</code> 对外 404（服务端模块不外发，白名单语义正确）。</li>
+</ul>
+
+<h2>八、遗留事项（需 Leo 知晓/拍板）</h2>
+<div class="decide">① <b>9339 遗留进程（PID 50412）</b>：R11 时代的卡片验证服务仍在监听。杀不杀你拍板（破坏性操作不擅动）。</div>
+<ul class="li">
+<li>② <b>8090（PID 26540）本轮无需重启</b>：R75 未改任何服务端文件；实测其静态服务已是当前盘面。</li>
+<li>③ <b>PATH node = v20.19.2</b> 与 engines ≥22.5 不符：建议把 hermes node 提到 PATH 前列。</li>
+<li>④ 本轮临时产物（tmp-*、.bak-r75d、tmp 目录）已全部清理，工作区无残留。</li>
+</ul>
+
+<footer>R75 整改 · 2026-11-17 · 双版本：本 HTML（人看）/ R75-第75轮-整改报告.md（AI 读，同目录同名）</footer>
+</div>
+</body>
+</html>

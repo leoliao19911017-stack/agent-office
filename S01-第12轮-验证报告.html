@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>S01 第12轮验证报告 — 技能摘要两行 + 卡片统一 144px</title>
+<style>
+  body{font-family:"Microsoft YaHei",system-ui,sans-serif;max-width:980px;margin:24px auto;padding:0 20px;color:#E6EDF3;background:#0D1117;line-height:1.7}
+  h1{font-size:22px;border-bottom:2px solid #388BFD;padding-bottom:8px}
+  h2{font-size:17px;margin-top:28px;color:#79C0FF}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid #30363D;padding:6px 10px;text-align:left}
+  th{background:#161B22}
+  .ok{color:#7EE787;font-weight:600}
+  .bad{color:#FFA198}
+  code,pre{background:#161B22;border:1px solid #30363D;border-radius:6px}
+  code{padding:1px 5px;font-size:12.5px}
+  pre{padding:12px;overflow-x:auto;font-size:12.5px}
+  .meta{color:#8B949E;font-size:13px}
+  .card{background:#161B22;border:1px solid #30363D;border-radius:8px;padding:12px 16px;margin:12px 0}
+  ul{padding-left:22px}
+</style>
+</head>
+<body>
+<h1>S01 第12轮验证报告 — 技能摘要两行 + 卡片统一 144px</h1>
+<p class="meta">2026-11-16 ｜ 任务：技能中心首屏六卡摘要区扩展为两行、卡片统一尺寸（前 11 轮未过）｜ 改动仅 <code>web/app.css</code> 末尾一层（回滚点 <code>web/app.css.bak-s01r12</code>），app.js / index.html / server.js 零改动</p>
+
+<h2>1. 根因</h2>
+<div class="card">
+基础层 <code>app.css:576</code> 的 <code>.skill-row small { white-space: nowrap }</code> 从未被重声明。后续轮次写了 <code>-webkit-line-clamp:2</code>，但 <code>nowrap</code> 下文本永远不换行——line-clamp 形同虚设，摘要恒 1 行（baseline 实测：<code>ws=nowrap</code>、盒高 20px、scrollH=clientH=20，长文被裁且无第二行）。
+</div>
+
+<h2>2. 改动内容</h2>
+<pre>.skill-row {
+  height: 144px; min-height: 144px;
+  padding: 16px; border-radius: 8px;
+  background: #182230;
+}
+.skill-row b {
+  font-size: 14px; line-height: 20px;
+  display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.skill-row small {
+  font-size: 13px; line-height: 20px;
+  height: 40px; flex: 0 0 40px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; white-space: normal;   /* 关键：压掉 :576 的 nowrap */
+}
+#skill-list { gap: 16px; }</pre>
+<ul>
+  <li>卡片纵向 flex + <code>.sk-meta{margin-top:auto}</code> 钉底：摘要固定 40px 后富余空间成为摘要→标签间距（实测 24px）。</li>
+  <li>标题单行省略的依据：144px 卡内两行标题算术上不可行（40+40+40+20+32=132，仅剩 10px &lt; 12px 下限）；222 个技能名最长 30 字符，550px 列宽单行可容纳。</li>
+</ul>
+
+<h2>3. 实测数据（getComputedStyle + getBoundingClientRect，CDP headless Chrome，1440×900 / 1280×800 双视口，结果一致）</h2>
+<table>
+  <tr><th>项</th><th>baseline</th><th>after</th><th>规格</th><th>判定</th></tr>
+  <tr><td>卡片高度（前6卡 / 全20卡集合）</td><td class="bad">124 / [124]</td><td><b>144 / [144]</b></td><td>144±1px</td><td class="ok">✅</td></tr>
+  <tr><td>padding</td><td class="bad">14px</td><td><b>16px</b></td><td>16px</td><td class="ok">✅</td></tr>
+  <tr><td>圆角</td><td class="bad">10px</td><td><b>8px</b></td><td>8px</td><td class="ok">✅</td></tr>
+  <tr><td>卡片背景</td><td>rgb(24,34,48)</td><td>rgb(24,34,48)</td><td>保持 #182230</td><td class="ok">✅</td></tr>
+  <tr><td>摘要 white-space / 盒高</td><td class="bad">nowrap / 20px（1行）</td><td><b>normal / 40px</b></td><td>可换行，固定 40px</td><td class="ok">✅</td></tr>
+  <tr><td>摘要截断</td><td class="bad">clamp 无效，无第2行</td><td><b>clamp=2，长摘要 scrollH 120–200 &gt; 40（2行+省略号）</b></td><td>13/20 最多 2 行</td><td class="ok">✅</td></tr>
+  <tr><td>标题</td><td>14px / 22px</td><td><b>14px / 20px 单行（行盒数=1）</b></td><td>14/20</td><td class="ok">✅</td></tr>
+  <tr><td>摘要底→标签顶</td><td>26px</td><td><b>24px</b>（覆盖=false）</td><td>≥12px</td><td class="ok">✅</td></tr>
+  <tr><td>#skill-list gap</td><td>16px</td><td><b>16px</b></td><td>16×16</td><td class="ok">✅</td></tr>
+  <tr><td>列数 / 列宽</td><td>2 / [550.5, 550.5]</td><td>2 / [550.5, 550.5]</td><td>双列保持</td><td class="ok">✅</td></tr>
+  <tr><td>横向滚动（1440 & 1280）</td><td>无</td><td><b>无</b>（docW=winW）</td><td>无</td><td class="ok">✅</td></tr>
+  <tr><td>技能总数</td><td>匹配 222 / 222</td><td><b>匹配 222 / 222</b></td><td>222</td><td class="ok">✅</td></tr>
+</table>
+<p>短摘要卡（browserless）实测 h=40、scrollH=40 未触发截断——固定 40px 区域内 1 行顶格，符合「最多 2 行」语义。</p>
+
+<h2>4. 截图目检（verify-s01r12-1440x900-skills.png，VLM 复核）</h2>
+<div class="card">
+前 6 卡：aihot / article-comic / article-fetch / article-rewrite / article-translate 均精确 <b>2 行</b>且末尾带省略号；_gstack-command（短描述）1 行；每卡摘要与底部标签行（claude/codex 胶囊 + 类别）之间有明显空隙、无重叠；同行卡片等高对齐。
+</div>
+
+<h2>5. 证据文件（仓库根）</h2>
+<ul>
+  <li><code>verify-s01r12.mjs</code> — 验证脚本（baseline/after 双相位、双视口）</li>
+  <li><code>verify-s01r12-baseline.json</code> / <code>verify-s01r12-after.json</code> — 原始量测输出</li>
+  <li><code>verify-s01r12-1440x900-skills.png</code> — 修复后技能页截图</li>
+  <li><code>web/app.css.bak-s01r12</code> — 改动前备份</li>
+</ul>
+
+<h2>6. 结论与遗留</h2>
+<p>任务书全部验收项达标：前 6 卡 144±1、长摘要 ≤2 行不覆盖标签、1440/1280 双列无横滚、总数 222、筛选与双列网格未动（grid-template-columns 与 app.js 渲染逻辑零改动）。</p>
+<p class="meta">遗留（不属本任务）：标题超长时单行省略是本轮为满足 12px 间距下限的取舍；若评审要求标题两行，需重新分配 144px 内部预算——需新任务书拍板。</p>
+</body>
+</html>

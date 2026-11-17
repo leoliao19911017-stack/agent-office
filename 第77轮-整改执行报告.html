@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 77 轮整改执行报告</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1c2430; --muted:#5b6673;
+    --line:#e3e7ec; --accent:#2f6fed; --ok:#1e9e6a; --okbg:#e8f7f0;
+    --warn:#b8860b; --warnbg:#fdf6e3; --code:#eef1f5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font:15px/1.75 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 20px 64px;}
+  header{background:linear-gradient(135deg,#1c2a4a,#2f6fed);color:#fff;border-radius:14px;
+    padding:28px 32px;margin-bottom:28px;}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:.5px;}
+  header .sub{opacity:.92;font-size:14px;}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:16px;}
+  .meta div{background:rgba(255,255,255,.12);border-radius:8px;padding:10px 14px;font-size:13.5px;}
+  .meta b{font-weight:600}
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:24px 28px;margin-bottom:20px;}
+  h2{font-size:19px;margin:0 0 14px;padding-bottom:10px;border-bottom:2px solid var(--line);}
+  h2 .tag{font-size:12px;font-weight:600;vertical-align:2px;margin-left:8px;padding:2px 10px;border-radius:99px;}
+  .ok-tag{background:var(--okbg);color:var(--ok);}
+  h3{font-size:16px;margin:20px 0 8px;}
+  h3 .st{font-size:12.5px;font-weight:600;margin-left:8px;padding:2px 10px;border-radius:99px;background:var(--okbg);color:var(--ok);vertical-align:2px;}
+  p{margin:8px 0;}
+  .muted{color:var(--muted);}
+  code{background:var(--code);border-radius:4px;padding:1px 6px;font:13px/1.6 Consolas,"Courier New",monospace;color:#c0341d;}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+  th,td{border:1px solid var(--line);padding:8px 12px;text-align:left;vertical-align:top;}
+  th{background:#f0f3f7;font-weight:600;white-space:nowrap;}
+  tr:nth-child(even) td{background:#fafbfd;}
+  .pill{display:inline-block;padding:1px 10px;border-radius:99px;font-size:12px;font-weight:600;}
+  .pill.ok{background:var(--okbg);color:var(--ok);}
+  .pill.warn{background:var(--warnbg);color:var(--warn);}
+  .note{background:var(--warnbg);border-left:4px solid #d9a441;border-radius:6px;
+    padding:12px 16px;margin:12px 0;font-size:13.5px;}
+  .kpi{display:flex;flex-wrap:wrap;gap:12px;margin:14px 0;}
+  .kpi .box{flex:1 1 150px;background:#f4f7ff;border:1px solid #dbe5fb;border-radius:10px;
+    padding:12px 16px;text-align:center;}
+  .kpi .num{font-size:22px;font-weight:700;color:var(--accent);}
+  .kpi .lbl{font-size:12.5px;color:var(--muted);}
+  .zero{font-size:20px;font-weight:700;color:var(--ok);margin:6px 0;}
+  footer{text-align:center;color:var(--muted);font-size:12.5px;margin-top:8px;}
+  ul{margin:8px 0;padding-left:22px;}
+  li{margin:4px 0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>第 77 轮整改执行报告</h1>
+  <div class="sub">Leo's Agent Office · 整改系列 · 2026-11-17</div>
+  <div class="meta">
+    <div><b>评审背景：</b>GPT 第 77 轮 6.6 → 6.6（目标 8.0），严重 6 + 一般 1</div>
+    <div><b>本轮定位：</b>规格与第 76 轮逐条一致 → 零产品代码改动的全量重验轮</div>
+    <div><b>唯一改动：</b>test/g07-r73.test.js 1 行断言修正（17px→16px，非产品代码）</div>
+    <div><b>运行实例：</b>http://127.0.0.1:8090（PID 26540）build r73 健康</div>
+  </div>
+</header>
+
+<section>
+  <h2>总览 <span class="tag ok-tag">7 / 7 达标</span></h2>
+  <div class="kpi">
+    <div class="box"><div class="num">237/237</div><div class="lbl">全量 node --test 套件</div></div>
+    <div class="box"><div class="num">0 行</div><div class="lbl">产品代码净改动</div></div>
+    <div class="box"><div class="num">7 个</div><div class="lbl">验证脚本全过</div></div>
+    <div class="box"><div class="num">4 / 4</div><div class="lbl">四页截图 AI 目检通过</div></div>
+  </div>
+  <div class="zero">✅ 产品代码净改动 0 行 —— R77 规格与 R76 完全一致，实现在 R73-R75 已落地；本轮全量重验证据并补齐 R76 漏跑的全量测试套件。</div>
+</section>
+
+<section>
+  <h2>一、逐项执行情况（严重 6 + 一般 1）</h2>
+
+  <h3>W01 审批提交服务端重读校验 <span class="st">✅ 达标</span></h3>
+  <p>零改动重验。服务端提交时重读物理文件校验（路径白名单/字节数/SHA-256/登记版本/前置步骤），任意不匹配 HTTP 409 <code>ARTIFACT_VERSION_DRIFT</code>；同 opId 重放 200 <code>replay:true</code>；并发 <code>WRITE_IN_FLIGHT</code> 锁。</p>
+  <p><b>实测</b>：verify-w01-r76.mjs <span class="pill ok">22/22 PASS</span>（六场景冲突成功事件 0、重复并发恰 1 条成功事件）；verify-w01r17.mjs <span class="pill ok">26/26 PASS</span>。</p>
+
+  <h3>F01 历史版本独立不可变快照 <span class="st">✅ 达标</span></h3>
+  <p>零改动重验。vkey 独立快照、双端 SHA-256 复算、快照缺失明确报错不回退。</p>
+  <p><b>实测</b>：verify-f01-r75.mjs <span class="pill ok">ALL OK</span> —— 版本标识 11px/16px/mono；V1 预览逐字=快照原文；5 次刷新指纹全同；删快照不回退、错误提示 12px/18px/#E5B95E；零 pageerror。</p>
+
+  <h3>W02 检阅面板独立滚动 <span class="st">✅ 达标</span></h3>
+  <p><b>实测</b>：verify-w02-r75.mjs <span class="pill ok">ALL OK</span> —— 300/1500/3000 字三档正文末行与固定操作区间距 92px（≥80）；三档切换中央流水线位移 0px（≤1px）。</p>
+
+  <h3>S01 技能页双列分页 <span class="st">✅ 达标</span></h3>
+  <p>零改动重验，并对 <b>222 条技能实数据</b>重跑三视口量测（技能数 12→222 为中台持续注册的运行期增长，每页布局与总数无关）。</p>
+  <table>
+    <tr><th>视口</th><th>卡片</th><th>列</th><th>末卡底↔分页顶（滚到底）</th><th>标签在框内</th><th>重叠分页</th><th>横向滚动</th></tr>
+    <tr><td>1440×900</td><td>6 @144px</td><td>2</td><td><b>32px</b>（≥12）</td><td>true</td><td>false</td><td>false</td></tr>
+    <tr><td>1280×768</td><td>6 @144px</td><td>2</td><td><b>32px</b>（≥12）</td><td>true</td><td>false</td><td>false</td></tr>
+    <tr><td>1920×1080</td><td>6 @144px</td><td>2</td><td>147px（无需滚动）</td><td>true</td><td>false</td><td>false</td></tr>
+  </table>
+  <div class="note">p3 目检观察项裁决：「第三排低于滚动折叠线」为设计内行为——<code>#skill-list</code> 是独立滚动容器（overflow-y:auto），顶部态第 6 卡超出列表底 49px/181px（900/768），其<b>可见部分</b>与分页间距 16px 且不重叠；规格口径以滚到底态量测（32px）为准。</div>
+
+  <h3>A01 Agents 三列独立状态 <span class="st">✅ 达标</span></h3>
+  <p><b>实测</b>：verify-a01-r75.mjs <span class="pill ok">ALL OK</span>（三列独立变化、色值、12px/18px）。p2 目检直接视觉证据：连接全在线、执行未知×3+空闲×1、新鲜度橙已过期 / — / 绿 1 分钟前，三列取值各异。</p>
+
+  <h3>G01 测试覆盖 <span class="st">✅ 达标</span></h3>
+  <ul>
+    <li><b>全量 node --test 套件（R76 漏跑，本轮补齐）：首跑 236/237 → 修复 1 行过时断言后 237/237</b>（# tests 237 / # pass 237 / # fail 0）。失败根因：R76 改版本标识行高 17→16px 时 <code>test/g07-r73.test.js:344</code> 钉死断言未同步——规格变更遗留，修测试不修产品。</li>
+    <li>7 个验证脚本全过（w01-r76 22/22、w01r17 26/26、f01 ALL OK、w02 ALL OK、s01r13 三视口 exit=0、a01 ALL OK、g02 两项 PASS）。</li>
+    <li>四页截图（verify-g01.mjs exit=0）+ JSON 量测达标（待拍板 13/20 #E5B95E contrast 7.02、ag-hb 三态 contrast 10.17/9.6/5.87、geom.skillRows [144×6]）。</li>
+    <li>四页 AI 目检全部通过。p4 观察项裁决：fixture-time/fixture-bad/fixture-mixed 为 F01 验证脚本留存的测试数据，「F01 验证差异 A」提示为差异解释特性正常工作；「页面较暗」为暗色主题主观项，程序化实测 lf-size contrast 9.24、lf-tag 12px/18px 达标。</li>
+  </ul>
+
+  <h3>G02 代码规模与规范 <span class="st">✅ 达标</span></h3>
+  <p><b>实测</b>：app.js 有效 <b>620 ≤ 800</b>、server.js 有效 <b>278 ≤ 500</b>、最大函数 111 行（无 &gt;120）、<code>:root</code> 外颜色字面量 <b>0</b>、循环依赖 <b>0</b>。</p>
+</section>
+
+<section>
+  <h2>二、行数增减（基线 = 第 76 轮工作区）</h2>
+  <table>
+    <tr><th>文件</th><th>上轮</th><th>本轮</th><th>增减</th><th>说明</th></tr>
+    <tr><td>web/app.js</td><td>855（有效 620）</td><td>855</td><td>±0</td><td>未动</td></tr>
+    <tr><td>web/server.js</td><td>401（有效 278）</td><td>401</td><td>±0</td><td>未动，<b>8090 无需重启</b></td></tr>
+    <tr><td>web/render.js</td><td>586</td><td>586</td><td>±0</td><td>未动</td></tr>
+    <tr><td>web/server-api.mjs</td><td>915</td><td>915</td><td>±0</td><td>未动</td></tr>
+    <tr><td>CSS 四文件合计</td><td>2150</td><td>2150</td><td>±0</td><td>base 691 + workbench 569 + pages 247 + layers 643</td></tr>
+    <tr><td>test/g07-r73.test.js</td><td>765</td><td>765</td><td>±0（行内改 1 处）</td><td>第 344 行断言 17px→16px（本轮唯一改动）</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>三、未达成项</h2>
+  <p>无，7 项全部达标。两点说明：① 规格与 R76 一致，未做装饰性改动，重心为全量重验取证 + 补齐全量套件；② 技能 12→222、登记 17 条为运行期状态变化（中台注册 + F01 fixture 留存），非回归，已实测量证。</p>
+</section>
+
+<section>
+  <h2>四、汇总表</h2>
+  <table>
+    <tr><th>条目</th><th>状态</th><th>改了哪些文件</th><th>实测证据</th></tr>
+    <tr><td>W01 审批重读校验</td><td><span class="pill ok">达标</span></td><td>无（零产品改动）</td><td>verify-w01-r76 22/22 + w01r17 26/26</td></tr>
+    <tr><td>F01 历史版本快照</td><td><span class="pill ok">达标</span></td><td>无</td><td>verify-f01-r75 ALL OK</td></tr>
+    <tr><td>W02 检阅面板滚动</td><td><span class="pill ok">达标</span></td><td>无</td><td>verify-w02-r75 ALL OK（gap 92px、位移 0px）</td></tr>
+    <tr><td>S01 技能页分页</td><td><span class="pill ok">达标</span></td><td>无</td><td>verify-s01r13 exit=0 三视口（222 条实数据，32px/32px/147px）+ p3 目检</td></tr>
+    <tr><td>A01 Agents 三列</td><td><span class="pill ok">达标</span></td><td>无</td><td>verify-a01-r75 ALL OK + p2 目检</td></tr>
+    <tr><td>G01 测试覆盖</td><td><span class="pill ok">达标</span></td><td>test/g07-r73.test.js（1 行）</td><td><b>全量套件 237/237</b> + 7 脚本全过 + 四页截图/量测/目检</td></tr>
+    <tr><td>G02 代码规模</td><td><span class="pill ok">达标</span></td><td>无</td><td>620≤800 / 278≤500 / 最大 111 行 / 语义色 0 / 循环依赖 0</td></tr>
+  </table>
+  <p><b>服务说明</b>：本轮未动 server.js 与任何产品文件，8090 实例无需重启。</p>
+</section>
+
+<section>
+  <h2>遗留决策（需 Leo 拍板）</h2>
+  <ul>
+    <li>端口 9339 验证遗留临时实例（PID 50412）是否杀？拍板后执行 <code>taskkill //F //PID 50412</code>。</li>
+    <li>工作区大量未 commit 改动（R73-R77 报告、verify 脚本、test 文件、web 修改）是否提交？拍板后按规范 commit。</li>
+  </ul>
+</section>
+
+<footer>第 77 轮整改执行报告 · 2026-11-17 · 全部数值为真实实测，无捏造</footer>
+</div>
+</body>
+</html>

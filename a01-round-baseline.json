@@ -1,0 +1,101 @@
+{
+  "phase": "baseline",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-16T05:39:46.280Z",
+  "viewports": {
+    "1440x900": {
+      "text": "本页只列一线 Agent（3 个 Hermes 入口 + Codex）；中台共注册角色 7 个，其余为未启用的壳角色。两层数字均出自同一份名册（agentStats），与底栏一致。",
+      "beforeContent": "\"口径 · \"",
+      "computed": {
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "rgb(179, 192, 210)",
+        "clamp": "2",
+        "display": "flow-root",
+        "paddingTop": "0px",
+        "paddingBottom": "0px",
+        "minHeight": "0px",
+        "maxWidth": "720px",
+        "marginTop": "12px",
+        "marginBottom": "0px"
+      },
+      "rect": {
+        "left": 88,
+        "top": 200,
+        "width": 720,
+        "height": 36
+      },
+      "overflowX": 0,
+      "lineRects": 2,
+      "linesByHeight": 2,
+      "gridMarginTop": "24px",
+      "gapToHead": 24,
+      "gapToGrid": 24,
+      "stats": [
+        {
+          "label": "中台注册角色",
+          "value": "7"
+        },
+        {
+          "label": "一线角色",
+          "value": "4"
+        },
+        {
+          "label": "在线实例",
+          "value": "4"
+        }
+      ],
+      "agentCards": 4,
+      "innerW": 1440
+    },
+    "1280x800": {
+      "text": "本页只列一线 Agent（3 个 Hermes 入口 + Codex）；中台共注册角色 7 个，其余为未启用的壳角色。两层数字均出自同一份名册（agentStats），与底栏一致。",
+      "beforeContent": "\"口径 · \"",
+      "computed": {
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "rgb(179, 192, 210)",
+        "clamp": "2",
+        "display": "flow-root",
+        "paddingTop": "0px",
+        "paddingBottom": "0px",
+        "minHeight": "0px",
+        "maxWidth": "720px",
+        "marginTop": "12px",
+        "marginBottom": "0px"
+      },
+      "rect": {
+        "left": 88,
+        "top": 200,
+        "width": 720,
+        "height": 36
+      },
+      "overflowX": 0,
+      "lineRects": 2,
+      "linesByHeight": 2,
+      "gridMarginTop": "24px",
+      "gapToHead": 24,
+      "gapToGrid": 24,
+      "stats": [
+        {
+          "label": "中台注册角色",
+          "value": "7"
+        },
+        {
+          "label": "一线角色",
+          "value": "4"
+        },
+        {
+          "label": "在线实例",
+          "value": "4"
+        }
+      ],
+      "agentCards": 4,
+      "innerW": 1280
+    }
+  },
+  "shots": [
+    "a01-round-baseline-1440x900-agents.png",
+    "a01-round-baseline-1280x800-agents.png"
+  ]
+}

@@ -1,0 +1,691 @@
+/* app-base.css —— G02（第 5 轮）自 app.css 拆分：全局 token（:root 变量）、重置、骨架、顶/底栏、三栏框架、弹层与响应式。加载顺序 1/4。 */
+  /* ================= TASK-7.1 工作台三栏骨架（V2.0） =================
+     素色骨架：只做布局、数据、交互，不做美术（梵高皮在后续任务）。
+     布局铁律：整页不出纵向滚动条，三栏各自滚，顶栏 56 / 底栏 28 固定。 */
+  :root {
+    /* TASK-R9（评审 视觉）：全局 token 换代——沿用旧变量名，全部既有规则自动跟随。
+       新增 --hover 供卡片悬停；--paper/--ink* 保留给纸面旧规则，组件级在 R9 层覆盖。 */
+    --bg: #0D111A;          /* 主背景 */
+    --panel: #121925;       /* 面板 / 导航底 */
+    --card: #182230;        /* 卡片底 */
+    --line: #334155;        /* 分隔线（第 72 轮 G01/F01 口径统一） */
+    --hover: #1E2B3B;       /* 悬停 */
+    --paper: #F1EADB;       /* 纸色 · 选中步骤 / Inspector（旧规则沿用） */
+    --ink: #20211C;         /* 墨色 · 纸上的字 */
+
+    --amber: #E5B95E;       /* 审批金（只给品牌 / 待决策 / 关键动作）+ 进行中（TASK-11.1 统一口径） */
+    --green: #62C6A0;       /* 完成绿 */
+    --blue: #6C9EF1;        /* 选中蓝 / 进度条（不再表示「进行中」） */
+    --red: #EA7B76;         /* 故障红 */
+
+    --text: #F1ECE2;        /* 主文字 */
+    --muted: #A3B0BF;       /* 次文字 */
+    --faint: #8996A8;       /* 未知灰（没数据 = 「—」，不猜） */
+    /* G02（第 5 轮）：11 种高频硬编码颜色（169 处）语义化收口——组件规则一律 var() 引用，
+       计算色值与收口前逐一致（verify-assets/g02/colors-diff.json 实测 0 差异）。 */
+    --meta: #B3C0D2;         /* 辅助文字档（原 :1527 散置定义前移） */
+    --meta-strong: #D6E0ED;  /* 正文强调档（原 :1877 覆盖值前移,历史 #E2EAF4 归 --meta-hi） */
+    --meta-hi: #E2EAF4;      /* 重要状态文字档 */
+    --meta-num: #D7E1EE;     /* 登记数值档 */
+    --amber-bg: #3B3021;     /* 琥珀警示底 */
+    --ok: #65D9B1;           /* 恢复/有效强调（与完成绿 --green #62C6A0 是两个色值） */
+    /* 第 73 轮（F01/G02）：异常原因文案的规格色收口为 token——模块层一律 var() 引用，
+       不再散置硬编码（G02「页面模块禁止硬编码」口径）。 */
+    --alert-red: #E56B6F;    /* 不可校验文件行红边框（F01 第 73 轮规格值） */
+    --reason-red: #E8A4A7;   /* 异常原因说明文字（F01 第 73 轮规格值） */
+    /* 纸面上的状态色（同色系加深一档，保证对比度） */
+    --ink-green: #2E7D4F;
+    --ink-blue: #3D6BC4;
+    --ink-amber: #8A6A1A;
+    --ink-red: #B23A31;
+    --ink-muted: #7A7464;
+
+    --topbar-h: 52px;
+    --statusbar-h: 56px;
+    --rail-w: 56px;
+    --reqs-w: 248px;
+    --insp-w: 328px;
+  }
+  * { box-sizing: border-box; }
+
+  /* ================= 梵高皮（点缀级） =================
+     定位是「天天用的工具」，不是演示页。判断标准：连看 8 小时会不会累。
+     所以星空只出现在两处：
+       1) 顶栏 56px 的一条窄带（被压到 18% 亮度）
+       2) 页面最底部的极窄边（和星空呼应，不干扰阅读）
+     工作区（三栏）一律纯色，零纹理零图片。
+     金色只给「待拍板」，不做满屏装饰。 */
+
+  /* 顶栏的星空条：衬在顶栏底色之下，降低到几乎只是"有一点夜空感" */
+  #topbar::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: url("assets/starry-night.webp") center 38% / cover no-repeat;
+    opacity: .26;
+    filter: saturate(.85) brightness(.72);
+    pointer-events: none;
+    z-index: 0;
+  }
+  /* 顶栏内容压在星空之上 */
+  #topbar > * { position: relative; z-index: 1; }
+
+  /* 降噪开关：一键把星空也关掉，只剩纯色 */
+  body.quiet #topbar::before { opacity: 0; }
+
+  /* 底部一条极窄的星空边，和顶栏呼应 */
+  #statusbar::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: url("assets/starry-night.webp") center 92% / 1600px auto no-repeat;
+    opacity: .16;
+    pointer-events: none;
+    z-index: 0;
+  }
+  #statusbar > * { position: relative; z-index: 1; }
+  body.quiet #statusbar::before { opacity: 0; }
+
+  /* 选中的步骤卡用纸张纹理（唯一用纹理的数据区，因为它是"纸"的隐喻） */
+  .step-card.sel {
+    background-image: url("assets/canvas-texture.webp");
+    background-size: 384px 384px;
+    background-blend-mode: multiply;
+  }
+
+  /* 待拍板的金色星芒点缀：只给顶栏待决策胶囊，一个就够 */
+  #tb-decision::before {
+    content: "";
+    position: absolute; left: -9px; top: 50%; transform: translateY(-50%);
+    width: 18px; height: 18px;
+    background: url("assets/golden-star.webp") center / contain no-repeat;
+    opacity: .9;
+    pointer-events: none;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0; overflow: hidden;
+    display: flex; flex-direction: column;
+    background: var(--bg); color: var(--text);
+    font: 13px/20px "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  button { font: inherit; color: inherit; }
+
+  /* ================= 顶栏 56px ================= */
+  #topbar {
+    flex: none; height: var(--topbar-h);
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+    position: relative; z-index: 30;
+  }
+  .tb-logo {
+    font-size: 15px; font-weight: 700; letter-spacing: .02em; white-space: nowrap;
+  }
+  .tb-div { width: 1px; height: 20px; background: var(--line); flex: none; }
+  #tb-task {
+    font-size: 13px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+    flex: 0 1 auto;
+  }
+  /* 待决策琥珀胶囊：0 个时整个隐藏（hidden 属性），不留空位 */
+  #tb-decision {
+    flex: none; display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(224,179,65,.12); border: 1px solid rgba(224,179,65,.5);
+    color: var(--amber); border-radius: 999px;
+    padding: 2px 12px 2px 20px; font-size: 12.5px; cursor: pointer; white-space: nowrap;
+    position: relative;
+  }
+  #tb-decision:hover { background: rgba(224,179,65,.2); }
+  /* 同 settings-pop：hidden 属性必须真隐藏，否则 0 待决策时留一个空琥珀壳 */
+  #tb-decision[hidden] { display: none; }
+  .tb-spacer { flex: 1; }
+  .tb-icon {
+    flex: none; display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px; border-radius: 8px;
+    background: transparent; border: 1px solid transparent; cursor: pointer;
+    color: var(--muted);
+  }
+  .tb-icon:hover { color: var(--text); border-color: var(--line); }
+  .tb-icon.on { color: var(--text); border-color: var(--line); background: var(--card); }
+  .tb-icon svg { width: 17px; height: 17px; }
+  #tb-search-input {
+    flex: none; width: 168px; height: 30px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text); padding: 0 10px; font-size: 12.5px; outline: none;
+  }
+  #tb-search-input:focus { border-color: var(--blue); }
+  /* 响应式开关：宽屏不需要，媒体查询里才显示 */
+  #tb-reqs-toggle, #tb-insp-toggle { display: none; }
+
+  /* 设置弹层：只有真功能（暂停轮询 / 立即刷新 / 连接信息） */
+  #settings-pop {
+    position: absolute; top: calc(var(--topbar-h) - 6px); right: 12px;
+    min-width: 220px; padding: 12px 14px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0,0,0,.45);
+    display: flex; flex-direction: column; gap: 8px; z-index: 31;
+  }
+  /* hidden 属性要真的隐藏：上面的 display:flex 会盖掉 UA 的 [hidden]{display:none} */
+  #settings-pop[hidden] { display: none; }
+  #settings-pop h4 { margin: 0 0 2px; font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+  #settings-pop .sp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 12.5px; color: var(--muted); }
+  #settings-pop .sp-row b { color: var(--text); font-weight: 600; }
+  /* 设置面板按钮走 .btn 三级系统（TASK-10.1），不再单独定义 */
+
+  /* ================= 主框架：导航 + 三栏 ================= */
+  #frame {
+    flex: 1; min-height: 0;
+    display: flex; align-items: stretch;
+  }
+
+  /* ---- 导航 Rail 60px：固定，图标 + 底部专注入口 ---- */
+  #rail {
+    flex: none; width: var(--rail-w);
+    background: var(--panel); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 12px 0; gap: 6px;
+  }
+  .rail-logo {
+    width: 30px; height: 30px; border-radius: 8px; margin-bottom: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--card); border: 1px solid var(--line);
+    font-weight: 700; font-size: 14px; color: var(--text);
+  }
+  .rail-item {
+    width: 48px; padding: 7px 0 5px; border-radius: 8px;
+    background: transparent; border: 1px solid transparent; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--muted); font-size: 12px;
+  }
+  .rail-item:hover { color: var(--text); background: var(--card); }
+  .rail-item .ic { width: 20px; height: 20px; }
+  .rail-item[aria-current] { color: var(--text); background: var(--card); border-color: var(--line); }
+  .rail-spacer { flex: 1; }
+
+  /* ---- 需求列表 248px ---- */
+  #reqs {
+    flex: none; width: var(--reqs-w);
+    background: var(--bg); border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .reqs-head {
+    flex: none; display: flex; align-items: center; gap: 8px;
+    padding: 12px 14px 8px; font-size: 12px; color: var(--muted);
+    letter-spacing: .06em;
+  }
+  .reqs-head b { color: var(--text); font-weight: 600; }
+  #btn-overview {
+    margin-left: auto; background: transparent; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px;
+    color: var(--muted); font-size: 12px; padding: 1px 10px; white-space: nowrap;
+  }
+  #btn-overview:hover { color: var(--text); border-color: var(--muted); }
+  #btn-overview.on { color: var(--bg); background: var(--muted); border-color: var(--muted); font-weight: 600; }
+  #reqs-list {
+    flex: 1; min-height: 0; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 8px; padding: 4px 12px 14px;
+  }
+  .req-empty { color: var(--faint); padding: 18px 6px; text-align: center; font-size: 12.5px; }
+  /* TASK-R5（评审 #1）：部分读取失败的尾注——列表/文件页共用口径，不冒充完整 */
+  .reqs-partial { padding: 2px 4px 6px; font-size: 12px; color: var(--amber); }
+  .files-partial { color: var(--amber); font-size: 12px; margin: 0 0 10px; }
+  /* 需求卡 68–80px：名称 / 状态·当前阶段 / 已完成 n/m / 细进度条 */
+  .req-item {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--line);
+    border-radius: 8px; padding: 9px 12px 10px;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .req-item:hover { border-color: var(--muted); border-left-color: var(--muted); }
+  .req-item.sel { background: #1C2532; border-color: var(--line); border-left: 3px solid var(--blue); }
+  .req-name {
+    /* TASK-R7（评审 #7）：单行截断改两行夹断——标题信息量翻倍，长需求不再只剩半截 */
+    font-size: 13.5px; font-weight: 700; color: var(--text); line-height: 1.35;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .req-item.sel .req-name { color: #fff; }
+  .req-line2 { display: flex; align-items: center; gap: 8px; font-size: 12px; min-width: 0; }
+  .req-status { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
+  .s-active .dot { background: var(--amber); }
+  .s-awaiting .dot { background: var(--amber); }
+  .s-queued .dot { background: var(--faint); }
+  .s-delivered .dot { background: var(--green); }
+  .req-status.t-active { color: var(--amber); }
+  .req-status.t-awaiting { color: var(--amber); }
+  .req-status.t-queued { color: var(--muted); }
+  .req-status.t-delivered { color: var(--green); }
+  .req-stage { color: var(--faint); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .req-prog { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .req-bar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; margin-top: 2px; }
+  .req-bar i { display: block; height: 100%; background: var(--blue); border-radius: 2px; }
+
+  /* ---- 中央交付链：自适应，唯一主工作区 ---- */
+  /* TASK-11.1（R2）：padding/gap 收紧——625px 视口下 7 步轨 + 摘要 + 产物区
+     全部进首屏（预算 ≈330px < 可用 517px），内部滚动只兜底极端换行场景 */
+  #center {
+    flex: 1; min-width: 0; min-height: 0;
+    overflow-y: auto; padding: 12px 16px 16px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ch-head { display: flex; flex-direction: column; gap: 6px; }
+  .ch-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  /* TASK-R7（评审 #7）：标题允许换行占第二行，不再被状态徽标挤成省略号；
+     行高放宽，两行也立得住 */
+  .ch-title-row h2 { margin: 0; font-size: 19px; font-weight: 700; line-height: 1.4; flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere; }
+  .ch-id { font-size: 12px; color: var(--faint); letter-spacing: .06em; font-weight: 600; }
+  .ch-meta { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .ch-bar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; max-width: 640px; }
+  .ch-bar i { display: block; height: 100%; background: var(--blue); border-radius: 2px; transition: width .3s; }
+
+  /* TASK-R7（评审 #7）：链路头部「现在」快捷条——可拍板/已打回的步骤顶到最上面，
+     点击直达 Inspector。数据驱动渲染，没有待办就不出这条栏 */
+  .now-next { display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap; margin: 2px 0 12px; }
+  .nn-label {
+    flex: none; align-self: center; font-size: 12px; font-weight: 700; letter-spacing: .12em;
+    color: var(--amber); text-transform: uppercase;
+  }
+  .nn-item {
+    flex: 1 1 200px; max-width: 320px; display: flex; align-items: center; gap: 10px;
+    text-align: left; cursor: pointer; border-radius: 8px; padding: 8px 12px;
+    background: rgba(224,179,65,.08); border: 1px solid rgba(224,179,65,.45); color: var(--text);
+  }
+  .nn-item:hover { border-color: var(--amber); background: rgba(224,179,65,.14); }
+  .nn-item.nn-rej { background: rgba(228,104,93,.08); border-color: rgba(228,104,93,.45); }
+  .nn-item.nn-rej:hover { border-color: var(--red); background: rgba(228,104,93,.14); }
+  .nn-no { flex: none; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .nn-main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+  .nn-name { font-size: 14px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nn-why { font-size: 12px; color: var(--muted); }
+
+  /* 状态胶囊（居中/概览/Inspector 共用） */
+  .st { display: inline-flex; align-items: center; gap: 6px; padding: 1px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+  .st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .st-done { color: var(--green); background: rgba(111,211,160,.12); }
+  .st-running { color: var(--amber); background: rgba(224,179,65,.14); }
+  .st-awaiting { color: var(--amber); background: rgba(224,179,65,.12); }
+  .st-pending { color: var(--faint); background: rgba(147,161,181,.12); }
+  .st-skipped { color: var(--faint); background: rgba(102,116,138,.12); }
+  .st-failed { color: var(--red); background: rgba(228,104,93,.14); }
+  /* W02：等待前置条件（审批记录在、前序未通过）——灰系，不占审批金 */
+  .st-waitpre { color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); }
+  /* 纸面（选中卡/Inspector）上的状态色加深一档 */
+  .on-paper .st-done { color: var(--ink-green); background: color-mix(in srgb, var(--ink-green) 12%, transparent); }
+  .on-paper .st-running { color: var(--ink-amber); background: color-mix(in srgb, var(--ink-amber) 12%, transparent); }
+  .on-paper .st-awaiting { color: var(--ink-amber); background: color-mix(in srgb, var(--ink-amber) 12%, transparent); }
+  .on-paper .st-pending { color: var(--ink-muted); background: color-mix(in srgb, var(--ink-muted) 12%, transparent); }
+  .on-paper .st-skipped { color: var(--ink-muted); background: color-mix(in srgb, var(--ink-muted) 12%, transparent); }
+  .on-paper .st-waitpre { color: var(--ink-muted); background: color-mix(in srgb, var(--ink-muted) 12%, transparent); }
+  .on-paper .st-failed { color: var(--ink-red); background: color-mix(in srgb, var(--ink-red) 12%, transparent); }
+
+  /* 4 阶段横排：当前阶段高亮 */
+  .phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+  .phase {
+    padding: 8px 12px; border-radius: 8px;
+    background: var(--panel); border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  }
+  .phase .p-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
+  .phase .p-count { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .phase .p-count .c-run { color: var(--amber); }
+  .phase .p-count .c-wait { color: var(--amber); }
+  .phase.cur { border-color: var(--blue); background: rgba(91,143,249,.08); }
+  .phase.cur .p-name { color: var(--blue); }
+  .phase.fin { opacity: .82; }   /* 已完成阶段低视觉权重 */
+
+  /* 步骤卡按阶段成列：一阶段一列，上下堆叠 */
+  .cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: start; }
+  .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .step-card {
+    display: flex; flex-direction: column; gap: 6px; width: 100%;
+    text-align: left; cursor: pointer;
+    background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 14px;   /* TASK-R7（评审 #7）：密度放宽一档，呼吸感 */
+  }
+  .step-card:hover { border-color: var(--muted); }
+  .step-card.sel { background: var(--paper); border-color: #C9BFA9; color: var(--ink); }
+  .sc-row1 { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .sc-title {
+    font-size: 13.5px; font-weight: 700; color: var(--text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0;
+  }
+  .step-card.sel .sc-title { color: var(--ink); }
+  .step-card .st { flex: none; padding: 0 8px; }
+  .sc-row2 { font-size: 12.5px; color: var(--muted); display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
+  .step-card.sel .sc-row2 { color: var(--ink-muted); }
+  .sc-by { overflow: hidden; text-overflow: ellipsis; }
+
+  /* 概览矩阵（全部需求）：一行一个需求 */
+  .ov-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ov-table th, .ov-table td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+  .ov-table th { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+  .ov-row { cursor: pointer; }
+  .ov-row:hover td { background: rgba(91,143,249,.06); }
+  .ov-row.sel td { background: rgba(91,143,249,.1); }
+  .ov-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ov-cell.k-done { color: var(--green); }
+  .ov-cell.k-run { color: var(--amber); }
+  .ov-cell.k-wait { color: var(--amber); }
+  .ov-cell.k-idle { color: var(--faint); }
+  .ov-block { color: var(--amber); }
+  .ov-noblock { color: var(--faint); }
+
+  /* ---- Inspector 320px：纸面 ---- */
+  #inspector {
+    flex: none; width: var(--insp-w);
+    background: var(--paper); color: var(--ink);
+    border-left: 1px solid var(--line);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .insp-head {
+    flex: none; padding: 12px 16px;
+    font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--ink-muted);
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+  }
+  /* W02：右侧详情区独立纵向滚动——宽度 328px / 高度 100vh-52-56 由外层 flex 链给出，
+     横向不滚动（审批说明靠自动换行，不许横向溢出），外部 body overflow:hidden 不与内滚争夺。
+     W02 本轮：任务书口径 padding 16px 16px 80px——底部 80px = 64px 固定底栏 +
+     ≥16px 安全间距，滚到底时最后一段说明与操作区不贴边；无底栏步骤多出的
+     80px 只是留白，不遮挡任何内容。 */
+  #insp-body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 16px 16px 80px; }
+  .insp-empty {
+    margin-top: 28px; color: var(--ink-muted); font-size: 13px;
+    border: 1px dashed color-mix(in srgb, var(--ink) 28%, transparent); border-radius: 8px;
+    padding: 18px 14px; text-align: center;
+  }
+  .ip-step { font-size: 12px; font-weight: 700; letter-spacing: .14em; color: var(--ink-muted); }
+  .ip-name { margin: 4px 0 2px; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ip-time { font-size: 12px; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .ip-sec { margin-top: 16px; }
+  .ip-sec > h4 {
+    margin: 0 0 6px; font-size: 12px; font-weight: 700;
+    color: var(--ink-muted); letter-spacing: .08em;
+    border-bottom: 1px solid color-mix(in srgb, var(--ink) 12%, transparent); padding-bottom: 4px;
+  }
+  .ip-sec .ip-v { font-size: 13.5px; }
+  .ip-file {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 5px 0; font-size: 12.5px;
+    border-bottom: 1px dashed color-mix(in srgb, var(--ink) 10%, transparent);
+  }
+  .ip-file:last-child { border-bottom: none; }
+  .ip-file .fm { flex: none; font-style: normal; }
+  .ip-file .fn {
+    min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-weight: 600;
+  }
+  .ip-file .fb { flex: none; color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .ip-file .ft { flex: none; font-size: 12px; }
+  .ip-file.miss .fm, .ip-file.miss .fn, .ip-file.miss .ft { color: var(--ink-red); }
+  .ip-file.miss .fb { color: var(--ink-red); opacity: .75; }
+  /* 产物可点开：给出可交互的视觉提示 */
+  .ip-file[data-open-file] { cursor: pointer; border-radius: 5px; }
+  .ip-file[data-open-file]:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+
+  /* ================= 文件预览弹层 ================= */
+  #file-view {
+    position: fixed; inset: 0; z-index: 80;
+    display: none; align-items: center; justify-content: center;
+    background: rgba(6,9,14,.72); backdrop-filter: blur(2px);
+  }
+  #file-view.open { display: flex; }
+  .fv-panel {
+    width: min(920px, 92vw); height: min(760px, 88vh);
+    display: flex; flex-direction: column;
+    background: var(--paper); color: var(--ink);
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 30px 90px rgba(0,0,0,.6);
+  }
+  .fv-bar {
+    flex: none; display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-bottom: 1px solid color-mix(in srgb, var(--ink) 14%, transparent);
+    background: rgba(255,255,255,.35);
+  }
+  .fv-name { font-size: 13.5px; font-weight: 600; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fv-meta { font-size: 11.5px; color: var(--ink-muted); white-space: nowrap; }
+  .fv-path {
+    font-size: 12px; color: var(--ink-muted); padding: 0 14px 6px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-family: ui-monospace, Consolas, monospace; direction: rtl; text-align: left;
+  }
+  #fv-close {
+    margin-left: auto; flex: none; cursor: pointer;
+    background: transparent; border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
+    border-radius: 6px; color: var(--ink); padding: 3px 12px; font-size: 12px;
+  }
+  #fv-close:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+  #fv-body {
+    flex: 1; min-height: 0; overflow: auto; padding: 16px 20px 28px;
+    font-size: 13px; line-height: 1.75;
+  }
+  #fv-body pre {
+    margin: 0; white-space: pre-wrap; word-break: break-word;
+    font: 12.5px/1.7 ui-monospace, Consolas, "Microsoft YaHei", monospace;
+  }
+  #fv-body img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+  #fv-body .fv-msg { color: var(--ink-muted); font-size: 13px; }
+  #fv-body .fv-warn {
+    margin-bottom: 12px; padding: 7px 10px; border-radius: 6px;
+    background: color-mix(in srgb, var(--ink-red) 10%, transparent); color: var(--ink-red); font-size: 12px;
+  }
+  .ip-link { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; }
+  .ip-link .arr { color: var(--ink-muted); flex: none; }
+  .ip-link .ln { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  /* W02：上下游状态文字 13px / 20px */
+  .ip-link .ls { flex: none; font-size: 13px; line-height: 20px; color: var(--ink-muted); }
+  .ip-link .ls.k-done { color: var(--ink-green); }
+  .ip-link .ls.k-awaiting { color: var(--ink-amber); }
+  .ip-link .ls.k-running { color: var(--ink-amber); }
+  .ip-link .ls.k-failed { color: var(--ink-red); }
+  .ip-note { margin: 0; font-size: 13px; line-height: 1.65; color: #3F3B30; overflow-wrap: anywhere; }
+  .ip-none { color: var(--ink-muted); font-size: 13px; }
+
+  /* ================= 底部状态栏 28px ================= */
+  #statusbar {
+    flex: none; height: var(--statusbar-h);
+    display: flex; align-items: center; gap: 18px;
+    padding: 0 16px;
+    background: var(--panel); border-top: 1px solid var(--line);
+    font-size: 12px; line-height: 18px; color: var(--muted);
+    white-space: nowrap; overflow: hidden;
+    position: relative; z-index: 30;
+  }
+  #sb-conn { display: inline-flex; align-items: center; gap: 6px; }
+  /* G06：连接四态——加载中灰点；正常 var(--ok)；异常（连接失败/数据获取失败）var(--amber)。
+     规格色直接写死，不走主题变量（--green/--red 是另一套语义色，不等于本规格值）。 */
+  #sb-conn .dot { background: var(--faint); }
+  #sb-conn.ok { color: var(--ok); }
+  #sb-conn.ok .dot { background: var(--ok); }
+  #sb-conn.off { color: var(--amber); }
+  #sb-conn.off .dot { background: var(--amber); }
+  #sb-sync { margin-left: auto; color: var(--faint); font-variant-numeric: tabular-nums; }
+
+  /* ================= 专注模式（EaseDraw） =================
+     覆盖不挤压；关闭用 display:none 保留 iframe，不重载。 */
+  #focus-panel {
+    position: fixed; top: 0; right: 0; bottom: 0; z-index: 60;
+    /* 默认 560 而非 720：专注模式够用，还能留出 Inspector。
+       1440 屏上 720 会盖掉右半屏，等于"专注时看不见工作台"。 */
+    width: 560px; max-width: 100vw;
+    display: none; flex-direction: row;
+    background: var(--bg); border-left: 1px solid var(--line);
+    box-shadow: -24px 0 60px rgba(0,0,0,.5);
+  }
+  .fd-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fd-bar {
+    flex: none; height: 34px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 12px;
+    background: var(--panel); border-bottom: 1px solid var(--line);
+    font-size: 12.5px; color: var(--muted);
+  }
+  .fd-bar b { color: var(--text); font-weight: 600; }
+  #fd-close {
+    margin-left: auto; background: transparent; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 6px;
+    color: var(--muted); padding: 2px 10px; font-size: 12px;
+  }
+  #fd-close:hover { color: var(--text); border-color: var(--muted); }
+  #fd-frame { flex: 1; border: none; width: 100%; background: #fff; }
+
+  /* ================= 响应式 ================= */
+  /* W02：右栏改为 ≥1100 常驻 328px 滚动列；只有 ≤1099 才收成抽屉，点步骤卡或顶栏按钮时覆盖式展开 */
+  @media (max-width: 1099px) {
+    #inspector {
+      position: fixed; top: var(--topbar-h); right: 0; bottom: var(--statusbar-h);
+      width: var(--insp-w); z-index: 40;
+      transform: translateX(105%);
+      transition: transform .18s ease;
+      box-shadow: -18px 0 44px rgba(0,0,0,.4);
+      border-left: 1px solid var(--line);
+    }
+    body.insp-open #inspector { transform: none; }
+    #tb-insp-toggle { display: inline-flex; }
+    #tb-insp-toggle.on { color: var(--blue); border-color: var(--blue); }
+  }
+  /* ≤1024：需求列表也收起，中央优先；覆盖式展开 */
+  @media (max-width: 1024px) {
+    #reqs {
+      position: fixed; top: var(--topbar-h); left: var(--rail-w); bottom: var(--statusbar-h);
+      width: var(--reqs-w); z-index: 40;
+      transform: translateX(-105%);
+      transition: transform .18s ease;
+      box-shadow: 18px 0 44px rgba(0,0,0,.4);
+    }
+    body.reqs-open #reqs { transform: none; }
+    #tb-reqs-toggle { display: inline-flex; }
+    #tb-reqs-toggle.on { color: var(--blue); border-color: var(--blue); }
+  }
+
+/* TASK-8.2: semantic colors. Amber #E0B341 = Leo decision ONLY;
+   blue #5B8FF9 = selected requirement / step / Agent / navigation;
+   green #6FD3A0 = completed / online; red #E4685D = failed / broken / missing;
+   gray #66748A = pending / waiting. */
+html,body {height:100%;overflow:hidden}
+#inspector {background:var(--panel);color:var(--text)}
+.insp-head,.insp-empty,.ip-step,.ip-time,.ip-none,.ip-sec>h4,.ip-link .arr {color:var(--muted)}
+.ip-name {background:var(--paper);color:var(--ink);min-height:48px;max-height:56px;padding:8px 10px;border-radius:4px;flex-wrap:nowrap;font-size:14px}
+.ip-note,.ip-link .ln {color:var(--text)}
+.ip-sec>h4,.ip-file,.insp-head {border-color:var(--line)}
+.step-card.sel {background:var(--card);border:1px solid var(--blue);box-shadow:none;color:var(--text)}
+.step-card.sel .sc-title {color:var(--text)}
+.step-card.sel .sc-row2 {color:var(--muted)}
+/* TASK-R2：撤掉 2 列覆盖——阶段标题是 4 列（.phases），步骤列必须同构 4 列，一阶段一列 */
+.step-card {padding:14px;min-height:84px}
+.step-card:not(.sel) {border-color:var(--line)}
+.step-card.st-awaiting {background:var(--panel);color:var(--text)}
+.phase.cur {border-color:var(--blue)}
+/* TASK-R2：待拍板=Leo 的决策点，琥珀是它的语义色，不再灰化 */
+.s-awaiting .dot {background:var(--amber)}
+.req-status.t-awaiting,.phase .p-count .c-wait,.ov-block,.ov-cell.k-wait,.ip-link .ls.k-awaiting {color:var(--amber)}
+/* W02：等待前置条件的上下游文字——灰系 var(--muted)，不占审批金 */
+.ip-link .ls.k-waitpre {color:var(--muted)}
+/* G05：选中态规格——背景 var(--card)、边框 1px #78A9EF、文字 13px */
+.rail-item[aria-current=page],.rail-item.selected {color:var(--blue);border:1px solid #78A9EF;background:var(--card);font-size:13px}
+#rail .rail-spacer {display:none}
+#rail-focus {margin-top:auto}
+
+.skill-tools,.pagination {display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.skill-tools input {background:var(--bg);color:var(--text);border:1px solid var(--line);padding:7px;border-radius:6px}
+.skill-tools button,.pagination button {background:var(--card);color:var(--text);border:1px solid var(--line);padding:6px 12px;border-radius:6px;cursor:pointer}
+.pagination {justify-content:space-between;margin-top:10px}
+.skill-row {display:block;width:100%;text-align:left;background:var(--bg);color:var(--text);padding:9px 12px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.skill-row.selected {border-color:var(--blue)}
+.skill-row small {display:block;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.skill-layout {display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.skilldetail {color:var(--text);overflow-wrap:anywhere}
+.filegroup summary {padding:10px 0;cursor:pointer}
+.library-file {display:flex;gap:12px;align-items:center;width:100%;padding:10px;background:var(--bg);color:var(--text);border:1px solid var(--line);text-align:left;cursor:pointer}
+.library-file .ic{width:18px;height:18px}.library-file small {margin-left:auto;color:var(--muted)}
+
+
+/* TASK-9.1 — independent, internally scrolling pages. */
+:root {--font-display:"Georgia","Songti SC","SimSun","Noto Serif SC",serif;--font-body:"Segoe UI","Microsoft YaHei",system-ui,sans-serif;--font-mono:"Cascadia Code",Consolas,monospace;--ink-muted:var(--muted);--ink-green:var(--green);--ink-blue:var(--blue);--ink-red:var(--red)}
+[hidden] {display:none!important}
+body,button,input,textarea {font-family:var(--font-body)}
+/* TASK-R7（评审 #7）：衬线展示字体收回标题层（页标题/Logo/眉标）——业务数据
+   （步骤名、状态、进度、概览矩阵）回归无衬线正文，读起来不再发飘 */
+h1,h2,.tb-logo,.eyebrow {font-family:var(--font-display);font-weight:600!important}
+.fv-path,#fv-body pre,.skill-row b,.skilldetail h3,.skill-path,.library-file span {font-family:var(--font-mono)}
+/* TASK-10.1 油画风图标：米金 PNG 不跟随 currentColor，用透明度+滤镜区分状态 */
+.ic {flex:none;display:inline-block;vertical-align:-3px;opacity:.82;transition:opacity .15s,filter .15s}
+button:hover .ic {opacity:1}
+.tb-icon .ic {width:18px;height:18px}
+/* 默认暖米金，当前页偏蓝金：亮度略提 + 色相拉向蓝 + 饱和补回 */
+.rail-item[aria-current] .ic {opacity:1;filter:brightness(1.12) sepia(.3) hue-rotate(175deg) saturate(1.5)}
+button:focus-visible,[tabindex]:focus-visible,input:focus-visible {outline:2px solid var(--blue);outline-offset:3px}
+button:disabled {opacity:.45;cursor:default}
+.workbench-page {display:flex;flex:1;min-width:0;min-height:0}
+.module-page {flex:1;min-width:0;min-height:0;overflow:auto;padding:28px 32px 36px}
+.page-heading {display:flex;align-items:end;justify-content:space-between;gap:24px;border-bottom:1px solid var(--line);padding-bottom:20px;margin-bottom:24px}
+.page-heading h1 {font-size:30px;line-height:1.2;margin:6px 0 0;color:var(--paper)}
+.page-heading p {color:var(--muted);margin:0;font-size:15px}
+.eyebrow {font-size:10px;letter-spacing:.2em;color:var(--muted)}
+#agent-grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;align-items:start}
+.agent-card {background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.agent-card.selected {border-color:var(--blue)}
+.agent-card:hover {border-color:var(--blue)}
+.agent-select {display:block;width:100%;padding:22px;text-align:left;background:none;border:0;cursor:pointer}
+.agent-head {display:flex;gap:14px;align-items:center}
+.agent-avatar {width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.agent-name {font-size:20px;display:block;color:var(--paper)}
+.agent-role {font-size:12px;color:var(--muted)}
+.agent-online {display:block;color:var(--green);font-size:12px;margin-top:6px}.agent-offline {color:var(--faint)}
+.agent-badge {display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;border-radius:10px;font-size:12px;font-weight:600;letter-spacing:.5px;flex:none;background:#2A3548;color:#D8C7A0;border:1px solid #3A4760}
+.scene-code {background:#1E3A5F;color:#9DC8FF;border-color:#2E5480}
+.scene-video {background:#4A2340;color:#F2A8D0;border-color:#6B3A5C}
+.scene-note {background:#1E4038;color:#8FD9C0;border-color:#2C5C50}
+.st-anim b {display:block}
+.st-working b {color:var(--green)}
+.st-idle b {color:var(--faint)}
+.st-unknown b {color:var(--amber, #E0B341)}
+.agent-cost {color:var(--muted);font-size:12px}
+.agent-cost {border-top:1px solid var(--line);padding-top:12px;display:flex;justify-content:space-between}.agent-cost b {color:var(--paper);font-family:var(--font-display);font-size:17px;font-weight:600}
+.agent-detail {padding:0 22px 20px;border-top:1px solid var(--line)}
+.agent-detail h4 {color:var(--paper);font-size:15px;margin:18px 0 8px}.agent-kv {display:flex;justify-content:space-between;color:var(--muted);gap:12px}.agent-run {padding:10px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}.agent-run p {margin:4px 0;color:var(--muted)}
+#page-skills {display:flex;flex-direction:column;overflow:hidden}
+.skill-tools {flex:none;display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px}.skill-tools input {width:min(360px,100%);padding:9px 12px;font:inherit}
+#skill-filters {display:flex;gap:8px;align-items:center}#skill-filters button {border-radius:999px;padding:5px 16px}#skill-filters button.selected {border-color:var(--blue);color:var(--blue)}
+.skill-layout {display:flex;flex:1;min-height:0;gap:24px;position:relative}
+.skill-list-column {flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+#skill-list {overflow:auto;flex:1;min-height:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-content:start;padding:2px}
+.skill-row {padding:12px 14px;background:var(--panel);min-width:0;min-height:76px}.skill-row b {font-size:12px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:400}.skill-row:hover {border-color:var(--blue)}.skill-row small {margin-top:5px}
+.pagination {flex:none;padding-top:14px;margin:0;border-top:1px solid var(--line)}
+.skilldetail {flex:0 0 340px;padding:24px;background:var(--panel);border:1px solid var(--blue);border-radius:8px;overflow:auto;white-space:pre-wrap}.skilldetail h3 {font-size:18px;margin:22px 0;font-weight:400}.skilldetail h4 {color:var(--muted);margin:24px 0 6px}.skilldetail p {line-height:1.8}.skilldetail button {float:right;background:var(--card);border:1px solid var(--line);border-radius:5px;cursor:pointer}.skill-path {font-size:12px;color:var(--muted)}
+.filegroup {margin-bottom:18px;padding:12px 16px;background:#111823;border:1px solid var(--line);border-radius:10px}.filegroup summary {font-family:var(--font-display);font-size:17px;color:var(--paper)}.library-file:hover {border-color:var(--blue)}.library-file span {overflow-wrap:anywhere;min-width:0}.library-file small {white-space:nowrap}
+.file-pill {border:1px solid var(--blue);background:rgba(91,143,249,.1);color:var(--blue);border-radius:999px;padding:2px 10px;margin-left:auto;font-size:12px;cursor:pointer}.file-pill:disabled {border-color:var(--faint);color:var(--faint);background:none;opacity:.8}.step-card.has-files:hover {border-color:var(--blue);cursor:pointer}.step-card .sc-row2 {overflow:visible}
+#step-files {background:var(--panel);color:var(--text);border:1px solid var(--blue);border-radius:10px;width:min(560px,90vw);max-height:70vh;padding:20px}#step-files::backdrop {background:#06090eb8}.picker-heading {display:flex;justify-content:space-between;align-items:center}.picker-heading button {background:var(--card);border:1px solid var(--line);border-radius:6px;cursor:pointer}
+body:not([data-page="workbench"]) #tb-reqs-toggle,body:not([data-page="workbench"]) #tb-insp-toggle {display:none}
+@media(max-width:1199px){#agent-grid {grid-template-columns:repeat(3,minmax(0,1fr))}.skilldetail {position:fixed;right:20px;top:76px;bottom:48px;width:min(440px,calc(100vw - 100px));z-index:45;box-shadow:0 0 0 100vmax #06090eaa}}
+@media(max-width:900px){#agent-grid {grid-template-columns:repeat(2,minmax(0,1fr))}.module-page {padding:20px}#skill-list {grid-template-columns:1fr}.page-heading {align-items:start;flex-direction:column;gap:12px}}
+@media(max-width:600px){#agent-grid {grid-template-columns:1fr}.skill-tools {gap:8px}#skill-filters button {padding:5px 9px}}
+
+/* ================= TASK-10.1 油画风资产接入 ================= */
+/* 按钮底纹：btn-frame.png 是 96×96 九宫格描边纹理，实心色由 CSS 给 */
+.btn {
+  border: none;
+  background-image: url("assets/btn-frame.png");
+  background-size: 100% 100%;
+  background-color: var(--card);
+  border-radius: 8px;
+  padding: 6px 14px;
+  font: 12.5px/1.2 var(--font-body);
+  color: var(--text);
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.12); }
+.btn:active { filter: brightness(.94); }
+/* 主按钮：琥珀实心。底纹偏白压在琥珀上发灰，主按钮不套底纹 */
+.btn-primary { background-image: none; background-color: var(--amber); color: var(--ink); font-weight: 600; }
+.btn-primary:hover { filter: brightness(1.06); }
+/* 次按钮：卡片底色 + 底纹描边 */
+.btn-secondary {}
+/* 幽灵按钮：透明，hover 才出底 */
+.btn-ghost { background-image: none; background-color: transparent; color: var(--muted); }
+.btn-ghost:hover { background-color: var(--card); color: var(--text); filter: none; }
+.btn:disabled { opacity: .45; cursor: default; filter: none; }
+
+/* 空状态插画 */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 28px 0; color: var(--faint); font-size: 12.5px; }
+.empty img { opacity: .55; }
+

@@ -12,7 +12,9 @@ import { tmpdir } from 'node:os';
 
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const PORT = 9337;            // 独立端口，避免撞上其他验证实例
-const BASE = 'http://127.0.0.1:8090';
+// BASE 可用环境变量覆盖（R73 G02 收口：截图/量测跑在临时端口的新代码实例上，
+// 不依赖 8090 常驻进程是否已重启到最新 build）。
+const BASE = process.env.BASE || 'http://127.0.0.1:8090';
 const PHASE = process.env.PHASE || 'after';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

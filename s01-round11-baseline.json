@@ -1,0 +1,729 @@
+{
+ "phase": "baseline",
+ "base": "http://127.0.0.1:8090",
+ "when": "2026-11-16T05:32:33.844Z",
+ "viewports": {
+  "1440x900": {
+   "default": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "chinese-documentation",
+       "left": 182,
+       "bottom": 742,
+       "width": 550.5
+      },
+      {
+       "text": "chinese-git-workflow",
+       "left": 748.5,
+       "bottom": 742,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 756,
+      "left": 180,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "12px",
+     "listPaddingBottom": "2px",
+     "cardBottomToLineTop": 14,
+     "lineBottomToControlTop": 11.5,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 12 页",
+     "btnDisabled": [
+      true,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 180,
+      "y": 736,
+      "width": 1136,
+      "height": 64
+     },
+     "pngW": 1136,
+     "pngH": 64,
+     "lineGroups": [
+      {
+       "y0": 5,
+       "y1": 5,
+       "x0": 9,
+       "x1": 1111,
+       "core": 1065,
+       "soft": 1073,
+       "rows": 1
+      },
+      {
+       "y0": 20,
+       "y1": 20,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 33,
+       "y1": 33,
+       "x0": 1068,
+       "x1": 1126,
+       "core": 55,
+       "soft": 59,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "page2": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "doodle-anim",
+       "left": 182,
+       "bottom": 742,
+       "width": 550.5
+      },
+      {
+       "text": "dynamic-art-signature",
+       "left": 748.5,
+       "bottom": 742,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 756,
+      "left": 180,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "12px",
+     "listPaddingBottom": "2px",
+     "cardBottomToLineTop": 14,
+     "lineBottomToControlTop": 11.5,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 2 / 12 页",
+     "btnDisabled": [
+      false,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 180,
+      "y": 736,
+      "width": 1136,
+      "height": 64
+     },
+     "pngW": 1136,
+     "pngH": 64,
+     "lineGroups": [
+      {
+       "y0": 5,
+       "y1": 5,
+       "x0": 9,
+       "x1": 1111,
+       "core": 1065,
+       "soft": 1073,
+       "rows": 1
+      },
+      {
+       "y0": 20,
+       "y1": 20,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 33,
+       "y1": 33,
+       "x0": 9,
+       "x1": 1126,
+       "core": 110,
+       "soft": 118,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilter": {
+    "dom": {
+     "cardCount": 13,
+     "card0": {
+      "border": [
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 1,
+     "lastRow": [
+      {
+       "text": "skillify",
+       "left": 182,
+       "bottom": 742,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": null,
+     "pagRect": {
+      "top": 756,
+      "left": 180,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "12px",
+     "listPaddingBottom": "2px",
+     "cardBottomToLineTop": 14,
+     "lineBottomToControlTop": 11.5,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 1 页",
+     "btnDisabled": [
+      true,
+      true
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 180,
+      "y": 736,
+      "width": 1136,
+      "height": 64
+     },
+     "pngW": 1136,
+     "pngH": 64,
+     "lineGroups": [
+      {
+       "y0": 5,
+       "y1": 5,
+       "x0": 9,
+       "x1": 545,
+       "core": 533,
+       "soft": 537,
+       "rows": 1
+      },
+      {
+       "y0": 20,
+       "y1": 20,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilterChip": {
+    "label": "浏览器",
+    "count": 13
+   }
+  },
+  "1280x800": {
+   "default": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "chinese-documentation",
+       "left": 102,
+       "bottom": 642,
+       "width": 550.5
+      },
+      {
+       "text": "chinese-git-workflow",
+       "left": 668.5,
+       "bottom": 642,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 656,
+      "left": 100,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "12px",
+     "listPaddingBottom": "2px",
+     "cardBottomToLineTop": 14,
+     "lineBottomToControlTop": 11.5,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 12 页",
+     "btnDisabled": [
+      true,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 100,
+      "y": 636,
+      "width": 1136,
+      "height": 64
+     },
+     "pngW": 1136,
+     "pngH": 64,
+     "lineGroups": [
+      {
+       "y0": 5,
+       "y1": 5,
+       "x0": 9,
+       "x1": 1111,
+       "core": 1065,
+       "soft": 1073,
+       "rows": 1
+      },
+      {
+       "y0": 20,
+       "y1": 20,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 33,
+       "y1": 33,
+       "x0": 1068,
+       "x1": 1126,
+       "core": 55,
+       "soft": 59,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "page2": {
+    "dom": {
+     "cardCount": 20,
+     "card0": {
+      "border": [
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 2,
+     "lastRow": [
+      {
+       "text": "doodle-anim",
+       "left": 102,
+       "bottom": 642,
+       "width": 550.5
+      },
+      {
+       "text": "dynamic-art-signature",
+       "left": 668.5,
+       "bottom": 642,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": 0,
+     "pagRect": {
+      "top": 656,
+      "left": 100,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "12px",
+     "listPaddingBottom": "2px",
+     "cardBottomToLineTop": 14,
+     "lineBottomToControlTop": 11.5,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 2 / 12 页",
+     "btnDisabled": [
+      false,
+      false
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      },
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 100,
+      "y": 636,
+      "width": 1136,
+      "height": 64
+     },
+     "pngW": 1136,
+     "pngH": 64,
+     "lineGroups": [
+      {
+       "y0": 5,
+       "y1": 5,
+       "x0": 9,
+       "x1": 1111,
+       "core": 1065,
+       "soft": 1073,
+       "rows": 1
+      },
+      {
+       "y0": 20,
+       "y1": 20,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      },
+      {
+       "y0": 33,
+       "y1": 33,
+       "x0": 9,
+       "x1": 1126,
+       "core": 110,
+       "soft": 118,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilter": {
+    "dom": {
+     "cardCount": 13,
+     "card0": {
+      "border": [
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)",
+       "rgb(51, 66, 87)"
+      ],
+      "borderWidth": [
+       "1px",
+       "1px",
+       "1px",
+       "1px"
+      ],
+      "background": "rgb(24, 34, 48)",
+      "radius": "10px"
+     },
+     "lastRowCount": 1,
+     "lastRow": [
+      {
+       "text": "skillify",
+       "left": 102,
+       "bottom": 642,
+       "width": 550.5
+      }
+     ],
+     "leftRightBottomDiff": null,
+     "pagRect": {
+      "top": 656,
+      "left": 100,
+      "width": 1136,
+      "height": 56
+     },
+     "pagBorderTop": "1px solid rgb(51, 66, 87)",
+     "pagMarginTop": "12px",
+     "listPaddingBottom": "2px",
+     "cardBottomToLineTop": 14,
+     "lineBottomToControlTop": 11.5,
+     "btnHeights": [
+      32,
+      32
+     ],
+     "pagSpan": "第 1 / 1 页",
+     "btnDisabled": [
+      true,
+      true
+     ],
+     "pseudoOnLastRow": [
+      {
+       "before": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       },
+       "after": {
+        "content": "none",
+        "border": "0px rgb(241, 236, 226)",
+        "bg": "rgba(0, 0, 0, 0)"
+       }
+      }
+     ],
+     "columnChildren": [
+      "skill-list",
+      "skill-pagination"
+     ]
+    },
+    "pixelScan": {
+     "clip": {
+      "x": 100,
+      "y": 636,
+      "width": 1136,
+      "height": 64
+     },
+     "pngW": 1136,
+     "pngH": 64,
+     "lineGroups": [
+      {
+       "y0": 5,
+       "y1": 5,
+       "x0": 9,
+       "x1": 545,
+       "core": 533,
+       "soft": 537,
+       "rows": 1
+      },
+      {
+       "y0": 20,
+       "y1": 20,
+       "x0": 0,
+       "x1": 1135,
+       "core": 1136,
+       "soft": 1136,
+       "rows": 1
+      }
+     ]
+    }
+   },
+   "oddFilterChip": {
+    "label": "浏览器",
+    "count": 13
+   }
+  }
+ },
+ "shots": [
+  "s01-round11-baseline-1440x900-default.png",
+  "s01-round11-baseline-1440x900-page2.png",
+  "s01-round11-baseline-1440x900-oddFilter.png",
+  "s01-round11-baseline-1280x800-default.png",
+  "s01-round11-baseline-1280x800-page2.png",
+  "s01-round11-baseline-1280x800-oddFilter.png"
+ ]
+}

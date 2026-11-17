@@ -1,0 +1,1100 @@
+{
+  "phase": "after",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-16T22:19:30.383Z",
+  "viewport": "1440x900",
+  "pages": {
+    "workbench": [
+      {
+        "sel": ".req-item .req-status",
+        "text": "待拍板",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#243249",
+        "contrast": 7.02,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 151,
+          "w": 51,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".req-item .req-status.t-active",
+        "text": "进行中",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#121925",
+        "contrast": 9.6,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 587,
+          "w": 51,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".req-item .req-status.t-delivered",
+        "text": "已交付",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#121925",
+        "contrast": 8.48,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 671,
+          "w": 51,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      {
+        "sel": ".req-item .req-stage",
+        "text": "02 生产 · 开发计划",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#243249",
+        "contrast": 7,
+        "mono": false,
+        "rect": {
+          "x": 142,
+          "y": 152,
+          "w": 97,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".req-item .req-line2",
+        "text": "待拍板\n        02 生产 · 开发计划",
+        "fontSize": "12px",
+        "lineHeight": "20px",
+        "color": "#F1ECE2",
+        "rawColor": "rgb(241, 236, 226)",
+        "bg": "#243249",
+        "contrast": 10.96,
+        "mono": false,
+        "rect": {
+          "x": 83,
+          "y": 151,
+          "w": 195,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      }
+    ],
+    "agents": [
+      {
+        "sel": ".roster-head",
+        "text": "Agent连接健康执行状态上报新鲜度当前需求 / 最近动作",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 88,
+          "y": 244,
+          "w": 1320,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".agent-card .ag-ids",
+        "text": "lemate·lemate",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#0D111A",
+        "contrast": 14.16,
+        "mono": true,
+        "rect": {
+          "x": 238,
+          "y": 290,
+          "w": 107,
+          "h": 17
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-idcol .agent-role",
+        "text": "Coding",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 185,
+          "y": 311,
+          "w": 276,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".sc-label",
+        "text": "中台注册角色",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#172131",
+        "contrast": 8.77,
+        "mono": false,
+        "rect": {
+          "x": 945,
+          "y": 108,
+          "w": 118,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-conn.ok",
+        "text": "在线",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#121925",
+        "contrast": 8.48,
+        "mono": false,
+        "rect": {
+          "x": 477,
+          "y": 299,
+          "w": 112,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      null,
+      {
+        "sel": ".ag-work.work-idle",
+        "text": "空闲",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#121925",
+        "contrast": 13.21,
+        "mono": false,
+        "rect": {
+          "x": 605,
+          "y": 551,
+          "w": 112,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-work.work-unknown",
+        "text": "未知",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#121925",
+        "contrast": 13.21,
+        "mono": false,
+        "rect": {
+          "x": 605,
+          "y": 299,
+          "w": 112,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-hb.ok",
+        "text": "40 秒前",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#65D9B1",
+        "rawColor": "rgb(101, 217, 177)",
+        "bg": "#121925",
+        "contrast": 10.17,
+        "mono": false,
+        "rect": {
+          "x": 733,
+          "y": 551,
+          "w": 140,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-hb.stale",
+        "text": "已过期 · 11/15 00:08",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#121925",
+        "contrast": 9.6,
+        "mono": false,
+        "rect": {
+          "x": 733,
+          "y": 299,
+          "w": 140,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-hb.off",
+        "text": "—",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#8996A8",
+        "rawColor": "rgb(137, 150, 168)",
+        "bg": "#121925",
+        "contrast": 5.87,
+        "mono": false,
+        "rect": {
+          "x": 733,
+          "y": 383,
+          "w": 140,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-task",
+        "text": "上次上报已过期 · 11/15 00:08",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#121925",
+        "contrast": 13.21,
+        "mono": false,
+        "rect": {
+          "x": 889,
+          "y": 298,
+          "w": 502,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-task.hist",
+        "text": "上次上报已过期 · 11/15 00:08",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#121925",
+        "contrast": 13.21,
+        "mono": false,
+        "rect": {
+          "x": 889,
+          "y": 298,
+          "w": 502,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": "#agent-scope",
+        "text": "本页展示参与日常协作的一线 Agent 及其连接与执行状态。",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 88,
+          "y": 200,
+          "w": 720,
+          "h": 32
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      null
+    ],
+    "agentsDetail": [
+      {
+        "sel": ".agent-detail .agent-kv",
+        "text": "角色ID（稳定）lemate",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 105,
+          "y": 386,
+          "w": 1271,
+          "h": 27
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".agent-detail .agent-kv span:first-child",
+        "text": "角色ID（稳定）",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 105,
+          "y": 390,
+          "w": 84,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".agent-detail .agent-kv span:last-child",
+        "text": "lemate",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": false,
+        "rect": {
+          "x": 1340,
+          "y": 390,
+          "w": 36,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null
+    ],
+    "skills": [
+      {
+        "sel": "#skill-count",
+        "text": "匹配 222 / 222",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1207,
+          "y": 118,
+          "w": 77,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".sfr-label",
+        "text": "用途",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 212,
+          "y": 241,
+          "w": 34,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-row small",
+        "text": "Fast headless browser for QA testing",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#182230",
+        "contrast": 12.02,
+        "mono": false,
+        "rect": {
+          "x": 231,
+          "y": 368,
+          "w": 263,
+          "h": 36
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-row .sk-tag",
+        "text": "claude",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#F1ECE2",
+        "rawColor": "rgb(241, 236, 226)",
+        "bg": "#26384F",
+        "contrast": 10.13,
+        "mono": false,
+        "rect": {
+          "x": 231,
+          "y": 432,
+          "w": 44,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-row .sk-cat",
+        "text": "类别 浏览器",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 435,
+          "y": 434,
+          "w": 58,
+          "h": 16
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".skill-path",
+        "text": "C:/Users/Administrator/.claude/skill",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": true,
+        "rect": {
+          "x": 885,
+          "y": 634,
+          "w": 363,
+          "h": 36
+        },
+        "clipX": false,
+        "escX": false
+      }
+    ],
+    "files": [
+      {
+        "sel": "#file-count",
+        "text": "匹配 14 / 14 个产物（17 条登记）",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1213,
+          "y": 118,
+          "w": 180,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".file-only",
+        "text": "只看有产物",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1048,
+          "y": 195,
+          "w": 87,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-name",
+        "text": "fixture-time.md",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#F1ECE2",
+        "rawColor": "rgb(241, 236, 226)",
+        "bg": "#182230",
+        "contrast": 13.61,
+        "mono": false,
+        "rect": {
+          "x": 150,
+          "y": 329,
+          "w": 93,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-src",
+        "text": "C:/Users/Administrator/Desktop/Soda ",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": true,
+        "rect": {
+          "x": 150,
+          "y": 353,
+          "w": 813,
+          "h": 16
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-size",
+        "text": "V1133 B·d4ada83b ✓2026-11-15 17:00",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#65D9B1",
+        "rawColor": "rgb(101, 217, 177)",
+        "bg": "#182230",
+        "contrast": 9.24,
+        "mono": true,
+        "rect": {
+          "x": 979,
+          "y": 323,
+          "w": 119,
+          "h": 34
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-type",
+        "text": "历史归档",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 997,
+          "y": 882,
+          "w": 66,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".lf-tag.unver",
+        "text": "无法校验",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#26384F",
+        "contrast": 6.47,
+        "mono": false,
+        "rect": {
+          "x": 979,
+          "y": 635,
+          "w": 64,
+          "h": 22
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".fv-path",
+        "text": "C:/Users/Administrator/Desktop/Soda ",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#121925",
+        "contrast": 9.56,
+        "mono": true,
+        "rect": {
+          "x": 1020,
+          "y": 48,
+          "w": 420,
+          "h": 26
+        },
+        "clipX": true,
+        "escX": false
+      },
+      {
+        "sel": ".fvd-row span",
+        "text": "执行者",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#0D111A",
+        "contrast": 10.24,
+        "mono": false,
+        "rect": {
+          "x": 1045,
+          "y": 94,
+          "w": 36,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".fvd-row b",
+        "text": "selftest",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#0D111A",
+        "contrast": 14.16,
+        "mono": false,
+        "rect": {
+          "x": 1374,
+          "y": 93,
+          "w": 41,
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      {
+        "sel": ".lf-lines .lf-size",
+        "text": "V1133 B·d4ada83b ✓2026-11-15 17:00",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#65D9B1",
+        "rawColor": "rgb(101, 217, 177)",
+        "bg": "#182230",
+        "contrast": 9.24,
+        "mono": true,
+        "rect": {
+          "x": 979,
+          "y": 323,
+          "w": 119,
+          "h": 34
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-size.ok",
+        "text": "✓ 384 B",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#182230",
+        "contrast": 7.71,
+        "mono": false,
+        "rect": {
+          "x": 979,
+          "y": 860,
+          "w": 42,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-exec",
+        "text": "selftest",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 150,
+          "y": 373,
+          "w": 38,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-exec.na",
+        "text": "—",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#8996A8",
+        "rawColor": "rgb(137, 150, 168)",
+        "bg": "#182230",
+        "contrast": 5.34,
+        "mono": false,
+        "rect": {
+          "x": 979,
+          "y": 882,
+          "w": 12,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      }
+    ]
+  },
+  "stress": {
+    "workbench": {
+      "cases": [
+        {
+          "sel": ".req-item .req-stage",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 136,
+            "h": 18
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".req-item .req-line2",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 195,
+            "h": 80
+          },
+          "clipX": true,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    },
+    "agents": {
+      "cases": [
+        {
+          "sel": ".agent-detail .agent-kv span:last-child",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 965,
+            "h": 18
+          },
+          "clipX": false,
+          "escX": false
+        },
+        {
+          "sel": ".ag-task",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 492,
+            "h": 40
+          },
+          "clipX": false,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    },
+    "skills": {
+      "cases": [
+        {
+          "sel": ".skill-row small",
+          "kind": "long-cn",
+          "found": true,
+          "rect": {
+            "w": 263,
+            "h": 54
+          },
+          "clipX": false,
+          "escX": false
+        },
+        {
+          "sel": ".skill-path",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 363,
+            "h": 90
+          },
+          "clipX": false,
+          "escX": false
+        },
+        {
+          "sel": ".skill-path",
+          "kind": "long-mix",
+          "found": true,
+          "rect": {
+            "w": 363,
+            "h": 36
+          },
+          "clipX": false,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    },
+    "files": {
+      "cases": [
+        {
+          "sel": ".library-file .lf-src",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 813,
+            "h": 16
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".fv-path",
+          "kind": "long-path",
+          "found": true,
+          "rect": {
+            "w": 420,
+            "h": 26
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".fv-path",
+          "kind": "long-mix",
+          "found": true,
+          "rect": {
+            "w": 420,
+            "h": 26
+          },
+          "clipX": true,
+          "escX": false
+        },
+        {
+          "sel": ".fvd-row b",
+          "kind": "long-mix",
+          "found": true,
+          "rect": {
+            "w": 322,
+            "h": 20
+          },
+          "clipX": true,
+          "escX": false
+        }
+      ],
+      "pageOverflowX": false
+    }
+  },
+  "geom": {
+    "workbench": {
+      "reqItems": [
+        94,
+        94,
+        76,
+        76,
+        76,
+        76,
+        76,
+        76
+      ],
+      "agentCards": [],
+      "skillRows": [],
+      "fileRows": [],
+      "fileMainW": [],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "agents": {
+      "reqItems": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "agentCards": [
+        18,
+        76,
+        76,
+        76,
+        76
+      ],
+      "skillRows": [],
+      "fileRows": [],
+      "fileMainW": [],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "skills": {
+      "reqItems": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "agentCards": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "skillRows": [
+        144,
+        144,
+        144,
+        144,
+        144,
+        144
+      ],
+      "fileRows": [],
+      "fileMainW": [],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "files": {
+      "reqItems": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "agentCards": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "skillRows": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "fileRows": [
+        108,
+        108,
+        124,
+        84,
+        84,
+        84,
+        84,
+        84,
+        122,
+        84,
+        84,
+        84
+      ],
+      "fileMainW": [
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813
+      ],
+      "pageOverflowX": false,
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      }
+    }
+  },
+  "workbenchExtra": {
+    "directTextNodes": 0
+  },
+  "shots": [
+    "verify-g01-p1-workbench.png",
+    "verify-g01-p2-agents.png",
+    "verify-g01-p3-skills.png",
+    "verify-g01-p4-files.png"
+  ]
+}

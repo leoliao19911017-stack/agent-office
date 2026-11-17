@@ -1,0 +1,273 @@
+{
+  "phase": "after",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-16T06:36:19.221Z",
+  "scenarios": {
+    "S1_three_classes": {
+      "desc": "最近上报(lemate) / 超阈值+心跳新鲜(winter,11-15 00:08) / 从未上报(karina)",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "执行中",
+            "hb": {
+              "text": "30 秒前",
+              "cls": "ag-hb ok",
+              "title": "最后一次业务上报 14:35，在 2 分钟过期阈值内",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(101, 217, 177)",
+              "colorHex": "#65D9B1"
+            },
+            "task": "在做 A02 修复",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "已过期 · 11/15 00:08",
+              "cls": "ag-hb stale",
+              "title": "最后一次业务上报 11/15 00:08（1 天前），已超 2 分钟过期阈值；连接心跳是「连接健康」列的口径，不参与本列",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(229, 185, 94)",
+              "colorHex": "#E5B95E"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "—",
+              "cls": "ag-hb off",
+              "title": "从未上报业务状态：缺上报时间显「—」，不拿连接心跳冒充新鲜",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(145, 160, 180)",
+              "colorHex": "#91A0B4"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "1 分钟前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(101, 217, 177)",
+              "colorHex": "#65D9B1"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": false
+      }
+    },
+    "S2_heartbeat_only": {
+      "desc": "仅 winter 连接心跳 15s→2s，业务上报时间不变——新鲜度不得重置",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "执行中",
+            "hb": {
+              "text": "40 秒前",
+              "cls": "ag-hb ok",
+              "title": "最后一次业务上报 14:35，在 2 分钟过期阈值内",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(101, 217, 177)",
+              "colorHex": "#65D9B1"
+            },
+            "task": "在做 A02 修复",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "已过期 · 11/15 00:08",
+              "cls": "ag-hb stale",
+              "title": "最后一次业务上报 11/15 00:08（1 天前），已超 2 分钟过期阈值；连接心跳是「连接健康」列的口径，不参与本列",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(229, 185, 94)",
+              "colorHex": "#E5B95E"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "—",
+              "cls": "ag-hb off",
+              "title": "从未上报业务状态：缺上报时间显「—」，不拿连接心跳冒充新鲜",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(145, 160, 180)",
+              "colorHex": "#91A0B4"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "1 分钟前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(101, 217, 177)",
+              "colorHex": "#65D9B1"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": false
+      }
+    },
+    "S3_report_goes_stale": {
+      "desc": "lemate 业务上报推到 5 分钟前（超阈值），连接心跳仍新鲜——新鲜度翻过期、连接仍在线",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "已过期 · 14:31",
+              "cls": "ag-hb stale",
+              "title": "最后一次业务上报 14:31（5 分钟前），已超 2 分钟过期阈值；连接心跳是「连接健康」列的口径，不参与本列",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(229, 185, 94)",
+              "colorHex": "#E5B95E"
+            },
+            "task": "上次上报已过期 · 14:31",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "已过期 · 11/15 00:08",
+              "cls": "ag-hb stale",
+              "title": "最后一次业务上报 11/15 00:08（1 天前），已超 2 分钟过期阈值；连接心跳是「连接健康」列的口径，不参与本列",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(229, 185, 94)",
+              "colorHex": "#E5B95E"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "—",
+              "cls": "ag-hb off",
+              "title": "从未上报业务状态：缺上报时间显「—」，不拿连接心跳冒充新鲜",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(145, 160, 180)",
+              "colorHex": "#91A0B4"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "1 分钟前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(101, 217, 177)",
+              "colorHex": "#65D9B1"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": false
+      }
+    }
+  },
+  "shots": [
+    "a02r3-after-S1_three_classes-1440x900.png",
+    "a02r3-after-S2_heartbeat_only-1440x900.png",
+    "a02r3-after-S3_report_goes_stale-1440x900.png"
+  ]
+}

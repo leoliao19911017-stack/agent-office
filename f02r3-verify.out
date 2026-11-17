@@ -1,0 +1,73 @@
+== A. API 地面真值 + /api/office/file-version ==
+PASS  A1 F01R10 doc 登记 = 300B/9490ac36（夹具未动）  | 300B 9490ac36
+PASS  A2 F01R10 plan 登记 = 124B/f0431173  | 124B f0431173
+PASS  A3 F01R10 doc›time 登记 = 133B/d4ada83b  | 133B
+PASS  A4 file-version doc›time → 可用·磁盘现状核对一致 133B/d4ada83b  | HTTP 200 disk-current 133B d4ada83b
+PASS  A5 file-version doc›ver(300B 历史) → 明确不可用·快照核对不上  | HTTP 200 snapshot-mismatch
+PASS  A6 A5 的快照实测：15B/43615f79 ≠ 登记 300B/9490ac36（SHA-256+字节双比对）  | 快照 15B/43615f79 vs 登记 300B/9490ac36
+PASS  A7 A5 同时回磁盘实测 124B/f0431173（只报数值，不回内容冒充）  | disk 124B/f0431173 text=undefined
+PASS  A8 file-version plan›ver → 可用 124B/f0431173  | disk-current 124B
+PASS  A9 file-version plan›time → 可用 133B/d4ada83b  | disk-current
+PASS  A10 vkey 双确认：拿 plan 的指纹问 doc 登记 → HTTP 409 拒绝  | HTTP 409 vkey-mismatch
+PASS  A11 登记不存在 → HTTP 404  | HTTP 404 reg-not-found
+PASS  A12 file-version TEST-R11 app.css（登记 80408B，磁盘漂移）→ 明确不可用·无快照留档  | reg 80408B disk 121944B/2eec1142（磁盘值实测自取，不硬编码）
+== B. 300B 历史登记预览（不可用态） ==
+PASS  B1 所点行身份 = TEST-F01R10›doc · sha:9490ac36（物理文件+版本登记双绑定）  | TEST-F01R10›doc sha:9490ac36152969f6… cls=lf-size lf-reg lf-hist
+PASS  B2 data-fv-hint=hist 且无 <pre>（不展示任何冒充内容）  | hint=hist pre=false
+PASS  B3 正文无磁盘 V2 字样（不冒充当前文件）  | 含"当前版本 V2"=false
+PASS  B4 正文无快照文本"旧版快照"（不冒充快照）  | 含"旧版快照"=false
+PASS  B5 提示样式 = 12px / 18px / #E5B95E / 背景 #3B3021  | {"fontSize":"12px","lineHeight":"18px","color":"rgb(229, 185, 94)","bg":"rgb(59, 48, 33)","padTop":"12px","padRight":"12px","padBottom":"12px","padLeft":"12px"}
+PASS  B6 提示内边距 12px 四边  | 12px/12px/12px/12px
+PASS  B7 元数据：登记ID=TEST-F01R10›doc、登记字节=300 B（300 B）  | TEST-F01R10›doc | 300 B（300 B）
+PASS  B8 保存原文行含快照实测 15B/43615f79 ≠ 登记 9490ac36  | 有快照留档但核对不上：快照 15 B · 指纹 43615f79 ≠ 登记版本 指纹 9490ac36，不能冒充历史原文，不可预览
+PASS  B9 服务端核对行 = file-version 不可用（snapshot-mismatch）+ 快照实测值  | file-version：不可用（snapshot-mismatch，快照实测 15 B · 指纹 43615f79）
+PASS  B10 磁盘当前行只报实测 124B/f0431173，不展示内容  | 124 B · 指纹 f0431173，属另一条登记（TEST-F01R10›plan）的版本，不在历史预览里展示
+PASS  B11 定位入口 = TEST-F01R10|doc  | TEST-F01R10|doc
+== C. 124B 当前登记预览 ==
+PASS  C1 所点行身份 = TEST-F01R10›plan  | TEST-F01R10›plan
+PASS  C2 pre 页内实测 = 124B / sha256=f0431173…（与所选登记指纹逐字节一致）  | 124B f04311738965
+PASS  C3 正文含「当前版本 V2」（当前版本正常展示，非冒充）
+PASS  C4 data-fv-hint 未标历史（match 分支不贴提示）  | hint=null
+PASS  C5 定位入口 = TEST-F01R10|plan  | TEST-F01R10|plan
+== D. 133B 同版本双登记 ==
+PASS  D1 doc›time：登记身份=doc、pre=133B/d4ada83b、定位 doc  | doc 133B d4ada83b goto=TEST-F01R10|doc
+PASS  D2 plan›time（同版本合并行）：pre=133B/d4ada83b、无 124B/300B 串入、行根身份=TEST-F01R10  | 133B d4ada83b 行内登记=[TEST-F01R10›plan] 行根=TEST-F01R10
+PASS  D2b plan›time 按条核对由服务端完成（A9 已过：133B/d4ada83b 可用）  | 见 A9
+== E. TEST-R11 app.css 漂移登记 ==
+PASS  E1 登记身份 = TEST-R11 · vkey=sha:selftest-placeholder（历史分支接管；合并行回退行根身份）  | 行根=TEST-R11 vk=sha:selftest-placeholder… 行内登记=[TEST-R11›doc,TEST-R11›plan]
+PASS  E2 无 <pre>——磁盘 121879B 当前内容不再冒充 80408B 登记版本  | pre=false
+PASS  E3 服务端核对行 = no-snapshot（无保存原文、无快照留档）  | file-version：不可用（no-snapshot）
+PASS  E4 磁盘当前行报实测 121944B 现值 / 指纹 2eec1142（只报数值不展示内容）  | 119.1 KB · 指纹 2eec1142
+== F. 交替切换 10 次 + 刷新 3 次 ==
+PASS  F1a 300B→hist：无 pre、无 V2/快照冒充  | hint=hist pre=false
+PASS  F2b 124B→match：pre=124B/f0431173  | 124B f0431173
+PASS  F3a 300B→hist：无 pre、无 V2/快照冒充  | hint=hist pre=false
+PASS  F4b 124B→match：pre=124B/f0431173  | 124B f0431173
+PASS  F5a 300B→hist：无 pre、无 V2/快照冒充  | hint=hist pre=false
+PASS  F6b 124B→match：pre=124B/f0431173  | 124B f0431173
+PASS  F7a 300B→hist：无 pre、无 V2/快照冒充  | hint=hist pre=false
+PASS  F8b 124B→match：pre=124B/f0431173  | 124B f0431173
+PASS  F9a 300B→hist：无 pre、无 V2/快照冒充  | hint=hist pre=false
+PASS  F10b 124B→match：pre=124B/f0431173  | 124B f0431173
+PASS  刷新1后 聚合仍 2 物理文件  | rows=2
+PASS  刷新1后 登记仍 4 条  | regs=4
+PASS  刷新1后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  刷新2后 聚合仍 2 物理文件  | rows=2
+PASS  刷新2后 登记仍 4 条  | regs=4
+PASS  刷新2后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+PASS  刷新3后 聚合仍 2 物理文件  | rows=2
+PASS  刷新3后 登记仍 4 条  | regs=4
+PASS  刷新3后 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+== G. 版本选择状态色 ==
+PASS  G1 .lf-cur 当前版本行 = rgb(101,217,177)=#65D9B1  | rgb(101, 217, 177)
+PASS  G2 .lf-hist 历史版本行 = rgb(175,192,213)=#AFC0D5  | rgb(175, 192, 213)
+== H. 历史内容未被修改 ==
+PASS  H1 10 次切换+3 次刷新后 doc 登记 = 300B/9490ac36（历史内容未变）  | 300B 9490ac36
+PASS  H2 TEST-F01R10.json 文件 sha256 前后一致（登记档案零写入）  | 26906be77cc7 → 26906be77cc7
+PASS  H3 TEST-R11.json 文件 sha256 前后一致  | 0dd1e387c790 → 0dd1e387c790
+PASS  H4 页面 JS 异常 = 0  | 0
+PASS  终态 聚合仍 2 物理文件  | rows=2
+PASS  终态 登记仍 4 条  | regs=4
+PASS  终态 组头明示 2 个产物（4 条登记）  | F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）
+
+总计: 63 PASS / 0 FAIL

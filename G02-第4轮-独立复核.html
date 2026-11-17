@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G02 第 4 轮 — 独立复核记录</title>
+<style>
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; color: #1f2328; background: #fafafa; line-height: 1.65; }
+  h1 { font-size: 22px; border-bottom: 2px solid #d0d7de; padding-bottom: 8px; }
+  h2 { font-size: 17px; margin-top: 28px; }
+  .verdict { background: #dafbe1; border: 1px solid #4ac26b; border-radius: 6px; padding: 10px 14px; font-weight: 600; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13.5px; background: #fff; }
+  th, td { border: 1px solid #d0d7de; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f2f5; }
+  code { background: #eff1f3; border-radius: 4px; padding: 1px 5px; font-size: 12.5px; font-family: Consolas, monospace; }
+  .ok { color: #1a7f37; font-weight: 600; }
+  ol li, ul li { margin: 4px 0; }
+  .muted { color: #57606a; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>G02 第 4 轮 — 独立复核记录</h1>
+<p class="muted">日期：2026-11-16 23:25 ｜ 复核会话：与第 4 轮实施会话并行的独立会话</p>
+<p class="verdict">结论：第 4 轮全部验收声明经独立复测属实</p>
+
+<h2>复测矩阵（全部本会话真实输出）</h2>
+<table>
+<tr><th>验收项</th><th>命令</th><th>实测结果</th></tr>
+<tr><td>静态依赖检查</td><td><code>node verify-g02-deps.mjs</code></td><td class="ok">PASS：顶层前向引用 0、跨文件顶层写 0；调用期环 38 个均合法</td></tr>
+<tr><td>结构统计</td><td><code>node verify-g02-stats.mjs</code></td><td class="ok">app.js 1376≤1500，8 模块 ≤450，184 函数 ≤100 行</td></tr>
+<tr><td>单元测试</td><td><code>node --no-warnings --test ../test/g02-*.test.js</code></td><td class="ok">103/103 pass，fail 0（6 个测试文件）</td></tr>
+<tr><td>分支覆盖率</td><td><code>node tmp-g02-coverage.mjs</code></td><td class="ok">shared 98.5% / version 92.8% / approval 95.1% / decision-ops 100% / files 100% / server-core 90.4%，全 ≥90%</td></tr>
+<tr><td>17 条 API 路由</td><td><code>node tmp-g02-api-check.mjs</code></td><td class="ok">exit=0：形状全部与拆分前口径一致</td></tr>
+<tr><td>四页首屏</td><td><code>node --no-warnings --test ../test/g07-pages.test.js</code></td><td class="ok">4/4 pass（工作台 / Agents / 技能 / 文件）</td></tr>
+<tr><td>三流程 E2E</td><td>g02-flows.test.js D1–D3（含在 103 内）</td><td class="ok">审批 reject 闭环 + 文件预览 sha256 核对 + 历史版本双路径</td></tr>
+</table>
+<p>E2E 内嵌实测断言：verify 轨道节点 ≥24×24 且 <code>cursor:pointer</code>、预览抽屉 ≥400×200 且可见、页内 file-version 200 且保存原文与登记指纹一致。</p>
+
+<h2>两点澄清</h2>
+<ol>
+<li><b>app.js:57 未知全局 <code>file</code></b>：实为 <code>for (const [file, names] of Object.entries(NEED))</code> 的解构循环常量，块级局部、仅作标签使用。检查器词法层不追踪解构模式的误报，非代码问题。</li>
+<li><b>任务书数据过期</b>：「app.js 1769 行」为第 3 轮末状态；第 4 轮（并发会话）已完成拆分至 1376 行，本会话到达时工作已就绪，<b>本会话未修改任何产品代码</b>（诊断脚本已删）。</li>
+</ol>
+
+<h2>并发披露</h2>
+<p>23:19:33 另一会话将 D1 改测 reject 完整闭环——与前后端既有口径一致（verify 步骤的前序已登记产物即构成审批对象）。本会话曾独立诊断到同一结论。23:20:32 第 4 轮报告落盘。两会话无代码冲突。</p>
+
+<h2>还差什么（环境/流程事项）</h2>
+<ol>
+<li>Node v20.19.2 &lt; 22.5.0：9 个非 g02 测试因 <code>node:sqlite</code> 环境性失败，先于 G02 存在（升级需拍板）。</li>
+<li>未 commit：改动在工作区待拍板。</li>
+<li>临时工具文件（tmp-g02-*）保留与否待拍板。</li>
+<li>8090 开发服务（PID 42136）保留与否待拍板。</li>
+</ol>
+</body>
+</html>

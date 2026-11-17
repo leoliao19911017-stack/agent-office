@@ -1,0 +1,50 @@
+<!doctype html><html lang=zh-CN><head><meta charset=utf-8><title>S01 第11轮验证报告</title><style>
+body{font:14px/1.7 -apple-system,'Segoe UI','Microsoft YaHei',sans-serif;color:#D7E1EE;background:#0D111A;max-width:980px;margin:24px auto;padding:0 20px}
+h1{font-size:22px;border-bottom:1px solid #334257;padding-bottom:8px}h2{font-size:17px;color:#E2EAF4;margin-top:28px}h3{font-size:15px}
+table{border-collapse:collapse;width:100%;margin:12px 0;font-size:13px}th,td{border:1px solid #334257;padding:6px 10px;text-align:left}
+th{background:#182230}tr:nth-child(even) td{background:#121925}
+pre.code{background:#182230;border:1px solid #334257;border-radius:8px;padding:12px;overflow:auto;font:12px/1.6 Consolas,monospace;color:#B3C0D2}
+code{background:#182230;border-radius:4px;padding:1px 5px;font:12px Consolas,monospace;color:#E2EAF4}
+blockquote{border-left:3px solid #6C9EF1;background:#121925;margin:10px 0;padding:8px 14px;color:#B3C0D2}
+li{margin:4px 0}a{color:#6C9EF1}
+</style></head><body><h1>S01 · 第11轮验证报告：删除技能卡片底部多余横线</h1>
+
+<li>任务：仅保留分页区域上方一条通栏分隔线（100% × 1px × #334257），删除末行卡片下方左右两条独立横线；末行卡片底边 → 分隔线 24px，分隔线 → 分页控件 12px；卡片背景 #182230、圆角 10px、既有布局不变。</li><li>日期：2026-11-16 · 探针：<code>s01-round11-probe.mjs</code>（CDP + headless Chrome 1440×900 / 1280×800，DOM 实测 + 截图区域像素级横线扫描）</li><li>改动：<code>web/app.css</code> 末尾追加 S01 段 16 行（备份 <code>web/app.css.bak-s01r11</code>）；<code>web/app.js</code>、<code>index.html</code> 零改动。</li>
+<h2>根因</h2>
+
+<p><code>.skill-row</code> 基础规则（app.css:572）<code>border:1px solid var(--line)</code> 历代设计代际均未覆盖：末行左右两卡各自 1px #334257 底边框 + 分页 <code>border-top</code> 通栏线 = 三线重复分隔。无 JS 注入元素（<code>.skill-list-column</code> 仅 skill-list / skill-pagination 两个子元素）、无伪元素横线（末行卡片 <code>::before/::after</code> 均 <code>content:none</code>）。</p>
+
+<h2>修复（app.css 末尾追加）</h2>
+
+<pre class=code>
+.skill-row { border-color: transparent; }                                  /* 默认边框透明，边框仍占 1px，几何零变化 */
+#skill-list { padding-bottom: 0; }                                         /* 清 :631 的 2px 底 padding */
+#skill-pagination { margin-top: 24px; padding: 12px 4px 0; align-items: flex-start; }  /* 24px / 12px 精确间距 */
+</pre>
+
+<p><code>.selected</code>(:573) / <code>:hover</code>(:632) 蓝描边特异性 0-2-0 高于本规则 0-1-0，选中/悬停高亮不受影响。</p>
+
+<h2>实测数据（6 场景全过）</h2>
+
+<table><thead><tr><th>指标</th><th>基线</th><th>修复后</th><th>判定</th></tr></thead><tbody>
+<tr><td>像素扫描线组数（默认/换页，两视口）</td><td>3 组</td><td><b>2 组</b>（通栏线 + 按钮自身边框）</td><td>✅ 多余线已删</td></tr>
+<tr><td>像素扫描线组数（奇数卡筛选 13 张，末行单卡）</td><td>2 组</td><td><b>1 组</b>（仅通栏线）</td><td>✅</td></tr>
+<tr><td>末行卡片底边横线</td><td>2 段（x[9-1111]，列隙断开）</td><td><b>无</b></td><td>✅</td></tr>
+<tr><td>通栏分隔线</td><td>1px solid rgb(51,66,87)，x[0-1135] 满幅 1136px</td><td>同（y=756，core 1136/1136）</td><td>✅ 保留且 100% 宽</td></tr>
+<tr><td>卡片底边 → 分隔线</td><td>14px</td><td><b>24.0px</b></td><td>✅</td></tr>
+<tr><td>分隔线下沿 → 控件顶</td><td>11.5px</td><td><b>12.0px</b></td><td>✅</td></tr>
+<tr><td>末行左右卡底边 y 差（getBoundingClientRect）</td><td>0</td><td><b>0</b>（≤1）</td><td>✅</td></tr>
+<tr><td>换页后复测（第 1→2 页，共 12 页）</td><td>—</td><td>同上全过</td><td>✅</td></tr>
+<tr><td>卡片背景 / 圆角</td><td>rgb(24,34,48) / 10px</td><td><b>rgb(24,34,48)=#182230 / 10px</b></td><td>✅ 不变</td></tr>
+<tr><td>分页条带</td><td>56px 高</td><td><b>56px</b></td><td>✅ 不变</td></tr>
+<tr><td>选中卡描边</td><td>rgb(108,158,241)</td><td><b>rgb(108,158,241) 蓝描边保留</b>，详情面板正常打开</td><td>✅ 功能未动</td></tr>
+</tbody></table>
+
+<blockquote>"2 组"中的第二组是「下一页」按钮自身 59px 顶边框（分隔线下方 13px、属控件本体），基线同样存在，非分隔线。正常卡四边 computed border 全为 <code>rgba(0,0,0,0)</code>。</blockquote>
+
+<h2>证据文件</h2>
+
+<li><code>s01-round11-baseline.json</code> / <code>s01-round11-after.json</code> — 全量 DOM + 像素扫描数据</li><li><code>s01-round11-{baseline,after}-{1440x900,1280x800}-{default,page2,oddFilter}.png</code> — 12 张区域截图</li><li><code>web/app.css.bak-s01r11</code> — 改动前备份</li>
+<h2>还差什么</h2>
+
+<li>无遗留。未提交 git（按惯例等统一收口）；<code>app.css</code> 中本轮之前工作区已有的未提交改动未触碰。</li><p style=color:#8A97A8;margin-top:32px>S01 · 第11轮 · 2026-11-16 · 探针 s01-round11-probe.mjs</p></body></html>

@@ -1,0 +1,247 @@
+/* app-pages.css —— G02（第 5 轮）自 app.css 拆分：TASK-R11 层——Agents/技能/文件三个模块页与全局提示组件。加载顺序 3/4。 */
+  /* ================================================================
+     TASK-R11 层（GPT 第 11 轮整改）——只追加覆盖，不动前层。
+     规格：S02/S03/S04 技能页 · F01–F04 文件库 · G01/G02/G03 全局。
+     ================================================================ */
+
+  /* ---- G02：辅助页共享布局约束 ---- */
+  .module-page { font-size: 14px; line-height: 22px; padding: 24px 32px 32px; }
+  .module-page .btn { border-radius: 8px; }
+  .module-page h1 { font-size: 24px; line-height: 32px; }
+  .filegroup summary { font-size: 16px; line-height: 24px; }
+  /* 技能页内容最大宽 1136px（S01 第 72 轮钉死值）：页眉/工具栏/列表共用同一个居中容器 */
+  #page-skills { max-width: 1136px; margin-left: auto; margin-right: auto; width: 100%; }
+
+  /* ---- G01：页头 112px（标题左 + 三张统计卡 152×64 右）+ 范围说明（A01：一行 32px，窄屏最多两行 48px） ---- */
+  #page-agents .page-heading {
+    height: 112px; align-items: flex-start; flex-wrap: nowrap;
+    padding-bottom: 0; margin-bottom: 0;
+  }
+  #agent-stats {
+    display: flex; flex-wrap: nowrap; gap: 12px;
+    margin-top: 24px;   /* flex-start 对齐下把三张卡压回页眉中带（top≈100），与标题视觉齐平 */
+  }
+  .stat-card {
+    width: 152px; height: 64px; border-radius: 8px;
+    display: flex; flex-direction: column; justify-content: center; gap: 2px;
+    padding: 12px 16px;
+    background: #172131; border: 1px solid #334257;
+    cursor: help;
+  }
+  .sc-label { font-size: 12px; line-height: 18px; color: var(--muted); }
+  .sc-num { font-size: 22px; line-height: 28px; font-weight: 600; color: var(--text); }
+  #agent-scope {
+    font-size: 12px; line-height: 18px; color: #8FA3BA; max-width: 720px;
+    min-height: 32px; max-height: 48px; padding: 6px 0;   /* 1 行=32px、2 行=48px（border-box） */
+    margin: 12px 0 0;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .ag-ids {
+    font-style: normal; font-family: var(--font-mono); font-size: 11px; line-height: 16px;
+    color: var(--faint); margin-left: 8px; padding: 0 6px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    vertical-align: middle; font-weight: 400; white-space: nowrap;
+  }
+  #statusbar { gap: 12px; font-size: 12px; line-height: 18px; }
+
+  /* ---- S02：技能页两级筛选（用途一级 / 来源二级）---- */
+  .skill-tools {
+    flex: none; display: flex; flex-direction: column; align-items: stretch;
+    gap: 0; margin-bottom: 16px;   /* S04：列表与搜索区 16px */
+  }
+  #skill-search {
+    width: min(400px, 100%); height: 40px; flex: none;
+    border-radius: 8px; padding: 0 12px;
+    font-size: 14px; line-height: 20px;
+    background: var(--bg); border: 1px solid var(--line); color: var(--text);
+    outline: none;
+  }
+  #skill-search:focus { border-color: var(--blue); }
+  .skill-filter-rows { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .skill-filter-row { display: flex; align-items: center; gap: 8px; min-height: 32px; }
+  .sfr-label { flex: none; width: 34px; font-size: 12px; line-height: 18px; color: var(--muted); }
+  .chip-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+  .chip-row button {
+    height: 34px; padding: 0 12px; border-radius: 17px;   /* S01（第 72 轮）：筛选项高 34px */
+    background: var(--card); border: 1px solid var(--line); color: var(--muted);
+    font-size: 13px; line-height: 20px; cursor: pointer; position: relative;
+  }
+  .chip-row button::after { content: ""; position: absolute; inset: -2px; }   /* 热区补到 ≥36px */
+  .chip-row button:hover { border-color: var(--blue); color: var(--text); }
+  .chip-row button.selected { background: #243D61; border-color: var(--blue); color: var(--text); }
+  #skill-count { font-size: 13px; line-height: 20px; color: var(--muted); }
+
+  /* ---- S03：技能卡两组标签（Agent / 类别）+ 420px 详情 ---- */
+  .skill-row { min-height: 124px; border-radius: 10px; padding: 14px; }
+  .skill-row b {
+    font-size: 14px; line-height: 22px; white-space: normal;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .skill-row small {
+    font-size: 13px; line-height: 20px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .sk-tag {
+    font-style: normal; font-size: 11px; line-height: 16px; height: 20px;
+    display: inline-flex; align-items: center; padding: 2px 6px;
+    border-radius: 6px; background: #26384F; color: var(--text); white-space: nowrap;
+    font-family: var(--font-body);
+  }
+  .sk-cat { font-style: normal; font-size: 11px; line-height: 16px; color: var(--muted); margin-left: auto; white-space: nowrap; font-family: var(--font-body); }
+  .sk-na { color: var(--faint); }
+  #skill-detail {
+    flex: 0 0 420px; width: 420px; padding: 20px;
+    border-color: var(--line); border-radius: 12px;
+    font-size: 14px; line-height: 22px;
+  }
+  #skill-detail h3 { font-size: 18px; line-height: 26px; }
+  #skill-detail h4 { font-size: 16px; line-height: 24px; font-weight: 600; color: var(--text); }
+
+  /* ---- S04：分页条固定在列表容器底部（56px · var(--bg)）---- */
+  #skill-pagination {
+    flex: none; height: 56px; min-height: 56px;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    margin: 12px 0 0; padding: 0 4px;
+    background: var(--bg); border-top: 1px solid var(--line);
+  }
+  #skill-pagination .btn {
+    height: 32px; min-width: 64px; border-radius: 8px;
+    font-size: 13px; line-height: 20px; position: relative;
+  }
+  #skill-pagination .btn::after { content: ""; position: absolute; inset: -2px; }
+  #skill-pagination .btn[disabled] { opacity: .4; cursor: default; }
+  #skill-pagination span { font-size: 13px; line-height: 20px; color: var(--muted); }
+
+  /* ---- F01：文件行三列 · 最小 68px · var(--card)（第 9 轮规格，原 #151F2D）/ 边框 #334257（--line）·
+       文件信息自适应（最小 300px）· 元信息固定 190px · 操作区固定 150px · 列间距 16px。
+       .library-file small（line ~577）的 margin-left:auto 是 (0,1,1)，高于 .lf-src 的 (0,1,0)——
+       路径列因此失去宽度约束、长路径溢出挤占元信息列（连续多轮未修复的根因）。
+       这里必须用 .library-file .lf-src (0,2,0) 压回去，并显式 width:100% 锁定省略号边界。 ---- */
+  .filegroup { display: flex; flex-direction: column; gap: 8px; }
+  .filegroup .library-file, .filegroup .library-file:last-child { margin-bottom: 0; }
+  .library-file {
+    min-height: 84px;
+    padding: 16px; border-radius: 8px; gap: 16px;
+    background: var(--card); cursor: pointer;
+  }
+  .library-file > .ic { width: 24px; height: 24px; }
+  /* .lf-main 是 <span>：老规则 .library-file span{min-width:0} 是 (0,1,1)，
+     直接写 .lf-main (0,1,0) 压不过——300px 最小宽必须用 (0,2,0) 才生效 */
+  .library-file .lf-main { flex: 1 1 300px; min-width: 300px; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
+  /* .lf-name/.lf-meta/.lf-size/.lf-exec 都是 <span>（.lf-meta 容器同），:587 的
+     .library-file span (0,1,1) 把它们全压成等宽——块内原本写的 font-family:var(--font-body)
+     因 (0,1,0) 全是死代码。中文文件名等宽+CJK fallback 混排正是「难扫描」观感的来源。
+     路径列 .lf-src 是 <small> 且 :1315 有意用等宽，不受影响；.lf-type/.lf-tag 是 <i>，本来就正常 */
+  .library-file .lf-name {
+    font-family: var(--font-body);
+    font-size: 14px; line-height: 22px; font-weight: 600; cursor: pointer;
+    max-width: 100%; align-self: flex-start;
+  }
+  .library-file .lf-src {
+    width: 100%; margin-left: 0;
+    font-family: var(--font-mono); font-size: 12px; line-height: 18px; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;
+  }
+  .library-file .lf-meta {
+    flex: none; width: 190px; margin: 0;
+    display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px;
+    font-family: var(--font-body); overflow: hidden;
+  }
+  .lf-meta > * { max-width: 100%; }
+  .library-file .lf-size { font-size: 12px; line-height: 18px; color: var(--muted); font-variant-numeric: tabular-nums; font-family: var(--font-body); }
+  .library-file .lf-exec { font-size: 12px; line-height: 18px; color: var(--text); font-family: var(--font-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .lf-exec.na { color: var(--faint); }
+  .lf-type {
+    font-style: normal; height: 20px; display: inline-flex; align-items: center; padding: 0 8px;
+    border-radius: 6px; background: var(--card); border: 1px solid var(--line);
+    color: var(--muted); font-size: 11px; line-height: 16px; white-space: nowrap; font-family: var(--font-body);
+  }
+  /* F02：大小三态标签——不一致琥珀 / 无法校验灰，不挤成一段文字 */
+  .lf-tag {
+    font-style: normal; height: 22px; display: inline-flex; align-items: center; padding: 0 8px;
+    border-radius: 6px; font-size: 11px; line-height: 16px; white-space: nowrap; font-family: var(--font-body);
+  }
+  /* F01（第 3 轮）：大小不一致异常标签按规范提到 12px/18px（其余标签维持 11/16 档） */
+  .lf-tag.mism { background: var(--amber-bg); color: var(--amber); font-size: 12px; line-height: 18px; }
+  .lf-tag.unver { background: #26384F; color: var(--muted); }
+  /* F02（R14 评审·R11）：历史版本——登记版本≠磁盘当前内容，但同路径另有版本与磁盘一致；信息态，非异常 */
+  .lf-tag.hist { background: #263548; color: #B2BFD1; }
+  /* F02（第 8 轮评审）：元信息列维持 190px。异常/未知态 = 标签 + 双行「实测/登记」
+     （字号 12px、行高 18px，与 .lf-size 同款数字排版）并排收在 190px 内；
+     放不进时登记行走省略号，不挤邻列。正常态实测值用完成绿 #62C6A0（--green）。 */
+  .library-file .lf-dual { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+  .lf-dual .lf-tag { flex: none; }
+  .library-file .lf-lines { display: flex; flex-direction: column; min-width: 0; max-width: 100%; }
+  .library-file .lf-lines .lf-size { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  /* F01（第 3 轮）：异常/未知双行的实测与登记数值提亮 var(--meta-num)（12px/18px 不变）；
+     一致态数值仍用完成绿（.lf-size.ok），未核实态登记值仍走弱化色 */
+  .library-file .lf-lines .lf-size { color: var(--meta-num); }
+  .library-file .lf-size.ok { color: var(--green); }
+  .lf-actions { flex: none; width: 150px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+  .lf-locate { color: #78A8F5; font-size: 13px; line-height: 20px; height: 32px; position: relative; }
+  .lf-locate::after { content: ""; position: absolute; inset: -4px; }
+  .lf-preview {
+    width: 64px; height: 32px; border-radius: 6px;
+    background: #26384F; border: 1px solid var(--line); color: var(--text);
+    font-size: 12px; line-height: 18px; cursor: pointer; position: relative;
+  }
+  .lf-preview::after { content: ""; position: absolute; inset: -4px; }   /* 30px 按钮热区补到 ≥36px */
+  .lf-preview:hover { border-color: var(--blue); }
+
+  /* ---- F03/F04：420px 详情/预览抽屉 ---- */
+  .fv-panel { width: min(420px, 94vw); border-radius: 12px 0 0 12px; }
+  .fv-bar {
+    min-height: 48px; height: 48px; padding: 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .fv-bar .fv-meta { display: none; }   /* 元数据移到 fv-detail，48px 栏只留操作 */
+  .fv-bar .btn { min-height: 30px; height: 30px; padding: 0 8px; font-size: 12px; line-height: 18px; }
+  .fv-name { font-size: 14px; line-height: 22px; flex: 1 1 auto; }
+  .fv-path { padding: 4px 12px; }
+  .fv-detail {
+    flex: none; margin: 8px 12px 4px; padding: 8px 12px;
+    background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+  }
+  .fvd-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    height: 24px; font-size: 13px; line-height: 24px;
+  }
+  .fvd-row span { color: var(--muted); flex: none; }
+  .fvd-row b { font-weight: 400; color: var(--text); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-body); }
+  .fvd-row b.warn { color: var(--amber); }
+  #fv-body { padding: 8px 12px 20px; }
+  #fv-body pre { background: #111824; border-radius: 8px; padding: 12px; }
+  .fv-err {
+    min-height: 96px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 8px;
+    padding: 12px 16px; margin: 12px; border-radius: 8px;
+    background: color-mix(in srgb, var(--red) 12%, transparent); color: var(--red); font-size: 13px; line-height: 20px;
+  }
+
+  /* ---- G03：焦点环 / 统一 toast ---- */
+  :where(button, input, select, a, [tabindex]):focus-visible {
+    outline: 2px solid #78A8F5; outline-offset: 2px;
+  }
+  #toast-root {
+    position: fixed; right: 20px; bottom: calc(var(--statusbar-h) + 16px);
+    display: flex; flex-direction: column; gap: 8px; z-index: 120; pointer-events: none;
+  }
+  #toast-root .toast {
+    width: 320px; border-radius: 10px; padding: 10px 14px;
+    font-size: 13px; line-height: 20px; color: var(--text);
+    background: var(--hover); border: 1px solid var(--line);
+    box-shadow: 0 8px 28px rgba(0,0,0,.4);
+    opacity: 1; transition: opacity .32s ease, transform .32s ease;
+    overflow-wrap: anywhere;
+  }
+  #toast-root .toast-ok { border-color: color-mix(in srgb, var(--green) 50%, transparent); }
+  #toast-root .toast-err { border-color: color-mix(in srgb, var(--red) 55%, transparent); }
+  #toast-root .toast.out { opacity: 0; transform: translateY(6px); }
+
+  /* ---- 窄幅适配（900×700 验收宽度）----
+     F01 后元信息/操作区为固定 190px/150px，不再按 1100px 断点缩窄（缩窄会把
+     长路径重新挤进操作区）；仅 <960px 隐藏元信息列保文件名与操作。 */
+  @media (max-width: 960px) {
+    .lf-meta { display: none; }          /* 窄幅保文件名与操作，大小/执行者进详情抽屉 */
+    #agent-stats { gap: 8px; }
+  }
+

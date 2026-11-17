@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G07 第 2 轮验证报告 — 补齐审批与历史版本校验</title>
+<style>
+  :root { --ink:#1c2733; --mut:#5b6b7a; --line:#dfe6ec; --ok:#0e9f6e; --bad:#e02424; --acc:#1f6feb; --bg:#f6f8fa; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap { max-width:980px; margin:0 auto; padding:32px 20px 64px; }
+  header.hero { background:linear-gradient(135deg,#0d1b2a,#1b3a5c); color:#fff; border-radius:14px; padding:28px 30px; margin-bottom:26px; }
+  header.hero h1 { margin:0 0 6px; font-size:24px; }
+  header.hero .meta { color:#bcd3e8; font-size:13.5px; }
+  .verdict { margin-top:14px; background:rgba(14,159,110,.16); border:1px solid rgba(14,159,110,.5); border-radius:10px; padding:12px 16px; font-size:14px; }
+  section { background:#fff; border:1px solid var(--line); border-radius:12px; padding:22px 26px; margin-bottom:20px; }
+  section h2 { font-size:18px; margin:0 0 14px; padding-bottom:8px; border-bottom:2px solid var(--line); }
+  section h2 .no { color:var(--acc); margin-right:8px; }
+  table { width:100%; border-collapse:collapse; font-size:13.5px; margin:10px 0; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#eef3f7; white-space:nowrap; }
+  code { background:#eef2f6; border-radius:4px; padding:1px 6px; font:12.5px/1.6 Consolas,monospace; color:#24292f; }
+  .pass { color:var(--ok); font-weight:600; }
+  .fail { color:var(--bad); font-weight:600; }
+  .num { font-variant-numeric:tabular-nums; font-weight:600; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; }
+  .shots figure { margin:0; }
+  .shots img { width:100%; border:1px solid var(--line); border-radius:8px; }
+  .shots figcaption { font-size:12px; color:var(--mut); text-align:center; margin-top:4px; }
+  .note { background:#fff8e6; border-left:4px solid #f0b429; border-radius:0 8px 8px 0; padding:10px 14px; font-size:13.5px; margin:12px 0; }
+  .ask { background:#eef6ff; border:1px solid #b6d4f5; border-radius:10px; padding:12px 16px; font-size:14px; }
+  ul { margin:8px 0; padding-left:22px; }
+  li { margin:3px 0; }
+  .muted { color:var(--mut); font-size:13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>G07 第 2 轮验证报告 — 补齐「审批与历史版本校验」</h1>
+  <div class="meta">任务：G07｜四页加载与核心操作回归测试纳入 test/（严重）&nbsp;·&nbsp;日期：2026-11-17</div>
+  <div class="verdict">
+    <b>结论：</b>新增 D1–D4 审批与历史版本用例，合计 <span class="num">19/19</span> 通过（21.3s）；三类故障注入（页面初始化异常 / 历史版本错配双向 / API 吞故障）分别造成 <span class="num">14 / 1 / 2</span> 个用例明确失败；恢复代码后 19/19 复过。<b>web/ 业务代码零改动</b>（注入后逐字节还原，cmp 校验）。
+  </div>
+  <div class="meta" style="margin-top:10px">上一轮缺口：15 用例中「审批和历史版本校验」类别缺失，被路由测试顶替 → 验收未过</div>
+</header>
+
+<section>
+  <h2><span class="no">1</span>本轮交付物（全部在 test/ 与 scripts/，web/ 零净改动）</h2>
+  <table>
+    <tr><th>文件</th><th>内容</th></tr>
+    <tr><td><code>test/g07-approval.test.js</code></td><td>D1–D4：审批链路 UI 闭环 / 审批版本门禁 / 历史版本命中 / 历史版本错配拒绝（任务书缺失的第四类）</td></tr>
+    <tr><td><code>test/g07-harness.mjs</code></td><td>3 处纯增量：<code>REAL_FILE</code>/<code>realFileMeta</code> 导出、<code>buildFixtureHome(hubPort, extraTasks)</code>、<code>startStack(extraTasks)</code> 透传；既有夹具逻辑未动</td></tr>
+    <tr><td><code>package.json</code></td><td><code>test:g07</code> 扩为 5 个测试文件（新增 g07-approval.test.js），既有 <code>test</code> 脚本未动</td></tr>
+    <tr><td><code>scripts/g07-screens.mjs</code></td><td>取证脚本（非测试）：四页各截 1 张真实业务内容 PNG + getComputedStyle / getBoundingClientRect 实测值</td></tr>
+    <tr><td><code>verify-assets/g07/</code></td><td>p1–p4 四张 PNG（125–178 KB）+ metrics.json（第 4 节数值来源）</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="no">2</span>D1–D4 用例明细（新增的「审批与历史版本校验」类）</h2>
+  <p class="muted">夹具独立注入两条合成任务（只写进本文件自己的临时 home，不影响 A/B/C/R 的断言）：
+  <b>T-G07V</b>（doc 登记旧指纹 V1 + 快照=V1 命中路径；plan 快照故意换成 WRONG 错配路径）、
+  <b>T-G07D</b>（deliverable 登记与磁盘漂移，verify 待拍板）。指纹全部由测试侧 <code>node:crypto</code> 实算，不信服务端回显值。</p>
+  <table>
+    <tr><th>用例</th><th>验证点</th><th>结果</th></tr>
+    <tr><td><b>D1</b> 审批链路 UI 闭环</td><td>真浏览器选 T-G07A → 备注理由 → 打回 → 中央链路 verify 节点转 <code>st-failed</code> + 服务端档案复核 <code>verify.status==='failed'</code> 且 note 带回提交理由；零页面异常</td><td class="pass">✅ UI+服务端双确认</td></tr>
+    <tr><td><b>D2</b> 审批版本门禁</td><td>选 T-G07D → approve 按钮 disabled 且 title 含「版本不一致」，reject 保持可用；绕过前端直接 POST approve → <code>409 ARTIFACT_VERSION_DRIFT</code> 且档案不落笔；改走 reject → 200 <code>verified:true, to:'failed'</code></td><td class="pass">✅ 门禁不锁死打回路径</td></tr>
+    <tr><td><b>D3</b> 历史版本命中</td><td><code>file-version</code> 带 vkey 查 doc → <code>available:true, source:'snapshot'</code>，text 逐字等于留档快照；<b>测试侧独立复算 sha256 === 登记指纹</b>；磁盘 bytes ≠ 登记 bytes 证明走 snapshot 分支</td><td class="pass">✅ 复算指纹吻合</td></tr>
+    <tr><td><b>D4</b> 历史版本错配拒绝</td><td>查 plan（快照≠指纹）→ <code>available:false, reason:'snapshot-mismatch'</code>，<b>无 text 泄露</b>，candidates 只回实测指纹且 ≠ 登记指纹；vkey 配错 → <code>409 vkey-mismatch</code></td><td class="pass">✅ 双向拒绝都不落笔</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2><span class="no">3</span>故障注入验证（注入 → 明确失败 → 逐字节还原 → 全过）</h2>
+  <table>
+    <tr><th>#</th><th>注入点</th><th>注入方式</th><th>必须失败的用例</th><th>实测失败签名</th></tr>
+    <tr><td>①</td><td>页面初始化异常</td><td>web/app.js 尾部追加语法错误（node --check 实证 SyntaxError）</td><td>所有走浏览器的用例</td><td><span class="fail">14 挂 / 5 过</span>（A1-4、B1-4、C4、D1、D2 全挂；D3/D4/R1-3 纯 API 不经浏览器，正确地不受影响）</td></tr>
+    <tr><td>②a</td><td>历史版本错配被冒充接受</td><td>server.js:576-578 <code>verEqual</code> 恒返回 true</td><td>D4</td><td><span class="fail">D4 挂</span>（snapshot-mismatch 防线失效被点名）</td></tr>
+    <tr><td>②b</td><td>合法快照被误拒</td><td>同一处 <code>verEqual</code> 恒返回 false</td><td>D3</td><td><span class="fail">D3 挂</span>（snapshot 命中路径失效被点名）</td></tr>
+    <tr><td>③</td><td>API 故障被静态 200 掩盖</td><td>server.js <code>/api/state</code> 吞中台故障改回 200 空成功</td><td>C 系列</td><td><span class="fail">C2/C3 挂</span>（C1 health 路由未注入、C4 浏览器层断网不经过该行——签名干净，无误伤）</td></tr>
+  </table>
+  <ul>
+    <li>还原方式：注入前 <code>.g07bak</code> 备份，还原后 <code>cmp</code> 逐字节比对一致再删备份</li>
+    <li>恢复后全套：<b class="pass num">19/19 通过，21250ms</b></li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="no">4</span>四页截图与首屏实测 <span class="muted">（verify-assets/g07/metrics.json，2026-11-16T16:47:48Z）</span></h2>
+  <table>
+    <tr><th>页</th><th>contentMs（≤3000）</th><th>业务元素数</th><th>首个业务元素 rect (px)</th><th>sb-conn 计算样式</th></tr>
+    <tr><td>p1 工作台</td><td class="num">247</td><td class="num">3 需求条目</td><td class="num">{x:68, y:98, w:223, h:76}</td><td><code>rgb(101, 217, 177)/12px</code></td></tr>
+    <tr><td>p2 Agents</td><td class="num">214</td><td class="num">4 agent 卡</td><td class="num">{x:88, y:270, w:1320, h:74}</td><td><code>rgb(101, 217, 177)/12px</code></td></tr>
+    <tr><td>p3 技能</td><td class="num">216</td><td class="num">12 技能行</td><td class="num">{x:182, y:323, w:558, h:144}</td><td><code>rgb(101, 217, 177)/12px</code></td></tr>
+    <tr><td>p4 文件</td><td class="num">249</td><td class="num">2 文件组</td><td class="num">{x:88, y:241, w:1320, h:170}</td><td><code>rgb(101, 217, 177)/12px</code></td></tr>
+  </table>
+  <ul>
+    <li>四页 sb-conn 全部为「已连接」绿色（<code>rgb(101,217,177)</code>），非空 DOM：bodyTextLen 2134/2469/2781/2592 字符</li>
+    <li>p1-workbench.png 已独立视觉核验：含需求列表、七步链路、审批面板（app.css 登记「实测 123.8 KB」）、「通过验收/打回」按钮、底部四 Agent 状态栏——真实业务内容，非空白壳</li>
+  </ul>
+  <div class="shots">
+    <figure><img src="verify-assets/g07/p1-workbench.png" alt="工作台"><figcaption>p1 工作台 · 247ms · 3 需求</figcaption></figure>
+    <figure><img src="verify-assets/g07/p2-agents.png" alt="Agents"><figcaption>p2 Agents · 214ms · 4 卡片</figcaption></figure>
+    <figure><img src="verify-assets/g07/p3-skills.png" alt="技能"><figcaption>p3 技能 · 216ms · 12 技能</figcaption></figure>
+    <figure><img src="verify-assets/g07/p4-files.png" alt="文件"><figcaption>p4 文件 · 249ms · 2 文件组</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="no">5</span>既有验收项复核（本轮未回退）</h2>
+  <ul>
+    <li>17 固定 + 3 参数化路由兼容：R1–R3 重跑通过（源码清单扫描 + GET/POST 实测）</li>
+    <li>A/B/C 三类 12 用例 + R 系列 3 用例随全套复跑通过</li>
+    <li>隔离性不变：stub 中台 + mkdtemp 临时 AGENT_AUTOLOOP_HOME + 临时端口，跑完整体删除，不碰真实数据</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="no">6</span>结论</h2>
+  <p>任务书四项硬性要求全部满足：<b>19 用例四类齐备</b>（4 页面启动 / 4 导航刷新 / 4 审批与历史版本 / 4 API 异常恢复 + 3 路由兼容）；三类注入各自命中目标用例且无误伤；恢复后全过；四页截图含真实业务内容且首屏实测 <b>214–249ms</b>（≤3000ms）；17 路由兼容通过。web/ 目录零净改动，本轮改动全部在 test/、scripts/、package.json 与报告/取证产物。</p>
+  <div class="ask"><b>需 Leo 决策：</b>是否按本轮证据通过 G07 验收。</div>
+</section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>F01 第 11 轮验证报告｜两条历史登记独立保存与校验</title>
+<style>
+  body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; max-width: 980px; margin: 24px auto; padding: 0 20px; color: #1c2733; background: #f6f8fa; }
+  h1 { font-size: 22px; border-bottom: 3px solid #2b6cb0; padding-bottom: 8px; }
+  h2 { font-size: 17px; color: #2b6cb0; margin-top: 28px; }
+  .verdict { display: inline-block; background: #276749; color: #fff; padding: 4px 14px; border-radius: 6px; font-weight: 600; }
+  .meta { color: #5a6b7d; font-size: 13px; line-height: 1.7; }
+  table { border-collapse: collapse; width: 100%; background: #fff; font-size: 13.5px; margin: 10px 0; }
+  th, td { border: 1px solid #d3dde6; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #e8eff6; }
+  code { background: #eef2f6; padding: 1px 5px; border-radius: 4px; font-size: 12.5px; }
+  .ok { color: #276749; font-weight: 600; }
+  .num { font-family: Consolas, monospace; color: #1a365d; }
+  ul { line-height: 1.8; }
+  .card { background: #fff; border: 1px solid #d3dde6; border-radius: 8px; padding: 12px 18px; margin: 10px 0; }
+  details summary { cursor: pointer; color: #2b6cb0; font-weight: 600; margin: 8px 0; }
+</style>
+</head>
+<body>
+<h1>F01 第 11 轮验证报告｜两条历史登记独立保存与校验</h1>
+<p class="meta">2026-11-16 12:30–12:50 ｜ 验证人：Lemate（claude）｜ server.js <code>127.0.0.1:8090</code>（build r11c）· Edge headless <code>Edg/157.0.4341.60</code>（CDP 9466，验证后已关闭）· Node 20.19.2 <code>--experimental-websocket</code></p>
+<p><span class="verdict">结论：24/24 全过（EXIT=0）</span>　全部数值来自 curl / getComputedStyle / getBoundingClientRect 实测，无推算。证据：<code>verify-assets/f01-r11/</code>（results.json + 3 张截图）；脚本 <code>f01r11-verify.mjs</code>；回滚备份 <code>web/app.css.bak-f01r11</code>。</p>
+
+<h2>一、改了什么（只动文件行这一处）</h2>
+<table>
+<tr><th>文件</th><th>改动</th><th>原因</th></tr>
+<tr><td><code>web/app.css</code><br>（仅 1 条规则，文件末尾 F01 第 11 轮段）</td><td><code>.library-file .lf-size.lf-reg { color: #D7E1EE; }</code></td><td><b>本轮实测发现的真缺陷（S1c）</b>：第 10 轮把汇总/分叉身份行放在 <code>.lf-dual/.lf-lines</code> 块外吃整列 190px（防截断），但规格色 #D7E1EE 的规则作用域是 <code>.lf-lines .lf-size</code>——容器外的身份行落回基础色 <code>var(--meta)</code>=#B3C0D2，实测 <code class="num">rgb(179,192,210)</code> ≠ 规格。补 <code>.lf-reg</code> 限定规则（特异性 (0,3,0) 压过 (0,2,0)）；<code>.lf-size.ok</code>（✓ 绿）不带 <code>.lf-reg</code> 不受影响</td></tr>
+<tr><td><code>f01r11-verify.mjs</code><br>（验证脚本自身）</td><td>① S3c 断言选择器补 <code>.lf-tag</code>；② 两处 <code>Page.reload</code> 补 <code>ignoreCache:true</code></td><td>①「历史版本」标签是 <code>&lt;i&gt;</code> 不是 span（展示本身正确，是脚本口径错）；② 普通 reload 撞 HTTP 缓存拿旧 CSS</td></tr>
+</table>
+<p>第 9/10 轮的代码层改动（regIdentKey 三要素全等才汇总、data-regs 登记原件投影、身份行、.lf-multi 分行、重校验不就地覆盖登记原件）本轮全部在位，未回滚未重写；<b>app.js 本轮零改动</b>。</p>
+
+<h2>二、验证了什么（真实数值）</h2>
+
+<div class="card"><b>任务书①：查两条登记并比对 ID / 字节数 / 版本标识 / 时间</b><br>
+curl <code>/api/office/flow</code>：TEST-R11 的 app.css 两条登记 <code>TEST-R11›doc</code> / <code>TEST-R11›plan</code>，各 <span class="num">80408 B / sha:selftest-placeholder / 2026-11-15T18:50:08.441Z</span>；页面 R11 行 <code>data-regs</code> 四要素与 API <span class="ok">逐一相等</span>（exp=got 完全一致）。</div>
+
+<div class="card"><b>任务书②：登记相同（汇总）与不同（分行）三类真实形态</b>
+<ul>
+<li><b>完全相同（TEST-R11）</b>：汇总行「登记 78.5 KB ×2」+ 身份行「02·03 同版 selfte 02:50」；两行实测 <span class="num">12px / 18px / rgb(215,225,238)=#D7E1EE</span></li>
+<li><b>同版本不同登记时间（fixture-time.md）</b>：<code>.lf-multi</code> 分行「02 133B·d4ada8·11/15 17:00 ✓」/「03 133B·d4ada8·09:30 ✓」，各行 data-regs 各 1 条、四要素与 API 相等、时间不同未合并</li>
+<li><b>不同版本（fixture-ver.md）</b>：两实体行 data-vkey 独立（<code>sha:9490ac36…</code> / <code>sha:f04311738…</code>）；V1 行登记原件 <span class="num">300B / sha:9490ac… / history:1</span>，可见「历史版本｜02 300B·9490ac·11/15 17:00」——<b>未被当前 124B 覆盖</b>；V2 行「✓ 124 B」+ 登记行 124B/f04311</li>
+</ul></div>
+
+<div class="card"><b>任务书③：物理文件修改后重读，历史快照不变</b><br>
+fixture-time.md 133→134 B（+1 字节）→ 整页硬重读：三文件（fixture-time / fixture-ver / app.css）全部 data-regs <span class="ok">逐字节不变</span>，仅逐条结论 ✓→≠；还原后 sha256 一致（<span class="num">d4ada83b…</span>）、data-regs 与变异前相同、结论回 ✓；磁盘复核 <span class="num">133 bytes / d4ada83b</span>。</div>
+
+<div class="card"><b>任务书④：getBoundingClientRect 无重叠 + 规格数值</b>
+<table>
+<tr><th>指标</th><th>要求</th><th>实测</th></tr>
+<tr><td>元信息区宽</td><td>190px</td><td class="num">190px</td></tr>
+<tr><td>字号 / 行高</td><td>12px / 18px</td><td class="num">12px / 18px（汇总行+身份行均测）</td></tr>
+<tr><td>文字色</td><td>#D7E1EE</td><td class="num ok">rgb(215,225,238)（修复后达标）</td></tr>
+<tr><td>行间距</td><td>4px</td><td class="num">4px（rowGap）</td></tr>
+<tr><td>行最小高</td><td>68px</td><td class="num">min-height 68px，单登记行实测 68px</td></tr>
+<tr><td>内容多扩展至</td><td>96px</td><td class="num">max-height 96px，双登记/分行行实测 96px</td></tr>
+<tr><td>背景 / 圆角</td><td>#182230 / 8px</td><td class="num">rgb(24,34,48) / 8px</td></tr>
+<tr><td>元信息↔操作区</td><td>无重叠</td><td class="num">metaRight 1169 &lt; actsLeft 1185，间隙 16px；全库 15 行 0 重叠</td></tr>
+<tr><td>全库行高</td><td>[68,96]</td><td class="num">{68,76,80,96} 全部在界</td></tr>
+</table>
+回归：全程页面 JS 异常 0 条。</div>
+
+<h2>三、还差什么 / 待拍板</h2>
+<ul>
+<li><b>验证夹具（测完即删）</b>：<code>C:/Tools/agent-autoloop/office-data/tasks/TEST-F01R10.json</code>、<code>TEST-R11</code> + <code>web/verify-assets/f01-r10/fixture-{time,ver}.md</code>——「版本不同」场景唯一的活数据，删除属破坏性操作，待 Leo 拍板。</li>
+<li>首轮 22/24：S1c 为产品真缺陷（本轮已修并复测达标），S3c 为脚本断言口径问题（已修）；修复后 24/24。</li>
+<li>本轮产品代码改动仅 app.css 一条颜色规则；<code>Page.reload</code> 需 <code>ignoreCache:true</code> 才能拿到最新 CSS（HTTP 缓存），环境坑已记入脚本注释与项目记忆。</li>
+</ul>
+</body>
+</html>

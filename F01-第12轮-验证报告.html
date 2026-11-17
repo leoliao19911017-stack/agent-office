@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F01 第 12 轮验证报告 — 统一物理文件与历史登记的聚合口径</title>
+<style>
+  :root { --bg:#0f151f; --panel:#161f2e; --line:#26334a; --text:#dbe4f0; --sub:#9fb0c8; --ok:#65d9b1; --hist:#afc0d5; --warn:#e5b95e; --code:#8ab4f8; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 64px; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:36px 0 12px; border-left:3px solid var(--ok); padding-left:10px; }
+  .meta { color:var(--sub); font-size:13px; margin-bottom:8px; }
+  .verdict { background:rgba(101,217,177,.1); border:1px solid var(--ok); border-radius:10px; padding:14px 18px; margin:16px 0; font-size:16px; }
+  .verdict b { color:var(--ok); font-size:20px; }
+  table { border-collapse:collapse; width:100%; margin:10px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:var(--sub); font-weight:600; }
+  td.n { font-family:Consolas,monospace; color:var(--code); white-space:nowrap; }
+  code { font-family:Consolas,monospace; color:var(--code); background:var(--panel); padding:1px 5px; border-radius:4px; font-size:12.5px; }
+  .cur { color:var(--ok); font-family:Consolas,monospace; } .hst { color:var(--hist); font-family:Consolas,monospace; }
+  .shot { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:12px 0; }
+  .shot figure { margin:0; background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .shot img { width:100%; display:block; }
+  .shot figcaption { padding:8px 12px; font-size:12px; color:var(--sub); }
+  ul,ol { padding-left:22px; } li { margin:4px 0; }
+  .note { color:var(--sub); font-size:12.5px; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:10px; font-size:12px; border:1px solid var(--line); color:var(--sub); margin-right:6px; }
+</style>
+</head>
+<body><div class="wrap">
+<h1>F01 第 12 轮验证报告 — 统一物理文件与历史登记的聚合口径</h1>
+<div class="meta">2026-11-16 14:12（本地） · Leo's Agent Office · 文件页（图4）</div>
+<div class="verdict">结果：<b>28 / 28 PASS</b> —— 2 个物理文件主行 · 4 条登记全部可查看 · 历史原件零覆盖</div>
+<div class="meta">证据：<code>verify-assets/f01-r12/</code>（results.json + 4 截图） · 脚本：<code>f01r12-verify.mjs</code>（Edge headless CDP 实测 + API 地面真值 + node 复刻 physKey） · 回滚点：<code>web/app.js.bak-f01r12</code> / <code>web/app.css.bak-f01r12</code></div>
+
+<h2>一、问题（前 11 轮失败根因）</h2>
+<p>文件页按「实体 = 物理键 × 版本键」渲染行：fixture-ver.md 的 <b>300B 历史</b>与 <b>124B 当前</b>被拆成 2 个主行，fixture-time.md 的两条同版本登记合并为 1 行 —— 2 个物理文件显示成 3 个产物，聚合口径不一致。</p>
+
+<h2>二、改动（只动文件页聚合口径）</h2>
+<table>
+<tr><th style="width:44px">#</th><th style="width:170px">位置</th><th>内容</th></tr>
+<tr><td class="n">1</td><td>全局点击处理</td><td>多版本主行内点哪条登记行就看哪条：行内 <code>data-reg-vkey/data-task-id/data-step-key</code> 优先于行根上下文</td></tr>
+<tr><td class="n">2</td><td>fileButton 登记行</td><td>登记字节=磁盘实测 → <code>lf-cur</code>；实测已知但不等 → <code>lf-hist</code>（统一双色口径；汇总/身份行不上色）</td></tr>
+<tr><td class="n">3</td><td>fileButton lineOf</td><td>单条登记行自带登记身份属性（同版本多登记可逐条点击）</td></tr>
+<tr><td class="n">4</td><td>新增 <code>physButton</code></td><td>多版本物理文件渲染为<b>一个</b> <code>lf-phys</code> 主行：<code>.lf-vers</code> 纵向容器内逐条登记行（当前版本在首 ✓，历史按时间降序 ≠），主行 data-regs 载全部登记投影</td></tr>
+<tr><td class="n">5</td><td>renderFiles</td><td>展示/排序/分组/计数升到物理文件级（键 = 需求ID + 规范化绝对路径）；顶部总量与组头「N 个产物（M 条登记）」同口径去重</td></tr>
+</table>
+<p class="note">app.css 文件末尾追加 r12 层 6 条：min-height 80px、.lf-vers 纵向布局 gap 4px、行高 24px、lf-cur #65D9B1、lf-hist #AFC0D5 + 12px/18px。</p>
+
+<h2>三、四条验证要求 × 实测数值</h2>
+<h3>① 档案查询：4 个登记ID 分属 2 个规范化绝对路径</h3>
+<table>
+<tr><th>规范化绝对路径（node 复刻 physKey）</th><th>登记ID</th><th>字节</th><th>指纹</th><th>登记时间</th></tr>
+<tr><td rowspan="2" class="n">…/f01-r10/fixture-time.md</td><td class="n">TEST-F01R10›doc</td><td class="n">133B</td><td class="n">d4ada83b…</td><td class="n">2026-11-15T09:00Z</td></tr>
+<tr><td class="n">TEST-F01R10›plan</td><td class="n">133B</td><td class="n">d4ada83b…（同）</td><td class="n">2026-11-16T01:30Z</td></tr>
+<tr><td rowspan="2" class="n">…/f01-r10/fixture-ver.md</td><td class="n">TEST-F01R10›doc</td><td class="n">300B · history:1</td><td class="n">9490ac36…</td><td class="n">2026-11-15T09:00Z</td></tr>
+<tr><td class="n">TEST-F01R10›plan</td><td class="n">124B</td><td class="n">f0431173…</td><td class="n">2026-11-16T01:30Z</td></tr>
+</table>
+
+<h3>② 刷新后 2 主行 / 4 条登记可查看</h3>
+<ul>
+<li>组头实测：<code>F01 两条历史登记独立保存验证（测完即删） · 2 个产物（4 条登记）</code>，组内 <code>.library-file</code> 恰 <b>2</b> 行</li>
+<li>fixture-ver.md → 1 行 <code>lf-phys</code>：行内 <span class="cur">03 124B·f04311·09:30 ✓</span> + <span class="hst">02 300B·9490ac·11/15 17:00 ≠</span>；data-regs 2 条四要素与 API 逐一相等（<b>300B 历史原件未被 124B 覆盖</b>）</li>
+<li>fixture-time.md → 1 行 <code>lf-multi</code>：2 条 133B 登记各占一行，统一当前色</li>
+<li>顶部总量实测：<code>匹配 14 / 14 个产物（17 条登记）</code> = node 独立计算的物理去重期望值</li>
+</ul>
+
+<h3>③ getBoundingClientRect / getComputedStyle 实测</h3>
+<table>
+<tr><th>项</th><th>规格</th><th>实测</th></tr>
+<tr><td>主行 min-height / 渲染高</td><td>≥80px</td><td class="n">minHeight "80px" · 高 80px（rect 480→560）</td></tr>
+<tr><td>登记行高</td><td>24px</td><td class="n">cur=24 / hist=24</td></tr>
+<tr><td>行间垂直间隙</td><td>4px</td><td class="n">522 − 518 = 4px</td></tr>
+<tr><td>同一主行容器</td><td>历史在主行内</td><td class="n">row.contains ✓ · 矩心 494-518 / 522-546 ⊂ 480-560</td></tr>
+<tr><td>当前版本色</td><td>#65D9B1</td><td class="n cur">rgb(101, 217, 177)</td></tr>
+<tr><td>历史版本色</td><td>#AFC0D5</td><td class="n hst">rgb(175, 192, 213)</td></tr>
+<tr><td>历史版本字号/行高</td><td>12px / 18px</td><td class="n">12px / 18px</td></tr>
+<tr><td>点击身份</td><td>点哪条看哪条</td><td>300B 行 → 抽屉「登记值 300 B · 02 需求文档 · 指纹 9490ac36 · 历史版本」；124B 行 → 「登记值 124 B · 03 开发计划 · 一致」</td></tr>
+</table>
+
+<h3>④ 再次修改当前文件 → 登记内容与指纹不变</h3>
+<ul>
+<li>fixture-ver.md 124B → 125B（追加换行），<code>Page.reload(ignoreCache)</code> 整页重读：两物理文件全部登记 <b>data-regs 逐字节不变</b>；124B 登记随实测转 ≠ 历史色，300B 历史行不变</li>
+<li>字节级还原（磁盘 sha 复核 f0431173896513… / d4ada83ba873…）：登记仍逐字节一致，124B 回 ✓ 当前色</li>
+</ul>
+
+<h2>四、回归与清扫</h2>
+<ul>
+<li>R11 app.css：仍 1 行、data-regs 2 条、汇总行「登记 78.5 KB ×2」保持 G01 r10 规格色 #E2EAF4（r12 层未动 lf-reg 基色）</li>
+<li>全库 14 主行：元信息/操作区 0 重叠；F01 两主行高 ∈[80,96]</li>
+<li>全程页面 JS 异常 0 条；headless Edge 已关；临时探针脚本已删</li>
+</ul>
+
+<h2>五、证据截图</h2>
+<div class="shot">
+<figure><img src="verify-assets/f01-r12/shot-1-forms.png" alt="F01 组两主行"><figcaption>① F01 组 = 2 主行（lf-phys 双版本行 + lf-multi 双登记行）</figcaption></figure>
+<figure><img src="verify-assets/f01-r12/shot-2-drawer-300B.png" alt="点击 300B 历史行抽屉"><figcaption>② 点 300B 历史行 → 抽屉展示该条登记</figcaption></figure>
+<figure><img src="verify-assets/f01-r12/shot-3-mutated.png" alt="变异后"><figcaption>③ 125B 变异后：登记不变，两行均转历史色 ≠</figcaption></figure>
+<figure><img src="verify-assets/f01-r12/shot-4-final.png" alt="还原后"><figcaption>④ 字节级还原后：✓/≠ 与双色恢复</figcaption></figure>
+</div>
+</div></body></html>

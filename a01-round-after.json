@@ -1,0 +1,101 @@
+{
+  "phase": "after",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-16T05:41:46.903Z",
+  "viewports": {
+    "1440x900": {
+      "text": "本页展示参与日常协作的一线 Agent 及其连接与执行状态。",
+      "beforeContent": "none",
+      "computed": {
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "rgb(143, 163, 186)",
+        "clamp": "2",
+        "display": "flow-root",
+        "paddingTop": "6px",
+        "paddingBottom": "6px",
+        "minHeight": "32px",
+        "maxWidth": "720px",
+        "marginTop": "12px",
+        "marginBottom": "0px"
+      },
+      "rect": {
+        "left": 88,
+        "top": 200,
+        "width": 720,
+        "height": 32
+      },
+      "overflowX": 0,
+      "lineRects": 1,
+      "linesByHeight": 1,
+      "gridMarginTop": "12px",
+      "gapToHead": 12,
+      "gapToGrid": 12,
+      "stats": [
+        {
+          "label": "中台注册角色",
+          "value": "7"
+        },
+        {
+          "label": "一线角色",
+          "value": "4"
+        },
+        {
+          "label": "在线实例",
+          "value": "4"
+        }
+      ],
+      "agentCards": 4,
+      "innerW": 1440
+    },
+    "1280x800": {
+      "text": "本页展示参与日常协作的一线 Agent 及其连接与执行状态。",
+      "beforeContent": "none",
+      "computed": {
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "rgb(143, 163, 186)",
+        "clamp": "2",
+        "display": "flow-root",
+        "paddingTop": "6px",
+        "paddingBottom": "6px",
+        "minHeight": "32px",
+        "maxWidth": "720px",
+        "marginTop": "12px",
+        "marginBottom": "0px"
+      },
+      "rect": {
+        "left": 88,
+        "top": 200,
+        "width": 720,
+        "height": 32
+      },
+      "overflowX": 0,
+      "lineRects": 1,
+      "linesByHeight": 1,
+      "gridMarginTop": "12px",
+      "gapToHead": 12,
+      "gapToGrid": 12,
+      "stats": [
+        {
+          "label": "中台注册角色",
+          "value": "7"
+        },
+        {
+          "label": "一线角色",
+          "value": "4"
+        },
+        {
+          "label": "在线实例",
+          "value": "4"
+        }
+      ],
+      "agentCards": 4,
+      "innerW": 1280
+    }
+  },
+  "shots": [
+    "a01-round-after-1440x900-agents.png",
+    "a01-round-after-1280x800-agents.png"
+  ]
+}

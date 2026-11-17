@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F02 第 3 轮验证报告｜历史版本预览读取对应快照</title>
+<style>
+  :root { --bg:#141519; --panel:#1D1F26; --line:#2A2D37; --text:#D7DCE4; --muted:#91A0B4; --gold:#E5B95E; --green:#65D9B1; --red:#E57373; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:8px; }
+  h2 { font-size:17px; margin:28px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); color:var(--gold); }
+  h3 { font-size:15px; margin:18px 0 8px; color:var(--text); }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:16px; }
+  .verdict { background:rgba(101,217,177,.08); border:1px solid rgba(101,217,177,.35); color:var(--green); border-radius:8px; padding:12px 16px; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:var(--muted); font-weight:600; white-space:nowrap; }
+  td code, p code, li code { background:#0F1116; border:1px solid var(--line); border-radius:4px; padding:1px 5px; font:12px/1.4 Consolas,monospace; color:var(--gold); overflow-wrap:anywhere; }
+  ul,ol { padding-left:22px; margin:8px 0; }
+  li { margin:5px 0; }
+  .k { color:var(--muted); }
+  .ok { color:var(--green); font-weight:600; }
+  .no { color:var(--red); font-weight:600; }
+  .pill { display:inline-block; border-radius:10px; padding:0 10px; font-size:12px; line-height:20px; margin-right:6px; }
+  .pill.g { background:rgba(101,217,177,.12); color:var(--green); }
+  .pill.r { background:rgba(229,115,115,.12); color:var(--red); }
+  .hint-demo { display:inline-block; font-size:12px; line-height:18px; color:#E5B95E; background:#3B3021; padding:12px; border-radius:0; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; margin:12px 0; }
+  .shots figure { background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .shots img { width:100%; display:block; }
+  .shots figcaption { font-size:12px; color:var(--muted); padding:8px 10px; }
+  details { background:var(--panel); border:1px solid var(--line); border-radius:8px; margin:10px 0; }
+  details summary { cursor:pointer; padding:10px 14px; color:var(--muted); font-size:13px; }
+  details pre { padding:0 14px 14px; font:12px/1.6 Consolas,monospace; color:var(--text); overflow-x:auto; }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>F02 第 3 轮验证报告｜确保历史版本预览读取对应快照而非当前文件</h1>
+<p class="meta">任务：F02（严重程度：严重）· 2026-11-16 · 前端 <code>web/</code>（8090 服务，build r11d，已重启生效）</p>
+
+<div class="verdict">结论：<strong>63 / 63 断言通过</strong>（f02r3-verify.mjs，headless Chrome CDP 1440×900 + curl 实测）——服务端按「物理文件 + 版本登记」共同定位、SHA-256+字节双核对；并抓出且补上了第 2 轮漏测的提示条背景色。</div>
+
+<h2>一、改了什么（本轮 5 处，均在 F02 范围内）</h2>
+<table>
+<tr><th>#</th><th>文件</th><th>位置</th><th>修改</th></tr>
+<tr><td>1</td><td><code>web/app.js</code></td><td><code>openFileView</code> 历史分支门（~2398 行）</td><td>去掉 <code>&amp;&amp; diskMatchesOtherReg(...)</code> 附加条件：磁盘现状与所选登记指纹不同（gate=hist）一律走历史预览分支。<strong>堵死「磁盘谁的版本都不匹配→照样展示当前文件」的冒充洞</strong>（TEST-R11 app.css 即此案例）</td></tr>
+<tr><td>2</td><td><code>web/app.js</code></td><td><code>fvHistPreview()</code> 候选段（~2202 行）</td><td>历史原文改为<strong>服务端优先</strong>：请求 <code>/api/office/file-version?path+taskId+stepKey+vkey</code>，服务端 node crypto 实测候选（登记原文+最近快照）与登记指纹核对；回文本后<strong>页内 WebCrypto 再算 SHA-256</strong> 双重核对，两端一致才上屏；端点失败回退页内候选核对（第 2 轮逻辑保留）</td></tr>
+<tr><td>3</td><td><code>web/app.js</code></td><td><code>fvHistPreview()</code> 不可用态元数据（~2253 行）</td><td>新增「服务端核对」行：明示端点不可用结论与服务端实测的候选字节/指纹（如 <code>snapshot-mismatch，快照实测 15 B · 指纹 43615f79</code>）</td></tr>
+<tr><td>4</td><td><code>web/server.js</code></td><td>新端点 <code>GET /api/office/file-version</code>（~946 行）</td><td>服务端文件读取逻辑：<code>path+taskId+stepKey</code> 共同定位登记，<code>vkey</code> 二次确认（不符 → HTTP 409）；服务端实测磁盘与候选的字节+SHA-256；一致 → 回磁盘/快照文本（2MB 上限），否则 <code>available:false</code> + reason（snapshot-mismatch / no-snapshot）+ 只回数值不回内容。BUILD_VERSION r11c→r11d</td></tr>
+<tr><td>5</td><td><code>web/app.css</code></td><td><code>#fv-body .fv-hint</code>（1830 行）</td><td><strong>补上第 2 轮漏掉的 <code>background:#3B3021</code></strong>。第 2 轮只测了字号/行高/字色/内边距没测背景，本轮实测抓出 computed background 为透明，按任务规格补上并复测通过。实际效果：<span class="hint-demo">历史版本提示条（12px/18px/#E5B95E 字/#3B3021 底）</span></td></tr>
+</table>
+<p class="k">备份：web/app.js.bak-f02r3（219047 B）、web/server.js.bak-f02r3（74103 B）。node --check 两个 JS 均通过。app.css 为单属性新增，回滚点=精确 diff（见第三节第 4 条）。</p>
+
+<h2>二、验证了什么（全部为真实实测值）</h2>
+
+<h3>A. 服务端按条核对（4 条登记逐个 + 拒绝路径）</h3>
+<table>
+<tr><th>登记</th><th>端点结论</th><th>实测值</th></tr>
+<tr><td>TEST-F01R10›doc›fixture-ver.md（300B 历史）</td><td><span class="pill r">不可用 snapshot-mismatch</span></td><td>快照实测 <strong>15 B / 43615f79</strong> ≠ 登记 <strong>300 B / 9490ac36</strong>（SHA-256+字节双比对）；磁盘 124 B/f0431173 只回数值不回内容（text 字段 undefined）</td></tr>
+<tr><td>TEST-F01R10›plan›fixture-ver.md（124B 当前）</td><td><span class="pill g">可用 disk-current</span></td><td>124 B / f0431173</td></tr>
+<tr><td>TEST-F01R10›doc›fixture-time.md（133B）</td><td><span class="pill g">可用 disk-current</span></td><td>133 B / d4ada83b</td></tr>
+<tr><td>TEST-F01R10›plan›fixture-time.md（133B）</td><td><span class="pill g">可用 disk-current</span></td><td>133 B / d4ada83b</td></tr>
+<tr><td>vkey 双确认：拿 plan 指纹问 doc 登记</td><td><span class="pill r">HTTP 409 vkey-mismatch</span></td><td>—</td></tr>
+<tr><td>登记不存在（TEST-F01R10›doc 问 app.css）</td><td><span class="pill r">HTTP 404 reg-not-found</span></td><td>—</td></tr>
+<tr><td>TEST-R11›app.css（登记 80408B，磁盘漂移）</td><td><span class="pill r">不可用 no-snapshot</span></td><td>磁盘实测 121944 B / 2eec1142（探针实测自取）；candidates=[] 无快照留档</td></tr>
+</table>
+
+<h3>B. 点 300B 历史登记 → 不可用态，零冒充（浏览器实测）</h3>
+<ul>
+<li>所点行身份 <code>TEST-F01R10›doc · sha:9490ac36…</code>（登记ID+版本指纹双绑定）；<code>data-fv-hint="hist"</code>、<strong>无 <code>&lt;pre&gt;</code></strong>；正文不含「当前版本 V2」（不冒充磁盘）、不含「旧版快照」（不冒充快照）</li>
+<li>提示样式 getComputedStyle 实测：<strong>font-size 12px · line-height 18px · color rgb(229,185,94)=#E5B95E · background-color rgb(59,48,33)=#3B3021 · padding 四边 12px</strong></li>
+<li>元数据行：保存原文=「有快照留档但核对不上：快照 15 B · 指纹 43615f79 ≠ 登记版本 指纹 9490ac36，不能冒充历史原文，不可预览」；服务端核对=「file-version：不可用（snapshot-mismatch，快照实测 15 B · 指纹 43615f79）」；磁盘当前=「124 B · 指纹 f0431173，属另一条登记（plan）的版本，不在历史预览里展示」；定位入口 TEST-F01R10|doc</li>
+</ul>
+
+<h3>C/D. 当前版本与同版本双登记</h3>
+<ul>
+<li>点 124B 当前登记：&lt;pre&gt; 页内 WebCrypto 实测 <strong>124 B / sha256=f04311738965…=登记指纹</strong>，正文含「当前版本 V2」，match 分支不贴历史提示</li>
+<li>两条 133B 登记（同版本合并行）：pre 逐字节 133 B/d4ada83b，无 124B/300B 内容串入；plan 条的按条定位由 A 组端点在 HTTP 层完成</li>
+</ul>
+
+<h3>E. 冒充洞关闭（TEST-R11 app.css，本轮核心回归）</h3>
+<ul>
+<li>点 80408B 历史登记（行内登记=[doc, plan]）→ <strong>fvHint=hist、无 &lt;pre&gt;</strong>：磁盘 119.1 KB（121944 B）/2eec1142 当前内容不再冒充 80408B 登记版本；服务端核对=不可用（no-snapshot）；磁盘当前行只报数值</li>
+<li>修改前行为（第 2 轮遗留）：磁盘与两条登记都不匹配时直接展示磁盘现状——本轮已消除</li>
+</ul>
+
+<h3>F/G/H. 切换、刷新、状态色、零篡改</h3>
+<ul>
+<li>300B↔124B 交替 10 次：hist 态 5 次全部无 pre/无冒充字样；cur 态 5 次全部 124 B/f0431173</li>
+<li>Page.reload(ignoreCache) 3 次：每次 TEST-F01R10 组 = <strong>物理文件 2、登记 4、组头「· 2 个产物（4 条登记）」</strong></li>
+<li>.lf-cur = rgb(101,217,177)=<strong>#65D9B1</strong>（当前版本色保持）；.lf-hist = rgb(175,192,213)</li>
+<li>全程后 TEST-F01R10.json sha256 <strong>26906be77cc7…前后一致</strong>（登记档案零写入）；TEST-R11.json 一致；页面 JS 异常 0</li>
+</ul>
+
+<div class="shots">
+<figure><img src="f02r3-hist-300B-1440x900.png" alt="300B 历史登记不可用态"><figcaption>300B 历史登记：不可用态 + 服务端核对行（1440×900）</figcaption></figure>
+<figure><img src="f02r3-r11-drift-1440x900.png" alt="R11 漂移登记"><figcaption>TEST-R11 app.css 漂移登记：无 pre、no-snapshot（1440×900）</figcaption></figure>
+<figure><img src="f02r3-final-aggregation-1440x900.png" alt="终态聚合"><figcaption>终态聚合：2 个产物（4 条登记）（1440×900）</figcaption></figure>
+</div>
+
+<details><summary>完整 63 条断言输出（f02r3-verify.out）</summary><pre>PASS × 63（A1–A12 · B1–B11 · C1–C5 · D1–D2b · E1–E4 · F1–F10 · 刷新×3×3 · G1–G2 · H1–H4 · 终态×3）
+总计: 63 PASS / 0 FAIL
+证据：f02r3-verify.mjs / f02r3-verify.out / f02r3-*.png（仓库根目录）</pre></details>
+
+<h2>三、还差什么（如实声明）</h2>
+<ol>
+<li><strong>300B V1 原文不可恢复</strong>：不在 git（仓库仅 1 个提交）、不在任何夹具与探针记录中。快照留档实测 15 B/43615f79 与登记 300 B/9490ac36 不符 → 「实测失配 → 明示不可用」是该登记唯一诚实结果；不可用态本身就是「读取了对应快照并核对过」的证据。</li>
+<li><strong>图片类预览没有版本门</strong>（第 1 轮起声明）：历史版本的图片文件仍展示磁盘当前图，收口属另一改动点。</li>
+<li><strong>nover 路径未实测</strong>：登记既无 SHA-256 又无字节时走不了指纹核对，现有夹具无此情况。</li>
+<li><strong>app.css 无独立 bak-f02r3</strong>：本轮 css 改动是单属性新增（background: #3B3021;），回滚点=第一节第 5 行的精确 diff；app.js / server.js 均有完整备份。</li>
+<li><strong>同版本多登记合并行</strong>：同一版本多条登记聚成一个版本行，行内点击绑定行根代表身份——F01 既有聚合语义，非本轮引入；按条身份核对已由服务端端点（taskId+stepKey+vkey）完成。</li>
+</ol>
+
+</div></body>
+</html>

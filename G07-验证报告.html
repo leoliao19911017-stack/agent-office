@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G07 验证报告 — 四页启动流程自动化回归测试</title>
+<style>
+  :root {
+    --ink: #1c2430; --sub: #5b6b7c; --line: #dde4ec; --bg: #f6f8fb;
+    --ok: #0d8a5f; --okbg: #e6f6ef; --bad: #c0392b; --badbg: #fdeceb;
+    --warn: #9a6b00; --warnbg: #fdf3dd; --accent: #2563eb; --accentbg: #eaf1fe;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.75 "Segoe UI", "Microsoft YaHei", sans-serif; color: var(--ink); background: var(--bg); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { border-bottom: 3px solid var(--ink); padding-bottom: 16px; margin-bottom: 24px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  .meta { color: var(--sub); font-size: 13.5px; }
+  .verdict { margin: 18px 0; padding: 14px 18px; border-radius: 10px; background: var(--okbg); border: 1px solid #b7e4d0; font-weight: 600; }
+  h2 { font-size: 19px; margin: 40px 0 12px; padding-left: 12px; border-left: 4px solid var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(20,40,80,.07); font-size: 14px; }
+  th, td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  th { background: #eef2f8; font-size: 13px; letter-spacing: .03em; }
+  tr:last-child td { border-bottom: none; }
+  code { font-family: Consolas, "Courier New", monospace; background: #eef2f8; padding: 1px 6px; border-radius: 4px; font-size: 13px; color: #0f3d99; word-break: break-all; }
+  .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .ok { color: var(--ok); font-weight: 700; }
+  .bad { color: var(--bad); font-weight: 700; }
+  .warn-note { background: var(--warnbg); border: 1px solid #ecd9a0; border-radius: 8px; padding: 10px 14px; margin: 12px 0; }
+  pre { background: #10192b; color: #d8e2f2; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.6; }
+  pre code { background: none; color: inherit; padding: 0; }
+  ul { margin: 8px 0 16px; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .pill { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.pass { background: var(--okbg); color: var(--ok); }
+  .pill.fail { background: var(--badbg); color: var(--bad); }
+  .kpi { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 0 4px; }
+  .kpi .card { flex: 1 1 180px; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; box-shadow: 0 1px 3px rgba(20,40,80,.06); }
+  .kpi .card b { display: block; font-size: 22px; color: var(--accent); }
+  .kpi .card span { color: var(--sub); font-size: 12.5px; }
+  footer { margin-top: 48px; color: var(--sub); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>G07 验证报告 — 四页启动流程自动化回归测试</h1>
+  <div class="meta">
+    任务：G07｜为重构后的四页启动流程补齐自动化回归测试（严重）　·　日期：2026-11-16<br>
+    范围：<code>web/</code> 四页（工作台 / Agents / 技能 / 文件）+ <code>test/</code> 目录 + 提交门禁 + 17 个既有 API 路由
+  </div>
+  <div class="verdict">结论：15/15 用例通过；故意破坏初始化后 12/15 失败且提交被门禁拦截；恢复后 15/15 通过。既有测试全数保留，全量套件 Node 22 上 142/142。</div>
+  <div class="kpi">
+    <div class="card"><b class="num">15/15</b><span>G07 用例通过（正常态）</span></div>
+    <div class="card"><b class="num">12/15 → 挂</b><span>注入初始化异常后（提交被拦）</span></div>
+    <div class="card"><b class="num">≤ 370ms</b><span>四页首屏最慢实测（目标 3000ms）</span></div>
+    <div class="card"><b class="num">17+3</b><span>API 路由清单守护（固定+参数化）</span></div>
+  </div>
+</header>
+
+<h2>1. 交付物</h2>
+<table>
+  <tr><th style="width:220px">文件</th><th>内容</th></tr>
+  <tr><td><code>test/g07-harness.mjs</code></td><td>共用夹具：stub 中台（可切故障）+ 临时 AGENT_AUTOLOOP_HOME + 真实 web/server.js 子进程 + 系统 Chrome（playwright-core 无头）</td></tr>
+  <tr><td><code>test/g07-pages.test.js</code></td><td>A1–A4：四页首屏加载（业务 DOM + ≤3000ms + 零异常）</td></tr>
+  <tr><td><code>test/g07-nav.test.js</code></td><td>B1–B4：导航与刷新状态（display 矩阵 / aria-current / 刷新恢复 / 往返不毁数据）</td></tr>
+  <tr><td><code>test/g07-recovery.test.js</code></td><td>C1–C4：API 异常与恢复（health 500 / 中台坏 JSON / 中台 503 / 全断网，恢复 ≤35s）</td></tr>
+  <tr><td><code>test/g07-routes.test.js</code></td><td>R1–R3：17 固定 + 3 参数化路由清单 + GET 业务形状 + POST 具名错误码 + 白名单 + 代理透传</td></tr>
+  <tr><td><code>package.json</code></td><td>新增 <code>test:g07</code>（既有 <code>test</code> 未动）</td></tr>
+  <tr><td><code>scripts/hooks/pre-commit</code></td><td>提交门禁：<code>npm run test:g07</code> 失败即阻止提交；已 <code>git config core.hooksPath scripts/hooks</code> 激活</td></tr>
+</table>
+
+<h2>2. 隔离测试环境（不碰真实数据）</h2>
+<ul>
+  <li><b>stub 中台</b>：node:http 临时端口，<code>/healthz</code> + <code>/v1/state</code>；<code>faultMode</code> 可切 <code>garbage</code>（200 回非 JSON）/ <code>http503</code>，用于服务层真实故障注入。</li>
+  <li><b>临时 HOME</b>：<code>os.tmpdir()</code> 下 mkdtemp 的 AGENT_AUTOLOOP_HOME——config.json 指向 stub 中台；3 条真实形状任务档案（awaiting / delivered / queued）、12 条技能 + 4 条分类 overlay、hermes-status.mjs 存根（时间戳现算保证不 stale）。跑完整体删除。</li>
+  <li><b>真实服务</b>：spawn 真实 <code>web/server.js</code>（临时 PORT），就绪判定为 <code>/api/health</code> 返回 <code>{ok:true, build}</code>。</li>
+  <li><b>产物登记指向真实白名单文件</b> <code>web/app.css</code>（真实字节 + sha256），<code>/api/office/file</code>、<code>file-version</code>、<code>file-download</code> 走通真实读取链。</li>
+  <li><b>真实测试数据断言</b>：HTTP 200 一律不作为通过条件，必须核对响应体业务字段 / 页面业务 DOM。</li>
+</ul>
+
+<h2>3. 首屏加载实测（目标 ≤3000ms）</h2>
+<table>
+  <tr><th>页</th><th>用例</th><th>实测 contentMs</th><th>业务 DOM 证据</th></tr>
+  <tr><td>工作台</td><td>A1</td><td class="num"><b>370ms</b></td><td>需求行 3（含夹具标题）、交付链节点 7、连接色 <code>rgb(101, 217, 177)</code>/12px</td></tr>
+  <tr><td>Agents</td><td>A2</td><td class="num"><b>237ms</b></td><td>4 卡（Lemate/Winter/Karina/Codex），卡 <code>getBoundingClientRect {w:1320, h:74, display:block}</code></td></tr>
+  <tr><td>技能</td><td>A3</td><td class="num"><b>207ms</b></td><td>12 行、计数「匹配 12 / 12」、overlay「类别 开发」与「未分类」并存</td></tr>
+  <tr><td>文件</td><td>A4</td><td class="num"><b>235ms</b></td><td>≥2 组、计数「匹配 1 / 1 个产物（3 条登记）」、文件行 <code>{w:1278, h:92}</code></td></tr>
+</table>
+<p>四页全部 <code>__uiErrors=0</code>、pageerror=0、console.error=0。</p>
+
+<h2>4. 导航与刷新（B1–B4 全过）</h2>
+<ul>
+  <li><b>B1 侧栏切换</b>：四页 <code>body.dataset.page</code> + 每页 <code>getComputedStyle().display</code> 矩阵断言（目标页可见、其余 none）。</li>
+  <li><b>B2 哈希导航</b>：<code>aria-current="page"</code> 唯一且跟随。</li>
+  <li><b>B3 刷新恢复</b>：技能页刷新后仍停技能页、12 行恢复、选中「gstack-command」详情恢复（选中态按产品真实落盘路径——列表滚动 300ms 防抖 saveUiPos——归档后恢复）。</li>
+  <li><b>B4 四页往返</b>：reqs=3、track=7 数据不毁，零异常。</li>
+</ul>
+
+<h2>5. API 异常与恢复实测（窗口 ≤35s）</h2>
+<table>
+  <tr><th>用例</th><th>注入</th><th>前端表现（实测）</th><th>恢复</th></tr>
+  <tr><td>C1</td><td><code>/api/health</code> 500（浏览器层）</td><td>「连接失败 · G07 注入 500」，色 <code>rgb(229, 185, 94)</code>，数据行 3 仍在</td><td class="num"><b>2.9s</b></td></tr>
+  <tr><td>C2</td><td>中台回非 JSON（服务层）</td><td>「数据获取失败」，横幅点名「中台状态」可见</td><td class="num"><b>3.4s</b>，行数恢复 3、横幅隐藏</td></tr>
+  <tr><td>C3</td><td>中台 503（服务层）</td><td>服务端透传 <b>HTTP 503 / STUB_503</b>（curl 口径实测），前端数据失败</td><td class="num"><b>3.4s</b></td></tr>
+  <tr><td>C4</td><td>全部 <code>/api/</code> 中断</td><td>持续「连接失败 · 网络错误」两轮采样稳定、body 高 &gt;400 不空白</td><td class="num"><b>2.9s</b>，rows=3 + console「已重新连接」</td></tr>
+</table>
+
+<h2>6. 17 个既有 API 路由核对（R1–R3 全过）</h2>
+<p>
+  <b>17 = 固定路径路由</b>（11 GET + 6 POST）：<code>/api/health</code>、<code>/api/state</code>、<code>/api/office/hermes|files|skills|flow|file|file-version|decisions|op-status|file-download</code>（GET）+ <code>/api/office/file-check|version-gate|file-revalidate|decide|resubmit|decision</code>（POST）。<br>
+  <b>另有 3 条参数化中台代理</b>：<code>/api/cards/:id/answer|resolve</code>、<code>/api/runs/:id/cancel</code>（共 20 条一并守护）。
+</p>
+<ul>
+  <li><b>R1 源码静态扫描</b>：17 固定 + 3 参数化字面量逐一对照冻结清单，<b>少一条即失败</b>（防「重构删路由」无声发生）。</li>
+  <li><b>R2 业务形状</b>：health <code>{ok,autoloop,build}</code>、state 透传 codex/9001、hermes 三入口、skills=12 且 overlay 合并、flow=3 任务×7 步（T-G07A 5/7、updatedAt 倒序）、decisions 含 T-G07A/verify、op-status 缺参 400/MISSING_OP_ID、file 读回真实文本+64 位 sha256、file-version <code>disk-current</code>。</li>
+  <li><b>R3 协议与安全</b>：POST 具名 400 码（BAD_TASK_ID/BAD_STEP/BAD_ACTION/REASON_REQUIRED/MISSING_PARAMS/BAD_DEMAND_ID/INVALID_ANSWER/INVALID_REASON）；白名单外 403/PATH_NOT_ALLOWED ×4 路径；下载带 <code>attachment</code> 头且字节与磁盘一致；cards/runs 代理链打到 stub 中台 404 原样透传（错误文案点名 <code>/v1/cards/123/answer</code> 等真实转发路径）；已知路由错方法 405。</li>
+</ul>
+
+<h2>7. 故障注入验证（任务书要求，真实输出）</h2>
+<table>
+  <tr><th style="width:44%">步骤</th><th>结果</th></tr>
+  <tr>
+    <td><code>mv web/shared.js → .g07fault</code>（初始化异常，页面只剩外壳）</td>
+    <td><code>npm run test:g07</code> → <span class="pill fail">15 用例挂 12</span>（A/B/C 全部 UI 用例失败；R 服务端 3 条仍过），exit=1</td>
+  </tr>
+  <tr>
+    <td>同时验证提交门禁</td>
+    <td><code>sh scripts/hooks/pre-commit</code> → <b class="bad">exit=1</b>，「❌ 本次提交已被阻止」</td>
+  </tr>
+  <tr>
+    <td><code>mv</code> 还原</td>
+    <td><code>npm run test:g07</code> → <span class="pill pass">15/15 通过</span>，exit=0；门禁 → <b class="ok">exit=0</b>，「✅ 15/15 通过」</td>
+  </tr>
+</table>
+<div class="warn-note">结论：上一轮「提交截图显示业务界面整体失效而测试无阻拦」的事故类别，现在会被 12 条 UI 用例当场拦下，且提交被阻止。</div>
+
+<h2>8. 全量套件基线（既有测试全保留）</h2>
+<table>
+  <tr><th>环境</th><th>结果</th><th>说明</th></tr>
+  <tr><td>Node 20.19.2（本机默认）</td><td class="num">64 tests / <b class="bad">55 pass / 9 fail</b></td><td>9 个失败全为既有 <code>node:sqlite</code> 文件（engines 要求 ≥22.5），与本次改动前完全一致，零新增失败</td></tr>
+  <tr><td>Node 22.23.2（engines 合规）</td><td class="num"><b class="ok">142/142 pass</b>（≈21.6s）</td><td>既有 127 + 新增 15</td></tr>
+</table>
+<p>G07 单套耗时：正常 ~21s；故障轮 ~62s（失败用例吃满等待超时）。</p>
+
+<h2>9. 边界与如实说明</h2>
+<ul>
+  <li><b>B3</b>：app.js 行点击处理器（<code>app.js:2056</code>）只重渲染不落盘，选中态落盘由滚动/切页等路径触发——<b>既有行为未改</b>，用例按真实用户路径验证恢复。</li>
+  <li><b>C4</b> 断网期间 rows=0 属预期（首轮加载即断网，无数据可渲染）；已断言页面不空白（body 高 &gt;400）且状态持续稳定。</li>
+  <li>门禁绕过口 <code>git commit --no-verify</code> 保留（Git 固有），hook 输出中已注明不建议。</li>
+  <li>本任务只新增测试与门禁，未改 <code>web/</code> 任何功能代码（<code>git status</code> 可核）。</li>
+</ul>
+
+<h2>10. 复现命令</h2>
+<pre><code>npm run test:g07                      # 15 用例（门禁同款）
+npm test                              # 全量（Node 20：目录参数；Node 22：node --no-warnings --test "test/*.test.js"）
+sh scripts/hooks/pre-commit           # 手动跑门禁
+git config core.hooksPath             # → scripts/hooks（已激活）</code></pre>
+
+<h2>11. 第 2 轮独立复验（2026-11-16 深夜，交付后原样重跑）</h2>
+<p>交付文件零改动，全部命令原样重跑（并行会话期间 web/ 又有迭代：app.js sha256 <code>fef3a996…</code>，G02 拆分继续加测试至 203 条——G07 在其上无损存活）：</p>
+<table>
+  <tr><th>复验项</th><th>命令</th><th>实测结果</th></tr>
+  <tr><td>G07 单套（Node 22.23.2 直跑）</td><td><code>node --test test/g07-{pages,nav,recovery,routes}.test.js</code></td><td><b>15/15 通过</b>，21021ms</td></tr>
+  <tr><td>G07 单套（门禁同款，npm → Node 20.19.2）</td><td><code>npm run --silent test:g07</code></td><td><b>15/15 通过</b>，exit=0（门禁环境实测可用）</td></tr>
+  <tr><td>故障注入①（初始化异常）</td><td>向 <code>web/app.js</code> 末尾注入语法错误</td><td><b>15 用例挂 12</b>（A/B/C 全部 UI 用例失败，R1–R3 服务端 3 条仍过），<b>exit=1</b></td></tr>
+  <tr><td>故障注入②（提交门禁拦截）</td><td><code>sh scripts/hooks/pre-commit</code>（注入未还原时）</td><td><b>exit=1</b>，「❌ G07 回归失败——本次提交已被阻止」</td></tr>
+  <tr><td>还原复跑</td><td>备份拷回，sha256 与原文件逐字节一致（<code>fef3a996…</code>）</td><td><b>15/15 通过</b>，exit=0</td></tr>
+</table>
+<p>本轮首屏实测（≤3000ms 目标）：A1 工作台 <b>547ms</b>、A2 Agents <b>260ms</b>、A3 技能 <b>217ms</b>、A4 文件 <b>335ms</b>；A2 Agent 卡 <code>getBoundingClientRect {w:1320, h:74, display:block}</code>、A4 文件行 <code>{w:1278, h:92}</code>；C1–C4 恢复 3.4s/3.4s/3.4s/2.9s（窗口 ≤35s）。</p>
+<p>全量套件：Node 22 <code>node --test "test/*.test.js"</code> <b>203/203 通过</b>（两连跑；注意 Node 22 的 <code>--test test/</code> 目录参数不被识别、须用 glob 形式）。一次高负载运行中出现 1 例偶发失败：既有 <code>test/g02-branches.test.js</code> #61 <code>renderDecisionPop</code>（隔离复跑 61/61×1 + 5/5 全过，属并行会话 G02 测试在负载下的偶发，<b>非 G07 用例、门禁不含该文件、与 G07 交付无关</b>，如实记录）。</p>
+<p>结论：<b>故障注入→用例拦截→门禁阻止→还原恢复</b>全链路第 2 次独立复核成立，本轮数字以上表为准（第 3/8 节为首轮当时数字）。</p>
+
+<footer>G07 验证报告 · 2026-11-16 · 本文档与 <code>G07-验证报告.md</code> 同目录双版本（MD 给 AI / HTML 给人）</footer>
+</div>
+</body>
+</html>

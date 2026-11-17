@@ -1,7 +1,7 @@
 {
   "phase": "baseline",
   "base": "http://127.0.0.1:8090",
-  "when": "2026-11-15T20:42:48.291Z",
+  "when": "2026-11-16T23:44:13.793Z",
   "viewport": "1440x900",
   "pages": {
     "workbench": [
@@ -17,7 +17,7 @@
         "mono": false,
         "rect": {
           "x": 83,
-          "y": 152,
+          "y": 151,
           "w": 51,
           "h": 20
         },
@@ -36,7 +36,7 @@
         "mono": false,
         "rect": {
           "x": 83,
-          "y": 486,
+          "y": 587,
           "w": 51,
           "h": 20
         },
@@ -55,7 +55,7 @@
         "mono": false,
         "rect": {
           "x": 83,
-          "y": 570,
+          "y": 671,
           "w": 51,
           "h": 20
         },
@@ -75,7 +75,7 @@
         "mono": false,
         "rect": {
           "x": 142,
-          "y": 153,
+          "y": 152,
           "w": 97,
           "h": 18
         },
@@ -94,7 +94,7 @@
         "mono": false,
         "rect": {
           "x": 83,
-          "y": 152,
+          "y": 151,
           "w": 195,
           "h": 20
         },
@@ -115,7 +115,7 @@
         "mono": false,
         "rect": {
           "x": 88,
-          "y": 260,
+          "y": 244,
           "w": 1320,
           "h": 18
         },
@@ -125,18 +125,18 @@
       {
         "sel": ".agent-card .ag-ids",
         "text": "lemate·lemate",
-        "fontSize": "12px",
-        "lineHeight": "18px",
-        "color": "#B3C0D2",
-        "rawColor": "rgb(179, 192, 210)",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
         "bg": "#0D111A",
-        "contrast": 10.24,
+        "contrast": 14.16,
         "mono": true,
         "rect": {
-          "x": 236,
-          "y": 306,
-          "w": 100,
-          "h": 16
+          "x": 238,
+          "y": 290,
+          "w": 107,
+          "h": 17
         },
         "clipX": false,
         "escX": false
@@ -152,9 +152,9 @@
         "contrast": 9.56,
         "mono": false,
         "rect": {
-          "x": 183,
-          "y": 325,
-          "w": 277,
+          "x": 185,
+          "y": 311,
+          "w": 276,
           "h": 18
         },
         "clipX": false,
@@ -165,10 +165,10 @@
         "text": "中台注册角色",
         "fontSize": "12px",
         "lineHeight": "18px",
-        "color": "#A3B0BF",
-        "rawColor": "rgb(163, 176, 191)",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
         "bg": "#172131",
-        "contrast": 7.33,
+        "contrast": 8.77,
         "mono": false,
         "rect": {
           "x": 945,
@@ -182,18 +182,18 @@
       {
         "sel": ".ag-conn.ok",
         "text": "在线",
-        "fontSize": "13px",
-        "lineHeight": "20px",
+        "fontSize": "12px",
+        "lineHeight": "18px",
         "color": "#62C6A0",
         "rawColor": "rgb(98, 198, 160)",
         "bg": "#121925",
         "contrast": 8.48,
         "mono": false,
         "rect": {
-          "x": 476,
-          "y": 313,
+          "x": 477,
+          "y": 299,
           "w": 112,
-          "h": 20
+          "h": 18
         },
         "clipX": false,
         "escX": false
@@ -203,18 +203,18 @@
       {
         "sel": ".ag-work.work-idle",
         "text": "空闲",
-        "fontSize": "13px",
-        "lineHeight": "20px",
-        "color": "#E2EAF4",
-        "rawColor": "rgb(226, 234, 244)",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
         "bg": "#121925",
-        "contrast": 14.53,
+        "contrast": 13.21,
         "mono": false,
         "rect": {
-          "x": 604,
-          "y": 559,
+          "x": 605,
+          "y": 551,
           "w": 112,
-          "h": 20
+          "h": 18
         },
         "clipX": false,
         "escX": false
@@ -222,57 +222,93 @@
       {
         "sel": ".ag-work.work-unknown",
         "text": "未知",
-        "fontSize": "13px",
-        "lineHeight": "20px",
-        "color": "#8996A8",
-        "rawColor": "rgb(137, 150, 168)",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
         "bg": "#121925",
-        "contrast": 5.87,
+        "contrast": 13.21,
         "mono": false,
         "rect": {
-          "x": 604,
-          "y": 313,
+          "x": 605,
+          "y": 299,
           "w": 112,
-          "h": 20
+          "h": 18
         },
         "clipX": false,
         "escX": false
       },
       {
         "sel": ".ag-hb.ok",
-        "text": "刚刚",
-        "fontSize": "13px",
-        "lineHeight": "20px",
-        "color": "#E2EAF4",
-        "rawColor": "rgb(226, 234, 244)",
+        "text": "22 秒前",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#65D9B1",
+        "rawColor": "rgb(101, 217, 177)",
         "bg": "#121925",
-        "contrast": 14.53,
+        "contrast": 10.17,
         "mono": false,
         "rect": {
-          "x": 732,
-          "y": 313,
+          "x": 733,
+          "y": 551,
           "w": 140,
-          "h": 20
+          "h": 18
         },
         "clipX": false,
         "escX": false
       },
-      null,
-      null,
       {
-        "sel": ".ag-task",
-        "text": "上次上报已过期 · 11/15 00:08",
-        "fontSize": "13px",
-        "lineHeight": "20px",
+        "sel": ".ag-hb.stale",
+        "text": "已过期 · 11/15 00:08",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#E5B95E",
+        "rawColor": "rgb(229, 185, 94)",
+        "bg": "#121925",
+        "contrast": 9.6,
+        "mono": false,
+        "rect": {
+          "x": 733,
+          "y": 299,
+          "w": 140,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-hb.off",
+        "text": "—",
+        "fontSize": "12px",
+        "lineHeight": "18px",
         "color": "#8996A8",
         "rawColor": "rgb(137, 150, 168)",
         "bg": "#121925",
         "contrast": 5.87,
         "mono": false,
         "rect": {
-          "x": 888,
-          "y": 313,
-          "w": 505,
+          "x": 733,
+          "y": 383,
+          "w": 140,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".ag-task",
+        "text": "上次上报已过期 · 11/15 00:08",
+        "fontSize": "13px",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
+        "bg": "#121925",
+        "contrast": 13.21,
+        "mono": false,
+        "rect": {
+          "x": 889,
+          "y": 298,
+          "w": 502,
           "h": 20
         },
         "clipX": false,
@@ -283,15 +319,15 @@
         "text": "上次上报已过期 · 11/15 00:08",
         "fontSize": "13px",
         "lineHeight": "20px",
-        "color": "#8996A8",
-        "rawColor": "rgb(137, 150, 168)",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
         "bg": "#121925",
-        "contrast": 5.87,
+        "contrast": 13.21,
         "mono": false,
         "rect": {
-          "x": 888,
-          "y": 313,
-          "w": 505,
+          "x": 889,
+          "y": 298,
+          "w": 502,
           "h": 20
         },
         "clipX": false,
@@ -299,7 +335,7 @@
       },
       {
         "sel": "#agent-scope",
-        "text": "本页只列一线 Agent（3 个 Hermes 入口 + Codex）；",
+        "text": "本页展示参与日常协作的一线 Agent 及其连接与执行状态。",
         "fontSize": "12px",
         "lineHeight": "18px",
         "color": "#B3C0D2",
@@ -311,7 +347,7 @@
           "x": 88,
           "y": 200,
           "w": 720,
-          "h": 36
+          "h": 32
         },
         "clipX": false,
         "escX": false
@@ -323,8 +359,8 @@
       {
         "sel": ".agent-detail .agent-kv",
         "text": "角色ID（稳定）lemate",
-        "fontSize": "14px",
-        "lineHeight": "22px",
+        "fontSize": "12px",
+        "lineHeight": "18px",
         "color": "#B3C0D2",
         "rawColor": "rgb(179, 192, 210)",
         "bg": "#121925",
@@ -332,9 +368,9 @@
         "mono": false,
         "rect": {
           "x": 105,
-          "y": 402,
+          "y": 386,
           "w": 1271,
-          "h": 31
+          "h": 27
         },
         "clipX": false,
         "escX": false
@@ -342,18 +378,18 @@
       {
         "sel": ".agent-detail .agent-kv span:first-child",
         "text": "角色ID（稳定）",
-        "fontSize": "14px",
-        "lineHeight": "22px",
-        "color": "#8996A8",
-        "rawColor": "rgb(137, 150, 168)",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
         "bg": "#121925",
-        "contrast": 5.87,
+        "contrast": 9.56,
         "mono": false,
         "rect": {
           "x": 105,
-          "y": 406,
-          "w": 98,
-          "h": 22
+          "y": 390,
+          "w": 84,
+          "h": 18
         },
         "clipX": false,
         "escX": false
@@ -361,18 +397,18 @@
       {
         "sel": ".agent-detail .agent-kv span:last-child",
         "text": "lemate",
-        "fontSize": "14px",
-        "lineHeight": "22px",
+        "fontSize": "12px",
+        "lineHeight": "18px",
         "color": "#B3C0D2",
         "rawColor": "rgb(179, 192, 210)",
         "bg": "#121925",
         "contrast": 9.56,
         "mono": false,
         "rect": {
-          "x": 1334,
-          "y": 406,
-          "w": 42,
-          "h": 22
+          "x": 1340,
+          "y": 390,
+          "w": 36,
+          "h": 18
         },
         "clipX": false,
         "escX": false
@@ -391,8 +427,8 @@
         "contrast": 10.24,
         "mono": false,
         "rect": {
-          "x": 1239,
-          "y": 120,
+          "x": 1207,
+          "y": 118,
           "w": 77,
           "h": 18
         },
@@ -410,8 +446,8 @@
         "contrast": 10.24,
         "mono": false,
         "rect": {
-          "x": 180,
-          "y": 242,
+          "x": 212,
+          "y": 241,
           "w": 34,
           "h": 18
         },
@@ -423,16 +459,16 @@
         "text": "Fast headless browser for QA testing",
         "fontSize": "12px",
         "lineHeight": "18px",
-        "color": "#B3C0D2",
-        "rawColor": "rgb(179, 192, 210)",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
         "bg": "#182230",
-        "contrast": 8.69,
+        "contrast": 12.02,
         "mono": false,
         "rect": {
-          "x": 197,
+          "x": 231,
           "y": 368,
-          "w": 643,
-          "h": 18
+          "w": 263,
+          "h": 36
         },
         "clipX": false,
         "escX": false
@@ -448,8 +484,8 @@
         "contrast": 10.13,
         "mono": false,
         "rect": {
-          "x": 197,
-          "y": 414,
+          "x": 231,
+          "y": 432,
           "w": 44,
           "h": 20
         },
@@ -467,8 +503,8 @@
         "contrast": 8.69,
         "mono": false,
         "rect": {
-          "x": 782,
-          "y": 416,
+          "x": 435,
+          "y": 434,
           "w": 58,
           "h": 16
         },
@@ -486,8 +522,8 @@
         "contrast": 9.56,
         "mono": true,
         "rect": {
-          "x": 917,
-          "y": 652,
+          "x": 885,
+          "y": 634,
           "w": 363,
           "h": 36
         },
@@ -498,7 +534,7 @@
     "files": [
       {
         "sel": "#file-count",
-        "text": "匹配 12 / 12 个产物（13 条登记）",
+        "text": "匹配 14 / 14 个产物（17 条登记）",
         "fontSize": "12px",
         "lineHeight": "18px",
         "color": "#B3C0D2",
@@ -508,7 +544,7 @@
         "mono": false,
         "rect": {
           "x": 1213,
-          "y": 120,
+          "y": 118,
           "w": 180,
           "h": 18
         },
@@ -527,7 +563,7 @@
         "mono": false,
         "rect": {
           "x": 1048,
-          "y": 197,
+          "y": 195,
           "w": 87,
           "h": 20
         },
@@ -536,19 +572,19 @@
       },
       {
         "sel": ".library-file .lf-name",
-        "text": "app.css",
-        "fontSize": "14px",
-        "lineHeight": "22px",
+        "text": "fixture-time.md",
+        "fontSize": "13px",
+        "lineHeight": "20px",
         "color": "#F1ECE2",
         "rawColor": "rgb(241, 236, 226)",
-        "bg": "#151F2D",
-        "contrast": 14.09,
+        "bg": "#182230",
+        "contrast": 13.61,
         "mono": false,
         "rect": {
-          "x": 162,
-          "y": 326,
-          "w": 46,
-          "h": 22
+          "x": 150,
+          "y": 329,
+          "w": 93,
+          "h": 20
         },
         "clipX": false,
         "escX": false
@@ -556,37 +592,37 @@
       {
         "sel": ".library-file .lf-src",
         "text": "C:/Users/Administrator/Desktop/Soda ",
-        "fontSize": "12px",
-        "lineHeight": "18px",
+        "fontSize": "11px",
+        "lineHeight": "16px",
         "color": "#B3C0D2",
         "rawColor": "rgb(179, 192, 210)",
-        "bg": "#151F2D",
-        "contrast": 9,
+        "bg": "#182230",
+        "contrast": 8.69,
         "mono": true,
         "rect": {
-          "x": 162,
-          "y": 352,
-          "w": 825,
-          "h": 18
+          "x": 150,
+          "y": 353,
+          "w": 813,
+          "h": 16
         },
         "clipX": false,
         "escX": false
       },
       {
         "sel": ".library-file .lf-size",
-        "text": "实测 87.7 KB",
-        "fontSize": "12px",
-        "lineHeight": "18px",
-        "color": "#D7E1EE",
-        "rawColor": "rgb(215, 225, 238)",
-        "bg": "#151F2D",
-        "contrast": 12.56,
-        "mono": false,
+        "text": "V1133 B·d4ada83b ✓2026-11-15 17:00",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#65D9B1",
+        "rawColor": "rgb(101, 217, 177)",
+        "bg": "#182230",
+        "contrast": 9.24,
+        "mono": true,
         "rect": {
-          "x": 1087,
-          "y": 319,
-          "w": 102,
-          "h": 18
+          "x": 979,
+          "y": 323,
+          "w": 119,
+          "h": 34
         },
         "clipX": false,
         "escX": false
@@ -594,23 +630,41 @@
       {
         "sel": ".library-file .lf-type",
         "text": "历史归档",
-        "fontSize": "11px",
-        "lineHeight": "16px",
+        "fontSize": "12px",
+        "lineHeight": "18px",
         "color": "#B3C0D2",
         "rawColor": "rgb(179, 192, 210)",
         "bg": "#182230",
         "contrast": 8.69,
         "mono": false,
         "rect": {
-          "x": 1003,
-          "y": 539,
-          "w": 62,
-          "h": 20
+          "x": 997,
+          "y": 882,
+          "w": 66,
+          "h": 18
         },
         "clipX": false,
         "escX": false
       },
-      null,
+      {
+        "sel": ".lf-tag.unver",
+        "text": "无法校验",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#26384F",
+        "contrast": 6.47,
+        "mono": false,
+        "rect": {
+          "x": 979,
+          "y": 635,
+          "w": 64,
+          "h": 22
+        },
+        "clipX": false,
+        "escX": false
+      },
       {
         "sel": ".fv-path",
         "text": "C:/Users/Administrator/Desktop/Soda ",
@@ -633,8 +687,8 @@
       {
         "sel": ".fvd-row span",
         "text": "执行者",
-        "fontSize": "13px",
-        "lineHeight": "24px",
+        "fontSize": "12px",
+        "lineHeight": "18px",
         "color": "#B3C0D2",
         "rawColor": "rgb(179, 192, 210)",
         "bg": "#0D111A",
@@ -642,9 +696,9 @@
         "mono": false,
         "rect": {
           "x": 1045,
-          "y": 91,
-          "w": 39,
-          "h": 24
+          "y": 94,
+          "w": 36,
+          "h": 18
         },
         "clipX": false,
         "escX": false
@@ -653,38 +707,96 @@
         "sel": ".fvd-row b",
         "text": "selftest",
         "fontSize": "13px",
-        "lineHeight": "24px",
-        "color": "#F1ECE2",
-        "rawColor": "rgb(241, 236, 226)",
+        "lineHeight": "20px",
+        "color": "#D6E0ED",
+        "rawColor": "rgb(214, 224, 237)",
         "bg": "#0D111A",
-        "contrast": 16.04,
+        "contrast": 14.16,
         "mono": false,
         "rect": {
           "x": 1374,
-          "y": 91,
+          "y": 93,
           "w": 41,
-          "h": 24
+          "h": 20
+        },
+        "clipX": false,
+        "escX": false
+      },
+      null,
+      {
+        "sel": ".lf-lines .lf-size",
+        "text": "V1133 B·d4ada83b ✓2026-11-15 17:00",
+        "fontSize": "11px",
+        "lineHeight": "16px",
+        "color": "#65D9B1",
+        "rawColor": "rgb(101, 217, 177)",
+        "bg": "#182230",
+        "contrast": 9.24,
+        "mono": true,
+        "rect": {
+          "x": 979,
+          "y": 323,
+          "w": 119,
+          "h": 34
         },
         "clipX": false,
         "escX": false
       },
       {
-        "sel": ".fvd-row b.warn",
-        "text": "大小不一致（02 需求文档：登记 78.5 KB ≠ 实测 87.7 K",
-        "fontSize": "13px",
-        "lineHeight": "24px",
-        "color": "#E5B95E",
-        "rawColor": "rgb(229, 185, 94)",
-        "bg": "#0D111A",
-        "contrast": 10.28,
+        "sel": ".library-file .lf-size.ok",
+        "text": "✓ 384 B",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#62C6A0",
+        "rawColor": "rgb(98, 198, 160)",
+        "bg": "#182230",
+        "contrast": 7.71,
         "mono": false,
         "rect": {
-          "x": 1109,
-          "y": 307,
-          "w": 306,
-          "h": 24
+          "x": 979,
+          "y": 860,
+          "w": 42,
+          "h": 18
         },
-        "clipX": true,
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-exec",
+        "text": "selftest",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#B3C0D2",
+        "rawColor": "rgb(179, 192, 210)",
+        "bg": "#182230",
+        "contrast": 8.69,
+        "mono": false,
+        "rect": {
+          "x": 150,
+          "y": 373,
+          "w": 38,
+          "h": 18
+        },
+        "clipX": false,
+        "escX": false
+      },
+      {
+        "sel": ".library-file .lf-exec.na",
+        "text": "—",
+        "fontSize": "12px",
+        "lineHeight": "18px",
+        "color": "#8996A8",
+        "rawColor": "rgb(137, 150, 168)",
+        "bg": "#182230",
+        "contrast": 5.34,
+        "mono": false,
+        "rect": {
+          "x": 979,
+          "y": 882,
+          "w": 12,
+          "h": 18
+        },
+        "clipX": false,
         "escX": false
       }
     ]
@@ -724,8 +836,8 @@
           "kind": "long-cn",
           "found": true,
           "rect": {
-            "w": 1126,
-            "h": 22
+            "w": 965,
+            "h": 18
           },
           "clipX": false,
           "escX": false
@@ -735,7 +847,7 @@
           "kind": "long-cn",
           "found": true,
           "rect": {
-            "w": 495,
+            "w": 492,
             "h": 40
           },
           "clipX": false,
@@ -751,10 +863,10 @@
           "kind": "long-cn",
           "found": true,
           "rect": {
-            "w": 643,
-            "h": 18
+            "w": 263,
+            "h": 54
           },
-          "clipX": true,
+          "clipX": false,
           "escX": false
         },
         {
@@ -789,8 +901,8 @@
           "kind": "long-path",
           "found": true,
           "rect": {
-            "w": 825,
-            "h": 18
+            "w": 813,
+            "h": 16
           },
           "clipX": true,
           "escX": false
@@ -822,8 +934,8 @@
           "kind": "long-mix",
           "found": true,
           "rect": {
-            "w": 319,
-            "h": 24
+            "w": 322,
+            "h": 20
           },
           "clipX": true,
           "escX": false
@@ -835,6 +947,7 @@
   "geom": {
     "workbench": {
       "reqItems": [
+        94,
         94,
         76,
         76,
@@ -861,14 +974,15 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "agentCards": [
         18,
-        74,
-        74,
-        74,
-        74
+        76,
+        76,
+        76,
+        76
       ],
       "skillRows": [],
       "fileRows": [],
@@ -887,6 +1001,7 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "agentCards": [
@@ -897,18 +1012,12 @@
         0
       ],
       "skillRows": [
-        124,
-        124,
-        124,
-        124,
-        124,
-        124,
-        124,
-        124,
-        124,
-        124,
-        124,
-        124
+        144,
+        144,
+        144,
+        144,
+        144,
+        144
       ],
       "fileRows": [],
       "fileMainW": [],
@@ -926,6 +1035,7 @@
         0,
         0,
         0,
+        0,
         0
       ],
       "agentCards": [
@@ -941,41 +1051,35 @@
         0,
         0,
         0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
         0
       ],
       "fileRows": [
-        80,
-        86,
-        86,
-        86,
-        86,
-        86,
-        104,
-        86,
-        86,
-        86,
-        86,
-        86
+        108,
+        108,
+        124,
+        84,
+        84,
+        84,
+        84,
+        84,
+        122,
+        84,
+        84,
+        84
       ],
       "fileMainW": [
-        825,
-        825,
-        825,
-        825,
-        825,
-        825,
-        825,
-        825,
-        825,
-        825,
-        825,
-        825
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813,
+        813
       ],
       "pageOverflowX": false,
       "viewport": {
@@ -983,6 +1087,9 @@
         "h": 900
       }
     }
+  },
+  "workbenchExtra": {
+    "directTextNodes": 0
   },
   "shots": []
 }

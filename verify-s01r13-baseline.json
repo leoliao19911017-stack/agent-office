@@ -1,0 +1,500 @@
+{
+  "phase": "baseline",
+  "viewports": {
+    "1440x900": {
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "cardCount": 20,
+      "countText": "匹配 222 / 222",
+      "listBox": {
+        "overflowY": "auto",
+        "minHeight": "0px",
+        "paddingBottom": "0px",
+        "clientH": 411,
+        "scrollH": 1586,
+        "rectTop": 321,
+        "rectBottom": 732,
+        "scrollable": true,
+        "gap": "16px",
+        "cols": 2
+      },
+      "pagination": {
+        "computedH": "56px",
+        "minH": "56px",
+        "marginTop": "24px",
+        "rectTop": 756,
+        "rectBottom": 812,
+        "rectH": 56,
+        "gapToListBottom": 24
+      },
+      "cardComputed": {
+        "minH": "144px",
+        "h": "144px"
+      },
+      "cardHeights": [
+        144
+      ],
+      "columns": 2,
+      "desc": [
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 1,
+          "boxH": 40,
+          "clamped": false
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 11,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 7,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 8,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 9,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 8,
+          "boxH": 40,
+          "clamped": true
+        }
+      ],
+      "top_state": {
+        "scrollTop": 0,
+        "card6": {
+          "top": 643,
+          "bottom": 787,
+          "h": 144
+        },
+        "card6MetaBottom": 770,
+        "listBottom": 732,
+        "pagTop": 756,
+        "card6BelowFold": 55,
+        "card6VisibleBottom": 732,
+        "card6VisibleToPag": 24
+      },
+      "visibleCardsAtTop": 6,
+      "visibleOverlapAtTop": false,
+      "card6AtBottom": {
+        "bottom": -388,
+        "toPag": 1144
+      },
+      "bottom_state": {
+        "scrollTop": 1175,
+        "maxScroll": 1175,
+        "lastCardIdx": 20,
+        "lastCardBottom": 732,
+        "listBottom": 732,
+        "pagTop": 756,
+        "lastCardToListBottom": 0,
+        "lastCardToPag": 24
+      },
+      "visibleCardsAtBottom": 6,
+      "metaCheckAtBottom": [
+        {
+          "name": "careful",
+          "metaTop": 375,
+          "metaBottom": 395,
+          "inside": true
+        },
+        {
+          "name": "chatgpt-drive",
+          "metaTop": 375,
+          "metaBottom": 395,
+          "inside": true
+        },
+        {
+          "name": "chinese-code-rev",
+          "metaTop": 535,
+          "metaBottom": 555,
+          "inside": true
+        },
+        {
+          "name": "chinese-commit-c",
+          "metaTop": 535,
+          "metaBottom": 555,
+          "inside": true
+        },
+        {
+          "name": "chinese-document",
+          "metaTop": 695,
+          "metaBottom": 715,
+          "inside": true
+        },
+        {
+          "name": "chinese-git-work",
+          "metaTop": 695,
+          "metaBottom": 715,
+          "inside": true
+        }
+      ],
+      "allMetaInside": true,
+      "visibleOverlapAtBottom": false,
+      "hScroll": false
+    },
+    "1280x768": {
+      "viewport": {
+        "w": 1280,
+        "h": 768
+      },
+      "cardCount": 20,
+      "countText": "匹配 222 / 222",
+      "listBox": {
+        "overflowY": "auto",
+        "minHeight": "0px",
+        "paddingBottom": "0px",
+        "clientH": 279,
+        "scrollH": 1586,
+        "rectTop": 321,
+        "rectBottom": 600,
+        "scrollable": true,
+        "gap": "16px",
+        "cols": 2
+      },
+      "pagination": {
+        "computedH": "56px",
+        "minH": "56px",
+        "marginTop": "24px",
+        "rectTop": 624,
+        "rectBottom": 680,
+        "rectH": 56,
+        "gapToListBottom": 24
+      },
+      "cardComputed": {
+        "minH": "144px",
+        "h": "144px"
+      },
+      "cardHeights": [
+        144
+      ],
+      "columns": 2,
+      "desc": [
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 1,
+          "boxH": 40,
+          "clamped": false
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 11,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 7,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 8,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 9,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 8,
+          "boxH": 40,
+          "clamped": true
+        }
+      ],
+      "top_state": {
+        "scrollTop": 0,
+        "card6": {
+          "top": 643,
+          "bottom": 787,
+          "h": 144
+        },
+        "card6MetaBottom": 770,
+        "listBottom": 600,
+        "pagTop": 624,
+        "card6BelowFold": 187,
+        "card6VisibleBottom": 600,
+        "card6VisibleToPag": 24
+      },
+      "visibleCardsAtTop": 4,
+      "visibleOverlapAtTop": false,
+      "card6AtBottom": {
+        "bottom": -520,
+        "toPag": 1144
+      },
+      "bottom_state": {
+        "scrollTop": 1307,
+        "maxScroll": 1307,
+        "lastCardIdx": 20,
+        "lastCardBottom": 600,
+        "listBottom": 600,
+        "pagTop": 624,
+        "lastCardToListBottom": 0,
+        "lastCardToPag": 24
+      },
+      "visibleCardsAtBottom": 4,
+      "metaCheckAtBottom": [
+        {
+          "name": "chinese-code-rev",
+          "metaTop": 403,
+          "metaBottom": 423,
+          "inside": true
+        },
+        {
+          "name": "chinese-commit-c",
+          "metaTop": 403,
+          "metaBottom": 423,
+          "inside": true
+        },
+        {
+          "name": "chinese-document",
+          "metaTop": 563,
+          "metaBottom": 583,
+          "inside": true
+        },
+        {
+          "name": "chinese-git-work",
+          "metaTop": 563,
+          "metaBottom": 583,
+          "inside": true
+        }
+      ],
+      "allMetaInside": true,
+      "visibleOverlapAtBottom": false,
+      "hScroll": false
+    },
+    "1920x1080": {
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "cardCount": 20,
+      "countText": "匹配 222 / 222",
+      "listBox": {
+        "overflowY": "auto",
+        "minHeight": "0px",
+        "paddingBottom": "0px",
+        "clientH": 591,
+        "scrollH": 1586,
+        "rectTop": 321,
+        "rectBottom": 912,
+        "scrollable": true,
+        "gap": "16px",
+        "cols": 2
+      },
+      "pagination": {
+        "computedH": "56px",
+        "minH": "56px",
+        "marginTop": "24px",
+        "rectTop": 936,
+        "rectBottom": 992,
+        "rectH": 56,
+        "gapToListBottom": 24
+      },
+      "cardComputed": {
+        "minH": "144px",
+        "h": "144px"
+      },
+      "cardHeights": [
+        144
+      ],
+      "columns": 2,
+      "desc": [
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 1,
+          "boxH": 40,
+          "clamped": false
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 11,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 7,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 8,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 9,
+          "boxH": 40,
+          "clamped": true
+        },
+        {
+          "fs": "13px",
+          "lh": "20px",
+          "ws": "normal",
+          "clamp": "2",
+          "lines": 8,
+          "boxH": 40,
+          "clamped": true
+        }
+      ],
+      "top_state": {
+        "scrollTop": 0,
+        "card6": {
+          "top": 643,
+          "bottom": 787,
+          "h": 144
+        },
+        "card6MetaBottom": 770,
+        "listBottom": 912,
+        "pagTop": 936,
+        "card6BelowFold": -125,
+        "card6VisibleBottom": 787,
+        "card6VisibleToPag": 149
+      },
+      "visibleCardsAtTop": 8,
+      "visibleOverlapAtTop": false,
+      "card6AtBottom": {
+        "bottom": -208,
+        "toPag": 1144
+      },
+      "bottom_state": {
+        "scrollTop": 995,
+        "maxScroll": 995,
+        "lastCardIdx": 20,
+        "lastCardBottom": 912,
+        "listBottom": 912,
+        "pagTop": 936,
+        "lastCardToListBottom": 0,
+        "lastCardToPag": 24
+      },
+      "visibleCardsAtBottom": 8,
+      "metaCheckAtBottom": [
+        {
+          "name": "browse",
+          "metaTop": 395,
+          "metaBottom": 415,
+          "inside": true
+        },
+        {
+          "name": "canary",
+          "metaTop": 395,
+          "metaBottom": 415,
+          "inside": true
+        },
+        {
+          "name": "careful",
+          "metaTop": 555,
+          "metaBottom": 575,
+          "inside": true
+        },
+        {
+          "name": "chatgpt-drive",
+          "metaTop": 555,
+          "metaBottom": 575,
+          "inside": true
+        },
+        {
+          "name": "chinese-code-rev",
+          "metaTop": 715,
+          "metaBottom": 735,
+          "inside": true
+        },
+        {
+          "name": "chinese-commit-c",
+          "metaTop": 715,
+          "metaBottom": 735,
+          "inside": true
+        },
+        {
+          "name": "chinese-document",
+          "metaTop": 875,
+          "metaBottom": 895,
+          "inside": true
+        },
+        {
+          "name": "chinese-git-work",
+          "metaTop": 875,
+          "metaBottom": 895,
+          "inside": true
+        }
+      ],
+      "allMetaInside": true,
+      "visibleOverlapAtBottom": false,
+      "hScroll": false
+    }
+  }
+}

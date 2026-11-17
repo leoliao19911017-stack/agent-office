@@ -1,0 +1,488 @@
+{
+  "phase": "after",
+  "viewports": {
+    "1440x900": {
+      "viewport": {
+        "w": 1440,
+        "h": 900
+      },
+      "cardCount": 6,
+      "countText": "匹配 222 / 222",
+      "listBox": {
+        "overflowY": "auto",
+        "minHeight": "0px",
+        "paddingBottom": "16px",
+        "clientH": 417,
+        "scrollH": 482,
+        "rectTop": 323,
+        "rectBottom": 740,
+        "scrollable": true,
+        "gap": "16px",
+        "cols": 2
+      },
+      "pagination": {
+        "computedH": "56px",
+        "minH": "56px",
+        "marginTop": "16px",
+        "rectTop": 756,
+        "rectBottom": 812,
+        "rectH": 56,
+        "gapToListBottom": 16
+      },
+      "cardComputed": {
+        "minH": "144px",
+        "h": "144px"
+      },
+      "cardHeights": [
+        144
+      ],
+      "columns": 2,
+      "desc": [
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 1,
+          "boxH": 18,
+          "clamped": false
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 9,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 6,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 7,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 8,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 7,
+          "boxH": 54,
+          "clamped": true
+        }
+      ],
+      "top_state": {
+        "scrollTop": 0,
+        "card6": {
+          "top": 645,
+          "bottom": 789,
+          "h": 144
+        },
+        "card6MetaBottom": 772,
+        "listBottom": 740,
+        "pagTop": 756,
+        "card6BelowFold": 49,
+        "card6VisibleBottom": 740,
+        "card6VisibleToPag": 16
+      },
+      "visibleCardsAtTop": 6,
+      "visibleOverlapAtTop": false,
+      "card6AtBottom": {
+        "bottom": 724,
+        "toPag": 32
+      },
+      "bottom_state": {
+        "scrollTop": 65,
+        "maxScroll": 65,
+        "lastCardIdx": 6,
+        "lastCardBottom": 724,
+        "listBottom": 740,
+        "pagTop": 756,
+        "lastCardToListBottom": 16,
+        "lastCardToPag": 32
+      },
+      "visibleCardsAtBottom": 6,
+      "metaCheckAtBottom": [
+        {
+          "name": "_gstack-command",
+          "metaTop": 367,
+          "metaBottom": 387,
+          "inside": true
+        },
+        {
+          "name": "aihot",
+          "metaTop": 367,
+          "metaBottom": 387,
+          "inside": true
+        },
+        {
+          "name": "article-comic",
+          "metaTop": 527,
+          "metaBottom": 547,
+          "inside": true
+        },
+        {
+          "name": "article-fetch",
+          "metaTop": 527,
+          "metaBottom": 547,
+          "inside": true
+        },
+        {
+          "name": "article-rewrite",
+          "metaTop": 687,
+          "metaBottom": 707,
+          "inside": true
+        },
+        {
+          "name": "article-translat",
+          "metaTop": 687,
+          "metaBottom": 707,
+          "inside": true
+        }
+      ],
+      "allMetaInside": true,
+      "visibleOverlapAtBottom": false,
+      "hScroll": false
+    },
+    "1280x768": {
+      "viewport": {
+        "w": 1280,
+        "h": 768
+      },
+      "cardCount": 6,
+      "countText": "匹配 222 / 222",
+      "listBox": {
+        "overflowY": "auto",
+        "minHeight": "0px",
+        "paddingBottom": "16px",
+        "clientH": 285,
+        "scrollH": 482,
+        "rectTop": 323,
+        "rectBottom": 608,
+        "scrollable": true,
+        "gap": "16px",
+        "cols": 2
+      },
+      "pagination": {
+        "computedH": "56px",
+        "minH": "56px",
+        "marginTop": "16px",
+        "rectTop": 624,
+        "rectBottom": 680,
+        "rectH": 56,
+        "gapToListBottom": 16
+      },
+      "cardComputed": {
+        "minH": "144px",
+        "h": "144px"
+      },
+      "cardHeights": [
+        144
+      ],
+      "columns": 2,
+      "desc": [
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 1,
+          "boxH": 18,
+          "clamped": false
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 9,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 6,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 7,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 8,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 7,
+          "boxH": 54,
+          "clamped": true
+        }
+      ],
+      "top_state": {
+        "scrollTop": 0,
+        "card6": {
+          "top": 645,
+          "bottom": 789,
+          "h": 144
+        },
+        "card6MetaBottom": 772,
+        "listBottom": 608,
+        "pagTop": 624,
+        "card6BelowFold": 181,
+        "card6VisibleBottom": 608,
+        "card6VisibleToPag": 16
+      },
+      "visibleCardsAtTop": 4,
+      "visibleOverlapAtTop": false,
+      "card6AtBottom": {
+        "bottom": 592,
+        "toPag": 32
+      },
+      "bottom_state": {
+        "scrollTop": 197,
+        "maxScroll": 197,
+        "lastCardIdx": 6,
+        "lastCardBottom": 592,
+        "listBottom": 608,
+        "pagTop": 624,
+        "lastCardToListBottom": 16,
+        "lastCardToPag": 32
+      },
+      "visibleCardsAtBottom": 4,
+      "metaCheckAtBottom": [
+        {
+          "name": "article-comic",
+          "metaTop": 395,
+          "metaBottom": 415,
+          "inside": true
+        },
+        {
+          "name": "article-fetch",
+          "metaTop": 395,
+          "metaBottom": 415,
+          "inside": true
+        },
+        {
+          "name": "article-rewrite",
+          "metaTop": 555,
+          "metaBottom": 575,
+          "inside": true
+        },
+        {
+          "name": "article-translat",
+          "metaTop": 555,
+          "metaBottom": 575,
+          "inside": true
+        }
+      ],
+      "allMetaInside": true,
+      "visibleOverlapAtBottom": false,
+      "hScroll": false
+    },
+    "1920x1080": {
+      "viewport": {
+        "w": 1920,
+        "h": 1080
+      },
+      "cardCount": 6,
+      "countText": "匹配 222 / 222",
+      "listBox": {
+        "overflowY": "auto",
+        "minHeight": "0px",
+        "paddingBottom": "16px",
+        "clientH": 597,
+        "scrollH": 597,
+        "rectTop": 323,
+        "rectBottom": 920,
+        "scrollable": false,
+        "gap": "16px",
+        "cols": 2
+      },
+      "pagination": {
+        "computedH": "56px",
+        "minH": "56px",
+        "marginTop": "16px",
+        "rectTop": 936,
+        "rectBottom": 992,
+        "rectH": 56,
+        "gapToListBottom": 16
+      },
+      "cardComputed": {
+        "minH": "144px",
+        "h": "144px"
+      },
+      "cardHeights": [
+        144
+      ],
+      "columns": 2,
+      "desc": [
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 1,
+          "boxH": 18,
+          "clamped": false
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 9,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 6,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 7,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 8,
+          "boxH": 54,
+          "clamped": true
+        },
+        {
+          "fs": "12px",
+          "lh": "18px",
+          "ws": "normal",
+          "clamp": "3",
+          "lines": 8,
+          "boxH": 54,
+          "clamped": true
+        }
+      ],
+      "top_state": {
+        "scrollTop": 0,
+        "card6": {
+          "top": 645,
+          "bottom": 789,
+          "h": 144
+        },
+        "card6MetaBottom": 772,
+        "listBottom": 920,
+        "pagTop": 936,
+        "card6BelowFold": -131,
+        "card6VisibleBottom": 789,
+        "card6VisibleToPag": 147
+      },
+      "visibleCardsAtTop": 6,
+      "visibleOverlapAtTop": false,
+      "card6AtBottom": {
+        "bottom": 789,
+        "toPag": 147
+      },
+      "bottom_state": {
+        "scrollTop": 0,
+        "maxScroll": 0,
+        "lastCardIdx": 6,
+        "lastCardBottom": 789,
+        "listBottom": 920,
+        "pagTop": 936,
+        "lastCardToListBottom": 131,
+        "lastCardToPag": 147
+      },
+      "visibleCardsAtBottom": 6,
+      "metaCheckAtBottom": [
+        {
+          "name": "_gstack-command",
+          "metaTop": 432,
+          "metaBottom": 452,
+          "inside": true
+        },
+        {
+          "name": "aihot",
+          "metaTop": 432,
+          "metaBottom": 452,
+          "inside": true
+        },
+        {
+          "name": "article-comic",
+          "metaTop": 592,
+          "metaBottom": 612,
+          "inside": true
+        },
+        {
+          "name": "article-fetch",
+          "metaTop": 592,
+          "metaBottom": 612,
+          "inside": true
+        },
+        {
+          "name": "article-rewrite",
+          "metaTop": 752,
+          "metaBottom": 772,
+          "inside": true
+        },
+        {
+          "name": "article-translat",
+          "metaTop": 752,
+          "metaBottom": 772,
+          "inside": true
+        }
+      ],
+      "allMetaInside": true,
+      "visibleOverlapAtBottom": false,
+      "hScroll": false
+    }
+  }
+}

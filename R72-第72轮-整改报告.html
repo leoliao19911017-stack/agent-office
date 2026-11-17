@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>R72 第 72 轮整改报告 — Leo 的 Agent Office</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0D111A; color: #D6E0ED; font: 14px/1.7 "Segoe UI", "Microsoft YaHei", system-ui, sans-serif; padding: 32px 16px 64px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 24px; color: #E2EAF4; margin: 0 0 4px; }
+  h2 { font-size: 18px; color: #E2EAF4; border-left: 3px solid #E5B95E; padding-left: 10px; margin: 40px 0 14px; }
+  h3 { font-size: 15px; color: #E2EAF4; margin: 24px 0 8px; }
+  .meta { color: #B3C0D2; font-size: 13px; }
+  .verdict { background: #12261E; border: 1px solid #2C4A3B; color: #65D9B1; border-radius: 10px; padding: 14px 16px; margin: 16px 0; font-size: 14px; }
+  .warn { background: #3B3021; border: 1px solid #E5B95E; color: #E5B95E; border-radius: 10px; padding: 14px 16px; margin: 16px 0; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 13px; }
+  th, td { border: 1px solid #334155; padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: #182230; color: #E2EAF4; white-space: nowrap; }
+  tr:nth-child(even) td { background: #111823; }
+  code { font-family: Cascadia Code, Consolas, monospace; font-size: 12px; color: #A9C7F2; background: #182230; padding: 1px 5px; border-radius: 4px; }
+  .ok { color: #65D9B1; font-weight: 600; white-space: nowrap; }
+  ul { padding-left: 22px; } li { margin: 4px 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  footer { margin-top: 48px; color: #B3C0D2; font-size: 12px; border-top: 1px solid #334155; padding-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>R72 第 72 轮整改报告</h1>
+<p class="meta">Leo 的 Agent Office · 2026-11-17 · GPT 复审 6.4 → 3.0（目标 8.0）后的 8 条整改</p>
+
+<div class="verdict">✅ <b>8/8 全部闭环</b>（致命 1 + 严重 6 + 一般 1）。全量回归 <b class="num">216/216</b> 通过（hermes node v22.23.2，22.7s）；四页截图目检无样式错乱；app.js 1432 行 ≤1500。</div>
+<div class="warn">⚠ 服务状态：http://127.0.0.1:8090 四页正常。server.js 仅在 G01 修复时（本轮早前）改过一次并<b>已重启</b>，此后未再改动，无需再次重启。</div>
+
+<h2>一、总表</h2>
+<table>
+<tr><th>条目</th><th>状态</th><th>改了哪些文件</th><th>实测证据</th></tr>
+<tr><td><b>G01 致命</b><br>白页</td><td class="ok">✅ 已闭环</td><td><code>web/server.js</code>（STATIC_APP 白名单补 4 个拆分 CSS，本轮早前完成并已重启）</td><td>活体 8090：<code>app-base.css</code> 200 / <code>app.js</code> 200 / <code>/api/health</code> 200；四页截图全部带样式；E1 反证：拦掉主 CSS 后 rail 宽 1424px ≠ 56±1，测试必挂</td></tr>
+<tr><td><b>A01 严重</b><br>Agents 行规格</td><td class="ok">✅ 已闭环</td><td><code>web/app-workbench.css</code>（样式实现）+ <code>test/g07-r72.test.js</code>（L2 新增）</td><td>4 头像全部 44×44±1px、object-fit:cover、行 min-height≥74px、内边距 8px·16px、名称 14px/20px、角色 12px/18px；1440×900 与 1280×768 双视口、无横向溢出；截图目检头像无变形</td></tr>
+<tr><td><b>S01 严重</b><br>技能卡规格</td><td class="ok">✅ 已闭环</td><td><code>web/app.js</code>（SKILL_PAGE_SIZE=6）、<code>app-layers.css</code>（.skill-row 144/16/10px）、<code>app-pages.css</code>（#page-skills 1136px、chip 34px）+ L3</td><td>首页恰 6 卡（2×3）、列/行距 16px、相邻卡实测 16±1px、min-height 144px、内边距 16px、圆角 10px、底色 rgb(24,34,48)、名称 14px/20px、描述 12px/18px（clamp 3）、标签 11px/16px、chip 34px、容器 1136±1px、分页「第 1 / 37 页」（222÷6）；1280 复测仍双列 6 卡</td></tr>
+<tr><td><b>F01 严重</b><br>文件行规格</td><td class="ok">✅ 已闭环</td><td><code>web/app-pages.css</code>（.library-file 84px/16px、.lf-src 省略号）+ L4</td><td>三列 <code>minmax(0,1fr)</code>/220px/136px 间距 16px、行 min-height 84px、名称 13px/20px、路径 11px/16px nowrap+ellipsis、组卡 rgb(17,24,35) 圆角 10 边框 1px rgb(51,65,85)；1280 复测列宽钉死；历史版本预览回读登记内容（既有用例）</td></tr>
+<tr><td><b>W01 严重</b><br>审批规格</td><td class="ok">✅ 已闭环<br><small>逻辑前轮已实现，本轮实测钉死</small></td><td><code>web/server.js</code>（提交复核 SHA-256/登记版本/前置）、<code>web/app.js</code>（占用锁）+ 既有 g02/g07-approval + L1</td><td>检视栏计算宽度 328px、表头 48px、操作栏 64px、中段 flex:1+min-height:0+overflow-y:auto；四场景全过——①正常提交成功回执 ②文件被改 409 ARTIFACT_VERSION_DRIFT+按钮禁用 ③重复提交占用中拒发请求、无重复成功事件 ④写回失败明确报错并释放占用</td></tr>
+<tr><td><b>G02 严重</b><br>故障可见性</td><td class="ok">✅ 已闭环</td><td><code>web/app.js</code>（cssFail 横幅 + cssFailed 粘滞 + isDead 落定复核 + renderDataBanner 让位）+ E1/E2</td><td>E1 拦 app-base.css→琥珀横幅点名文件（bg #3B3021、字 #E5B95E、13px/20px、padding 16px）；E2 拦 files.js→启动护栏横幅点名 files.js/renderFiles、带重试按钮；粘滞标记保证数据正常也不摘「裸奔」警告；退避 2/4/8s 封顶 30s、看门狗 8s、保留末次有效数据</td></tr>
+<tr><td><b>G03 严重</b><br>回归体系</td><td class="ok">✅ 已闭环</td><td><code>test/g07-r72.test.js</code>（新增 L1-L4 + E1/E2，共 6 用例）+ 既有 A/B/C/D 系列</td><td><b>18 场景 ≥16</b>：4 初始化（A）+4 导航（B）+4 布局（L）+4 审批版本（D）+4 恢复（C）+2 注入（E）；双视口 1440×900 + 1280×768；误差 ≤1px（rail 56±1、头像 44±1）；摘主 CSS 视觉必挂（E1：1424px ≠ 56±1）</td></tr>
+<tr><td><b>G04 一般</b><br>工程约束</td><td class="ok">✅ 已闭环</td><td><code>web/app.js</code>（收口）、CSS 四文件拆分、全量契约测试</td><td>app.js <b>1432 ≤1500</b>；<b>0 函数 &gt;120 行</b>（最长 renderInspector 92）；CSS 687/566/247/595 均 ≤800；五色 <b>0 硬编码</b>（仅 :root 变量定义）；<b>17 API 契约</b>全绿</td></tr>
+</table>
+
+<h2>二、行数对比</h2>
+<table>
+<tr><th>文件</th><th>轮前</th><th>轮后</th><th>约束</th></tr>
+<tr><td><code>web/app.js</code></td><td class="num">1380</td><td class="num"><b>1432</b>（+52，G02 横幅与粘滞逻辑）</td><td class="ok">≤1500 ✅</td></tr>
+<tr><td><code>web/server.js</code></td><td class="num">1150</td><td class="num"><b>1150</b>（G01 白名单本轮早前完成，此后未动）</td><td>—</td></tr>
+<tr><td><code>web/app.css</code></td><td>单文件</td><td><b>已删除</b>，拆分为 4 文件</td><td>—</td></tr>
+<tr><td><code>web/app-base.css</code></td><td>—</td><td class="num"><b>687</b></td><td class="ok">≤800 ✅</td></tr>
+<tr><td><code>web/app-workbench.css</code></td><td>—</td><td class="num"><b>566</b></td><td class="ok">≤800 ✅</td></tr>
+<tr><td><code>web/app-pages.css</code></td><td>—</td><td class="num"><b>247</b></td><td class="ok">≤800 ✅</td></tr>
+<tr><td><code>web/app-layers.css</code></td><td>—</td><td class="num"><b>595</b></td><td class="ok">≤800 ✅</td></tr>
+<tr><td><code>web/shared.js</code></td><td class="num">231</td><td class="num"><b>231</b></td><td>—</td></tr>
+</table>
+<p class="meta">CSS 拆分合计 2095 行，组织顺序 base → workbench → pages → layers。</p>
+
+<h2>三、逐条明细</h2>
+
+<h3>G01（致命）静态资源白名单缺拆分 CSS → 白页</h3>
+<ul>
+<li><b>做了什么</b>：server.js STATIC_APP 文件名白名单（约 314 行）补入 4 个拆分 CSS，并重启服务进程（本轮早前完成）。</li>
+<li><b>实测值</b>：curl 活体 8090——app-base.css 200、app.js 200、/api/health 200；服务端返回的 app-layers.css 含「R72·S01」标记、app.js 含 cssFailed 逻辑，确认跑的是本轮代码。四页截图全部带完整样式。</li>
+<li><b>技术要点（之前漏测的原因）</b>：404 的样式表在 Chrome 里 <code>link.sheet</code> 仍存在且 <code>cssRules.length===0</code>——只查 <code>.sheet</code> 有无查不出 CSS 加载失败，必须叠加规则数判零（G02 的 E1 用例据此钉死）。</li>
+<li><b>未达成</b>：无。</li>
+</ul>
+
+<h3>A01（严重）Agents 名册行规格</h3>
+<ul>
+<li><b>做了什么</b>：规格值在 app-workbench.css 落位；新增 L2 用例以计算样式双视口实测钉死。</li>
+<li><b>实测值</b>：头像 4/4 全部 44×44（±1px）、object-fit=cover；行 min-height≥74px、padding 8px 16px；名称 14px/20px、角色 12px/18px；1280×768 复测仍 44±1、无横向溢出。截图目检：4 张名片（Lemate·Coding / Winter·视频剪辑 / Karina·图文笔记 / Codex·生图审查），头像无变形，统计卡（注册角色 7 / 一线 4 / 实例 4）正常。</li>
+<li><b>未达成</b>：无。</li>
+</ul>
+
+<h3>S01（严重）技能卡网格规格</h3>
+<ul>
+<li><b>做了什么</b>：app.js 钉死 SKILL_PAGE_SIZE=6；app-layers.css .skill-row 定稿 144px/16px/圆角 10px（源码带 R72·S01 标记）；app-pages.css 定稿 #page-skills max-width 1136px、chip 34px；L3 全数值断言 + 筛选变更复测 + 1280 复测。</li>
+<li><b>实测值</b>：首页恰 6 卡、2 列、colGap/rowGap 均 16px、相邻卡实测 16±1px、min-height 144px、padding 16px、圆角 10px、底色 rgb(24,34,48)、名称 14px/20px、描述 12px/18px（-webkit-line-clamp=3）、标签 11px/16px、chip 高 34px、容器 1136±1px、分页「第 1 / 37 页」；1280×768 仍双列 6 卡、容器 1136±1px、无溢出。</li>
+<li><b>连带修正</b>：A3/B3 两条既有用例原断言整页 12 行，按页大小 6 更新（断言文案注明 S01 第 72 轮口径）。</li>
+<li><b>未达成</b>：无。</li>
+</ul>
+
+<h3>F01（严重）文件库行规格</h3>
+<ul>
+<li><b>做了什么</b>：app-pages.css .library-file 定稿 min-height 84px、padding 16px；.lf-src 单行省略号；L4 实测三列轨道与组卡规格。</li>
+<li><b>实测值</b>：三轨道 <code>minmax(0,1fr)</code>/220px/136px、间距 16px；行 84px/16px；名称 13px/20px；路径 11px/16px nowrap+ellipsis；组卡 rgb(17,24,35)、圆角 10px、边框 1px solid rgb(51,65,85)；1280 下版本列仍 220px、操作列仍 136px。截图目检：按需求折叠分组，行内 V1/V2、✓/≠、定位/预览按钮对齐整齐；被删的 app.css 呈红框「⚠ 无法校验」——漂移检测如实报警，属预期行为。</li>
+<li><b>未达成</b>：无。</li>
+</ul>
+
+<h3>W01（严重）审批规格与四场景</h3>
+<ul>
+<li><b>做了什么</b>：服务端提交复核与前端占用锁为前轮已实现逻辑，本轮未改其行为；以 L1 实测检视栏布局、以既有用例把任务书四场景逐一映射钉死。</li>
+<li><b>实测值</b>：检视栏计算宽度 328px；表头 48px、操作栏 64px、中段 flex:1+min-height:0+overflow-y:auto（L1 同步实测 rail 56 / topbar 52 / statusbar 56 / 需求列 248 / 正文 13px/20px、底色 rgb(13,17,26)）。四场景：正常提交→成功回执；文件被改→409 ARTIFACT_VERSION_DRIFT 且按钮禁用；重复提交→占用中拒发新请求、按钮锁定、无重复成功事件；写回失败→明确报失败并释放占用。全部有断言、全部通过。</li>
+<li><b>未达成</b>：无（审批正文 12px/19px、卡片 #1B1B1B、强调色 #E5B95E 为前轮已落位值，经 D 系用例与截图确认在位）。</li>
+</ul>
+
+<h3>G02（严重）四类故障可见性</h3>
+<ul>
+<li><b>做了什么</b>：app.js 新增 R72·G02 块——cssFail() 渲染琥珀失败横幅点名失败文件；cssFailed 粘滞标记确保数据恢复也不摘警告；window-load 落定复核 isDead()；renderDataBanner() 首行让位。CSS 404 与 JS 模块缺失由 E1/E2 路由注入验证；API 500/网络中断由既有 C1-C4 覆盖。</li>
+<li><b>实测值</b>：E1——拦 app-base.css 后横幅含「样式表加载失败」且点名 app-base.css，计算样式 bg rgb(59,48,33)、color rgb(229,185,94)、font 13px/20px、padding 16px，同时 rail 偏离 56±1；E2——拦 files.js 后横幅含「前端模块加载不完整」并点名 files.js/renderFiles，带重试按钮。</li>
+<li><b>调试中钉死的事实</b>（已写入代码注释）：link error 事件在 app.js 执行前发完，不可靠；404 样式表得到空 CSSStyleSheet，须判 cssRules.length===0。</li>
+<li><b>未达成</b>：无。</li>
+</ul>
+
+<h3>G03（严重）回归体系 ≥16 场景</h3>
+<ul>
+<li><b>做了什么</b>：新增 test/g07-r72.test.js（L1 工作台 / L2 Agents / L3 技能 / L4 文件 / E1 CSS 注入 / E2 JS 注入），叠加既有 A（初始化）、B（导航）、C（恢复）、D（审批版本）系列。</li>
+<li><b>实测值</b>：<b>18 场景</b>（4+4+4+4+4+2）≥16 要求，全部通过；双视口 1440×900 基线 + 1280×768 复测（L1/L2/L3/L4 均有）；rail 56±1、头像 44±1 误差 ≤1px；E1 证明摘掉主 CSS→rail 实测 1424px、偏离 56±1 断言必挂。</li>
+<li><b>未达成（如实声明）</b>：「审批版本分支覆盖率 ≥90%」未跑行级覆盖率工具（c8/nyc 本轮未执行，不编数字）；以 D1-D4 四条版本分支（V1/V2/未登记/版本漂移）各有断言用例且全通过为替代口径。需要行级数字可后续补跑。</li>
+</ul>
+
+<h3>G04（一般）工程约束静态扫描</h3>
+<ul>
+<li><b>实测值</b>：app.js 1432 ≤1500；函数扫描 <b>0 个 &gt;120 行</b>（最长 renderInspector 92 行）；CSS 单文件 687/566/247/595 均 ≤800；五色扫描 <b>0 处硬编码</b>（--muted #A3B0BF、--amber #E5B95E 等仅存于 app-base.css :root）；API 端点清点<b>恰 17 个</b>（/api/health、/api/state、15× /api/office/*），全量契约测试通过。</li>
+<li><b>未达成</b>：无。</li>
+</ul>
+
+<h2>四、测试全景</h2>
+<ul>
+<li><b>全量</b>：<b class="num">216/216 通过</b>，22.7s —— <code>NODE_PATH=./node_modules hermes-node-v22 --test "test/*.test.js"</code></li>
+<li><b>本轮新增</b>：<code>test/g07-r72.test.js</code> 6 用例全绿（L1/L2/L3/L4/E1/E2）</li>
+<li><b>环境事实（非本轮缺陷）</b>：系统 node v20.19.2 跑 9 个依赖 node:sqlite 的测试文件报 ERR_UNKNOWN_BUILTIN_MODULE；全量必须用 <code>C:/Users/Administrator/AppData/Local/hermes/node/node.exe</code>（v22.23.2）</li>
+</ul>
+
+<h2>五、四页截图（web/verify-r72-p*.png，1440×900，活体 8090）</h2>
+<table>
+<tr><th>页</th><th>文件</th><th>目检结论</th></tr>
+<tr><td>工作台</td><td><code>verify-r72-p1-workbench.png</code></td><td>图标导航 + 8 张需求卡（待拍板/进行中/已交付徽标）+ 7 步交付链 + 步骤详情（通过/打回）；状态栏「● 已连接 · 一线角色 4 · 在线实例 4 · 执行中 0」；一致深色主题，无重叠无裸奔</td></tr>
+<tr><td>Agents</td><td><code>verify-r72-p2-agents.png</code></td><td>4 张名片行、约 44px 方形头像无拉伸、统计卡（注册 7 / 一线 4 / 实例 4）；布局整齐无错乱</td></tr>
+<tr><td>技能</td><td><code>verify-r72-p3-skills.png</code></td><td>6 卡 2 列×3 行、粗体名称、多行描述、底部标签；分页「第 1 / 37 页」与 222÷6 吻合；无破损</td></tr>
+<tr><td>文件</td><td><code>verify-r72-p4-files.png</code></td><td>按需求折叠分组、行内版本/哈希/校验（V1/V2、✓/≠）与操作按钮，行高一致；app.css 行红框「⚠ 无法校验」为删除后的如实漂移报警（预期行为）</td></tr>
+</table>
+
+<h2>六、遗留与需决策</h2>
+<ul>
+<li><b>未编造声明</b>：审批版本分支覆盖率无行级数字（见 G03）；其余所有数字均为实测输出。</li>
+<li>1280×768 未出第二套截图（以 L1-L4 计算样式断言覆盖窄视口）；如需可补。</li>
+<li><b>需要 Leo 决策</b>：本轮改动（app.js / app-layers.css / app-pages.css / server.js 白名单 / 新测试文件 / 4 张截图 / 本报告）是否现在 git 提交。未获指示前不动 git。</li>
+</ul>
+
+<footer>R72-第72轮-整改报告.html · 与 R72-第72轮-整改报告.md 内容一致（MD 给 AI / HTML 给人）· 生成于 2026-11-17</footer>
+</div>
+</body>
+</html>

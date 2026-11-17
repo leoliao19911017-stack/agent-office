@@ -1,0 +1,97 @@
+{
+  "phase": "live",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-16T06:37:01.157Z",
+  "scenarios": {
+    "LIVE_real_api": {
+      "desc": "真实 /api/office/hermes，不 mock",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "已过期 · 11/15 00:08",
+              "cls": "ag-hb stale",
+              "title": "最后一次业务上报 11/15 00:08（1 天前），已超 2 分钟过期阈值；连接心跳是「连接健康」列的口径，不参与本列",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(229, 185, 94)",
+              "colorHex": "#E5B95E"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "—",
+              "cls": "ag-hb off",
+              "title": "从未上报业务状态：缺上报时间显「—」，不拿连接心跳冒充新鲜",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(145, 160, 180)",
+              "colorHex": "#91A0B4"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "—",
+              "cls": "ag-hb off",
+              "title": "从未上报业务状态：缺上报时间显「—」，不拿连接心跳冒充新鲜",
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(145, 160, 180)",
+              "colorHex": "#91A0B4"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "10 秒前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "12px",
+              "lineHeight": "18px",
+              "color": "rgb(101, 217, 177)",
+              "colorHex": "#65D9B1"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": false
+      }
+    }
+  },
+  "shots": [
+    "a02r3-live-LIVE_real_api-1440x900.png"
+  ]
+}

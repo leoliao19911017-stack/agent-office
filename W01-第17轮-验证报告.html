@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>W01 第 17 轮验证报告：审批版本校验复验——决策临界区收口</title>
+<style>
+  :root { --ink:#1f2430; --sub:#5a6272; --line:#e3e6ec; --bg:#f7f8fa; --accent:#2f6fed; --ok:#1a7f4e; --warn:#8a6d1f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap { max-width:920px; margin:0 auto; padding:32px 24px 64px; }
+  header { border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:24px; }
+  h1 { font-size:22px; margin:0 0 8px; }
+  .meta { color:var(--sub); font-size:13px; }
+  .meta b { color:var(--ink); }
+  h2 { font-size:17px; margin:32px 0 12px; padding-left:10px; border-left:4px solid var(--accent); }
+  h3 { font-size:15px; margin:20px 0 8px; }
+  pre { background:#0f1522; color:#dbe4f3; padding:14px 16px; border-radius:8px; overflow-x:auto; font:12.5px/1.65 Consolas,monospace; }
+  code { background:#eceff4; border-radius:4px; padding:1px 5px; font-size:12.5px; }
+  pre code { background:none; padding:0; }
+  table { border-collapse:collapse; width:100%; background:#fff; border:1px solid var(--line); font-size:13px; }
+  th, td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:#eef1f6; }
+  .ok { color:var(--ok); font-weight:600; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:14px 0; }
+  .kpis { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:16px 0; }
+  .kpi { background:#fff; border:1px solid var(--line); border-radius:10px; padding:14px; text-align:center; }
+  .kpi .n { font-size:26px; font-weight:700; color:var(--accent); }
+  .kpi .d { font-size:12px; color:var(--sub); }
+  .note { border-left:4px solid #c9a227; background:#fdf8e8; padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:13px; }
+  .spec-strip { display:inline-block; font:12px/18px Consolas,monospace; background:rgb(59,48,33); color:rgb(229,185,94); padding:12px; border-radius:6px; margin:6px 0; }
+  footer { margin-top:40px; color:var(--sub); font-size:12px; border-top:1px solid var(--line); padding-top:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>W01 第 17 轮验证报告：审批版本校验复验——决策临界区收口</h1>
+  <div class="meta">
+    <div><b>日期</b>：2026-11-16（证据均为当日真实输出）</div>
+    <div><b>改动范围</b>：<code>web/server.js</code> 仅两个决策端点（<code>/api/office/decide</code>、<code>/api/office/decision</code>），其余零改动</div>
+    <div><b>结论</b>：任务书 5 组测试全过——失败案例成功记录数均为 0，重复提交均不产生重复记录</div>
+  </div>
+</header>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">26/26</div><div class="d">隔离验证 verify-w01r17</div></div>
+  <div class="kpi"><div class="n">35/35</div><div class="d">8090 回归 verify-w01r15</div></div>
+  <div class="kpi"><div class="n">206/206</div><div class="d">全量测试套件</div></div>
+</div>
+
+<h2>一、改了什么</h2>
+<div class="card">
+<p>两个决策端点原先的形态是「进门读档案 → 校验（锁外）→ 拿写锁 → 用进门时读的旧档案写回」。校验与写入之间存在 check-then-act（TOCTOU）形态的缺口。本轮重构为：</p>
+<pre><code>lockDecision(taskId/stepKey)          ← 先拿写锁
+  ├─ 锁内重读任务档案（不是请求进门的旧快照）
+  ├─ 锁内全量重校验：
+  │    computeDecisions        前置条件（awaiting 且前序全 done 才 actionable）
+  │    artifactGateOf          类型门禁（plan 步骤 expectsKinds:['plan']）
+  │    artifactVersionGateOf   版本门禁（statSync 字节数 + sha256 物理实测 vs 登记）
+  ├─ 锁内原子写（saveTaskFileAtomic：随机 tmp + renameSync 顶替）
+  └─ finally unlockDecision</code></pre>
+<p>opId 幂等重放检查保留在锁外、写之前（重放是读缓存，不需要互斥）。</p>
+</div>
+
+<div class="note">
+<b>诚实定性（必读）</b>：修复前，两个端点从校验到写回全程同步、中间无 <code>await</code>，Node 单线程事件循环下<b>进程内不存在可利用的穿插窗口</b>——外部可观察的行为契约（409 拒绝、不重复写入、失败零成功记录）在本轮改动前后是一致的、且早已正确。因此本轮性质是<b>结构性加固</b>：把「恰好正确」的隐式不变量变成显式临界区，防止未来任何人在校验与写入之间插入 <code>await</code>（例如加个日志上报、缓存查询）时无声引入真 TOCTOU。同时把「写回必须基于锁内重读的档案」变成代码结构本身，不再依赖读者自觉。
+</div>
+
+<h2>二、验证了什么（全部真实输出）</h2>
+
+<h3>2.1 隔离验证 verify-w01r17.mjs：26/26 PASS</h3>
+<div class="card">
+<p>隔离环境：<code>mkdtemp</code> 临时 <code>AGENT_AUTOLOOP_HOME</code> + 随机端口 spawn <b>真实 <code>web/server.js</code></b>，全部走 HTTP，磁盘档案与 <code>decision-events.jsonl</code> 为地面真值，测完即删。与生产 8090、生产数据零接触。</p>
+<table>
+<tr><th>组</th><th>场景</th><th>结果</th><th>关键实测值</th></tr>
+<tr><td>①</td><td>正常审批</td><td class="ok">✅</td><td>200 <code>verified:true, to:"done"</code>，磁盘 plan=done，written 事件恰 1 条（<code>from:"awaiting" → to:"done"</code>）</td></tr>
+<tr><td>②</td><td>提交前改文件</td><td class="ok">✅</td><td>409 <code>ARTIFACT_VERSION_DRIFT</code>，档案停 awaiting，成功记录 0。改字节：登记 41 B vs 实测 72 B（why=bytes）；等长改内容：指纹 d7018dff… vs c0f8bd4d…（why=sha）</td></tr>
+<tr><td>③</td><td>改登记版本</td><td class="ok">✅</td><td>409 <code>ARTIFACT_VERSION_DRIFT</code>（登记字节 +1000 后实测≠登记），档案停 awaiting，成功记录 0</td></tr>
+<tr><td>④</td><td>快速重复提交</td><td class="ok">✅</td><td>并发双发=一个 200 + 一个 409；顺序补发 409 <code>NOT_ACTIONABLE</code>；written 事件始终恰 1 条，无重复记录</td></tr>
+<tr><td>⑤</td><td>服务端写入失败</td><td class="ok">✅</td><td>500 <code>ATOMIC_WRITE_FAILED</code>（档案只读 → rename 顶替失败），档案未被替换、事件零新增；解除只读重提 200 done（失败未留半态）。成功记录 0</td></tr>
+</table>
+<p>附加守卫：</p>
+<ul>
+<li><b>T6 豁免边界</b>：声明 <code>test-any-file</code> + basis 入档的夹具 F，漂移照实上报但 <code>versionExempt:true</code> 放行 200；<b>同款漂移在未声明的 B 上仍是 409</b>——例外只在显式声明范围生效，未扩大。</li>
+<li><b>T7 非法输入</b>：非法 action / 未知 step / 不存在需求 / reject 缺理由 → <code>[400,400,404,400]</code>，事件零新增。</li>
+</ul>
+</div>
+
+<h3>2.2 生产 8090 回归 verify-w01r15.mjs：35/35 PASS</h3>
+<div class="card">
+<p>重启 8090（旧 PID 42136 → 新 PID 32372，<code>/api/health</code> → <code>{"ok":true,"autoloop":true,"build":"r11d"}</code>）后复跑：</p>
+<ul>
+<li>S1-S5 服务端契约（正常 409/幂等/非法输入）在新代码上全过，事件计数精确（如 <code>before:58 → after:58</code> 失败路径零新增）</li>
+<li>R11 测试数据基线前后一致（sha256 前缀 <code>0dd1e387c790</code>），脚本结束自动恢复</li>
+<li><b>错误提示样式实测</b>（CDP getComputedStyle + getBoundingClientRect）：</li>
+</ul>
+<div class="spec-strip">font-size:12px; line-height:18px; background:rgb(59,48,33); color:rgb(229,185,94); padding:12px</div>
+<ul>
+<li>字号 <code>12px</code>、行高 <code>18px</code>、背景 <code>rgb(59,48,33)</code>（#3B3021）、文字 <code>rgb(229,185,94)</code>（#E5B95E）、内边距 <code>12px</code>（四边），反馈块 244×168——与规格完全一致</li>
+<li>失败后主操作按钮收敛为禁用（防重复提交），刷新后页面与服务端状态一致（无成功 done-line，档案停 awaiting）</li>
+</ul>
+</div>
+
+<h3>2.3 全量测试套件：206/206 PASS</h3>
+<div class="card">
+<p>hermes node v22.23.2 <code>node --test "test/*.test.js"</code>：206 通过 / 0 失败（21.8s）。基线 203 项基础上历年新增 3 项，零回归。</p>
+</div>
+
+<h2>三、已知瑕疵（非本轮引入，未修，留拍板）</h2>
+<div class="card">
+<p><code>saveTaskFileAtomic</code> 在 rename 顶替失败（如目标只读）时会留下 <code>*.json.tmp-&lt;pid&gt;-&lt;时间&gt;-&lt;随机&gt;</code> 残留文件。本轮实测确认：残留<b>不会</b>进入任务/决策清单（<code>readTaskRecs</code> 只认 <code>*.json</code> 结尾，无幻影记录、无解析报错），仅占磁盘。清理它需要动共享核心 <code>server-core.mjs</code>，超出本轮「只改决策端点」的范围，且属既有行为——是否顺手加失败清理，留 Leo 决定。</p>
+</div>
+
+<h2>四、还差什么</h2>
+<div class="card">
+<ul>
+<li><b>未 commit</b>：工作区含多轮未提交改动，提交时机归 Leo 拍板。</li>
+<li>测试例外策略只验证了 <code>test-any-file</code> + basis 声明路径（设计上仅此一种），无其它策略分支可测。</li>
+</ul>
+</div>
+
+<footer>W01 · 第 17 轮 · Soda Agent Office · 验证脚本：verify-w01r17.mjs（隔离）/ verify-w01r15.mjs（回归）· 2026-11-16</footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F02 第 1 轮验证报告：历史版本预览不冒充磁盘当前内容</title>
+<style>
+  :root { --ink:#1f2430; --muted:#6b7280; --line:#e5e7eb; --gold:#E5B95E; --ok:#15803d; --bad:#b91c1c; --bg:#f8f9fb; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:0; background:var(--bg); color:var(--ink); font:15px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 40px 24px 72px; }
+  h1 { font-size: 26px; line-height:1.4; margin:0 0 6px; }
+  h2 { font-size: 19px; margin: 40px 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); }
+  h3 { font-size: 16px; margin: 24px 0 8px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:16px; }
+  .verdict { background:#f0fdf4; border:1px solid #bbf7d0; border-left:5px solid var(--ok); border-radius:8px; padding:14px 18px; margin:16px 0; font-size:15px; }
+  .verdict b { color:var(--ok); }
+  table { width:100%; border-collapse:collapse; margin:12px 0; background:#fff; border-radius:8px; overflow:hidden; font-size:14px; }
+  th, td { border:1px solid var(--line); padding:8px 12px; text-align:left; vertical-align:top; }
+  th { background:#f1f3f7; font-weight:600; white-space:nowrap; }
+  code { background:#eef0f4; border-radius:4px; padding:1px 6px; font:13px/1.6 Consolas,Menlo,monospace; overflow-wrap:anywhere; }
+  .num { font-family:Consolas,Menlo,monospace; font-size:13.5px; }
+  ul, ol { padding-left:22px; margin:8px 0; }
+  li { margin:4px 0; }
+  .pill { display:inline-block; border-radius:999px; padding:0 10px; font-size:12.5px; font-weight:600; line-height:22px; }
+  .pill.ok { background:#dcfce7; color:var(--ok); }
+  .pill.gap { background:#fef3c7; color:#92400e; }
+  details { background:#fff; border:1px solid var(--line); border-radius:8px; padding:10px 16px; margin:10px 0; }
+  summary { cursor:pointer; font-weight:600; font-size:14px; }
+  .shot { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; margin:12px 0; }
+  .shot figure { margin:0; background:#fff; border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .shot img { width:100%; border-radius:4px; border:1px solid var(--line); display:block; }
+  .shot figcaption { font-size:12.5px; color:var(--muted); padding-top:6px; text-align:center; }
+  .warnbox { background:#fffbeb; border:1px solid #fde68a; border-left:5px solid var(--gold); border-radius:8px; padding:12px 16px; margin:12px 0; font-size:14px; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:4px 14px; font-size:14px; }
+  .kv span { color:var(--muted); white-space:nowrap; }
+  .flow { background:#fff; border:1px solid var(--line); border-radius:8px; padding:14px 18px; font-size:14px; }
+  .flow .step { display:flex; gap:10px; margin:6px 0; }
+  .flow .no { flex:none; width:22px; height:22px; border-radius:50%; background:#e8ebf2; color:#3b4252; font-size:12.5px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+  .flow .branch { margin:2px 0 2px 32px; padding-left:14px; border-left:2px dashed #d3d7e0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>F02 第 1 轮验证报告</h1>
+<div style="font-size:16px;color:var(--muted);margin-bottom:4px;">历史版本预览不冒充磁盘当前内容</div>
+<div class="meta">2026-11-16 · server.js <code>http://127.0.0.1:8090</code>（build r11c）· Edge headless <code>Edg/157.0.4341.60</code>（CDP 9466，验证后已关闭）· Node 20.19.2 <code>--experimental-websocket</code></div>
+
+<div class="verdict">结论：<b>38/38 断言通过 + 回归 3/3 通过</b>。历史登记（300 B / <span class="num">9490ac36…</span>）预览不再展示 124 B 当前文件，只给真实登记元数据并明示原文不可预览；带保存原文的登记（181 B / <span class="num">3b255e02…</span>）指纹核对一致后展示保存原文。</div>
+
+<h2>一、改了什么（只动 F02 这一处）</h2>
+<table>
+  <tr><th>文件</th><th>改动</th></tr>
+  <tr><td><code>web/server.js</code></td><td><code>/api/office/file</code> 文本响应新增 <code>sha256</code>（全文哈希，不受 2MB 截断影响），供前端核对预览内容归属</td></tr>
+  <tr><td><code>web/app.js</code></td><td>新增 <code>fvVersionGate</code> / <code>diskMatchesOtherReg</code> / <code>sha256Text</code> / <code>textBytesOf</code> / <code>fvHistPreview</code>；<code>openFileView</code> 文本分支加版本门禁；<code>renderFvDetail</code> 加可选 <code>pv</code> 参数（仅历史分支多一行「预览核对」）</td></tr>
+  <tr><td><code>web/app.css</code></td><td>末尾追加 F02 层：<code>#fv-body .fv-hint</code>（12px / 18px / #E5B95E、与内容间距 12px）+ <code>.fv-hist-meta .fh-kv</code> 元数据行；<code>.fv-panel</code> 宽度零改动</td></tr>
+</table>
+
+<h3>门禁逻辑（与 server.js <code>artifactVersionGateOf</code> 同口径：指纹优先、字节退判）</h3>
+<div class="flow">
+  <div class="step"><div class="no">1</div><div>点登记行 → 按<b>登记ID + 版本指纹</b>（<code>data-reg-vkey</code>）定位那条登记</div></div>
+  <div class="step"><div class="no">2</div><div>磁盘内容指纹与所选登记一致 → 原有预览（内容 + 实测指纹一致）</div></div>
+  <div class="step"><div class="no">3</div><div>磁盘内容恰属<b>同路径另一条登记</b>的版本（F02 场景：124 B 属 plan 步骤登记）→ 历史分支：
+    <div class="branch">登记自带保存原文（<code>f.text</code>）且指纹核对一致 → <code>data-fv-hint="hist-saved"</code>，展示该保存原文</div>
+    <div class="branch">未保存原文 → <code>data-fv-hint="hist"</code>，只列真实登记元数据（登记ID / 登记版本 / 登记字节 / 内容指纹 / 登记时间 / 保存原文状态 / 磁盘当前归属），明示「原始内容不可预览」，<b>不展示磁盘当前内容</b></div>
+  </div></div>
+  <div class="step"><div class="no">4</div><div>登记与磁盘不同、但磁盘不属任何其他登记版本（普通漂移文件）→ 保持原行为（展示磁盘内容 + 原有校验状态），零回归</div></div>
+</div>
+
+<h2>二、验证了什么（全部 CDP 实测，非推断）</h2>
+
+<h3>A. API 地面真值（curl 实测）<span class="pill ok">5/5</span></h3>
+<ul>
+  <li>登记：doc 300 B / <span class="num">9490ac36…</span>（历史）· plan 124 B / <span class="num">f0431173…</span>（当前）· TEST-F02P1 doc 181 B / <span class="num">3b255e02…</span>（带 text 保存原文）</li>
+  <li>磁盘：fixture-ver.md = 124 B / <span class="num">f0431173…</span> · fixture-hist.md = 121 B / <span class="num">2c4ebaa0…</span>（API 已回 sha256）</li>
+</ul>
+
+<h3>B. 点 300 B 历史登记（getComputedStyle / getBoundingClientRect 实测）<span class="pill ok">10/10</span></h3>
+<ul>
+  <li><code>#fv-body[data-fv-hint="hist"]</code>；无 <code>&lt;pre&gt;</code>；正文无「验证夹具 B：当前版本 V2」冒充内容</li>
+  <li><code>.fv-hint</code>：<b>fontSize=12px</b> · <b>lineHeight=18px</b> · <b>color=rgb(229, 185, 94)</b>（#E5B95E）</li>
+  <li>提示底边 → 元数据顶边 = <b>12.0px</b></li>
+  <li>元数据含「300 B（300 B）」、明示「不可预览」；详情「预览核对」行为 warn 色</li>
+</ul>
+
+<h3>C. 点 124 B 当前登记 <span class="pill ok">6/6</span></h3>
+<ul>
+  <li>正常 <code>&lt;pre&gt;</code> 预览；页面内 WebCrypto 实测：内容 124 B、sha256 = <span class="num">f0431173…</span> 与所选登记一致</li>
+  <li><code>.fv-panel</code> 宽度：当前分支 420px = 历史分支 420px（未动）；match 分支详情不添「预览核对」行</li>
+</ul>
+
+<h3>D. 点 181 B 带保存原文登记（一次性夹具 TEST-F02P1，测完已删）<span class="pill ok">6/6</span></h3>
+<ul>
+  <li><code>data-fv-hint="hist-saved"</code>；展示 V1 保存原文，实测 181 B / sha256 <span class="num">3b255e02…</span> 指纹核对一致；非磁盘 V2</li>
+  <li>提示同规格 12px / 18px / rgb(229,185,94)；提示底边 → 原文顶边 = 12.0px</li>
+</ul>
+
+<h3>E. 刷新 ×5 + 300B/124B 交替切换 ×10 <span class="pill ok">10/10</span></h3>
+<ul>
+  <li>每次状态与所点登记一一对应：hist 态无 pre 无冒充；cur 态内容指纹 = <span class="num">f0431173…</span> 且 124 B。<b>无串用</b></li>
+  <li>全程无页面 JS 异常（console.error / exceptionThrown 为 0）</li>
+</ul>
+
+<h3>回归（app.css / server.js）<span class="pill ok">3/3</span></h3>
+<ul>
+  <li>单一漂移文件（登记≠磁盘、无其他版本归属）：仍展示磁盘内容（preLen=97536），详情不添行</li>
+  <li>未登记文件（server.js）：正常预览（preLen=58986），gate=noreg 不拦截</li>
+</ul>
+
+<h2>三、截图证据</h2>
+<div class="shot">
+  <figure><img src="f02p1-hist-300B-1440x900.png" alt="300B 历史登记预览" loading="lazy"><figcaption>300 B 历史登记：hist 态，只列登记元数据，明示不可预览</figcaption></figure>
+  <figure><img src="f02p1-cur-124B-1440x900.png" alt="124B 当前登记预览" loading="lazy"><figcaption>124 B 当前登记：正常预览，指纹与登记一致</figcaption></figure>
+  <figure><img src="f02p1-saved-181B-1440x900.png" alt="181B 保存原文登记预览" loading="lazy"><figcaption>181 B 带保存原文登记：hist-saved 态，展示核对一致的 V1 原文</figcaption></figure>
+</div>
+
+<details>
+<summary>证据与备份文件清单</summary>
+<ul>
+  <li><code>f02p1-verify.out</code>（38 断言完整输出）· <code>f02p1-verify.mjs</code>（验证脚本）</li>
+  <li>改动前备份：<code>web/app.js.bak-f02p1</code> · <code>web/app.css.bak-f02p1</code> · <code>web/server.js.bak-f02p1</code></li>
+</ul>
+</details>
+
+<h2>四、还差什么</h2>
+<div class="warnbox">图片类预览（<code>loadImagePreview</code>）没有版本门禁——同路径图片被当前版本覆盖时，点历史登记仍显示当前图片。本任务范围为文本预览区（图4 fixture-ver.md），未动图片分支；如需同等口径另开任务。</div>
+
+</div>
+</body>
+</html>

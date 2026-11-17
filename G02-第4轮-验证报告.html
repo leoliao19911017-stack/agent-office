@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G02 第 4 轮验证报告 — 模块依赖与结构性测试收官</title>
+<style>
+  :root { --ink:#1f2933; --line:#e3e8ee; --panel:#fff; --bg:#f7f9fb; --blue:#2563eb; --green:#16804b; --red:#b23a31; --amber:#92610c; --code:#0f172a; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap { max-width:980px; margin:0 auto; padding:36px 28px 64px; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  .meta { color:#5b6b7a; font-size:13px; margin-bottom:18px; }
+  .verdict { background:#eaf6ef; border:1px solid #bfe3cd; color:var(--green); border-radius:10px; padding:12px 16px; font-weight:600; margin:14px 0 26px; }
+  h2 { font-size:18px; margin:34px 0 12px; padding-bottom:6px; border-bottom:2px solid var(--line); }
+  h3 { font-size:15px; margin:20px 0 8px; }
+  table { border-collapse:collapse; width:100%; background:var(--panel); font-size:13.5px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#eef2f6; }
+  code { background:#eef2f6; border-radius:4px; padding:1px 5px; font-size:.92em; font-family:Consolas,monospace; }
+  pre { background:var(--code); color:#dbe7f3; border-radius:8px; padding:12px 14px; overflow-x:auto; font:12.5px/1.6 Consolas,monospace; }
+  .ok { color:var(--green); font-weight:600; }
+  .warn { color:var(--amber); }
+  ul { padding-left:22px; }
+  li { margin:4px 0; }
+  .tag { display:inline-block; background:#e8effc; color:var(--blue); border-radius:4px; padding:0 6px; font-size:12px; font-weight:600; margin-right:6px; }
+  details { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin:10px 0; }
+  summary { cursor:pointer; font-weight:600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>G02 第 4 轮验证报告 — 模块依赖与结构性测试收官</h1>
+  <div class="meta">日期：2026-11-16 ｜ 范围：<code>web/</code> 前端 + server.js</div>
+  <div class="verdict">✅ 结论：全部验收项达成 — 103/103 测试、覆盖率 90.4%~100%、17 路由兼容、四页 + 三流程 E2E 全过</div>
+
+  <h2>一、改了什么</h2>
+  <table>
+    <tr><th>项</th><th>前</th><th>后</th><th>目标</th></tr>
+    <tr><td>app.js 行数</td><td>1769</td><td><b>1376</b></td><td>≤1500 ✅</td></tr>
+    <tr><td>server.js 行数</td><td>1126</td><td>1131（核心逻辑入 server-core.mjs）</td><td>—</td></tr>
+    <tr><td>单业务模块</td><td>—</td><td>8 个，<b>全部 ≤450 行</b></td><td>≤450 ✅</td></tr>
+    <tr><td>函数</td><td>75 个超长</td><td>184 个，<b>全部 ≤100 行</b></td><td>≤100 ✅</td></tr>
+  </table>
+  <ul>
+    <li><span class="tag">拆分</span>决策执行段（submitDecision / settleOp / reconcile 回查 / 状态持久化）从 app.js 拆入 <code>decision-ops.js</code>；服务端核心入 <code>server-core.mjs</code>。</li>
+    <li><span class="tag">收口</span>共用路径、版本标识、审批状态、文件校验规则集中定义于 <code>shared.js</code>，客户端不再重复实现。</li>
+    <li><span class="tag">边界</span>9 个 <code>&lt;script&gt;</code> 顺序与依赖基线核对一致，无循环依赖、无隐式全局依赖。</li>
+    <li><span class="tag">测试</span>新增 <code>test/g02-flows.test.js</code>（三流程 E2E）+ <code>g02-branches.test.js</code> 追加 3 用例。</li>
+  </ul>
+
+  <h2>二、验证了什么（全部真实输出）</h2>
+
+  <h3>1. 静态依赖检查 — <span class="ok">PASS</span></h3>
+  <p>导入导出核对无循环依赖导致的未初始化引用（基线 <code>tmp-g02-deps-baseline.json</code> 留档）。</p>
+
+  <h3>2. 单元测试 — <span class="ok">103/103 全过</span></h3>
+<pre>$ node --no-warnings --test ../test/g02-*.test.js
+# tests 103
+# pass 103
+# fail 0</pre>
+
+  <h3>3. 分支覆盖率 — <span class="ok">六模块全 ≥90%</span></h3>
+<pre>$ node tmp-g02-coverage.mjs
+  shared.js:        67/68  分支臂 =  98.5% ✅
+  version.js:      103/111 分支臂 =  92.8% ✅
+  approval.js:     212/223 分支臂 =  95.1% ✅
+  decision-ops.js: 215/215 分支臂 = 100.0% ✅
+  files.js:          7/7  分支臂 = 100.0% ✅
+  server-core.mjs: 160/177 分支臂 =  90.4% ✅</pre>
+  <p>口径：V8 block coverage 分支臂（Istanbul「branch」近似），跨进程剪枝感知三步合并（<code>tmp-g02-coverage.mjs</code> 可复测）。</p>
+
+  <h3>4. 17 条 API 路由兼容 — <span class="ok">exit=0</span></h3>
+  <p>8 条 GET 业务形状 200 + 9 条缺参 400，与拆分前口径一致。</p>
+
+  <h3>5. 四页首屏 — <span class="ok">4/4</span></h3>
+  <p>workbench / agents / skills / files 全过（A4 contentMs=229ms，产物匹配 1/1）。</p>
+
+  <h3>6. 三流程 E2E — <span class="ok">3/3（G02 收官验收）</span></h3>
+  <table>
+    <tr><th>流程</th><th>关键实测</th></tr>
+    <tr><td><b>D1 审批闭环</b></td><td>verify 轨道节点 96×68 <code>cursor:pointer</code>；reject POST 200 <code>verified:true to:failed</code>，理由原样写入备注；事件末条 <code>action:reject result:written</code>；UI 重提面板「打回理由：原文」+ resubmit 按钮</td></tr>
+    <tr><td><b>D2 文件预览</b></td><td>抽屉 1440×900 <code>display:flex</code>；正文 106,249 字符；响应 sha256 与自算全文一致（<code>b37b474a2c05…</code>）</td></tr>
+    <tr><td><b>D3 历史版本</b></td><td>curl：T-G07B <code>source=snapshot</code>（保存原文 33 字符）/ T-G07A <code>disk-current</code>；页内 file-version 200，双重核对一致后展示保存原文</td></tr>
+  </table>
+  <p>E2E 全程 g07-harness 隔离夹具（stub 中台 + 临时 AGENT_AUTOLOOP_HOME + 真实 server.js 子进程 + 系统 Chrome），<b>不触碰真实任务档案</b>。</p>
+
+  <details>
+    <summary>调试中澄清的两个口径（测试假设修正，非产品 bug）</summary>
+    <ul>
+      <li><b>Inspector 布局</b>：app.css W02 = 宽屏（≥1100px）右栏常驻 328px；<code>#tb-insp-toggle</code> 仅 ≤1099px 抽屉模式显示（app.css:145、519-531）。探针实测开关在 1440 视口 <code>display:none</code> 0×0。</li>
+      <li><b>审批按钮渲染</b>：verify 的审批对象 = 前序步骤已登记产物（decideActsHtml 口径），渲染 approve/reject 双按钮；「补齐材料」单按钮仅在完全无审批对象时出现。approve 撞「类型未声明」W01 门禁 409 属正确兜底。</li>
+    </ul>
+  </details>
+
+  <h2>三、还差什么</h2>
+  <ol>
+    <li><span class="warn">Node 版本</span>：本机 v20.19.2 &lt; engines ≥22.5.0，9 个非 g02 测试因 <code>node:sqlite</code> 环境性失败——先于本轮存在，与 G02 无关。</li>
+    <li><span class="warn">未 commit</span>：按约定不主动提交，改动在工作区待拍板。</li>
+    <li><span class="warn">临时文件处置待拍板</span>：保留 coverage.mjs / deps-baseline.json / api-check.mjs / cov/ / server.log；拆分期工具（check-moves / p1 / shots / splice / moves-out）可删。</li>
+    <li><span class="warn">8090 开发服务</span>：PID 42136 常驻（build=r11d，curl 200 / 1.7ms），是否保留待定。</li>
+  </ol>
+
+  <h2>附：环境与复测命令</h2>
+<pre>cd web && rm -rf tmp-g02-cov && NODE_V8_COVERAGE=tmp-g02-cov node --no-warnings --test ../test/g02-*.test.js && node tmp-g02-coverage.mjs
+# 服务：PORT=8090 node server.js（日志 web/tmp-g02-server.log）；curl 须 --noproxy '*'</pre>
+</div>
+</body>
+</html>

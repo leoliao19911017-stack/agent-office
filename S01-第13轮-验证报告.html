@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S01 第13轮验证报告：技能网格独立滚动 + 分页不再裁卡</title>
+<style>
+  :root { --bg:#0D111A; --panel:#182230; --line:#334257; --txt:#D6E0ED; --dim:#B3C0D2; --ok:#65D9B1; --warn:#E5B95E; --accent:#6C9EF1; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:36px 0 10px; border-bottom:1px solid var(--line); padding-bottom:8px; color:var(--accent); }
+  .meta { color:var(--dim); font-size:13px; margin-bottom:8px; }
+  .meta code { color:var(--txt); }
+  .verdict { background:rgba(101,217,177,.08); border:1px solid var(--ok); border-radius:8px; padding:12px 16px; margin:16px 0; color:var(--ok); }
+  table { border-collapse:collapse; width:100%; margin:12px 0; font-size:13px; }
+  th, td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--panel); color:var(--dim); font-weight:600; white-space:nowrap; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .bad { color:#E57373; font-weight:600; }
+  .good { color:var(--ok); font-weight:600; }
+  pre { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; font:12.5px/1.6 Consolas,"Cascadia Mono",monospace; color:#C9D6E8; }
+  code { background:var(--panel); border-radius:4px; padding:1px 5px; font:12.5px Consolas,monospace; }
+  ul { padding-left:22px; } li { margin:4px 0; }
+  .shot-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:12px; margin:12px 0; }
+  .shot-grid figure { margin:0; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  .shot-grid img { width:100%; display:block; border-radius:4px; }
+  .shot-grid figcaption { font-size:12px; color:var(--dim); padding-top:6px; text-align:center; }
+  details { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:10px 14px; margin:10px 0; }
+  summary { cursor:pointer; color:var(--accent); font-weight:600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>S01 第13轮验证报告</h1>
+<div class="meta">技能网格独立滚动 + 分页不再裁卡 · 2026-11-17 · 前 5 轮未过验收</div>
+<div class="meta">改动：仅 <code>web/app.css</code>（末尾追加 r13 覆盖层 4 组选择器）· 回滚点 <code>web/app.css.bak-s01r13</code> · 验证 <code>verify-s01r13.mjs</code>（CDP headless Chrome，baseline/after 双相位 × 三视口）</div>
+<div class="verdict">✅ 结论：任务书全部规格在 1440×900 / 1280×768 / 1920×1080 逐项达标（真实 computed / rect 数值见下表）</div>
+
+<h2>1. 病根（baseline 实测）</h2>
+<ul>
+  <li>第 11 轮残留 <code>#skill-list{padding-bottom:0}</code> + 描述改多行后卡片整体变高。</li>
+  <li>1440×900 顶部态：列表可视底 732，第 6 卡布局盒 [643 → 787]，<b class="bad">底边超出折叠线 55px</b>，标签区（.sk-meta 底 770）整段藏在折叠线之下。</li>
+  <li>滚到底态：<b class="bad">末卡底 ↔ 列表底 = 0px 贴边</b>；分页 56px + 上边距 24px 超规格；描述 13/20 clamp2 固定 40px 盒。</li>
+</ul>
+
+<h2>2. 改动内容（app.css 末尾追加，源顺序覆盖 :639/:1103/:1339/:1811/:1985）</h2>
+<pre>#skill-list {
+  min-height: 0; overflow-y: auto; padding-bottom: 16px;
+}
+#skill-pagination {
+  height: 48px; min-height: 48px;
+  margin: 16px 0 0; padding: 0 4px; align-items: center;
+}
+.skill-row {
+  height: auto; min-height: 144px;      /* 原 r12 固定 height:144px → 标签换行可撑开 */
+}
+.skill-row small {
+  font-size: 12px; line-height: 18px;   /* 原 13/20 clamp2 固定 40px 盒 */
+  height: auto; flex: none;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; white-space: normal;
+}</pre>
+
+<h2>3. 计算值对照（三视口一致）</h2>
+<table>
+  <tr><th>指标</th><th>规格</th><th>baseline 实测</th><th>after 实测</th></tr>
+  <tr><td>#skill-list overflow-y / min-height / padding-bottom</td><td>auto / 0 / 16px</td><td class="num">auto / 0px / <span class="bad">0px</span></td><td class="num"><span class="good">auto / 0px / 16px</span></td></tr>
+  <tr><td>#skill-pagination 高度（计算值）</td><td class="num">48px</td><td class="num"><span class="bad">56px</span></td><td class="num"><span class="good">48px</span>（min-height 48px）</td></tr>
+  <tr><td>分页与网格底间隔</td><td class="num">16px</td><td class="num"><span class="bad">24px</span></td><td class="num"><span class="good">16px</span></td></tr>
+  <tr><td>.skill-row 高度</td><td>min-height 144px</td><td>144px（固定 height）</td><td><span class="good">144px（height:auto + min-height）</span></td></tr>
+  <tr><td>描述 字号/行高/clamp</td><td>12px / 18px / 3</td><td><span class="bad">13px / 20px / 2</span>（固定 40px 盒）</td><td><span class="good">12px / 18px / 3</span>，长文本盒高 54px = 3×18，clamped=true；短描述 1 行不截断</td></tr>
+  <tr><td>布局</td><td>双列，gap 16×16</td><td>2 列</td><td><span class="good">2 列，gap 16×16</span>，20 卡高度集合 [144]</td></tr>
+</table>
+
+<h2>4. 1440×900（任务书主口径）</h2>
+<table>
+  <tr><th>检查项</th><th>规格</th><th>baseline</th><th>after</th></tr>
+  <tr><td>网格可视区域</td><td>约 416px</td><td class="num">clientH 411</td><td class="num"><span class="good">clientH 427</span>（卡片可视区 411 = 427−16）</td></tr>
+  <tr><td>容器可滚动</td><td>scrollH &gt; clientH 可滚</td><td class="num">1586 &gt; 411</td><td class="num"><span class="good">1602 &gt; 427</span>，实达 maxScroll 1175</td></tr>
+  <tr><td>顶部态第 6 卡</td><td>不被裁</td><td><span class="bad">底边超折叠线 55px，标签整段在下</span></td><td><span class="good">可见底 ↔ 分页顶 = 16px</span>（余 39px 可滚出）</td></tr>
+  <tr><td>滚到底：末卡 ↔ 列表底</td><td class="num">≥16px</td><td class="num"><span class="bad">0px 贴边</span></td><td class="num"><span class="good">16px</span></td></tr>
+  <tr><td>滚到底：末卡 ↔ 分页顶</td><td class="num">≥16px</td><td class="num">24px</td><td class="num"><span class="good">32px</span>（第 6 卡底 ↔ 分页顶 1152px）</td></tr>
+  <tr><td>可见卡标签 .sk-meta</td><td>完整在框内</td><td>—</td><td><span class="good">allMetaInside = true</span>（6 张逐一核验）</td></tr>
+  <tr><td>分页覆盖可见卡</td><td>无</td><td>无</td><td><span class="good">可见区段重叠 = false</span>（顶/底两态）</td></tr>
+  <tr><td>横向滚动</td><td>无</td><td>无</td><td><span class="good">无</span></td></tr>
+</table>
+
+<h2>5. 另两视口（after 实测）</h2>
+<table>
+  <tr><th>视口</th><th class="num">clientH / scrollH</th><th class="num">分页高 / 间隔</th><th>顶部态第 6 卡</th><th class="num">滚到底 末卡↔列表底 / ↔分页顶</th><th>标签在框内 / 重叠 / 横滚</th></tr>
+  <tr><td>1280×768</td><td class="num">295 / 1602（maxScroll 1307 实达）</td><td class="num">48px / 16px</td><td>可见底 ↔ 分页顶 16px（171px 可滚出）</td><td class="num">16px / 32px</td><td class="good">true / false / 无</td></tr>
+  <tr><td>1920×1080</td><td class="num">607 / 1602</td><td class="num">48px / 16px</td><td><span class="good">整卡可见</span>（底边在折叠线上方 141px）</td><td class="num">16px / 32px</td><td class="good">true / false / 无</td></tr>
+</table>
+
+<h2>6. 截图与目视复核</h2>
+<p>滚到底态截图（after，三视口）与回顶态截图共 6 张：<code>verify-s01r13-{1440x900,1280x768,1920x1080}-{bottom,top}.png</code>。1440×900 底部态经视觉模型复核：最底排卡片完整（pill 标签行、类别文字、卡片下边缘全部可见）；分页条位于滚动区之外、有分割线分隔、不遮挡任何卡片、观感 ~48px。</p>
+<details><summary>展开截图（1440×900 顶部态 / 滚到底态）</summary>
+<div class="shot-grid">
+  <figure><img src="verify-s01r13-1440x900-top.png" alt="1440×900 顶部态"><figcaption>顶部态：第 6 卡可见底与分页间隔 16px</figcaption></figure>
+  <figure><img src="verify-s01r13-1440x900-bottom.png" alt="1440×900 滚到底态"><figcaption>滚到底态：末排标签完整，末卡↔分页 32px</figcaption></figure>
+</div>
+</details>
+
+<h2>7. “约 416px”口径说明</h2>
+<p>416px 为任务书估算值。实测修复后容器 <code>clientHeight = 427px</code>，扣容器 padding-bottom 16px 后卡片实际可视区 <b>411px</b>，两口径与 416px 偏差 ≤11px（≤2.6%）。硬性数值（分页 48px、间隔 16px、padding-bottom 16px、min-height 0）全部精确命中；若必须钉死 416px 需压页头/筛选区高度，超出本轮“只改这一处”授权，未动。</p>
+
+<h2>8. 遗留</h2>
+<ul>
+  <li>无功能性遗留。改动未 commit（工作区含多轮未提交改动，等 Leo 拍板）。</li>
+  <li>回滚：<code>cp web/app.css.bak-s01r13 web/app.css</code>。</li>
+</ul>
+
+</div>
+</body>
+</html>

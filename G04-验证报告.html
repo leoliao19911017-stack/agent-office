@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G04 验证报告｜四个页面空白的启动回归</title>
+<style>
+  :root { --ink:#e8e2d5; --mut:#9a917f; --bg:#191612; --card:#211d17; --line:#39322a; --gold:#E5B95E; --fail:#3B3021; --ok:#7fb069; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.7 "Segoe UI", "Microsoft YaHei", sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { font-size:22px; margin:0 0 4px; } h2 { font-size:17px; margin:36px 0 12px; color:var(--gold); border-bottom:1px solid var(--line); padding-bottom:6px; }
+  .meta { color:var(--mut); font-size:13px; margin-bottom:8px; }
+  .verdict { display:inline-block; background:var(--fail); color:var(--gold); padding:8px 16px; border-radius:4px; font-size:13px; line-height:18px; margin:8px 0 4px; }
+  table { border-collapse:collapse; width:100%; margin:10px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#26211a; color:var(--mut); font-weight:600; }
+  code { background:#26211a; padding:1px 5px; border-radius:3px; font-size:12.5px; color:#d8c9a3; }
+  .t { display:inline-block; background:#20261e; color:var(--ok); border:1px solid #2f3b2e; padding:1px 8px; border-radius:10px; font-size:12px; margin-right:6px; }
+  .kv b { color:var(--gold); }
+  ul { padding-left:20px; } li { margin:4px 0; }
+  .shots { display:grid; grid-template-columns:repeat(auto-fill,minmax(290px,1fr)); gap:10px; margin-top:10px; }
+  .shots figure { margin:0; background:var(--card); border:1px solid var(--line); border-radius:6px; padding:8px; }
+  .shots img { width:100%; display:block; border-radius:3px; }
+  .shots figcaption { font-size:12px; color:var(--mut); padding-top:6px; }
+  .note { background:var(--card); border-left:3px solid var(--gold); padding:10px 14px; border-radius:0 4px 4px 0; font-size:13px; }
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>G04 验证报告｜修复四个页面全部空白的启动回归</h1>
+<div class="meta">2026-11-16 · 严重程度：致命 · 验证方式：Chrome 138 headless + 原生 CDP（getComputedStyle / getBoundingClientRect 真实读数）</div>
+<div class="verdict">结论：通过 —— 4 组测试 + 1 个补充场景全部实测通过</div>
+<div class="meta">验证脚本 <code>g04-verify.mjs</code>（可重复执行）｜截图证据 6 张</div>
+
+<h2>一、改了什么</h2>
+<table>
+<tr><th>文件</th><th>改动</th><th>备份</th></tr>
+<tr><td><code>web/server.js</code></td><td>补 1 行导入：<code>createDecisionCore</code>（G02 拆分时漏导入，任何重启都 <code>ReferenceError</code> 崩溃）</td><td>git 工作区</td></tr>
+<tr><td><code>web/app.js</code></td><td>① 启动护栏：四模块关键函数缺失即挂失败横幅并中止；② 8s 看门狗：首轮 flow 8000ms 未到挂失败态，成功即撤销；③ 启动段 try/catch，异常不再让页面永久空白</td><td><code>app.js.bak-g04</code></td></tr>
+<tr><td><code>web/app.css</code></td><td>新增 <code>#data-banner.boot-fail</code>（G04 规定样式）</td><td><code>app.css.bak-g04</code></td></tr>
+</table>
+<div class="note"><b>根因（两层）</b>：① 线上 8090 是 G02 拆分<b>之前</b>启动的旧进程，对 4 个拆分脚本一律 404 → app.js 引用未定义函数即死 → 启动链路从未执行；② 就算重启也起不来：server.js 漏导入工厂函数，启动即崩。<br>
+<b>禁止项核查</b>：所有失败路径均不渲染虚构零值——首轮失败需求数保持占位「—」，运行中断开保留上次真实数据（8）并标注「过期数据」。</div>
+
+<h2>二、验证了什么</h2>
+
+<h3>T1 正常服务启动 <span class="t">PASS</span></h3>
+<ul>
+<li>页面需求数 <code>#reqs-count</code> = <b>8</b>，与页内实取 <code>/api/office/flow</code> 的 <code>tasks.length = 8</code> 一致（TEST-F01R10 / TEST-R11 / OFFICE-V3 / OFFICE-V4 / T-DAILY / T-EASEDRAW / T-PRODUCT / T-SKILLHUB）</li>
+<li>七步流水线 <code>.track-node</code> = <b>7</b>：01 原始需求·完成 → 02 需求文档·完成 → 03 开发计划·待拍板 → 04~07 等待</li>
+<li>失败横幅隐藏；<code>window.__uiErrors = 0</code>；控制台 0 条错误；状态栏「API 连接正常」</li>
+</ul>
+
+<h3>T2a API 断开（运行中服务被杀）<span class="t">PASS</span></h3>
+<ul>
+<li>横幅挂出「需求流水线 Failed to fetch 上次成功 5 秒前，以下为过期数据」；状态栏「API 连接断开」</li>
+<li>需求数保持 <b>8</b>（上次真实数据，未造假为 0）；中央区 604 字符内容仍在——页面不空白</li>
+</ul>
+
+<h3>T2b API 断开（首轮即 502）<span class="t">PASS</span> · 失败态样式实测</h3>
+<table>
+<tr><th>属性</th><th>实测值（getComputedStyle）</th><th>要求</th></tr>
+<tr><td>font-size</td><td><code>12px</code></td><td>12px ✅</td></tr>
+<tr><td>line-height</td><td><code>18px</code></td><td>18px ✅</td></tr>
+<tr><td>color</td><td><code>rgb(229,185,94)</code> = <code>#E5B95E</code></td><td>#E5B95E ✅</td></tr>
+<tr><td>background-color</td><td><code>rgb(59,48,33)</code> = <code>#3B3021</code></td><td>#3B3021 ✅</td></tr>
+<tr><td>padding（四边）</td><td><code>16px/16px/16px/16px</code></td><td>16px ✅</td></tr>
+</table>
+<p class="kv">横幅尺寸 getBoundingClientRect = <b>1424×112</b>；<code>__uiErrors = 0</code>；无未捕获异常；需求数为占位「—」而非假「0」。</p>
+
+<h3>T3 JS 模块异常（shared.js 临时改名 → 404）<span class="t">PASS</span></h3>
+<ul>
+<li>启动护栏挂出：「启动失败 前端模块加载不完整：shared.js 缺 esc；shared.js 缺 api……」+ 重试按钮；样式五项全部达标（同上表）</li>
+<li>唯一 1 条未捕获异常是护栏<b>故意</b>抛出的中止信号（带 <code>[G04]</code> 标记，app.js:56）；页面不再永久空白；测试后 shared.js 已还原</li>
+</ul>
+
+<h3>T4 API 延迟 9.5s（&gt; 8000ms）<span class="t">PASS</span></h3>
+<ul>
+<li><b>8.3s</b>：看门狗挂出「首轮数据加载超过 8000ms 未完成……这是明确的失败状态，不是『暂无数据』」，样式五项全部达标</li>
+<li><b>12.8s</b>（迟到数据到达后）：七步流水线恢复（<code>.track-node = 7</code>）、需求数 = 8、失败态自动让位（<code>hidden=true</code>）、<code>__uiErrors = 0</code>、无未捕获异常</li>
+</ul>
+
+<div class="note"><b>控制台事件全量</b>：5 个场景中仅 T3 有 1 条带 [G04] 标记的主动中止异常；T1/T2a/T2b/T4 均为 0 条。<br>
+<b>环境现状</b>：8090 已恢复常驻（须带 <code>PORT=8090</code> 启动，默认 8080 被占）；静态资源实测：app.js 123763 B、shared.js 10846 B、version.js 13833 B、approval.js 47105 B、files.js 36915 B、app.css 126334 B。</div>
+
+<h2>截图证据</h2>
+<div class="shots">
+<figure><img src="g04-t1-normal.png" alt="T1 正常启动"><figcaption>T1 正常启动：8 需求 + 七步流水线</figcaption></figure>
+<figure><img src="g04-t2a-apidown.png" alt="T2a 运行中断开"><figcaption>T2a 运行中断开：过期数据横幅</figcaption></figure>
+<figure><img src="g04-t2b-api-dead-bootfail.png" alt="T2b 首轮 502"><figcaption>T2b 首轮 502：boot-fail 失败态</figcaption></figure>
+<figure><img src="g04-t3-module-missing.png" alt="T3 模块缺失"><figcaption>T3 模块缺失：启动护栏</figcaption></figure>
+<figure><img src="g04-t4-timeout-8s.png" alt="T4 8s 超时"><figcaption>T4 8s 看门狗超时态</figcaption></figure>
+<figure><img src="g04-t4-recovered.png" alt="T4 恢复"><figcaption>T4 迟到数据到达后恢复</figcaption></figure>
+</div>
+
+<h2>三、还差什么</h2>
+<ol>
+<li><b>改动未 commit</b>：app.js / app.css / server.js 在工作区；另有 .bak 备份、验证脚本、6 张截图、本报告两类新文件，是否入库由 Leo 决定。</li>
+<li>T3 的 1 条 [G04] 中止异常是护栏设计的固有产物；若要求绝对零异常需把 app.js 改为惰性初始化结构，超出「只改这一处」边界，未动。</li>
+<li>Agents / 技能 / 文件三页依赖的模块函数在护栏白名单内（缺失同样挂失败态而非空白），但未对三页逐一截图留证。</li>
+</ol>
+
+</div></body>
+</html>

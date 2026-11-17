@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W02 第 13 轮验证报告｜右侧审批面板底栏规格色与滚动遮挡终验</title>
+<style>
+  :root { --bg:#0D111A; --card:#182230; --line:#334257; --txt:#D6E0ED; --dim:#B3C0D2; --amber:#E8B45A; --ok:#7BD88F; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  main { max-width:980px; margin:0 auto; }
+  h1 { font-size:22px; border-bottom:1px solid var(--line); padding-bottom:12px; }
+  h2 { font-size:17px; color:#fff; margin-top:36px; border-left:4px solid var(--amber); padding-left:10px; }
+  h3 { font-size:15px; color:#fff; margin:22px 0 8px; }
+  .meta, .meta a { color:var(--dim); font-size:13px; }
+  code { background:#111927; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font:12px/1.6 Consolas,monospace; color:#9CC3E8; }
+  pre { background:#111927; border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; }
+  pre code { border:0; background:none; padding:0; font-size:12.5px; line-height:1.65; }
+  table { border-collapse:collapse; width:100%; margin:10px 0 6px; font-size:13px; }
+  th, td { border:1px solid var(--line); padding:6px 10px; text-align:left; }
+  th { background:#111927; color:#fff; font-weight:600; white-space:nowrap; }
+  tr:nth-child(even) td { background:rgba(24,34,48,.45); }
+  .ok { color:var(--ok); font-weight:600; }
+  .warn { color:var(--amber); }
+  .swatch { display:inline-block; width:12px; height:12px; border-radius:2px; border:1px solid #55637a; vertical-align:-1px; margin-right:4px; }
+  .concl { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--ok); border-radius:8px; padding:14px 18px; margin-top:30px; }
+  .note { color:var(--dim); font-size:12.5px; }
+  details { margin:8px 0; } summary { cursor:pointer; color:#9CC3E8; }
+</style>
+</head>
+<body>
+<main>
+<h1>W02 第 13 轮验证报告｜右侧审批面板底栏规格色与滚动遮挡终验</h1>
+<p class="meta">2026-11-16 · 分支 master（未提交） · 唯一实改 <code>web/app.css</code> · 备份 <code>web/app.css.bak-w02r13</code> ·
+证据 <code>w02r13-baseline/after.json</code> <code>w02r13-pixels.json</code> 三视口滚底截图 ×2 组</p>
+
+<h2>一、改了什么（1 处，未动其他功能）</h2>
+<p><code>web/app.css:1670-1676</code>，<code>#insp-foot</code> 仅改两个颜色值 + 注释，几何（64px / padding 12px 16px / flex:none）未动：</p>
+<pre><code> #insp-foot {
+   flex: none; height: 64px; padding: 12px 16px;
+-  background: #171C27; border-top: 1px solid #344253;
++  background: #111927; border-top: 1px solid #334257;
+   box-sizing: border-box;
+ }</code></pre>
+<p class="note">三段滚动链、正文/辅助档位、padding、段落间距在 W01/G01 r12 层已就位（本轮 baseline 全部实测达标），唯一不符任务书的就是底栏两色——故本轮只改这一处。</p>
+
+<h2>二、验证了什么（真实数值，after 实测）</h2>
+
+<h3>2.1 三视口布局与滚动</h3>
+<table>
+<tr><th>指标</th><th>1440×900</th><th>1280×800</th><th>1100×768</th></tr>
+<tr><td>head 高 / foot 高</td><td>48px / 64px</td><td>48px / 64px</td><td>48px / 64px</td></tr>
+<tr><td>foot 视口内可见 / 滚动时钉底</td><td class="ok">true / true</td><td class="ok">true / true</td><td class="ok">true / true</td></tr>
+<tr><td>body 与 foot 重叠</td><td class="ok">false</td><td class="ok">false</td><td class="ok">false</td></tr>
+<tr><td>flex-grow / min-height</td><td>1 / 0px</td><td>1 / 0px</td><td>1 / 0px</td></tr>
+<tr><td>overflow-y / overflow-x</td><td>auto / hidden</td><td>auto / hidden</td><td>auto / hidden</td></tr>
+<tr><td>padding（上右下左）</td><td>12/16/24/16 px</td><td>12/16/24/16 px</td><td>12/16/24/16 px</td></tr>
+<tr><td>scrollHeight vs clientHeight</td><td>1246 vs 680</td><td>1246 vs 580</td><td>1246 vs 548</td></tr>
+<tr><td>可独立滚动（sH&gt;cH）</td><td class="ok">true</td><td class="ok">true</td><td class="ok">true</td></tr>
+<tr><td>滚底 maxTop / 横向溢出</td><td>566 / 0</td><td>666 / 0</td><td>698 / 0</td></tr>
+<tr><td>滚底最后一块完整可见</td><td class="ok">true</td><td class="ok">true</td><td class="ok">true</td></tr>
+<tr><td>最后块底边 ↔ foot 顶边间距</td><td class="ok">24.3px</td><td class="ok">24.3px</td><td class="ok">24.3px</td></tr>
+<tr><td>mm 警示块滚底完整可读</td><td class="ok">true</td><td class="ok">true</td><td class="ok">true</td></tr>
+</table>
+
+<h3>2.2 底栏规格色（双证据：计算样式 + 截图像素）</h3>
+<p>getComputedStyle 三视口一致：background <code>rgb(17,25,39)</code> = <span class="swatch" style="background:#111927"></span><b>#111927</b>；border-top <code>1px solid rgb(51,66,87)</code> = <span class="swatch" style="background:#334257"></span><b>#334257</b>。</p>
+<p>像素级实证（对已存滚底截图 canvas 采样，foot 左缘）：</p>
+<table>
+<tr><th>采样点</th><th>1440×900</th><th>1280×800</th><th>1100×768</th></tr>
+<tr><td>边界上方 6px（滚动区底衬）</td><td><span class="swatch" style="background:#121925"></span>#121925</td><td><span class="swatch" style="background:#121925"></span>#121925</td><td><span class="swatch" style="background:#121925"></span>#121925</td></tr>
+<tr><td>border-top 行（y=footTop）</td><td class="ok"><span class="swatch" style="background:#334257"></span>#334257 精确</td><td class="ok"><span class="swatch" style="background:#334257"></span>#334257 精确</td><td class="ok"><span class="swatch" style="background:#334257"></span>#334257 精确</td></tr>
+<tr><td>foot 内部（+32px）</td><td class="ok"><span class="swatch" style="background:#111927"></span>#111927 精确</td><td class="ok"><span class="swatch" style="background:#111927"></span>#111927 精确</td><td class="ok"><span class="swatch" style="background:#111927"></span>#111927 精确</td></tr>
+</table>
+<details><summary>方法论备注：视觉模型误判与像素裁决</summary>
+<p class="note">先用视觉模型目检 1100×768 滚底截图，它判"分隔线不明显/融为一体"，与计算样式矛盾。像素采样裁决：1px 分隔线在每个采样点逐字节精确存在（rgb(51,66,87)）。误判原因：滚动区底衬本身也是深色（#121925），浅色的是滚动内容里的纸面卡（--paper #F1EADB），分隔主要靠那 1px 线——这正是任务书要求的形态。像素不撒谎，线在。</p>
+</details>
+
+<h3>2.3 文档案位</h3>
+<table>
+<tr><th>选择器（实测场景）</th><th>font-size</th><th>line-height</th><th>color</th><th>margin 上下</th></tr>
+<tr><td><code>p.ev-src</code>（TEST-R11 policyNote）</td><td>13px</td><td>20px</td><td>#D6E0ED</td><td>12 / 12px</td></tr>
+<tr><td><code>.ev-demand</code>（T-DAILY/req 需求原文）</td><td>13px</td><td>20px</td><td>#D6E0ED</td><td>12 / 12px</td></tr>
+<tr><td><code>.ip-note</code>（TEST-F01R10/plan 备注）</td><td>13px</td><td>20px</td><td>#D6E0ED</td><td>12 / 12px</td></tr>
+<tr><td><code>.ip-sec .ip-v</code>（门禁未到列表，辅助档）</td><td>12px</td><td>18px</td><td>#B3C0D2</td><td>—</td></tr>
+</table>
+<p class="note">如实申报：<code>.rej-why</code> 当前全部数据无可渲染场景（无 failed 步骤），只能声明级核验——它与 .ev-src 同一选择器组（app.css:1864-1867），档位同源。</p>
+
+<h3>2.4 审批规则与关键数据未删减</h3>
+<p><code>.ev-policy</code> chip 0（r12 已并）；policyNote 1 段全文在（含"任意登记产物均可作为审批对象"与 R11 依据）；正文 test-any-file 出现 1 次；mmNote 含"已禁止按原版本通过"口径且 app.css 条目在列。</p>
+
+<h3>2.5 连续 10 次硬刷新（1440×900）</h3>
+<p>备注逐字保留 <b class="ok">10/10</b>；localStorage <code>office.notes.v1</code> 命中 <b class="ok">10/10</b>（本轮修正 r12 探针键名 bug，直接实测落档）；审批按钮保持 10/10；任务选中保持 10/10；scrollTop 恒 0（r12 记录的有意决策）。</p>
+
+<h2>三、还差什么</h2>
+<ol>
+<li><code>.rej-why</code> 无 failed 数据可渲染，档位只能声明级核验（见 2.3）。</li>
+<li class="warn">C 盘仅剩 ~224MB（r12 报告所列 ~6GB 非 W02 临时文件仍待 Leo 拍板）。</li>
+<li>滚动位置跨刷新恢复未做（同 r12 决策，非本轮范围）。</li>
+</ol>
+
+<div class="concl">
+<b>结论：</b>任务书全部验收项达标——三视口独立滚动（1246 vs 680/580/548）、滚底最后一行完整可见且不与固定操作栏重叠（间距 24.3px）、正文 13/20/#D6E0ED 与辅助 12/18/#B3C0D2、段落间距 12px、padding 16/24 就位；底栏 #111927 + 1px #334257 分隔线经计算样式与截图像素双重验证精确落地；10 次刷新备注与 localStorage 全留存；审批规则与关键数据零删减。本轮唯一代码改动即两处颜色值。
+</div>
+</main>
+</body>
+</html>

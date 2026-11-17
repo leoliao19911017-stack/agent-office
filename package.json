@@ -4,11 +4,14 @@
   "description": "Soda Office — Agent 编排工作台（看见 / 调度 / 交接）",
   "type": "module",
   "scripts": {
-    "test": "node --no-warnings --test test/*.test.js"
+    "test": "node --no-warnings --test test/",
+    "test:g07": "node --no-warnings --test test/g07-pages.test.js test/g07-nav.test.js test/g07-recovery.test.js test/g07-routes.test.js test/g07-approval.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
   },
   "license": "UNLICENSED",
-  "dependencies": {}
+  "dependencies": {
+    "playwright-core": "^1.65.1"
+  }
 }

@@ -1,0 +1,273 @@
+{
+  "phase": "baseline",
+  "base": "http://127.0.0.1:8090",
+  "when": "2026-11-16T06:34:45.663Z",
+  "scenarios": {
+    "S1_three_classes": {
+      "desc": "最近上报(lemate) / 超阈值+心跳新鲜(winter,11-15 00:08) / 从未上报(karina)",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "执行中",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "在做 A02 修复",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "1 分钟前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": true
+      }
+    },
+    "S2_heartbeat_only": {
+      "desc": "仅 winter 连接心跳 15s→2s，业务上报时间不变——新鲜度不得重置",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "执行中",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "在做 A02 修复",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "1 分钟前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": true
+      }
+    },
+    "S3_report_goes_stale": {
+      "desc": "lemate 业务上报推到 5 分钟前（超阈值），连接心跳仍新鲜——新鲜度翻过期、连接仍在线",
+      "measure": {
+        "rows": [
+          {
+            "name": "Lematelemate·lemate",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "上次上报已过期 · 14:29",
+            "rowH": 72
+          },
+          {
+            "name": "Winterwinter·winter",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "上次上报已过期 · 11/15 00:08",
+            "rowH": 72
+          },
+          {
+            "name": "Karinakarina·karina",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "未知",
+            "hb": {
+              "text": "刚刚",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "—",
+            "rowH": 72
+          },
+          {
+            "name": "Codexcodex·codex",
+            "conn": {
+              "text": "在线",
+              "cls": "ag-conn ok"
+            },
+            "work": "空闲",
+            "hb": {
+              "text": "1 分钟前",
+              "cls": "ag-hb ok",
+              "title": null,
+              "fontSize": "13px",
+              "lineHeight": "20px",
+              "color": "rgb(226, 234, 244)",
+              "colorHex": "#226234244"
+            },
+            "task": "试一下",
+            "rowH": 72
+          }
+        ],
+        "gridTemplateColumns": "64px 277.469px 112px 112px 140px 504.531px",
+        "headColumns": 6,
+        "innerW": 1440,
+        "anyJustNow": true
+      }
+    }
+  },
+  "shots": [
+    "a02r3-baseline-S1_three_classes-1440x900.png",
+    "a02r3-baseline-S2_heartbeat_only-1440x900.png",
+    "a02r3-baseline-S3_report_goes_stale-1440x900.png"
+  ]
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 78 轮整改执行报告</title>
+<style>
+  :root { --bg:#101418; --card:#171d24; --line:#26303a; --ink:#dbe4ee; --dim:#8996a8;
+          --ok:#65d9b1; --warn:#e5b95e; --accent:#6ca6f1; --bad:#e56b6f; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:14px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:1000px; margin:0 auto; padding:32px 24px 80px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  h2 { font-size:17px; margin:36px 0 12px; color:var(--accent);
+       border-bottom:1px solid var(--line); padding-bottom:8px; }
+  h3 { font-size:14.5px; margin:20px 0 8px; }
+  .sub { color:var(--dim); font-size:12.5px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:16px 20px; margin:12px 0; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top; }
+  th { background:#1c242e; color:var(--dim); font-weight:600; white-space:nowrap; }
+  code { font-family:Consolas,monospace; font-size:12px; color:var(--warn);
+         background:#0c1014; padding:1px 5px; border-radius:4px; }
+  .ok { color:var(--ok); font-weight:600; }
+  .warn { color:var(--warn); font-weight:600; }
+  ul { margin:8px 0; padding-left:22px; }
+  li { margin:3px 0; }
+  .banner { border-left:3px solid var(--warn); padding:10px 16px; background:#1d1a12;
+            border-radius:0 8px 8px 0; margin:14px 0; }
+  .banner.blue { border-color:var(--accent); background:#121a26; }
+  details { margin:10px 0; }
+  summary { cursor:pointer; color:var(--accent); font-weight:600; }
+  footer { color:var(--dim); font-size:12px; margin-top:44px; border-top:1px solid var(--line);
+           padding-top:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>第 78 轮整改执行报告</h1>
+<p class="sub">任务：R78 任务书 7 条（致命 0 / 严重 6 / 一般 1）· 评分 6.6 → 目标 8.0 · 2026-11-17</p>
+
+<div class="card">
+  <p><span class="ok">结论：7 条全部闭环。</span>本轮唯一真实行为变更是 <b>F01：file-version 端点「快照缺失/错配」HTTP 200 → 404</b>；其余 6 条经逐字比对任务书原文确认已达标，本轮为复测取证，未改代码。</p>
+  <p>全量测试 <b>237/237 通过</b>（hermes node v22.23.2，<code>--test "test/*.test.js"</code>）</p>
+</div>
+
+<h2>一、本轮代码增量</h2>
+<table>
+  <tr><th>文件</th><th>增量</th><th>内容</th></tr>
+  <tr><td><code>web/server-api.mjs</code></td><td>+5 行（915→920）</td><td>file-version 终态分支 200→<b>404</b>：<code>{ok:false, available:false, reason:'snapshot-mismatch'|'no-snapshot', candidates}</code>，不夹带 text。reg-not-found 404 / vkey-mismatch 409 / 无登记指纹 200 语义不变</td></tr>
+  <tr><td><code>web/preview.js</code></td><td>+3 行（437→440）</td><td>响应解析兼容 404 body（<code>r2.ok || r2.status===404</code> → json），历史不可用态读取 reason</td></tr>
+  <tr><td><code>web/app-layers.css</code></td><td>注释 1 行</td><td>W02 正文 12px/20px 本就是层叠终值（:626），钉注释防回归，渲染零影响</td></tr>
+  <tr><td><code>test/g07-approval.test.js</code></td><td>断言更新（D4）</td><td>快照错配 200→404 + reason + 不夹带 text + 候选指纹=错配快照实测值</td></tr>
+  <tr><td><code>test/g07-r73.test.js</code></td><td>断言更新（:578）</td><td>无留档快照断言 200→404</td></tr>
+  <tr><td><code>web/verify-f01-r75.mjs</code></td><td>白名单</td><td>Chromium 对 404 fetch 自动打网络层日志（JS 不可抑制），精确放行该 1 条</td></tr>
+</table>
+<p class="sub">未动：app.js、server.js、模块结构、17 条 API 路由与契约。</p>
+
+<h2>二、逐条实测</h2>
+
+<details open>
+<summary>W01（严重）服务端审批提交 — ✅ 复测通过，零改动</summary>
+<div class="card"><p><code>verify-w01-r76</code> <b class="ok">22/22</b> + <code>verify-w01r17</code> <b class="ok">26/26</b></p>
+<ul>
+  <li>S1 正常：200 + done，成功事件恰好 1 条</li>
+  <li>S2 同尺寸异内容：409 <code>ARTIFACT_VERSION_DRIFT</code>「大小 69 B 相同，内容已变化」，成功事件 0</li>
+  <li>S3 字节不符 409（131B≠69B）；S4 文件删除 409</li>
+  <li>S5 同 opId 重复提交：重放 200 <code>replay:true</code>，新 opId 再提 409 <code>NOT_ACTIONABLE</code> —— 同操作成功事件最多 1</li>
+  <li>S6 并发：<code>[200,409]</code> <code>WRITE_IN_FLIGHT</code>，重试走 replay，updatedAt 一致</li>
+</ul></div>
+</details>
+
+<details open>
+<summary>F01（严重）历史版本预览 — ✅ 本轮主改项</summary>
+<div class="card"><p><code>verify-f01-r75</code> ALL OK + <code>g07-approval</code> D3/D4 + <code>g07-r73:578</code></p>
+<ul>
+  <li>V1 预览逐字=快照原文（93 字），页内 WebCrypto 独立复算 SHA-256 = 登记 V1（<code>11cb51ee8477…</code>）</li>
+  <li>V2=磁盘现状（<code>1157b117…</code>）走 disk-current；改当前文件不影响 V1</li>
+  <li>刷新 5 次：内容 + 版本标识逐次相同</li>
+  <li><b>删 V1 快照 → 404 <code>no-snapshot</code></b>：无任何 <code>&lt;pre&gt;</code>（绝不返回 V2 冒充），页内明示「file-version：不可用（no-snapshot）」，提示 12px/18px/<code>rgb(229,185,94)</code></li>
+  <li><b>快照错配 → 404 <code>snapshot-mismatch</code></b>：不带 text，候选指纹=错配快照实测值</li>
+  <li>版本行 11px 等宽、34.0px ≤36px；pageerror=0、非预期 console.error=0、404 伴生日志=1</li>
+</ul></div>
+</details>
+
+<details open>
+<summary>W02（严重）审批区独立滚动 — ✅ 复测通过，零改动</summary>
+<div class="card"><p>300/1500/3000 字三档：末行底距固定操作区 <b class="ok">92px ≥12px</b>、末行完整可见、中央流水线 top 变化 0px；正文计算值 <b>12px/20px</b>（<code>app-layers.css:626</code> 层叠终值），段间距 <code>p+p{margin-top:12px}</code>。</p></div>
+</details>
+
+<details open>
+<summary>S01（严重）技能分页 — ✅ 复测通过，零改动</summary>
+<div class="card"><p>1440×900 与 1280×768：末卡底↔分页顶 <b class="ok">32px ≥12px</b>（1920×1080 为 147px）；每页 6 卡、2 列、卡高 [144px]，第三行标签完整可见。</p></div>
+</details>
+
+<details open>
+<summary>A01（严重）Agent 三态严格分离 — ✅ 复测通过，零改动</summary>
+<div class="card"><p>4 组数据实测，连接/执行/上报三列分源（连接只来自探针、执行只来自任务事件、新鲜度只看最近上报）：</p>
+<ul>
+  <li>g1 在线/未知/<code>—</code> <code>#8996A8</code>；g2 在线/未知/已过期·06:55 <code>#E5B95E</code></li>
+  <li>g3 离线/未知/2分钟前 <code>#65D9B1</code>；g4 在线/执行中<code>#6CA6F1</code>/30秒前 <code>#65D9B1</code></li>
+  <li>全部 12px/18px；<b>从不</b>用连接在线推断执行空闲</li>
+</ul></div>
+</details>
+
+<details open>
+<summary>G01（严重）回归与覆盖率 — ✅</summary>
+<div class="card">
+<ul>
+  <li><b>全量</b>：237/237（4 页 × 4 类测试远超 16 项）</li>
+  <li><b>视觉回归 A/B</b>（强杀进程 + 代码指纹证据链：改前 marker=0 且 mtime&lt;进程启动，改后 marker=1）：1440×900 四页全部几何字段 <b class="ok">same（0px 偏差）</b>、无横向溢出；1280×768 改后四页溢出全 false</li>
+  <li><b>四页视觉目检 4/4</b>：工作台三栏 8 需求卡+7 步流水线无截断；Agents 4 行三态列对齐；技能 6 卡两列完整；文件列表+校验抽屉无重叠</li>
+  <li><b>异常注入 5/5</b>：审批冲突 <code>g07-approval D2</code>；快照缺失 <code>g07-r73:578</code>+<code>verify-f01 组5</code>；文件删除 <code>W01-S4</code>；网络故障 <code>g07-recovery C1-C4</code>+<code>g02-branches:79,93</code>；CSS 404 <code>g07-r72:744-763</code></li>
+  <li><b>覆盖率</b>：仪器化 <code>web/server-core.mjs</code> 行 100%/分支 92.34%；<code>server-api.mjs</code> 以子进程拉起、node --test 不跨进程统计 → 人工分支矩阵补证：审批/版本 5 端点 25 分支命中 23（<b class="ok">92% ≥90%</b>）；<span class="warn">未直接命中 2 个</span>（file-version reg-not-found 404 / no-version 200，低频登记缺陷分支，无现成夹具，如实注明）</li>
+  <li><b>17 条路由/契约不变</b>：路由表 <code>server-api.mjs:871-887</code> 原样</li>
+</ul></div>
+</details>
+
+<details open>
+<summary>G02（一般）模块与行数 — ✅</summary>
+<div class="card"><p>app.js 原始 855 / 有效 <b class="ok">620 ≤800</b>；server.js 401 / 有效 <b class="ok">278 ≤500</b>；最大单函数 111 行 ≤120；语义色 :root 外字面量 0；依赖 0 环；未删任何测试。</p></div>
+</details>
+
+<h2>三、行数对账（R77 → R78）</h2>
+<table>
+  <tr><th>文件</th><th>R77</th><th>R78</th><th>Δ</th></tr>
+  <tr><td>web/app.js</td><td>855</td><td>855</td><td>0</td></tr>
+  <tr><td>web/server.js</td><td>401</td><td>401</td><td>0</td></tr>
+  <tr><td>web/server-api.mjs</td><td>915</td><td>920</td><td class="warn">+5</td></tr>
+  <tr><td>web/preview.js</td><td>437</td><td>440</td><td class="warn">+3</td></tr>
+  <tr><td>四份主 CSS 合计</td><td>2150</td><td>2150</td><td>0（仅注释）</td></tr>
+</table>
+<p class="sub">净增 8 行产品代码，未触发「app.js&gt;1500 先重构」红线。</p>
+
+<h2>四、上线提醒</h2>
+<div class="banner">
+  <b>8090 常驻服务（PID 26540，r73 构建）仍在跑旧版 server-api.mjs</b> —— F01 的 404 行为需<b>重启服务进程</b>才生效。<code>web/server.js</code> 本身未动，白名单无新增 .js，无需改 STATIC_APP。
+</div>
+
+<h2>五、遗留事项（等 Leo 拍板）</h2>
+<div class="banner blue">
+  <ul style="margin:0">
+    <li>R77 起挂着的临时进程 PID 50412（端口 9339）是否杀掉</li>
+    <li>本轮及此前多轮未提交的工作区改动是否入库（当前 master 有大量未提交文件）</li>
+  </ul>
+</div>
+
+<footer>报告生成：2026-11-17 · 证据均为本轮真实命令输出，未做任何修饰</footer>
+</div>
+</body>
+</html>

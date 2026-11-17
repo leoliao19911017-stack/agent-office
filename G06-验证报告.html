@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G06 验证报告 — 启动失败后无限连接且没有错误反馈</title>
+<style>
+  :root { --bg:#0F1319; --panel:#141A23; --line:#242D3A; --ink:#DEE5EE; --muted:#A3B0BF; --ok:#65D9B1; --warn:#E5B95E; --blue:#78A9EF; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.7 "Segoe UI","Microsoft YaHei",sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  h2 { font-size:17px; margin:36px 0 12px; color:var(--blue); border-bottom:1px solid var(--line); padding-bottom:6px; }
+  h3 { font-size:15px; margin:20px 0 8px; }
+  .meta { color:var(--muted); font-size:13px; margin-bottom:8px; }
+  .meta b { color:var(--ok); }
+  code { background:#1A2230; border:1px solid var(--line); border-radius:4px; padding:1px 6px; font:12px/1.6 Consolas,monospace; color:#9CD1FF; }
+  pre { background:#10161F; border:1px solid var(--line); border-radius:8px; padding:12px 16px; overflow:auto; }
+  pre code { background:none; border:none; padding:0; color:var(--muted); }
+  table { border-collapse:collapse; width:100%; margin:10px 0; font-size:13px; }
+  th,td { border:1px solid var(--line); padding:6px 10px; text-align:left; vertical-align:top; }
+  th { background:#182230; color:var(--muted); font-weight:600; white-space:nowrap; }
+  .pill { display:inline-block; border-radius:999px; padding:1px 10px; font-size:12px; font-weight:600; }
+  .pill.ok { background:rgba(101,217,177,.15); color:var(--ok); border:1px solid rgba(101,217,177,.4); }
+  .pill.warn { background:rgba(229,185,94,.15); color:var(--warn); border:1px solid rgba(229,185,94,.4); }
+  .ok-c { color:var(--ok); } .warn-c { color:var(--warn); }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 18px; margin:12px 0; }
+  .state-demo { display:flex; gap:10px; flex-wrap:wrap; margin:8px 0; }
+  .state-demo span { font-size:12px; line-height:18px; display:inline-flex; align-items:center; gap:6px; border:1px dashed var(--line); border-radius:6px; padding:4px 10px; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex:none; }
+  .dot.g { background:#65D9B1; } .dot.a { background:#E5B95E; } .dot.f { background:#8996A8; }
+  .tf { color:#65D9B1; font-size:12px; line-height:18px; } .ta { color:#E5B95E; font-size:12px; line-height:18px; }
+  ul { padding-left:20px; } li { margin:4px 0; }
+  .q { color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>G06 验证报告 — 启动失败后无限连接且没有错误反馈</h1>
+<div class="meta">日期 2026-11-16 · 范围仅 G06（未动其他功能） · 验收脚本 <code>web/verify-g06.mjs</code>（Playwright + 系统 Chrome 打 8090，故障全部 page.route() 拦截注入，未改服务端）</div>
+<div class="meta">结果：<b>43/43 PASS</b> · 回归 G05 全过 · G01 无溢出/逃逸 · G02 拆分后复验 43/43</div>
+
+<h2>一、改了什么（3 个文件 + 1 个新脚本）</h2>
+
+<div class="card">
+<h3>1. web/shared.js — api()</h3>
+<ul>
+<li>新增第三参 <code>timeoutMs</code>（默认仍 12000）：首轮初始化由调用方传 <b>8000</b>。</li>
+<li><b>修掉伪造成功源头</b>：之前 2xx + 无效 JSON 会 <code>return null</code>，上层把 null 当成功灌进 lastState/hermesData。现在抛错并标 <code>err.isDataError = true</code>，与 <code>isHttpError</code> / 超时 / 网络错误四类可区分。</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>2. web/app.js — 四态 + 退避链</h3>
+<ul>
+<li>新增状态 <code>initPhase</code>（loading→connected / conn-fail / data-fail）、<code>phaseReason</code>、<code>firstRound</code>、<code>failStreak</code>、<code>polling</code>，及 <code>errShort()</code> 归类（TimeoutError→请求超时；TypeError→网络错误；isDataError/isHttpError→原文）。</li>
+<li><code>tick()</code>：首轮 6 个请求全部 8000ms 超时；allSettled 后判四态——health 被拒=<span class="ta">连接失败</span>；health 通但 state/flow 任一被拒=<span class="ta">数据获取失败</span>；都成功=<span class="tf">已连接</span>。失败轮 <code>console.error('[G06] …')</code> 含模块明细；恢复时 console.info 报「已重新连接，恢复真实数据」。</li>
+<li>轮询从固定 setInterval(3000) 改为自调度退避链：<b>2s→4s→8s→之后最多每 30s</b>；任一轮成功清零回 3s。<code>sp-poll-btn</code> 判断同步改 <code>polling</code>（保留用户手动暂停语义）。</li>
+<li>渲染层同口径四态：底栏 <code>#sb-conn</code>（wait/ok/off + tooltip 带重试策略）、设置弹层 <code>#sp-conn</code>、顶栏 <code>#tb-task</code>、中央空态文案带原因。</li>
+<li>启动看门狗：首轮已有失败结论则不重复挂 bootFail，只兜「悬死无结论」。</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>3. web/app.css — 底栏规格色</h3>
+<ul>
+<li><code>#statusbar</code> 补 <code>line-height: 18px</code>。</li>
+<li><code>#sb-conn</code> 四态（规格色写死，不走主题变量——<code>--green #62C6A0</code>/<code>--red #EA7B76</code> 是另一套语义色）：</li>
+</ul>
+<div class="state-demo">
+  <span><i class="dot f"></i><span class="q">连接中…（加载中）</span></span>
+  <span><i class="dot g"></i><span class="tf">已连接 #65D9B1</span></span>
+  <span><i class="dot a"></i><span class="ta">连接失败 · 原因 #E5B95E</span></span>
+  <span><i class="dot a"></i><span class="ta">数据获取失败 · 原因 #E5B95E</span></span>
+</div>
+</div>
+
+<h2>二、验证了什么（全部真实输出，getComputedStyle 实测）</h2>
+
+<div class="card">
+<h3>T0 正常基线（真实 8090，无拦截）</h3>
+<table>
+<tr><th>项</th><th>实测</th></tr>
+<tr><td>底栏</td><td><span class="ok-c">已连接</span>，类 ok</td></tr>
+<tr><td>文字色 / 点色</td><td><code>rgb(101, 217, 177)</code> = #65D9B1 <span class="pill ok">✅</span></td></tr>
+<tr><td>字号 / 行高</td><td><code>12px</code> / <code>18px</code> <span class="pill ok">✅</span></td></tr>
+<tr><td>数据 / 横幅 / console</td><td>8 条数据行 · 横幅隐藏 · console.error = 0</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h3>T1 /api/health → 500 <span class="pill warn">注入</span></h3>
+<ul>
+<li>底栏 <span class="ta">连接失败 · internal error</span>，文字色 <code>rgb(229, 185, 94)</code> = #E5B95E，12px/18px。</li>
+<li>数据仍渲染（reqRows=8，state/flow 未拦截）、导航 5 项保留、设置弹层=连接失败。</li>
+<li>console：<code>[G06] 连接失败（连续第 1 轮）：/api/health internal error</code> ✅</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>T2 /api/state 挂起 10s（首轮 8s 超时生效）</h3>
+<ul>
+<li>底栏 <span class="ta">数据获取失败 · 请求超时</span>（与连接失败明确区分）✅</li>
+<li>横幅可见且含「中台状态 signal timed out」失败行。</li>
+<li>console：<code>[G06] 数据获取失败（连续第 1 轮）：state: signal timed out</code> ✅</li>
+<li>解除后恢复：已连接 + 8 条真实数据 + 横幅隐藏（过期错误态清除）。</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>T3 200 + 无效 JSON（state 与文件接口 file-check 各注一次）</h3>
+<ul>
+<li>底栏 <span class="ta">数据获取失败 · 响应不是有效 JSON</span>——<b>之前这里是伪造成功（null 灌进 lastState），现在如实失败</b> ✅</li>
+<li>页内直调 <code>api('/api/office/file-check', POST)</code>：抛 <code>{msg:'响应不是有效 JSON', isDataError:true, isHttpError:false}</code>——文件接口无效 JSON 与 HTTP 错误/超时可区分 ✅</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>T4 全部 /api/ 中断 60s → 恢复</h3>
+<ul>
+<li>0/10/20/30/40/50/60s 七次采样全部 <span class="ta">连接失败 · 网络错误</span>：无「已连接」误报、无「连接中…」悬死、中央区有明确失败文案（非空白）、导航保留。</li>
+<li>期间 console 持续新增 5 条 <code>[G06] 连接失败</code>（退避节奏 2s/4s/8s/30s，不刷屏）。</li>
+<li>解除后 <b class="ok-c">15s</b> 恢复：已连接 + 8 条真实数据行 + 横幅隐藏；console 出现「[G06] 已重新连接，恢复真实数据」（≤30s 退避上限内 ✅）。</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>回归</h3>
+<ul>
+<li><code>verify-g05.mjs</code> 全过：四页导航/路由/选中态/数据行，pageerror=0，console.error=0。</li>
+<li><code>verify-g01.mjs</code>（PHASE=after）：无内容逃逸/溢出，pageOverflowX=false（reqItems 7→8 条为中台实时任务数变化，非布局回归）。</li>
+<li><code>node --check</code> shared.js / app.js 通过。</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>复验（2026-11-16 深夜，G02 第4轮拆分后的代码上）</h3>
+<p>G06 初验 43/43 之后，22:31-22:33 并行会话执行 G02 第4轮拆分，把 app.js 再拆出 decision-ops.js / preview.js / agents.js（app.js 大幅重排）。本轮<b>零代码改动</b>，在拆分后的最新工作区上原样重跑 <code>web/verify-g06.mjs</code>：</p>
+<ul>
+<li><b>43/43 全 PASS</b>，与初验一致，G06 逻辑在拆分中无损存活。</li>
+<li>关键实测值复核：正常色 <code>rgb(101, 217, 177)</code>、异常色 <code>rgb(229, 185, 94)</code>、字号 <code>12px</code>、行高 <code>18px</code>；T1 health 500 → <code>连接失败 · internal error</code>（数据行 8 条仍渲染）；T2 state 超时 → <code>数据获取失败 · 请求超时</code>；T3 无效 JSON → <code>isDataError:true, isHttpError:false</code>；T4 断网 60s 七采样全 <code>连接失败 · 网络错误</code>、解除后 <b>15s</b> 恢复真实数据、console 出现「已重新连接，恢复真实数据」；全程 pageerror=0。</li>
+</ul>
+</div>
+
+<h2>三、还差什么</h2>
+<ul>
+<li>代码未提交（工作区还有此前几轮任务的未提交改动，由 Leo 统一拍板提交时机）。</li>
+<li>8090 服务进程是旧 build r11d 启动的实例（静态文件磁盘即时读取，前端改动已生效；服务端本轮零改动，无需重启）。</li>
+</ul>
+
+</div>
+</body>
+</html>

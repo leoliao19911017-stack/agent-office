@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>W01 第 16 轮验证报告 — 审批校验验收（G02 拆分后复审）</title>
+<style>
+  :root { color-scheme: light; }
+  body { font: 14px/1.7 "Segoe UI", "Microsoft YaHei", sans-serif; max-width: 980px; margin: 24px auto; padding: 0 20px; color: #1c2733; }
+  h1 { font-size: 22px; border-bottom: 2px solid #6C9EF1; padding-bottom: 8px; }
+  h2 { font-size: 17px; margin-top: 32px; border-left: 4px solid #6C9EF1; padding-left: 10px; }
+  code { background: #eef2f8; padding: 1px 5px; border-radius: 3px; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 13.5px; }
+  th, td { border: 1px solid #c7d2e0; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0f4fa; }
+  .ok { color: #0f7a4d; font-weight: 600; }
+  .spec-ok { background: #e8f6ee; }
+  .verdict { background: #fff7e0; border: 1px solid #e5b95e; border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+  .verdict b { color: #8a6414; }
+  ul { margin: 6px 0; }
+  .muted { color: #5b6b7d; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<h1>W01 第 16 轮验证报告<br><span style="font-size:15px;font-weight:400">恢复页面后重新完成审批校验验收（G02 拆分后复审）</span></h1>
+
+<ul>
+  <li><b>日期</b>：2026-11-16 23:28–23:32</li>
+  <li><b>任务书</b>：W01（与第 15 轮任务书原文相同，自称前 14 轮未过；本轮动机 = 第 15 轮验收（21:58）之后，G02 第 4 轮拆分又在 22:31–23:03 重写了 app.js 并拆出 decision-ops.js / preview.js / agents.js 三个新模块，审批链路需在拆分后的工作区上重新完成验收）</li>
+  <li><b>验证对象</b>：8090 线上进程（PID 42136，<code>node server.js</code>，23:07:35 启动，build r11d，与磁盘代码一致）+ 当前工作区（app.js 79598B / decision-ops.js / approval.js / server.js / server-core.mjs）</li>
+</ul>
+
+<div class="verdict">判定：<b>零代码改动，全套复验 35/35 PASS</b>。任务书症状「右侧审批内容完全没有渲染」经探针实测证伪。</div>
+
+<h2>一、症状证伪（右侧审批区域渲染正常）</h2>
+<p>探针 <code>w01r15-probe.mjs</code>（headless Chrome 1440×900 直连 8090）：</p>
+<table>
+  <tr><th>检查项</th><th>实测</th></tr>
+  <tr><td>五模块全局函数</td><td>esc / api / scheduleVersionGate / decideHtml / renderFiles 全 <code>function</code></td></tr>
+  <tr><td>G04 启动护栏</td><td>bootFailed=false（无 404 中止）</td></tr>
+  <tr><td>JS 异常</td><td><code>__uiErrors</code>=0，CDP 捕获异常 0</td></tr>
+  <tr><td>需求列表</td><td>8 条渲染</td></tr>
+  <tr><td>TEST-R11/plan 右侧面板</td><td>#insp-body innerHTML <b>3345 字符</b>，「通过计划 / 打回」按钮在且可用，.material-mismatch 在位（实测 123.8 KB ≠ 登记 78.5 KB 照报）</td></tr>
+  <tr><td>TEST-F01R10/doc</td><td>done 态无审批入口（#insp-foot hidden，正确）</td></tr>
+</table>
+<p>G02 第 4 轮拆分<b>没有</b>破坏审批渲染；index.html 九个 <code>&lt;script&gt;</code> 全部 200 可伺服。</p>
+
+<h2>二、任务书五场景验收（verify-w01r15.mjs 复跑，35/35）</h2>
+<p class="muted">一次性夹具 TEST-W01R15F1/F2（正式无策略）+ TEST-W01R15T（声明 test-any-file），测后删净、TEST-R11 按基线恢复。</p>
+
+<h3>S1 正常审批（正式·未修改）</h3>
+<p>POST /api/office/decision → <b>200</b> <code>verified:true to:done</code>；档案 plan=done；事件恰 +1 条 <code>written</code>（from:awaiting）。</p>
+
+<h3>S2 文件内容变更（正式·物理文件变了）</h3>
+<ul>
+  <li>变字节（81→104B）→ <b>409 ARTIFACT_VERSION_DRIFT</b>，gate <code>why:"bytes"</code>（regBytes:81 / actBytes:104）</li>
+  <li>等字节改内容 → <b>409</b>，gate <code>why:"sha"</code>（内容指纹不漏检）</li>
+  <li>两连失败后档案仍 <code>awaiting</code>；事件零新增（52→52）</li>
+</ul>
+
+<h3>S3 登记版本变更（登记更新为物理现值）</h3>
+<p>登记 bytes/sha 改为物理现值 → gate <code>valid:true</code> 漂移清零 → <b>200 done</b>。</p>
+
+<h3>S4 重复点击 / 重复提交</h3>
+<ul>
+  <li>/decision 对已 done 步骤重复 POST → <b>409 NOT_ACTIONABLE</b>（不二次写入）</li>
+  <li>legacy /decide 同 opId 重放 → 200 <code>replay:true</code>（命中幂等缓存），TT 档案 sha 前后一致（09a26bd14a6f）</li>
+  <li>测试需求漂移照报 + <code>versionExempt:true</code>（例外只按声明生效）</li>
+</ul>
+
+<h3>S5 API 写入失败</h3>
+<p>非法 action / 非法 step / 不存在需求 / 缺理由 → <b>[400, 400, 404, 400]</b>；事件零新增（53→53）。任何失败路径无虚假成功记录。</p>
+
+<h3>S6 页面层（headless CDP，真实点击 + 真实 HTTP）</h3>
+<ul>
+  <li>页面加载：模块齐全、0 UI 错误、需求列表 11 条（含夹具）</li>
+  <li><b>漂移后点通过</b>：页面就绪（按钮可用=门禁已拉取）再落盘等字节漂移 → 点击 → 真实 HTTP <code>/api/office/decision</code> <b>409</b>（前端缓存陈旧、服务端兜底）→ .fb.err 失败反馈出现 → 主操作按钮收敛禁用 → .material-mismatch 在位 → 档案停 awaiting + 事件零新增 → 硬刷新后无成功 done-line、仍「待拍板」（与服务端一致）</li>
+  <li><b>R11 测试例外</b>：按钮可用 → 点击 → 200 → 「✓ 已通过 · 23:31」→ 档案 done → 成功后审批按钮消失（无重复提交入口）</li>
+  <li><b>F1 已 done</b>：#insp-foot hidden、无 approve 按钮（重复点击无入口）</li>
+  <li>全程 0 JS 异常</li>
+</ul>
+
+<h2>三、失败反馈样式实测（getComputedStyle + getBoundingClientRect）</h2>
+<p><code>.fb.err</code>（规则出处 <code>web/app.css:748</code> <code>.ip-decide .fb.err</code>，第 15 轮已把 padding 修到 12px，本轮实测确认仍达标）：</p>
+<table>
+  <tr><th>属性</th><th>规格</th><th>实测</th></tr>
+  <tr class="spec-ok"><td>字号</td><td>12px</td><td class="ok">12px</td></tr>
+  <tr class="spec-ok"><td>行高</td><td>18px</td><td class="ok">18px</td></tr>
+  <tr class="spec-ok"><td>背景</td><td>#3B3021</td><td class="ok">rgb(59, 48, 33)</td></tr>
+  <tr class="spec-ok"><td>文字色</td><td>#E5B95E</td><td class="ok">rgb(229, 185, 94)</td></tr>
+  <tr class="spec-ok"><td>内边距</td><td>12px</td><td class="ok">12px（四边）</td></tr>
+  <tr><td>盒尺寸</td><td>—</td><td>rect 244×168</td></tr>
+</table>
+
+<h2>四、为什么零改动</h2>
+<ol>
+  <li>第 15 轮（21:58）已完成同一任务书验收（35/35），唯一需要的修复（padding 10px→12px）已落盘。</li>
+  <li>其后 G02 第 4 轮拆分动了 app.js / index.html / server.js——本轮探针 + 35 项复验证明审批链路（submitDecision 现位于 <code>web/decision-ops.js:225</code>，由 <code>app.js:51</code> 启动护栏白名单盯守；服务端核验在 server.js /decide /decision 双路径 + server-core.mjs versionGate）在拆分后<b>无损存活</b>。</li>
+  <li>服务侧排查附带发现：404 文案（server.js:1110「本服务只开放…」）是<b>硬编码陈旧清单</b>（含早已下线的 /api/cards，缺列 /api/office/flow 等 7 条现存路由）——仅文案误导、路由行为正确，不属于本任务范围，未动（另开任务处理）。</li>
+</ol>
+
+<h2>五、证据</h2>
+<ul>
+  <li><code>verify-assets/w01r15-out.json</code> — 35 项结果 + API/页面明细（本轮复跑覆盖写）</li>
+  <li><code>verify-w01r15.mjs</code> / <code>w01r15-probe.mjs</code> — 可复跑脚本</li>
+  <li>R11 终态 sha256 前 16 位 <code>0dd1e387c7908d92</code> = 基线；夹具（TEST-W01R15F1/F2/T + tmp-w01r15/）已删净</li>
+</ul>
+
+</body>
+</html>

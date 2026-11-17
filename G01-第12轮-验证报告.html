@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>G01 第12轮验证报告 — 四页辅助信息文字可读性</title>
+<style>
+  :root { --bg:#0F141C; --card:#182230; --border:#334257; --text:#F1ECE2; --body-text:#D6E0ED; --meta:#B3C0D2; --accent:#62C6A0; --warn:#E5B95E; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--body-text); font:14px/22px "Segoe UI","Microsoft YaHei",sans-serif; padding:32px 16px 64px; }
+  .wrap { max-width:980px; margin:0 auto; }
+  h1 { color:var(--text); font-size:22px; line-height:32px; margin-bottom:6px; }
+  h2 { color:var(--text); font-size:17px; margin:36px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  h3 { color:var(--text); font-size:15px; margin:20px 0 8px; }
+  .meta-line { color:var(--meta); font-size:12px; line-height:18px; margin:4px 0; }
+  code { font-family:Cascadia Mono,Consolas,monospace; font-size:12px; color:#8FD9BC; background:#121925; padding:1px 5px; border-radius:3px; }
+  pre { background:#121925; border:1px solid var(--border); border-radius:8px; padding:14px; overflow-x:auto; margin:10px 0; }
+  pre code { background:none; padding:0; color:#C9D8EA; font-size:12px; line-height:19px; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px 20px; margin:14px 0; }
+  table { width:100%; border-collapse:collapse; margin:10px 0; font-size:13px; }
+  th { color:var(--text); text-align:left; font-weight:600; }
+  th,td { padding:7px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  .ok { color:var(--accent); font-weight:600; }
+  .warn { color:var(--warn); }
+  .pill { display:inline-block; font-size:11px; line-height:16px; padding:1px 8px; border-radius:9px; border:1px solid var(--border); color:var(--meta); margin-left:6px; }
+  ul { margin:6px 0 6px 20px; }
+  li { margin:4px 0; }
+  .kv { font-size:12px; color:var(--meta); line-height:18px; }
+  .num { font-family:Cascadia Mono,Consolas,monospace; font-size:12px; }
+  footer { margin-top:40px; padding-top:12px; border-top:1px solid var(--border); color:var(--meta); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>G01｜统一四个页面辅助信息的文字可读性 <span class="pill">第 12 轮验证报告</span><span class="pill" style="color:#62C6A0;border-color:#2A5A48">通过</span></h1>
+<div class="meta-line">范围：图1 审批说明 · 图2 Agent 标识 · 图3 技能摘要 · 图4 文件路径及版本摘要</div>
+<div class="meta-line">环境：<code>http://127.0.0.1:8090</code>（server 每请求重读 app.css）· 审计 node v22.23.2 · 回滚点 <code>app.css.bak-g01r12</code></div>
+
+<h2>目标档位</h2>
+<div class="card">
+  普通正文 <b class="num">13px/20px/#D6E0ED</b> · 辅助元数据 <b class="num">12px/18px/#B3C0D2</b> · 短标签 <b class="num">11px/16px</b>（仅短标签）· 文件路径 <b class="num">12px 等宽</b> · 正文对比度 <b class="num">≥4.5:1</b> · 卡片底 <span class="num">#182230</span> / 边框 <span class="num">#334257</span> 保留 · 超出优先换行或增高容器，<span class="warn">禁止缩小字号</span>
+</div>
+
+<h2>一、改了什么</h2>
+<div class="card">
+<p>只改 <code>web/app.css</code> 一个文件：文件末尾追加 G01 r12 层（两类改动），无其他功能改动。</p>
+<h3>1. 令牌翻转（一处变量，13 处消费全部生效）</h3>
+<pre><code>:root { --meta-strong: #D6E0ED; }   /* 原 #E2EAF4（:1509）：13 处消费全是 13/20 档文字色 */</code></pre>
+<p>事先核查 13 个 <code>var(--meta-strong)</code> 消费者（.ch-sub / .ag-ids / .ag-task / .work-unknown / .fvd-row b / ev-v / .ls / topbar task 等）全部为纯文字色，无 border/背景用法，翻转安全。</p>
+<h3>2. 逐选择器归档（完整追加层）</h3>
+<pre><code>/* ========== G01（第 12 轮·2026-11-16）：四页辅助信息可读性统一 ========== */
+:root { --meta-strong: #D6E0ED; }
+#insp-body .ip-note,
+#insp-body .rej-why,
+#insp-body .ev-demand,
+#insp-body .ev-src { font-size: 13px; line-height: 20px; color: #D6E0ED; }
+#insp-body .ip-sec .ip-v { font-size: 12px; line-height: 18px; color: #B3C0D2; }
+#agent-scope,
+.page-scope { color: #B3C0D2; }
+.skilldetail p { font-size: 13px; line-height: 20px; color: #D6E0ED; }
+.library-file .lf-src { color: #B3C0D2; }
+.skill-path { font-size: 12px; line-height: 18px; color: #B3C0D2; }
+.skilldetail .skill-path { font-size: 12px; line-height: 18px; color: #B3C0D2; } /* (0,2,0) 压过 .skilldetail p (0,1,1) */
+.fv-path { font-size: 12px; line-height: 18px; color: #B3C0D2; }
+.handoff-file .hf-val,
+.library-file .lf-lines .lf-size,
+.library-file .lf-size.lf-reg { color: #B3C0D2; }
+#fv-body .fv-hist-meta .fh-kv span,
+#fv-body .fv-hist-meta .fh-kv b { font-size: 12px; line-height: 18px; color: #B3C0D2; }
+.library-file .lf-lines { gap: 6px; }
+.library-file .lf-vers { gap: 6px; }
+.library-file { max-height: 128px; }
+.sb-chip { color: #B3C0D2; }</code></pre>
+<ul>
+  <li><b>归档而非缩字号</b>：超出场景用「换行 + 容器增高」承接（.library-file max-height 96→128px），无任何一处缩小字号。</li>
+  <li><b>选择器权重</b>：.skill-path 在 .skilldetail 内被 .skilldetail p (0,1,1) 压过，首轮 after 发现后补 .skilldetail .skill-path (0,2,0)，复测归零。</li>
+  <li><b>豁免未动</b>（r4 以来口径）：控件/链接、标题（≥14px 或 ≥600 字重）、品牌语义色、<code>—</code> 诚实占位、#fv-body 文件内容预览。</li>
+</ul>
+</div>
+
+<h2>二、验证了什么（全部真实实测）</h2>
+<div class="meta-line">探针 g01-round12-probe.mjs：headless Chrome CDP 遍历全部可见文本节点，逐个取 getComputedStyle + 祖先实底混合色 + WCAG 对比度 + clipX/escX/几何；基线在还原旧 CSS 后采集，修复后同参复测。</div>
+
+<h3>1. 违规数：基线 91 处 → 修复后 0 处</h3>
+<table>
+<tr><th>页面态（每格 1440x900 / 1280x800）</th><th>基线 bad</th><th>修复后 bad</th></tr>
+<tr><td>图1 workbench（审批说明）</td><td class="num">14 / 14</td><td class="ok num">0 / 0</td></tr>
+<tr><td>图2 agentsList</td><td class="num">12 / 12</td><td class="ok num">0 / 0</td></tr>
+<tr><td>图2 agentsDetail（标识）</td><td class="num">12 / 12</td><td class="ok num">0 / 0</td></tr>
+<tr><td>图3 skills（技能摘要）</td><td class="num">2 / 2</td><td class="ok num">0 / 0</td></tr>
+<tr><td>图4 filesList（路径/指纹/时间）</td><td class="num">20 / 20</td><td class="ok num">0 / 0</td></tr>
+<tr><td>图4 filesPreview</td><td class="num">31 / 31</td><td class="ok num">0 / 0</td></tr>
+</table>
+<p>全部为档位违规（TIER），<b>对比度违规 0 起</b>：最低辅助色 #B3C0D2 在 #182230 上 = <b class="num">8.69:1</b>，正文 #D6E0ED = <b class="num">13.21:1</b>。</p>
+
+<h3>2. 每页 ≥5 个抽查元素（getComputedStyle 实测值，1440x900）</h3>
+
+<div class="card"><b>图1 审批说明（workbench inspector）</b>
+<table>
+<tr><th>元素</th><th>字号/行高</th><th>颜色</th><th>对比度</th><th>文本样例</th></tr>
+<tr><td><code>p.ip-note</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">13.21:1</td><td>登记 A（同版本晚刻）+ B</td></tr>
+<tr><td><code>p.ev-src</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">11.90:1</td><td>核对口径…</td></tr>
+<tr><td><code>div.ip-v</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2</td><td class="num">9.56:1</td><td>selftest</td></tr>
+<tr><td><code>div.ch-sub</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">14.16:1</td><td>03/07 开发计划…</td></tr>
+<tr><td><code>span.hf-val</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2</td><td class="num">8.69:1</td><td>实测 133 B</td></tr>
+<tr><td><code>span.ev-v</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">11.90:1</td><td>plan</td></tr>
+</table></div>
+
+<div class="card"><b>图2 Agent 标识（agents）</b>
+<table>
+<tr><th>元素</th><th>字号/行高</th><th>颜色</th><th>对比度</th><th>文本样例</th></tr>
+<tr><td><code>i.ag-ids</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED（等宽）</td><td class="num">14.16:1</td><td>lemate·lemate</td></tr>
+<tr><td><code>span.ag-task.hist</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">13.21:1</td><td>上次上报已过期…</td></tr>
+<tr><td><code>p.page-scope</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2</td><td class="num">10.24:1</td><td>本页展示…</td></tr>
+<tr><td><code>span.ag-work.work-unknown</code></td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">13.21:1</td><td>未知</td></tr>
+<tr><td><code>span.ag-hb.stale</code></td><td class="num">12px/18px</td><td class="num">#E5B95E</td><td class="num">9.60:1</td><td>过期（品牌警示色豁免）</td></tr>
+</table></div>
+
+<div class="card"><b>图3 技能摘要（skills）</b>
+<table>
+<tr><th>元素</th><th>字号/行高</th><th>颜色</th><th>对比度</th><th>文本样例</th></tr>
+<tr><td><code>aside.skilldetail</code> 正文 ×2</td><td class="num">13px/20px</td><td class="num">#D6E0ED</td><td class="num">13.21:1</td><td>技能说明两段</td></tr>
+<tr><td><code>p.skill-path</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2（等宽）</td><td class="num">9.56:1</td><td>C:/Users/Admin…</td></tr>
+<tr><td><code>button.skill-row.selected</code> 标题</td><td class="num">14px/22px</td><td class="num">#F1ECE2（等宽）</td><td class="num">13.61:1</td><td>技能名（控件+标题豁免）</td></tr>
+<tr><td><code>button.skill-row</code> 摘要</td><td class="num">12px/18px</td><td class="num">#B3C0D2</td><td class="num">8.69:1</td><td>摘要行</td></tr>
+</table></div>
+
+<div class="card"><b>图4 文件路径及版本摘要（files）</b>
+<table>
+<tr><th>元素</th><th>字号/行高</th><th>颜色</th><th>对比度</th><th>文本样例</th></tr>
+<tr><td><code>small.lf-src</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2（等宽）</td><td class="num">8.69:1</td><td>C:/Users/Admin…</td></tr>
+<tr><td><code>span.lf-size.lf-reg.lf-cur</code></td><td class="num">12px/18px</td><td class="num">#65D9B1</td><td class="num">9.24:1</td><td>当前登记（品牌色豁免）</td></tr>
+<tr><td><code>div.fvd-row</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2</td><td class="num">10.24:1</td><td>登记版本行</td></tr>
+<tr><td><code>div.fv-path</code></td><td class="num">12px/18px</td><td class="num">#B3C0D2（等宽）</td><td class="num">9.56:1</td><td>预览路径</td></tr>
+<tr><td><code>span.hf-val</code>（登记值）</td><td class="num">12px/18px</td><td class="num">#B3C0D2</td><td class="num">8.69:1</td><td>实测值</td></tr>
+</table></div>
+
+<h3>3. 布局回归（无新增重叠/裁切，1440 与 1280 双档）</h3>
+<div class="card">
+<ul>
+  <li><b>clip/escape 集合 diff</b>：1440x900 基线 38 → 修复后 38，<b class="ok">新增 0 / 消失 0</b>；1280x800 同样新增 0 / 消失 0。基线 38 处全为存量单行省略设计（skill-row 摘要 13、lf-locate/lf-preview 按钮 28、chip 10、lf-src 4、fvd-row 4、fv-name/fv-path 各 1、按钮 2——均保留完整查看方式）。</li>
+  <li><b>图1 inspector 滚动</b>（正文 12→13px 后变高）：scrollHeight <span class="num">1209→1238</span>（+29px），最后一项完全可见 = true，底部操作条不遮正文 = false（两视口一致）。</li>
+  <li><b>图4 行高</b>：fileRows 1440 <span class="num">[80,80,100,68,68,68,68,68,78,68,68,68]</span> vs 基线 <span class="num">[80,80,96,68,68,68,68,68,76,68,68,68]</span>——仅长路径行按预期增高（96→100、76→78，128px 上限内）。</li>
+  <li><b>重叠/横向溢出</b>：rosterOverlap / skillOverlap / fileOverlap / pageOverflowX 基线=修复后=0。</li>
+  <li><b>VLM 视觉复核</b>（GLM-4.5V 对 1440-files、1280-workbench 截图）5 点疑虑逐一经数据排除：按钮换行 rect 基线与修复后逐像素相同（「重新校验」x1243/y9/w55/h30）→ 非本轮回归且属控件豁免；fvd-row/fv-name 截断基线同样存在；lf-src「几乎不可读」与实测 8.69:1 不符；左列「被遮挡」是预览抽屉覆盖设计。</li>
+</ul>
+<p class="kv">截图回归（8 张，修复后态）：g01-round12-after-{1440x900,1280x800}-p{1-workbench,2-agents,3-skills,4-files}.png</p>
+</div>
+
+<h2>三、还差什么</h2>
+<div class="card">
+<ol style="margin-left:20px">
+  <li><b>预览抽屉顶部按钮换行</b>（打开属性/重新校验/定位到步骤 两行）——基线即存在、非本轮引入、属控件排版而非 G01 范畴，按「只改这一处」未动。建议另开任务。</li>
+  <li><b>fvd-row 单行省略</b>——F02 存量设计，保留复制/完整查看方式；若要求全量展示需与 F02 负责人对齐。</li>
+  <li><code>app.css.bak-g01r12</code> 回滚点保留在仓库根，验证通过、拍板后可删。</li>
+</ol>
+</div>
+
+<footer>证据文件：g01-round12-baseline.json / g01-round12-after.json / g01-round12-probe.mjs / 8 张截图（仓库根）· 2026-11-16</footer>
+</div>
+</body>
+</html>

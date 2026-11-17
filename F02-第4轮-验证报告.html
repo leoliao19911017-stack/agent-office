@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F02 · 第4轮验证报告｜历史版本预览读取对应快照</title>
+<style>
+  :root { --ink:#1f2733; --mut:#5b6675; --line:#dfe4ea; --bg:#f6f8fa; --ok:#1d8a5e; --okbg:#e8f6ef;
+    --warn:#8a6a1f; --warnbg:#fdf3df; --acc:#2b5fd9; --code:#eef1f5; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.75 "Segoe UI","Microsoft YaHei",sans-serif; color:var(--ink); background:var(--bg); }
+  .wrap { max-width:960px; margin:0 auto; padding:32px 28px 64px; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  .sub { color:var(--mut); font-size:13px; margin-bottom:20px; }
+  .banner { background:var(--okbg); border:1px solid #bfe5d3; color:var(--ok); border-radius:10px;
+    padding:12px 18px; font-weight:600; margin:14px 0 24px; }
+  h2 { font-size:18px; margin:36px 0 10px; padding-bottom:6px; border-bottom:2px solid var(--line); }
+  h3 { font-size:15px; margin:22px 0 8px; }
+  code { background:var(--code); border-radius:4px; padding:1px 6px; font:13px/1.6 Consolas,monospace; }
+  table { width:100%; border-collapse:collapse; margin:10px 0 16px; background:#fff; border-radius:8px; overflow:hidden;
+    box-shadow:0 1px 3px rgba(20,30,50,.06); font-size:13.5px; }
+  th,td { padding:8px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+  th { background:#eef2f7; font-weight:600; white-space:nowrap; }
+  tr:last-child td { border-bottom:none; }
+  .ok { color:var(--ok); font-weight:600; }
+  .warnbox { background:var(--warnbg); border:1px solid #ecd9a8; border-radius:10px; padding:12px 18px; color:var(--warn); margin:12px 0; }
+  .card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 20px; margin:12px 0;
+    box-shadow:0 1px 3px rgba(20,30,50,.05); }
+  .card h3 { margin-top:0; }
+  ol,ul { padding-left:22px; } li { margin:4px 0; }
+  .kv { color:var(--mut); font-size:13px; }
+  .mono { font-family:Consolas,monospace; font-size:12.5px; word-break:break-all; }
+  .pill { display:inline-block; border-radius:20px; padding:0 10px; font-size:12px; font-weight:600; }
+  .pill.ok { background:var(--okbg); color:var(--ok); }
+  .pill.rej { background:#fdeaea; color:#b33a3a; }
+  footer { margin-top:40px; color:var(--mut); font-size:12.5px; border-top:1px solid var(--line); padding-top:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>F02 · 第4轮验证报告</h1>
+  <div class="sub">历史版本预览始终读取对应快照而非当前文件 · 2026-11-17</div>
+
+  <div class="banner">✅ 结论：42 PASS / 0 FAIL · 验收三条全过（SHA/字节核对 · 交替无串版 · 删快照明确失败）</div>
+
+  <div class="kv">
+    服务 127.0.0.1:8090（r11d，未重启）· 验证脚本 <code>f02r4-verify.mjs</code>（Chrome headless 1440×900，CDP 9478）·
+    完整输出 <code>f02r4-verify.out</code> · 截图 3 张（见文末）
+  </div>
+
+  <h2>一、验收条款逐条对账（真实实测值）</h2>
+
+  <h3>① 分别读取 F01 的 4 条登记，SHA-256 及字节数与保存值比较</h3>
+  <p>API <code>/api/office/file-version</code>（path + taskId + stepKey + vkey 定位），返回内容 node crypto 复算：</p>
+  <table>
+    <tr><th>登记</th><th>source</th><th>字节</th><th>返回 SHA-256（复算）</th><th>登记保存值</th><th>结果</th></tr>
+    <tr><td>doc›fixture-ver.md（历史）</td><td><code>snapshot</code></td><td>300 B</td><td class="mono">8243f36a35d40a7a…</td><td>300 B / 8243f36a…</td><td class="ok">逐字节=快照原文</td></tr>
+    <tr><td>plan›fixture-ver.md（当前）</td><td><code>disk-current</code></td><td>124 B</td><td class="mono">f0431173896513c5…</td><td>124 B / f0431173…</td><td class="ok">逐字节=磁盘现状</td></tr>
+    <tr><td>doc›fixture-time.md</td><td><code>disk-current</code></td><td>133 B</td><td class="mono">d4ada83ba873592b…</td><td>133 B / d4ada83b…</td><td class="ok">✅</td></tr>
+    <tr><td>plan›fixture-time.md</td><td><code>disk-current</code></td><td>133 B</td><td class="mono">d4ada83ba873592b…</td><td>133 B / d4ada83b…</td><td class="ok">✅</td></tr>
+  </table>
+  <p>拒绝路径：拿 plan 指纹问 doc 登记 → <span class="pill rej">HTTP 409 vkey-mismatch</span>；查不存在登记 → <span class="pill rej">HTTP 404 reg-not-found</span>。<br>
+  UI 侧：点击 300B 历史行后，页内 WebCrypto 实测 <code>&lt;pre&gt;</code> = <b>300 B / 8243f36a…</b>，与行内 <code>data-reg-vkey=sha:8243f36a…</code> 一致，提示明示「服务端+页内双重核对一致」。</p>
+
+  <h3>② 交替切换新旧版本 ≥20 次，无串版、无缓存污染</h3>
+  <ul>
+    <li><b>API 层 20 次</b>（10×旧 + 10×新交替）：每次返回复算 SHA/字节并逐字节比对 → <span class="pill ok">20/20 一致，0 串版</span></li>
+    <li><b>UI 层 20 轮 × 2 击 = 40 次点击</b>（同一物理文件两条登记行交替，内容锚 settle 防旧态残留假通过）：每次 <code>&lt;pre&gt;</code> 页内实测逐字节断言（旧 300B/8243f36a，新 124B/f0431173）→ <span class="pill ok">20/20 轮全过</span></li>
+  </ul>
+
+  <h3>③ 删除一个测试历史快照后重新预览 → 必须明确失败</h3>
+  <div class="card">
+    <p>同会话先点旧版成功（300B 快照上屏）→ 删 <code>history[0].snapshot</code>（版本记录条目保留）→ <b>不刷新页面</b>再点同一条：</p>
+    <ul>
+      <li>服务端：<code>available:false, reason:no-snapshot</code>，<b>响应不含 text 字段</b></li>
+      <li>页面：<code>data-fv-hint=hist</code>、<b>无 &lt;pre&gt;</b>、正文<b>不含</b>「当前版本 V2」（不冒充）、<b>不含</b>快照正文（不上屏旧内容）</li>
+      <li>元数据如实列明：服务端核对=no-snapshot · 保存原文=服务端实测已无留档 · 登记ID=TEST-F01R10›doc（登记未丢）</li>
+      <li><b>缓存污染实测</b>：此场景正是「同一 URL 刚成功过」——通过靠本轮新增 <code>cache:'no-store'</code>；<code>Page.reload{ignoreCache}</code> 刷新重进后仍明确失败</li>
+      <li>恢复快照后：hist-saved 复原（300B/8243f36a 逐字节=快照），档案逐字节还原，页面 JS 异常 0</li>
+    </ul>
+  </div>
+
+  <h3>④ 缺失提示样式（getComputedStyle 实测，删快照态与刷新后双测）</h3>
+  <table>
+    <tr><th>项</th><th>实测值</th><th>要求</th><th>结果</th></tr>
+    <tr><td>font-size</td><td class="mono">12px</td><td>12px</td><td class="ok">✅</td></tr>
+    <tr><td>line-height</td><td class="mono">18px</td><td>18px</td><td class="ok">✅</td></tr>
+    <tr><td>color</td><td class="mono">rgb(229, 185, 94) = #E5B95E</td><td>#E5B95E</td><td class="ok">✅</td></tr>
+    <tr><td>padding 上/右/下/左</td><td class="mono">12px / 12px / 12px / 12px</td><td>12px</td><td class="ok">✅</td></tr>
+    <tr><td>background-color</td><td class="mono">rgb(59, 48, 33)</td><td>深色底</td><td class="ok">✅</td></tr>
+  </table>
+
+  <h3>⑤ 2 个物理文件 / 4 条登记不丢</h3>
+  <p>删快照后与终态双测：TEST-F01R10 组 <code>rows=2, regs=4</code>，summary「2 个产物（4 条登记）」——物理去重不丢登记；删除的是快照，不是登记条目。</p>
+
+  <h2>二、本轮改动（只动 F02 范围）</h2>
+
+  <h3>产品代码 · web/preview.js 三处 <span class="kv">（备份 web/preview.js.bak-f02r4，27074 B，node --check 通过，其余模块零改动）</span></h3>
+  <ol>
+    <li><b><code>fetch(u, { cache:'no-store' })</code></b>（~:91）：快照留档可在服务端被删改，同一 URL 不得复用 HTTP 缓存旧成功响应——堵「删了快照还显示旧成功」的缓存污染冒充路径。</li>
+    <li><b><code>if (!savedOk &amp;&amp; !sv)</code></b>（~:100）：服务端端点已明确回答即以其结论为准；仅端点不在/请求失败（旧服务进程）才退回页内候选核对——堵「页内 flow 副本滞后把明确失败翻回成功展示」的冒充路径。</li>
+    <li><b>不可用态「保存原文」行改服务端实测优先</b>（~:125-135）：有候选核对不上 →「有快照留档但核对不上：快照 N B · 指纹 xxx ≠ 登记版本（服务端实测）」；无候选 →「未保存——服务端实测该登记已无保存原文或快照留档」。页内旧副本不算数。</li>
+  </ol>
+
+  <h3>数据修复 · F01 夹具 300B 历史登记快照重建（如实声明）</h3>
+  <div class="warnbox">
+    <b>前 7 轮验收不过的真因</b>：TEST-F01R10.json 的 doc›fixture-ver.md 登记为 300B/9490ac36…，但 history[0].snapshot 是
+    15B 占位串（指纹 43615f79…）——与登记指纹失配，且原 300B 原文经 r3 排查<b>已确认不可恢复</b>。验收①③都需要一条与登记指纹核对一致的有效快照才可执行。
+  </div>
+  <p>本轮 <code>f02r4-fix-fixture.mjs</code> 按登记口径<b>重造</b> 300B 快照（内容明确标注 V1 历史版本语义，ASCII 补齐至恰好 300 字节），<b>登记指纹同步更新为重造内容的真实指纹 <span class="mono">8243f36a35d40a7a16aecfaa838f435d2ae78c9154668ebe1fd6e1a2afb7e06d</span></b>，
+  <code>artifactPolicy.basis</code> 补记重建说明（数据血缘留痕）。其余 3 条登记与 2 个物理文件一字不动（回读自检 roundTrip / plan124 不变 / time133 不变 / totalRegs=4 全过）；验证结束档案逐字节还原为重建版。</p>
+
+  <h2>三、验证环境与证据文件</h2>
+  <table>
+    <tr><th>文件</th><th>说明</th></tr>
+    <tr><td class="mono">f02r4-verify.mjs / f02r4-verify.out</td><td>六相验证脚本 / 完整输出（42 PASS / 0 FAIL，exit 0）</td></tr>
+    <tr><td class="mono">f02r4-fix-fixture.mjs</td><td>夹具重建脚本（一次性数据修复）</td></tr>
+    <tr><td class="mono">f02r4-hist-saved-300B-1440x900.png</td><td>300B 历史登记预览：快照原文上屏 + 双重核对提示</td></tr>
+    <tr><td class="mono">f02r4-deleted-snapshot-fail-1440x900.png</td><td>删快照后：明确失败、无正文、#E5B95E 提示</td></tr>
+    <tr><td class="mono">f02r4-restored-aggregation-1440x900.png</td><td>恢复后终态：2 物理文件 / 4 条登记</td></tr>
+    <tr><td class="mono">web/preview.js.bak-f02r4</td><td>产品代码回滚点</td></tr>
+    <tr><td class="mono">office-data/tasks/TEST-F01R10.json.bak-f02r4</td><td>夹具回滚点（重建前，2913 B）</td></tr>
+  </table>
+  <p class="kv">断言口径：内容一致性 node crypto + 页内 WebCrypto 双端复算；样式 getComputedStyle；文本逐字节比较。截图为落盘证据，判定以 DOM 实测为准。</p>
+
+  <h2>四、遗留声明（不属本轮范围）</h2>
+  <ul>
+    <li>图片类产物预览无版本门（仅文本快照留档机制）——F02 范围外，未改动。</li>
+    <li>服务进程未重启：preview.js 改动经 ignoreCache 刷新生效并验证；后续若有改动 server.js 的轮次需重启再验。</li>
+  </ul>
+
+  <footer>F02 · 第4轮 · Soda Office（Agent Office）· 断言全部来自真实运行，输出与截图落盘于仓库根目录</footer>
+</div>
+</body>
+</html>
