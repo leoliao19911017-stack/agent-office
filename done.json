@@ -1,60 +1,117 @@
 {
   "outcome": "succeeded",
-  "summary": "第81轮7项全部done：5项代码已在r73-r80落地、本轮交付全新实测证据；W02实测发现真缺陷（selectStep重建#insp-body滚动丢失1691→0）并修复（inspScrollMemo记忆，修复后Δ0px）；G01修复B5机器相关测试缺陷（pagefile错误码本机EBUSY非EINVAL，改动态取码）。全量套件三次全绿238/238 EXIT=0；分支覆盖（NODE_V8_COVERAGE 149文件跨进程并集）审批/版本三模块96.7%≥90、四模块93.6%（shared.js 76.0%为工具层node覆盖盲区下界，如实披露）；G02三色收口token后:root外命中变量值0处。四页双视口截图8/8。server.js未改动无需重启。注意：app.css已于第5轮拆为4文件，line_counts的app.css键给四文件合计2175。",
+  "summary": "G07 回归修复完成：9 条 r73 失败用例全部恢复通过（18/18），pre-commit 门禁 test:g07 19/19 通过 exit 0。修复分两类：(1) 8 条按任务书方向改用例适配新结构（首页驾驶舱 + #/pro 专业视图 + 设置页页签），断言强度不降反升（P1 的 CSS 检查 4→5 个文件、nav 增加设置页签可见性矩阵与旧链接 redirect 契约）；(2) R1/R2/R3 + nav-B3 的刷新恢复失败是重做引入的真实产品缺陷——saveUiPos 存了 settingsTab 但恢复时不落到 DOM（hash 不变时 route() 不会再跑，页签永远留在「常用」），在 web/app.js restoreUiPos 补 4 行修复（app.js 922→926），原断言一字未改即通过。",
   "items": [
     {
-      "code": "W01",
+      "code": "P1",
       "status": "done",
-      "evidence": "6场景实测：①版本一致→approve 200 verified:true 成功事件恰1条 刷新后仍done；②同大小异内容→409 ARTIFACT_VERSION_DRIFT 0成功事件；③大小改→409文案含实测X B≠登记Y B；④重复提交→decision重提409不加事件/decide同opId单次写回；⑤并发→[200,409]成功事件恰1条；⑥文件删除→双404 ARTIFACT_FILE_MISSING 0事件；错误条实测13px/20px 背景#3B3021 文字rgb(229,185,94)=#E5B95E（L4）"
+      "original_assert": "#/ 首页等 #reqs-list .req-item 就绪 + 4 个全局 CSS（base/workbench/pages/layers）全部 200 + 零 pageError/consoleError",
+      "new_assert": "#/ 首页等 #cabin-tasks .cabin-task（12 张任务卡=夹具全量，精确计数）+ #cabin-main .cabin-now 实况区；任务卡标题必须含夹具标题、h2 一句话非空、.cabin-progress 匹配 /第 \\d+ 项 \\/ 共 \\d+ 项 · 做完 \\d+ 项/（真实计数不是空壳）；CSS 检查扩为 5 个（新增 app-cabin.css）+ 零异常不变",
+      "why_not_weaker": "旧断言只证『需求列表出现』，新断言证『驾驶舱真实业务内容渲染』且把 CSS 就绪检查从 4 个文件加严到 5 个（重做新增的 app-cabin.css 也在监控内），超时阈值未动（15000/10000ms 原样）"
     },
     {
-      "code": "F01",
+      "code": "L1",
       "status": "done",
-      "evidence": "D3快照命中服务端独立重算SHA-256不冒充磁盘当前内容；D4快照不匹配404无正文/vkey串台409；B5四类真实错误码（ENOENT/EISDIR/pagefile本机实测EBUSY动态取码）18/18过；R3删除→恢复闭环ok→miss(ENOENT)→ok；修复测试自身缺陷：B5原写死EINVAL本机真实EBUSY"
+      "original_assert": "双视口（1440×900/1280×768）下 #rail 宽 56±1、#statusbar 高 56±1、#inspector 宽 328±1、头像 44×44±1，全部 ±1px 容差",
+      "new_assert": "同样的四个钉死值一个没动：导航 56/状态栏 56 在 #/ 驾驶舱布局量（新布局的真实几何），审批栏 328 改到它现在的住处 #/pro 专业视图量（先点需求等 #center-chain .track-node 出现再测，与旧流程同口径），头像 44×44 仍走 #/agents；±1px 容差、双视口口径原样",
+      "why_not_weaker": "钉死值与容差原样保留，只是测量入口跟着组件搬家；且比旧版更严格——旧版在 / 一屏内顺手量，新版分别验证两个真实路由下的几何，防止『组件挪走后尺寸漂移』漏检"
     },
     {
-      "code": "S01",
+      "code": "L4",
       "status": "done",
-      "evidence": "L2双视口1440×900+1280×768断言全过：滚到底第6卡底边距分页条顶≥12px；卡片144px/间隙16px/内边距16px/标题14px20px/描述12px18px最多3行/标签区20px；分页条56px固定不随滚动移动；8/8截图肉眼复核布局完整"
+      "original_assert": "goto / 后：W02 三档长文（300/1500/3000 字精确等值 + 滚动余量 ≥12px + overflow/min-height/padding 计算样式）+ W01 拍板前文件被改 → 409 红条（13px/20px/双色/文案含「登记版本不一致」「≠ 登记」）",
+      "new_assert": "全部断言一字未改，唯一变化是入口 goto '/#/pro'（三栏工作台的住处）",
+      "why_not_weaker": "不适用——非弱化改动，仅换路由入口，所有数值断言、文案断言、事件断言原样"
     },
     {
-      "code": "W02",
+      "code": "B1",
       "status": "done",
-      "evidence": "实测发现并修复真缺陷：selectStep重建#insp-body滚动丢失，修复前切plan→verify为1691→0（Δ1691px）❌，加inspScrollMemo后1691→1691（Δ0px）✅；正文滚到底（可滚2703px/右栏实测328px）中栏顶Δ0.00px/左列表滚动Δ0.00px/首项Δ0.00px；L4三档长文300/1500/3000字：末行距操作区≥12px、正文12px20px、底距80px、操作区64px、段距12px、滚动条6px；修复后238/238复跑全绿零pageerror"
+      "original_assert": "API：版本一致 approve 200 + decision-events 恰 1 条 result=written + 服务端档案 verify=done；浏览器：goto / 点 T-R73A 等 verify 节点 .st-done",
+      "new_assert": "API 部分原样；浏览器部分唯一变化是入口 goto '/#/pro'，点击与 .st-done 断言原样",
+      "why_not_weaker": "非弱化改动，仅换路由入口；API 侧断言完全未动"
     },
     {
-      "code": "A01",
+      "code": "B2",
       "status": "done",
-      "evidence": "verify-a01四场景矩阵全过（均12px/18px）：在线无上报→在线#62C6A0/未知/—#8996A8；在线上报过期→已过期·10:40 #E5B95E；离线带新鲜上报→2分钟前#65D9B1不被离线吞；在线执行中→执行中#6C9EF1/30秒前#65D9B1；在线不自动推断空闲（g1执行列=未知）；R1/R2断言300秒阈值明细与断线重连不覆盖执行态"
+      "original_assert": "内容改大小不变 + 大小改：双 409 ARTIFACT_VERSION_DRIFT（错误文案分别含「内容已变化」「≠ 登记」）、0 成功事件、verify 仍 awaiting",
+      "new_assert": "与原来完全一致——本条零改动，自然恢复通过",
+      "why_not_weaker": "B2 依赖 L4 在跑批顺序里对 r73-c.txt 的「拍板前外部追加字节」制造漂移，L4 修好后级联恢复；纯 API 断言与 UI 无关，无需改"
     },
     {
-      "code": "G01",
+      "code": "B5",
       "status": "done",
-      "evidence": "238/238 pass EXIT=0共3次全绿（改CSS前/后/改app.js后）；g07单文件18用例17固定场景≥16；分支覆盖（NODE_V8_COVERAGE 149文件跨进程并集）：approval.js 98.2%/decision-ops.js 100%/version.js 87.9%/shared.js 76.0%，审批版本三模块合计96.7%≥90✅、四模块93.6%；shared 76.0%系工具层且node覆盖看不见浏览器进程为下界，如实披露；6场景（审批冲突B2/重复提交B3/文件删除B6/快照缺失B5D4/API断线R2/CSS404 R4人为注入必被检出）全过"
+      "original_assert": "文件页四类后端错误码行 + file-version 404 无快照 + #file-view ENOENT 详情行；入口 openHash('#/files')",
+      "new_assert": "与原来完全一致——本条零改动。#/files 旧链接按重做契约折算成设置页·文件库页签再跳，openHash 等待的 .library-file 行照常出现",
+      "why_not_weaker": "零改动即通过，证明旧链接 redirect 契约真实生效；四类错误码与 ENOENT 断言原样"
     },
     {
-      "code": "G02",
+      "code": "R1",
       "status": "done",
-      "evidence": "4个在用CSS的:root外颜色字面量99处，命中三变量值0处（--text-soft #B8C5D6/--stat-line #334257/--green #62c6a0各仅存于:root定义）；app.js有效627≤800（总866）；server.js有效278≤500（总401）；227函数最长115≤120；顶层前向引用0/跨文件顶层写0；基础字号12px/18px未动；渲染色不变证据=238/238（含L1/L2双视口钉死几何断言）+8/8截图"
+      "original_assert": "#/agents 新鲜态 .ag-hb.ok 绿 + 明细「正常（N 秒前）」；写 hermes-control.json 造 600 秒前上报后 reload，.ag-hb.stale 琥珀「已过期 · HH:MM」+ 明细「已过期（…超 300 秒阈值）」",
+      "new_assert": "与原来一字不差——用例零改动",
+      "why_not_weaker": "失败根因是产品缺陷不是断言过时：saveUiPos 存了 settingsTab=agents，但 reload 时 hash 已是 /settings、route() 不会再跑，恢复的页签永远落不到 DOM（元素 resolved to hidden）。修的是 web/app.js restoreUiPos（+4 行：恢复出 settings 页时补 syncSettingsTabs()+renderModules()），完成重做自己「页签也记住」的设计意图。断言、造数、reload 流程全部原样通过"
+    },
+    {
+      "code": "R2",
+      "status": "done",
+      "original_assert": "无上报显示「—」不编造；离线×新鲜 hb=ok；中台停滞（stale600）conn「在线」+ hb stale；三态 reload 循环",
+      "new_assert": "与原来一字不差——用例零改动，与 R1 同根因，靠同一处 app.js 修复恢复",
+      "why_not_weaker": "同 R1：修产品不修断言。三态断言与 reload 时序原样"
+    },
+    {
+      "code": "R3",
+      "status": "done",
+      "original_assert": "文件登记 ok → unlinkSync 后 reload 出现 miss 行 + ENOENT 原因行 → 写回后 reload 恢复 ok，闭环一致",
+      "new_assert": "与原来一字不差——用例零改动，与 R1 同根因（#/files 折算设置页·文件库页签后 reload 页签丢失），靠同一处 app.js 修复恢复",
+      "why_not_weaker": "同 R1：修产品不修断言"
+    },
+    {
+      "code": "GATE-A1",
+      "status": "done",
+      "original_assert": "（test:g07 门禁用例）#/ 首屏：reqs ≥3 + 夹具标题 + track ≥7 + sb-conn 样式四断言 + contentMs ≤3000",
+      "new_assert": "#/ 首屏改测驾驶舱（任务卡 ≥3 + 夹具标题 + h2 非空 + 进度文字真实计数 + sb-conn 四断言 + contentMs ≤3000 原样），随后 goto /#/pro 把原需求行 ≥3、标题、track ≥7 断言原样补测",
+      "why_not_weaker": "首屏 3 秒口径未动；原工作台断言一条没删，挪到它现在的路由上继续钉着"
+    },
+    {
+      "code": "GATE-NAV",
+      "status": "done",
+      "original_assert": "（test:g07 门禁用例 B1-B4）旧四页可见性矩阵 + aria-current 唯一 + 刷新恢复技能页 + 四页往返数据不毁",
+      "new_assert": "矩阵换成新四页（home/log/settings/workbench）同强度断言，且加严两层：设置页内四个分区页签（set-general/agents/skills/files）只有当前页签可见；B2 追加旧链接 #/agents→设置页·agents 页签 + aria 归属 rail-settings 的 redirect 契约；B3 刷新恢复改为断言 settings+skills 页签+其余分区隐藏（比旧 dataPage=skills 多断一层）；B4 往返终点在 #/pro 验 reqs ≥3 / track ≥7 原样",
+      "why_not_weaker": "可见性矩阵、aria 唯一性、刷新恢复、往返数据四类断言全部保留且新增页签矩阵与 redirect 契约两层"
+    },
+    {
+      "code": "GATE-D1D2",
+      "status": "done",
+      "original_assert": "（test:g07 门禁用例）D1 UI 打回闭环（verify→failed UI+服务端双确认+note 带理由）；D2 版本漂移→批准禁用+409 ARTIFACT_VERSION_DRIFT+打回不受限",
+      "new_assert": "全部断言原样，唯一变化是入口 goto '/#/pro'（审批面板的住处）",
+      "why_not_weaker": "非弱化改动，仅换路由入口"
+    },
+    {
+      "code": "APP-FIX",
+      "status": "done",
+      "original_assert": "（非用例，产品缺陷修复记录）R1/R2/R3/nav-B3 reload 后页签丢失：restoreUiPos 只设置量不落 DOM",
+      "new_assert": "web/app.js restoreUiPos 末尾 +4 行：activePage==='settings' 时补 syncSettingsTabs()+renderModules()，让存档的 settingsTab 真正落到 DOM（app.js 922→926）",
+      "why_not_weaker": "这是唯一动产品代码的点，理由：nav-B3 的刷新持久化断言在没有此修复时不可能通过，除非弱化断言——按任务书原则选择修产品而不是放水；修复完成重做方案自己声明的「设置页里停在第几个页签也记住」意图，且由 R1/R2/R3/B3 四条零改动用例回归验证"
     }
   ],
+  "evidence": {
+    "r73_suite": "node --no-warnings --test test/g07-r73.test.js → 1..18 / # tests 18 / # pass 18 / # fail 0 / # skipped 0（duration 8996ms）",
+    "gate_suite": "npm run test:g07 → 1..19 / # tests 19 / # pass 19 / # fail 0 / # cancelled 0 / # skipped 0（duration 21301ms）EXIT=0",
+    "gate_output_tail": "# tests 19\n# suites 0\n# pass 19\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 21301.3014\nEXIT=0",
+    "fix_iterations": "首轮 r73 17/18（P1 任务卡计数误写 11，实际夹具 12 条任务，改断言为精确 12 后）→ 18/18；门禁套件一次通过 19/19",
+    "note": "test:g07 实际跑 19 条用例（任务书写 15）；r73 文件共 18 条（9 条失败在 test:g07 之外）。两套都已全绿，计数如实报告"
+  },
   "files_modified": [
-    "web/app.js",
-    "web/app-base.css",
-    "web/app-layers.css",
-    "web/app-pages.css",
-    "web/app-workbench.css",
     "test/g07-r73.test.js",
-    "web/verify-r81-shots.mjs",
-    "web/verify-r81-w02-isolation.mjs",
-    "web/verify-r81-branchcov.mjs",
-    "R81-整改执行报告.md",
-    "R81-整改执行报告.html"
+    "test/g07-pages.test.js",
+    "test/g07-nav.test.js",
+    "test/g07-approval.test.js",
+    "web/app.js"
   ],
   "blocked_by": null,
   "line_counts": {
-    "app.js": 866,
-    "app.css": 2175,
-    "server.js": 401
+    "app.js": 926,
+    "server.js": 404,
+    "note": "app.js 922→926：+4 行是 restoreUiPos 页签落地修复（APP-FIX 项）；server.js 404 行未动，与任务书基线一致"
   }
 }

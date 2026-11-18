@@ -155,14 +155,31 @@ const near = (v, target, tol = 1) => Math.abs(v - target) <= tol;
 
 /* ================= 初始化 4 场景 ================= */
 
-test('P1 工作台初始化：页面就绪 + 四个全局 CSS 全部 200 + 零异常', async () => {
+test('P1 首页驾驶舱初始化：页面就绪 + 五个全局 CSS 全部 200 + 零异常', async () => {
   const { page, state } = await newPage(browser);
   try {
+    // TASK-工作台重做：#/ 首页已是任务驾驶舱（三栏工作台挪到 #/pro 专业视图）。
+    // 就绪标记从 #reqs-list 换成驾驶舱业务 DOM：任务卡条 + 现在干什么的实况区。
     await page.goto(stack.base + '/', { waitUntil: 'commit' });
-    await page.waitForSelector('#reqs-list .req-item', { timeout: 15000 });
+    await page.waitForSelector('#cabin-tasks .cabin-task', { timeout: 15000 });
+    await page.waitForSelector('#cabin-main .cabin-now', { timeout: 10000 });
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
+    // 任务卡是真实业务内容（夹具 11 条任务，条上限 12），不是空壳
+    const cards = await page.locator('#cabin-tasks .cabin-task').count();
+    assert.equal(cards, 12, `任务卡应 12 张（夹具 T-R73A-H/G/W1-3/F 全量），实际 ${cards}`);
+    const titles = (await page.locator('#cabin-tasks .cabin-task b').allInnerTexts()).join('|');
+    assert.ok(titles.includes('R73-W01①版本一致放行'), `任务卡应含夹具标题，实际：${titles.slice(0, 120)}`);
+    // 实况区一句话 + 进度条 + 进度文字都是渲染出来的真实数据
+    const nowLine = await page.evaluate(() => document.querySelector('#cabin-main .cabin-now h2').textContent.trim());
+    assert.ok(nowLine.length > 0, `「现在干什么」一句话应为真实内容，实际「${nowLine}」`);
+    const prog = await page.evaluate(() => ({
+      bar: !!document.querySelector('#cabin-main .cabin-bar i'),
+      text: (document.querySelector('#cabin-main .cabin-progress') || {}).textContent || '',
+    }));
+    assert.ok(prog.bar, '进度条应渲染');
+    assert.match(prog.text, /第 \d+ 项 \/ 共 \d+ 项 · 做完 \d+ 项/, `进度文字应带真实计数，实际「${prog.text}」`);
     const cssStatus = await page.evaluate(async () => {
-      const names = ['app-base.css', 'app-workbench.css', 'app-pages.css', 'app-layers.css'];
+      const names = ['app-base.css', 'app-workbench.css', 'app-pages.css', 'app-layers.css', 'app-cabin.css'];
       const out = {};
       for (const n of names) { const r = await fetch(n); out[n] = r.status; }
       return out;
@@ -170,7 +187,7 @@ test('P1 工作台初始化：页面就绪 + 四个全局 CSS 全部 200 + 零�
     for (const [n, s] of Object.entries(cssStatus)) assert.equal(s, 200, `${n} 应 200，实际 ${s}`);
     assert.equal(state.pageErrors.length, 0, state.pageErrors.join(' || '));
     assert.equal(state.consoleErrs.length, 0, state.consoleErrs.join(' || '));
-    console.log('[P1] 工作台就绪，CSS=' + JSON.stringify(cssStatus) + '，零异常');
+    console.log('[P1] 驾驶舱就绪（' + nowLine.slice(0, 24) + '），CSS=' + JSON.stringify(cssStatus) + '，零异常');
   } finally { await page.close(); }
 });
 
@@ -226,16 +243,19 @@ test('L1 双视口钉死值：导航 56 / 状态栏 56 / 审批栏 328 / 头像 
     const { page } = await newPage(browser);
     try {
       await page.setViewportSize(vp);
+      // TASK-工作台重做：#/ 首页是驾驶舱，导航/状态栏在新布局里量；
+      // 审批栏 328 与选中需求后的交付链都在 #/pro 专业视图（原三栏工作台原样搬过去）。
       await page.goto(stack.base + '/', { waitUntil: 'commit' });
-      await page.waitForSelector('#reqs-list .req-item', { timeout: 15000 });
-      await page.click('#reqs-list .req-item');   // 选中需求，审批栏进入布局
-      await page.waitForSelector('#center-chain .track-node', { timeout: 8000 });
+      await page.waitForSelector('#cabin-tasks .cabin-task', { timeout: 15000 });
       const rail = await rect(page, '#rail');
       const sb = await rect(page, '#statusbar');
-      const insp = await rect(page, '#inspector');
       const tb = await rect(page, '#topbar');
       assert.ok(near(rail.w, 56), `${vp.width} 视口导航应 56±1，实际 ${rail.w}`);
       assert.ok(near(sb.h, 56), `${vp.width} 状态栏应 56±1，实际 ${sb.h}`);
+      await openHash(page, '#/pro', '#reqs-list .req-item');
+      await page.click('#reqs-list .req-item');   // 选中需求，审批栏进入布局
+      await page.waitForSelector('#center-chain .track-node', { timeout: 8000 });
+      const insp = await rect(page, '#inspector');
       assert.ok(near(insp.w, 328), `${vp.width} 审批栏应 328±1，实际 ${insp.w}`);
       await openHash(page, '#/agents', '.agent-avatar');
       const ava = await rect(page, '.agent-avatar');
@@ -361,7 +381,8 @@ test('L4 W02 详情密度滚动 + W01 服务端拒绝反馈（拍板瞬间文件
   const { page } = await newPage(browser);
   try {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(stack.base + '/', { waitUntil: 'commit' });
+    // TASK-工作台重做：三栏工作台在 #/pro 专业视图，#/ 首页是驾驶舱
+    await page.goto(stack.base + '/#/pro', { waitUntil: 'commit' });
     await page.waitForSelector('#reqs-list .req-item', { timeout: 15000 });
 
     // —— W02：三档长文（300/1500/3000 字）滚到底，末行完整且距操作区 ≥12px ——
@@ -454,7 +475,8 @@ test('B1 W01-① 版本一致：approve 200 → 1 条成功事件 + 档案 done 
 
   const { page } = await newPage(browser);
   try {
-    await page.goto(stack.base + '/', { waitUntil: 'commit' });
+    // TASK-工作台重做：需求列表与交付链在 #/pro 专业视图
+    await page.goto(stack.base + '/#/pro', { waitUntil: 'commit' });
     await page.waitForSelector('.req-item[data-task="T-R73A"]', { timeout: 15000 });
     await page.click('.req-item[data-task="T-R73A"]');
     await page.waitForSelector('#center-chain .track-node[data-step="verify"].st-done', { timeout: 8000 });

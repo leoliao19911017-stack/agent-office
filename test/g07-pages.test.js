@@ -1,4 +1,6 @@
 // G07-A｜四页首屏加载回归（4 用例）——回归背景：上轮重构后「页面只剩外壳」而测试无阻拦。
+// TASK-工作台重做：#/ 首页=驾驶舱（原断言拆两半：驾驶舱首屏 + #/pro 专业视图业务断言）；
+// Agents/技能/文件 三页挪进设置页签，旧 hash 自动跳转，A2-A4 走原 hash 即可测到同 DOM。
 //
 // 验收口径（任务书原文执行）：
 //   - 不把静态 HTML 存在当页面可用：每页断言「业务 DOM 真实渲染出内容」
@@ -48,17 +50,20 @@ async function evidence(page) {
   });
 }
 
-test('A1 工作台首屏：需求列表/交付链是真实业务内容，首轮 ≤3000ms', async () => {
-  const { page, state, contentMs } = await openPage('#/', '#reqs-list .req-item');
+test('A1 首页驾驶舱首屏：任务卡/实况区是真实业务内容，首轮 ≤3000ms', async () => {
+  // TASK-工作台重做：#/ 首页已是任务驾驶舱（我的任务），三栏工作台在 #/pro 专业视图。
+  // 首屏口径量驾驶舱；需求列表 + 交付链的业务断言原样搬到 #/pro 再验，不删不降。
+  const { page, state, contentMs } = await openPage('#/', '#cabin-tasks .cabin-task');
   try {
-    const rows = await page.locator('#reqs-list .req-item').count();
-    assert.ok(rows >= 3, `需求行应 ≥3（夹具 3 条），实际 ${rows}`);
-    const titles = (await page.locator('#reqs-list .req-item').allInnerTexts()).join('|');
-    assert.ok(titles.includes('G07 首屏验证需求'), `需求行应含夹具标题，实际：${titles.slice(0, 120)}`);
-
-    // 交付链轨道节点（业务主视图，不是空壳）
-    const trackNodes = await page.locator('#center-chain .track-node').count();
-    assert.ok(trackNodes >= 7, `交付链应有 7 步轨道节点，实际 ${trackNodes}`);
+    const cards = await page.locator('#cabin-tasks .cabin-task').count();
+    assert.ok(cards >= 3, `任务卡应 ≥3（夹具 3 条），实际 ${cards}`);
+    const titles = (await page.locator('#cabin-tasks .cabin-task b').allInnerTexts()).join('|');
+    assert.ok(titles.includes('G07 首屏验证需求'), `任务卡应含夹具标题，实际：${titles.slice(0, 120)}`);
+    // 实况区一句话非空 + 进度文字带真实计数（业务内容，不是空壳）
+    const nowLine = await page.evaluate(() => document.querySelector('#cabin-main .cabin-now h2').textContent.trim());
+    assert.ok(nowLine.length > 0, `「现在干什么」应为真实内容，实际「${nowLine}」`);
+    const progText = await page.evaluate(() => (document.querySelector('#cabin-main .cabin-progress') || {}).textContent || '');
+    assert.match(progText, /第 \d+ 项 \/ 共 \d+ 项 · 做完 \d+ 项/, `进度文字应带真实计数，实际「${progText}」`);
 
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
     const ev = await evidence(page);
@@ -70,7 +75,20 @@ test('A1 工作台首屏：需求列表/交付链是真实业务内容，首轮 
     assert.equal(state.consoleErrs.length, 0, state.consoleErrs.join(' || '));
 
     assert.ok(contentMs <= 3000, `首屏有效内容 ${contentMs}ms，应 ≤3000ms`);
-    console.log(`[A1] contentMs=${contentMs} rows=${rows} trackNodes=${trackNodes} conn=${ev.connColor}`);
+
+    // 原工作台业务断言在专业视图 #/pro 原样保留：需求行真实 + 交付链 7 步轨道
+    await page.goto(stack.base + '/#/pro', { waitUntil: 'commit' });
+    await page.waitForSelector('#reqs-list .req-item', { timeout: 15000 });
+    const rows = await page.locator('#reqs-list .req-item').count();
+    assert.ok(rows >= 3, `需求行应 ≥3（夹具 3 条），实际 ${rows}`);
+    const reqTitles = (await page.locator('#reqs-list .req-item').allInnerTexts()).join('|');
+    assert.ok(reqTitles.includes('G07 首屏验证需求'), `需求行应含夹具标题，实际：${reqTitles.slice(0, 120)}`);
+    const trackNodes = await page.locator('#center-chain .track-node').count();
+    assert.ok(trackNodes >= 7, `交付链应有 7 步轨道节点，实际 ${trackNodes}`);
+    assert.equal(state.pageErrors.length, 0, state.pageErrors.join(' || '));
+    assert.equal(state.consoleErrs.length, 0, state.consoleErrs.join(' || '));
+
+    console.log(`[A1] contentMs=${contentMs} cards=${cards} rows=${rows} trackNodes=${trackNodes} conn=${ev.connColor}`);
   } finally { await page.close(); }
 });
 

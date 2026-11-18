@@ -308,15 +308,17 @@ const server = createServer(async (req, res) => {
     }
 
     // TASK-R3 拆分产物：样式 / 主脚本 / 离线快照与 index.html 同目录。
-    // 只精确匹配这十四个文件名（G02 第5轮 app.css 拆为 base/workbench/pages/layers 四段,
+    // 只精确匹配这十六个文件名（G02 第5轮 app.css 拆为 base/workbench/pages/layers 四段,
     // 第4轮新增 decision-ops / preview / agents 三个模块脚本，R73 新增 render.js
-    // 渲染主干；不开放目录列表），no-cache 保证改版刷新即生效。
+    // 渲染主干；TASK-工作台重做新增 app-cabin.css / cabin.js 小白三页；
+    // 不开放目录列表），no-cache 保证改版刷新即生效。
     if (method === 'GET' || method === 'HEAD') {
       const STATIC_APP = {
         '/app-base.css': 'text/css; charset=utf-8',
         '/app-workbench.css': 'text/css; charset=utf-8',
         '/app-pages.css': 'text/css; charset=utf-8',
         '/app-layers.css': 'text/css; charset=utf-8',
+        '/app-cabin.css': 'text/css; charset=utf-8',
         '/app.js': 'application/javascript; charset=utf-8',
         '/shared.js': 'application/javascript; charset=utf-8',
         '/version.js': 'application/javascript; charset=utf-8',
@@ -325,6 +327,7 @@ const server = createServer(async (req, res) => {
         '/files.js': 'application/javascript; charset=utf-8',
         '/preview.js': 'application/javascript; charset=utf-8',
         '/agents.js': 'application/javascript; charset=utf-8',
+        '/cabin.js': 'application/javascript; charset=utf-8',
         '/render.js': 'application/javascript; charset=utf-8',
         '/offline-snapshot.js': 'application/javascript; charset=utf-8',
       };

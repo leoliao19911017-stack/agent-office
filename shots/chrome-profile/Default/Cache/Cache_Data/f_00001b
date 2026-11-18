@@ -1,0 +1,664 @@
+/* app-layers.css —— G02（第 5 轮）自 app.css 拆分：W01 审批材料门禁起的历轮评审覆盖层（必须最后加载,源顺序即覆盖顺序）。加载顺序 4/4。 */
+/* ================= W01：审批材料类型门禁 =================
+   开发计划步骤的审批对象必须是声明了计划类型的产物：
+   - 类型不符 → 警示块（金底警示，明确规则与出路），主操作禁用（实底灰，不半透明）
+   - 测试策略豁免 → 证据卡里展示依据（.ev-policy），不静默放行
+   服务端 /api/office/decision 同步 409 拒绝，前端禁用只是先让用户看到原因。 */
+.invalid-material {
+  margin: 2px 0 4px;
+  padding: 12px;
+  background: #342C20;
+  color: var(--amber);
+  border-radius: 8px;
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+/* 无效材料时的主操作：规格 36px 高 / 8px 圆角 / #575044 实底。
+   覆盖 .btn:disabled 的半透明 + .btn-primary 的琥珀渐变，保持可读的「明确禁用」形态。 */
+.ip-decide .acts .btn.btn-invalid-material {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  background: #575044;
+  color: #B4AA99;
+  cursor: not-allowed;
+  opacity: 1;
+  filter: none;
+}
+.ip-decide .acts .btn.btn-invalid-material:disabled { opacity: 1; }
+/* 证据卡里的类型要求 / 测试策略标注 */
+.ev .ev-policy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* ================= G01：统一高频元信息（图1 需求列表 / 图2 Agents 名册 / 图3 技能卡 / 图4 文件库） =================
+   口径：普通辅助文字 12px/18px/var(--meta) · 重要状态文字 13px/20px/var(--meta-hi)。
+   「没数据=—」的诚实弱化档（--faint：work-unknown / hb off 未连 / hist 历史 / na 无实测）独立保留，不并入统一提亮；
+   品牌语义色不动（琥珀=待拍板/超时 · 绿=完成/在线/实测一致 · 红=故障 · 蓝=选中/执行中）；
+   标签类（.sk-tag/.sk-cat/.lf-tag/.lf-type，非长篇阅读文本）保持 11px/16px，仅提色到可读档；
+   文件路径保留等宽字体，字号 ≥12px。主背景 var(--bg) / 卡片 var(--card) 不改。 */
+/* G02（第 5 轮）：--meta/--meta-strong 前移至文件头主 :root 集中定义 */
+
+/* —— 图1 · 需求列表：状态文字归重要档 13/20，阶段/筛选计数归辅助档 12/18 —— */
+.req-line2 { line-height: 20px; }
+.req-status { font-size: 13px; line-height: 20px; }
+.req-status.t-queued { color: var(--meta-strong); }
+.req-stage { font-size: 12px; line-height: 18px; color: var(--meta); }
+.reqs-partial { line-height: 18px; }
+
+/* —— 图2 · Agents 名册：表头/标识/角色提亮，常态状态归 var(--meta-hi) —— */
+.roster-head { line-height: 18px; color: var(--meta); }
+.ag-ids { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ag-idcol .agent-role { line-height: 18px; color: var(--meta); }
+.ag-conn.off, .ag-work.work-idle { color: var(--meta-strong); }   /* A02r3：.ag-hb 两态移出——归业务上报三色（见文件尾覆盖层） */
+.ag-task { color: var(--meta-strong); }
+#agent-scope { color: #8FA3BA; }   /* A01：范围说明最终色（覆盖上方 --muted） */
+.agent-kv, .agent-run p { color: var(--meta); }
+
+/* —— 图3 · 技能卡：描述归辅助档 12/18/var(--meta)，标签保持 11/16 仅提色 —— */
+.skill-row small { font-size: 12px; line-height: 18px; color: var(--meta); }
+.sk-cat { color: var(--meta); }
+.skill-path { font-size: 12px; line-height: 18px; color: var(--meta); }
+#skill-count { font-size: 12px; line-height: 18px; color: var(--meta); }
+.sfr-label { color: var(--meta); }
+
+/* —— 图4 · 文件库：路径/大小/来源标签提亮（路径等宽 12px 保留） —— */
+#file-count { font-size: 12px; line-height: 18px; color: var(--meta); }
+.file-only { font-size: 12px; line-height: 18px; color: var(--meta); }
+.library-file .lf-src { color: var(--meta); }
+.library-file .lf-size { color: var(--meta); }
+.lf-type { color: var(--meta); }
+.ff-title { color: var(--meta); }
+.ff-note { color: var(--meta); }
+.fv-path { color: var(--meta); }
+.fvd-row span { color: var(--meta); }
+/* 行高反压：.skilldetail p{line-height:1.8} (0,1,1) 与 .fv-path 继承的 1.6 会把两处路径行盒撑到 21.6/19.2px */
+.skilldetail .skill-path { line-height: 18px; }
+.fv-path { line-height: 18px; }
+
+/* —— G01（第 3 轮，2026-11-16）：评审连续两轮点名弱化档文字仍偏暗，收回上一轮的 faint 豁免。
+   var(--faint) 只留给真正的「—」无数据占位（.sk-na 等），不再用于需要用户判断的状态文字；
+   agent-kv / fvd-row 分别收进 12/18 辅助档与 13/20 状态档（原 14/22、13/24 均为继承/残留行高，档位外）。
+   实测依据 verify-g01-baseline.json：work-unknown / ag-task.hist / agent-kv 标签 = var(--faint) C5.87。 —— */
+.ag-work.work-unknown { color: var(--meta-strong); }   /* 「未知」是要判断的状态 → var(--meta-hi) */
+.ag-task.hist { color: var(--meta-strong); }           /* 「上次上报已过期」告警 → var(--meta-hi)（13/20 不变） */
+.sc-label { color: var(--meta); }                      /* 图2 顶部统计卡标签 → var(--meta) */
+.agent-kv { font-size: 12px; line-height: 18px; }      /* 明细 KV 行统一辅助档（覆盖 .module-page 的 14/22 继承） */
+.agent-kv span:first-child { color: var(--meta); }     /* KV 标签不再用弱化灰 */
+/* 图4 预览来源行：标签 12/18/var(--meta)；数值（执行者/校验状态/大小）是判断依据 → 13/20/var(--meta-hi)；
+   24px 行盒与 b.warn 琥珀品牌色（1419）不动 */
+.fvd-row span { font-size: 12px; line-height: 18px; color: var(--meta); }
+.fvd-row b { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+/* 收尾：lf-exec（执行者）原走 --text 亮过头，lf-lines 双值大小原为 F01 的 var(--meta-num) 强调色，均档位外 → 统一辅助档；
+   一致态 ✓ 保留完成绿（品牌语义），.lf-exec.na「—」占位保留诚实弱化档 */
+.library-file .lf-exec { color: var(--meta); }
+.library-file .lf-exec.na { color: var(--faint); }
+.library-file .lf-lines .lf-size { color: var(--meta); }
+.library-file .lf-size.ok { color: var(--green); }
+.lf-tag.unver { color: var(--meta); }   /* 5.41→6.47：未核实标签与其他标签同色，靠底色区分态 */
+
+/* ================= W01（版本轮）：审批材料与提交登记不一致警示 =================
+   审批面板按当前物理文件实时核对，实测≠登记（或登记缺失）时在审批详情里逐条列出，
+   让「批的是变化后的文件」这件事看得见，不再只剩一个实测值冒充原始提交材料。
+   规格（W02 第 10 轮按任务书更新）：var(--amber) on #342C20 / 圆角 8px / 内边距 12px /
+   段落间距 12px——审批面板内与 .invalid-material（类型门禁，同规格）统一，
+   中央 .hf-tag.mism、文件库 .lf-tag.mism 仍用旧 var(--amber-bg)/6px 标签规范，不在本轮范围。
+   比较口径在判定层（服务端 version-gate，原始字节数 + sha256），本块只做展示。
+   与 .invalid-material（类型门禁）并列各说各的事：这里只提示版本事实，不加新操作。 */
+.material-mismatch {
+  margin: 12px 0;
+  padding: 12px;
+  background: #342C20;
+  color: var(--amber);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+/* ================= F01（第 4 轮）：登记大小逐条核对后的展示口径 =================
+   与上方「收尾」辅助档刻意冲突、按本轮任务规格执行（同特异性下源顺序取胜）：
+   大小双行是核对结论而非普通辅助文字——12px / 行高 18px / var(--meta-num) / 行间距 4px；
+   异常标签 22px / 圆角 6px / var(--amber-bg) 底 var(--amber) 字；一致态数值用完成绿 var(--green)；
+   行最小高 68px；登记大小不同时逐条分列（步骤号 + 真实登记值），行高自然增长不截断。 */
+.library-file .lf-lines { gap: 4px; }
+.library-file .lf-lines .lf-size { font-size: 12px; line-height: 18px; color: var(--meta-num); }
+.library-file .lf-size.ok { color: var(--green); }
+.lf-tag.mism { height: 22px; border-radius: 6px; background: var(--amber-bg); color: var(--amber); font-size: 12px; line-height: 18px; }
+.library-file { min-height: 68px; }
+
+/* ================= G01（第 4 轮，2026-11-16）：辅助文字档位收口 + 纸底状态对比度 =================
+   评审第 3 轮反馈：图2 实例标识、图4 绝对路径等宽 12px 光学上仍偏小（Cascadia/Consolas 的 x-height 小于
+   Segoe UI 同字号），不同页面辅助文字视觉权重不一致；且全 DOM 巡检（verify-g01r4-baseline.json，
+   1440×900 + 1280×800 双视口 657 节点）发现 41 个硬违规节点。本轮口径：
+   ① 档位制不变：辅助 12/18/var(--meta)（--meta）· 状态与关键元数据 13/20/var(--meta-hi)（--meta-strong）· 短标签 11/16。
+   ② 等宽关键元数据（实例标识 / 文件绝对路径）升 13/20/--meta-strong——等宽字体光学偏小，13px 等宽 ≈ 12px
+      无衬线的视觉重量，路径等宽字体保留。
+   ③ 来源标签（lf-type / lf-tag）11px→12px：高度固定的胶囊盒（20px/22px）装得下 18px 行高，不改行结构。
+   ④ var(--muted)（--muted）辅助文字全部归 var(--meta)；var(--faint)（--faint）只留给纯「—」无数据占位，
+      带说明文字的占位（sk-na「—（原因）」）按辅助档提亮。
+   ⑤ 纸底（#inspector / .step-card.sel，#F1EADB）上的状态胶囊换深色：现有 --ink-green/--ink-amber/--ink-muted
+      在纸上算得 C 3.9–4.2 不达标，改用实测达标深色（#1E6B40 C5.43 · #75590F C5.5 · --ink-red C4.95 ·
+      --ink C≈13，按 #F1EADB 计算）；暗底上的状态胶囊（品牌语义色 C≥7）不动。
+   刻意不动：.lf-lines .lf-size 的 var(--meta-num)（F01 第 4 轮规格，跨任务冲突按源顺序保留，C12.56 达标）；
+   .lf-name 14/22（标题档）；.fv-panel 正文 12.5px（文件内容非辅助文字）；rail 导航按钮与表单控件；
+   .st 胶囊字号 12px（紧凑状态胶囊 ≥ 下限，主列表 .req-status 已是 13/20）。 */
+/* —— ② 等宽关键元数据升 13/20/var(--meta-hi)（评审点名「仍较细小」的四类） —— */
+.ag-ids { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+.library-file .lf-src { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+.fv-path { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+.skill-path { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+.skilldetail .skill-path { line-height: 20px; } /* 反压 .skilldetail p{line-height:1.8} 的 (0,2,0) 覆盖 */
+/* —— ③ 来源标签 11px→12px（胶囊盒高度不变） —— */
+.lf-type { font-size: 12px; line-height: 18px; }
+.lf-tag { font-size: 12px; line-height: 18px; }
+/* —— ⑤ 纸底状态胶囊：深色可读版（仅纸面生效，暗底品牌色不动） —— */
+#inspector .st-done, .step-card.sel .st-done { color: #1E6B40; background: rgba(30, 107, 64, .12); }
+#inspector .st-running, #inspector .st-awaiting,
+.step-card.sel .st-running, .step-card.sel .st-awaiting { color: #75590F; background: rgba(117, 89, 15, .14); }
+#inspector .st-pending, #inspector .st-skipped, #inspector .st-waitpre,
+.step-card.sel .st-pending, .step-card.sel .st-skipped, .step-card.sel .st-waitpre { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
+#inspector .st-failed, .step-card.sel .st-failed { color: var(--ink-red); background: color-mix(in srgb, var(--ink-red) 12%, transparent); }
+/* —— ④ 弱化灰收口：真文字不用 var(--faint) / var(--muted)（图1 检验面板 · 顶栏 · 状态栏 · 各页表头） —— */
+.ch-id { color: var(--meta); }
+.ev-k { color: var(--meta); line-height: 18px; }
+.note-cnt { color: var(--meta); line-height: 18px; }
+.ip-sec-h .chk-at, .chk-at { color: var(--meta); line-height: 18px; }
+.ev-file small.ev-file-meta { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ip-time { color: var(--meta); line-height: 18px; }
+.ip-file .fb, .ip-file .fb.reg { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ip-link .ls.k-waitpre { color: var(--meta-strong); } /* 「等待前置」是要判断的状态 → 13/20 档色 */
+.ev-src { color: var(--meta); line-height: 18px; }
+.ev .ev-policy { color: var(--meta); }
+.ev .ev-v { color: var(--meta-strong); } /* 检验值归状态档色（原 --text #F1ECE2 档外偏亮） */
+.eyebrow { font-size: 11px; line-height: 16px; color: var(--meta); } /* 10px 低于字号下限 */
+.sb-chip, .sb-chip.idle, .sb-chip.unknown { color: var(--meta); } /* 名册名是真文字；状态点色(:1000-1005)不动 */
+#sb-sync { color: var(--meta); }
+#statusbar > span { color: var(--meta); }
+.reqs-head { color: var(--meta); line-height: 18px; }
+.ss-meta { color: var(--meta); }
+.hf-meta { color: var(--meta); }
+.ch-sub { color: var(--meta-strong); } /* 顶栏当前需求副题 = 关键元数据（13/20 已达标） */
+#tb-task { color: var(--meta-strong); line-height: 20px; } /* 顶栏当前任务指示（13px 已达标，色归档） */
+p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色说明段（列表内 span 已落档） */
+#skill-pagination span { font-size: 12px; line-height: 18px; color: var(--meta); }
+.sk-na { font-size: 12px; line-height: 18px; color: var(--meta); } /* 「—（原因）」带说明文字 → 辅助档；纯「—」占位仍走 --faint */
+
+/* ================= F01（第 5 轮）：文件行路径字号按本轮规格收口 =================
+   本轮任务规格：文件名 14px/22px、路径 12px/18px。:1602 的 G01 13/20 升档是全局
+   等宽关键元数据口径，但文件库行内路径以本轮 F01 规格为准——同特异性 (0,2,0)
+   下源顺序取胜。仅改字号/行高，颜色仍走 --meta-strong，其余页面路径类不动。 */
+.library-file .lf-src { font-size: 12px; line-height: 18px; }
+
+/* ================= W01（底部固定操作区轮）：审批操作固定在右栏底部 =================
+   审批卡说明变长后按钮被推出首屏（改前实测 y1149.8..1185.8，三视口全在屏外）。
+   #inspector 已是纵向 flex（高 = 100vh - 108 = topbar 52 + statusbar 56）：
+   .insp-head 固定头 / #insp-body 弹性滚动体（W02 已就位）/ #insp-foot 固定底。
+   按钮仍带 data-decide 走 document 级事件委托，移位不改点击行为。 */
+.insp-head {
+  height: 48px; display: flex; align-items: center; box-sizing: border-box;
+}
+#insp-foot {
+  flex: none; height: 64px; padding: 12px 16px;
+  /* W02 本轮：底栏规格色按任务书收口——背景 #111823 + 顶部分隔线 1px #334155
+     （此前 r13 的旧底色/旧边框色仅色值偏差，几何不动）。 */
+  background: #111823; border-top: 1px solid var(--line);
+  box-sizing: border-box;
+}
+/* 反制「display 击穿 hidden」：不写这条，无审批的步骤会留 64px 空白占位。 */
+#insp-foot[hidden] { display: none; }
+#insp-foot .acts { display: flex; gap: 8px; align-items: center; height: 100%; }
+#insp-foot .acts .btn { min-height: 36px; border-radius: 8px; }
+#insp-foot .acts .btn-primary { min-width: 86px; }
+#insp-foot .acts .btn-secondary { min-width: 58px; }
+/* 材料无效/版本漂移的主按钮禁用形态原挂在 .ip-decide 作用域（:1473），
+   按钮进底栏后不再命中，按同一组值在 #insp-foot 作用域复刻 */
+#insp-foot .acts .btn.btn-invalid-material {
+  height: 36px; min-height: 36px; min-width: 86px;
+  border-radius: 8px; background: #575044; color: #B4AA99;
+  cursor: not-allowed; opacity: 1; filter: none;
+}
+#insp-foot .acts .btn.btn-invalid-material:disabled { opacity: 1; }
+/* 审批卡说明正文按 W01 规格收口：12px/19px；颜色 --meta(var(--meta)) 已是现状，
+   G01 层（:1625 附近）把行高压到 18px，这里以更高特异性压回 19px */
+#inspector .ev-src { line-height: 19px; }
+/* 正文段落全量收口：W02 第 10 轮规格是「正文文字 12px/行高 19px/软文色档」，
+   不止 .ev-src 一处——备注(.ip-note :549 是 13px/#F1ECE2)、打回理由(.rej-why :767
+   是 12.5px/1.7)、门禁未到与等待前置说明(.ip-sec .ip-v :389 是 13.5px)、需求原文
+   (.ev-demand :931 是 13px/1.6)、测试策略说明(.ev-src 只渲染进本面板，全部三处)
+   同为面板正文段，字号行高颜色按规格统一（字重 600、区块标题、状态胶囊、文件名、
+   警示块语义色均不动）。特异性 (1,1,0)/(1,2,0) 盖过上述各层；颜色只动审批面板，
+   中栏 --meta 色板归 G01 管，不随本轮改。 */
+#insp-body .ip-note,
+#insp-body .rej-why,
+#insp-body .ip-sec .ip-v,
+#insp-body .ev-demand,
+#insp-body .ev-src { font-size: 12px; line-height: 19px; color: var(--text-soft); }
+
+/* ================= F01（第 9 轮）：同一文件多条历史登记的独立校验 =================
+   行高封顶 96px（任务书：最小 68px、最大根据内容扩展至 96px）——
+   自然数据（汇总两行实测+登记 = 84px）不受影响；构造出的多版本分行超出 96px 时
+   按任务书上限截断（overflow:hidden），不再向外无限扩展挤压组内间距。
+   文件行底色改 var(--card)（第 9 轮规格，改动在 :1333 主层），边框（--line 档）与
+   圆角 8px 维持现状。特异性同 (0,1,0)、置于文件末尾，按源顺序压过前层。 */
+.library-file { max-height: 96px; overflow: hidden; }
+
+/* ================= F01（第 10 轮）：登记不同 → 元信息区逐条分行 =================
+   登记身份（原始字节数 + 版本标识 + 登记时间）任一不同时，app.js 给行挂 .lf-multi：
+   每条登记独立一行（12px/18px/var(--meta-num)/行距 4px，行尾 ✓/≠ 为与实测的逐条结论），
+   行高按任务书「内容较多时扩展至 96px」抬到 96px（自然高度 84px，与上方 96px 封顶一致，
+   不溢出不截断）；登记相同（汇总）与单登记行维持 68px 最小高不动。 */
+.library-file.lf-multi { min-height: 96px; }
+
+/* ================= F01（第 10 轮·验证轮，2026-11-16）：两条历史登记独立保存与校验 =================
+   验证缺口（本轮补齐）：此前 9 轮「登记版本不同」场景没有任何真实数据可渲染（multiCount=0），
+   分行文本单行四要素（02 78.5KB·指纹ab12cd34·11/15 02:50 ≠ ≈ 210px）在 190px 列必然截断。
+   本轮实测口径（fixture-time.md / fixture-ver.md / TEST-R11 三组数据）：
+   ① 行内边距 10px→6px：汇总态「实测+登记×N+同版身份行」三行（3×18px+2×4px=62px）+
+      执行者单行 18px + 4px 间距 + 12px 边距 = 96px 整——与任务书「内容较多时扩展至 96px」对齐；
+      单登记行自然高度 52–78px，由 68px 最小高托底，不破 96px 封顶。
+   ② 执行者/来源类型并为单行 .lf-row（18px，来源胶囊高度 20→18）——两行叠放占 42px 装不下；
+      分行态（.lf-multi）该行移入文件名列，190px 元信息列整列让给登记行。
+   ③ .lf-reg 登记行复用 .lf-size 排版（12px/18px/var(--meta-num)/省略号），data-regs 带登记原件投影。 */
+.library-file { padding: 6px 12px; }
+.library-file .lf-meta .lf-row { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; height: 18px; }
+.library-file .lf-row .lf-exec { flex: 0 1 auto; min-width: 0; }
+.library-file .lf-row .lf-type { flex: none; height: 18px; }
+.library-file .lf-main .lf-row { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; font-size: 12px; line-height: 18px; color: var(--meta); }
+
+/* ================= F01（第 11 轮·验证轮，2026-11-16）：容器外登记/身份行的规格色 =================
+   缺口（本轮 getComputedStyle 实测发现）：第 10 轮把汇总/分叉身份行放在 .lf-dual/.lf-lines 块外
+   吃整列 190px（防截断），但 var(--meta-num) 规格色的作用域是 .lf-lines .lf-size（:1582）——容器外的
+   身份行落回 .lf-size 基础色 var(--meta)=var(--meta)，实测 rgb(179,192,210) ≠ 规格 var(--meta-num)。
+   补一条 .lf-reg 限定规则（特异性 (0,3,0) 压过 :1526 的 (0,2,0)）：登记行/身份行无论渲染在
+   .lf-lines 容器内外，一律吃规格色；.lf-size.ok（✓ 结论绿）不带 .lf-reg，不受影响。 */
+.library-file .lf-size.lf-reg { color: var(--meta-num); }
+
+/* ============ G01 r10（第10轮）：四页辅助文字统一档 ============
+   档位口径：辅助正文 12px/18px/var(--meta) · 重要元数据 13px/20px/var(--meta-hi) · 短标签 11px/16px（不得用于多行说明）
+   文件路径 12px 等宽/单行截断 · 普通文字对比度 ≥4.5:1
+   本轮覆盖关系（源顺序在后取胜）：
+   ① 取代 W02 r10（:1663 一带）#insp-body 正文 12/19/--text-soft → 12/18/var(--meta)（本轮任务口径更新）
+   ② 取代 G01 r4（:1604）.skill-path/.fv-path 的 13/20 → 路径归档 12px/18px（颜色 var(--meta-hi) 不变）
+   ③ 取代 F01 r4/r11 的数值色 var(--meta-num) → 统一重要元数据色 var(--meta-hi)（亮度更高、对比度更好）；
+      .lf-lines/.lf-reg/.hf-val 字号保持 12/18 不升 13/20——F01 r9/r10 的 96px 行高上限 + overflow:hidden，
+      升行高会裁内容 = 新增不可访问截断，且任务要求不得缩小卡片，两难下保 12/18 仅统一颜色
+   ④ 不动：#fv-body pre 等文件内容预览（内容非辅助文字，G01 r4 :1601 已豁免）、表单控件、
+      品牌语义色（状态绿/金/红/蓝）、.lf-exec.na「—」诚实占位灰 */
+
+/* 图1-4 共用导航标签（未选中态；hover/--text 与 aria-current/--blue 状态规则特异性更高，不受影响） */
+.rail-item { font-size: 12px; line-height: 18px; color: var(--meta); }
+
+/* 图1 工作台 */
+.ss-note { font-size: 12px; line-height: 18px; color: var(--meta); }
+.handoff-file .hf-val { color: var(--meta-hi); } /* 值=重要元数据，12/18 不动（见③） */
+#insp-body .ip-note, #insp-body .rej-why, #insp-body .ip-sec .ip-v,
+#insp-body .ev-demand, #insp-body .ev-src { font-size: 12px; line-height: 18px; color: var(--meta); } /* 见① */
+.ip-decide .pre { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ip-file { font-size: 12px; line-height: 18px; }
+.ip-file .fm { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ev-file .fm { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ip-link .arr { font-size: 12px; line-height: 18px; color: var(--meta); }
+.ip-link .ls { color: var(--meta-strong); } /* 13/20 已有；无状态类的基准文字归元数据档，k-done/k-awaiting/… 状态色特异性更高不受影响 */
+
+/* 图3 技能：路径归档（见②），颜色沿用 :1604 的 var(--meta-hi) */
+.skill-path { font-size: 12px; line-height: 18px; }
+.skilldetail .skill-path { line-height: 18px; } /* 同特异性压回 :1608 的 20px（:1608 当年是为压 .skilldetail p 的 1.8） */
+
+/* 图4 文件 */
+.fv-path { font-size: 12px; line-height: 18px; }
+.lf-tag.hist { color: var(--meta); } /* 12/18 已有，仅归色 */
+.library-file .lf-lines .lf-size { color: var(--meta-hi); } /* 见③：取代 :1582 的 var(--meta-num) */
+.library-file .lf-size.lf-reg { color: var(--meta-hi); }    /* 见③：取代 :1730 的 var(--meta-num) */
+
+/* ========== S01（第11轮）：删除技能卡片底部多余横线，仅留分页上方一条通栏分隔线 ==========
+   根因：.skill-row 基础规则 :572 的 border:1px solid var(--line) 历代未被覆盖，末行卡片底边框
+   （左右两条独立线）与 #skill-pagination 的 border-top（通栏线）形成三线重复分隔。
+   基线像素实测见 s01-round11-baseline.json：3 组线；卡底→线 14px（要 24）、线下沿→控件顶 11.5px（要 12）。 */
+/* 1) 卡片默认边框透明：边框仍占 1px（border-box，几何零变化）；.selected(:573)/:hover(:632)
+      蓝描边特异性 0-2-0 更高，选中/悬停高亮照常生效。 */
+.skill-row { border-color: transparent; }
+/* 2) 间距精确化：清 #skill-list 底 padding（:631 的 2px），间距由分页 margin-top 全额承担；
+      线下沿→控件顶 = 1px 线 + 12px padding-top = 12px（替代 align-items:center 的 11.5px 半像素）。
+      56px 条带高度/背景/通栏 border-top 均不变。 */
+#skill-list { padding-bottom: 0; }
+#skill-pagination { margin-top: 24px; padding: 12px 4px 0; align-items: flex-start; }
+
+/* ========== F01（第 12 轮·2026-11-16）：物理文件统一聚合口径 ==========
+   聚合键 = 需求ID + 规范化绝对路径（physKey）：每个物理文件唯一主行（最小高度 80px），
+   该需求的全部登记在主行内部纵向展开——当前版本行 var(--ok)（登记字节=磁盘实测），
+   历史版本行 #AFC0D5（12px/18px），每条登记行高 24px、行间距 4px。
+   覆盖关系（源顺序在后取胜）：
+   ① .lf-phys/.lf-multi 主行 min-height 80px：同特异性 (0,2,0) 压过 r10 :1706 的 96px
+     与 r4 :1585 的 68px；max-height 96px 封顶与 overflow:hidden 维持 r9 :1699 口径；
+   ② 登记行分色 (0,4,0)：压过 G01 r10 :1766/.lf-lines .lf-size 与 :1767/.lf-size.lf-reg
+     的 var(--meta-hi)——lf-cur=当前版本、lf-hist=历史版本；未实测/不可读不上色，不冒充判定；
+   ③ 登记行 24px 行盒（flex 垂直居中，字号/行高维持 12/18）——逐条登记各占一行，
+     登记原文（字节/指纹/时间）不合并。 */
+.library-file.lf-phys, .library-file.lf-multi { min-height: 84px; }
+.library-file .lf-vers { display: flex; flex-direction: column; gap: 4px; min-width: 0; max-width: 100%; }
+.library-file .lf-vers .lf-size { display: flex; align-items: center; height: 24px; max-width: 100%; }
+.library-file .lf-lines .lf-size.lf-cur, .library-file .lf-size.lf-cur { color: var(--ok); }
+.library-file .lf-lines .lf-size.lf-hist, .library-file .lf-size.lf-hist { color: #AFC0D5; font-size: 12px; line-height: 18px; }
+.library-file.lf-multi .lf-lines .lf-size.lf-reg { display: flex; align-items: center; height: 24px; }
+
+/* ========== A02（第 3 轮·2026-11-16）：上报新鲜度与连接心跳解耦 ==========
+   上报新鲜度列只依据最后一次有效业务上报时间（lastReport）：缺上报时间「—」、
+   超 2 分钟过期阈值「已过期 · 时刻」，永不显示「刚刚」；连接健康列仍走连接心跳
+   （online），两列独立变化——只更新连接心跳不会重置上报新鲜度。
+   文字规格 12px/18px；正常 var(--ok) #65D9B1 / 过期 var(--amber) #E5B95E /
+   无上报「—」var(--faint) #8996A8（A01 第 75 轮：杂散色 #91A0B4 归入 --faint token）。
+   覆盖关系（源顺序在后取胜）：压过本层之前对 .ag-hb 的字号/行高/颜色的一切归并。 */
+.ag-hb { font-size: 12px; line-height: 18px; }
+.ag-hb.ok { color: var(--ok); }
+.ag-hb.stale { color: var(--amber); }
+.ag-hb.off { color: var(--faint); }
+
+/* ========== F02（历史版本预览不冒充磁盘当前内容）==========
+   预览抽屉 #fv-body 的历史分支：.fv-hint 提示条（12px/18px/var(--amber) 字/var(--amber-bg) 底/
+   内边距 12px，与下方内容间距 12px）+ .fv-hist-meta 元数据行（.fh-kv 键值对）。
+   #fv-body 自身的 14px/23px 是 ID 选择器 (1,0,0)，会盖类选择器——这里全部用
+   #fv-body 前缀抬高特异性压过它。.fv-panel 宽度零改动（保持 min(420px, 94vw)）。 */
+#fv-body .fv-hint { font-size: 12px; line-height: 18px; color: var(--amber); background: var(--amber-bg); padding: 12px; margin: 0 0 12px; overflow-wrap: anywhere; }
+#fv-body .fv-hist-meta .fh-kv { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+#fv-body .fv-hist-meta .fh-kv + .fh-kv { margin-top: 2px; }
+#fv-body .fv-hist-meta .fh-kv span { flex: none; font-size: 12px; line-height: 20px; color: var(--muted); }
+#fv-body .fv-hist-meta .fh-kv b { flex: 1; min-width: 0; font-weight: 400; font-size: 13px; line-height: 20px; color: var(--text); text-align: right; overflow-wrap: anywhere; }
+
+/* ========== W02（第 12 轮·2026-11-16）：审批说明正文档位与滚动区收口 ==========
+   背景：G01 第 10 轮层（:1760）把 #insp-body 说明文字归并为 12px/18px/var(--meta)，
+   本轮任务书规格为普通说明文字 12px / 行高 19px / 颜色 --text-soft 档、段落间距 12px——
+   同特异性下源顺序在后取胜，本层整体压回任务书规格。
+   顶部内边距 14→12px 已直接改在 :374 基础规则上（同为 (1,0,0)，改源值即可）。
+   选择器沿用 W02 第 10 轮层的段落集合（备注 .ip-note / 打回理由 .rej-why /
+   需求原文 .ev-demand / 策略与核对口径说明 .ev-src / 门禁未到列表 .ip-sec .ip-v），
+   .ip-sec .ip-v 是块内列表内容，不参与段落间距归并（margin 维持原有节内节奏）。 */
+#insp-body .ip-note,
+#insp-body .rej-why,
+#insp-body .ip-sec .ip-v,
+#insp-body .ev-demand,
+#insp-body .ev-src { font-size: 12px; line-height: 19px; color: var(--text-soft); }
+#insp-body .ip-note,
+#insp-body .rej-why,
+#insp-body .ev-demand,
+#insp-body .ev-src { margin: 12px 0; }
+
+/* ========== G01（第 12 轮·2026-11-16）：四页辅助信息可读性统一 ==========
+   任务口径：普通正文 13px/20px/var(--meta-strong) · 辅助元数据 12px/18px/var(--meta) ·
+   短标签 11px/16px · 文件路径 12px 等宽（元数据色）· 正文对比度 ≥ 4.5:1。
+   实测对比（var(--card) 卡底）：var(--meta-strong)≈12.0:1 · var(--meta)=8.69:1，均达标。
+   文本放不下一律换行或增高容器，禁止缩小字号。 */
+/* G02（第 5 轮）：--meta-strong 生效值 var(--meta-strong) 前移集中,原两处覆盖块移除 */
+
+/* 图1 审批说明（压 W02 r12 的 12/19/--text-soft）：备注/打回理由/需求原文/策略说明是
+   阅读型正文 → 正文档；段间距沿用上方 W02 r12 的 margin:12px 0 不动。
+   .ip-sec .ip-v 是门禁未到列表内容 → 元数据档。 */
+#insp-body .ip-note,
+#insp-body .rej-why,
+#insp-body .ev-demand,
+#insp-body .ev-src { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+#insp-body .ip-sec .ip-v { font-size: 12px; line-height: 18px; color: var(--meta); }
+
+/* 图2 页首范围说明：A01 终色 #8FA3BA → 元数据档统一色（12/18 尺寸不变） */
+#agent-scope,
+.page-scope { color: var(--meta); }
+
+/* 图3 技能摘要：正文段落原继承 body 16px/1.8，四页正文不统一 → 归正文档 */
+.skilldetail p { font-size: 13px; line-height: 20px; color: var(--meta-strong); }
+
+/* 图3/图4 路径：12px 等宽 · 元数据色（r10 的 var(--meta-strong)→var(--meta-hi) 归位；
+   .lf-src 尺寸沿用 :1660 的 12/18 等宽省略号，只改色） */
+.library-file .lf-src { color: var(--meta); }
+.skill-path { font-size: 12px; line-height: 18px; color: var(--meta); }
+.skilldetail .skill-path { font-size: 12px; line-height: 18px; color: var(--meta); } /* (0,2,0)：skill-path 是 <p>，须压过本层上方 .skilldetail p (0,1,1) 的 13/20/var(--meta-strong) */
+.fv-path { font-size: 12px; line-height: 18px; color: var(--meta); }
+
+/* 图4 版本摘要元数据：r10 硬编码 var(--meta-hi) → 元数据档色（12/18 尺寸不变）；
+   预览抽屉历史键值（F02 p1 的 12/20/--muted、13/20/--text）统一元数据档 */
+.handoff-file .hf-val,
+.library-file .lf-lines .lf-size,
+.library-file .lf-size.lf-reg { color: var(--meta); }
+#fv-body .fv-hist-meta .fh-kv span,
+#fv-body .fv-hist-meta .fh-kv b { font-size: 12px; line-height: 18px; color: var(--meta); }
+
+/* 图4 密度缓解：元数据行距 4→6px、文件行高上限 96→128px（增高容器，不缩字号） */
+.library-file .lf-lines { gap: 6px; }
+.library-file .lf-vers { gap: 6px; }
+.library-file { max-height: 128px; }
+
+/* 底栏状态 chips 基准色归元数据档（状态变体色特异性更高，不受影响） */
+.sb-chip { color: var(--meta); }
+
+/* ================= G01 第 13 轮：四页辅助文字字号/行高/颜色统一归档 =================
+   规格：正文 13px/20px/var(--meta-strong)（--meta-strong）· 辅助 12px/18px/var(--meta)（--meta）·
+   11px 仅单行短标签 · 标题字号/字重层级不变 · 语义状态色（绿/金/蓝/红、心跳、版本
+   判定）保留 · 卡底 var(--card)、边框色不动。只改字号/行高/颜色，不动布局、
+   不动全局控件样式（.btn 系 12.5px 属控件规格，不参与本档）。
+   ---- 图1 审批说明（Inspector）---- */
+.insp-head { color: var(--meta); line-height: 18px; }            /* 面板头：var(--muted)/19.2 → 辅助档（字重层级保留） */
+.ip-step { color: var(--meta); line-height: 18px; }              /* STEP 眉题：同上 */
+.ip-sec > h4 { color: var(--meta); line-height: 18px; }          /* 小节标签（执行者等）：同上 */
+.handoff-h { color: var(--meta); line-height: 18px; }            /* 产物与交接小节头：同上 */
+.ip-decide h4 { line-height: 18px; }                             /* 「⏸ 待确认」琥珀标题：仅行高归档，色保留 */
+.ev-head { line-height: 18px; }                                  /* 「审批对象」琥珀小节头：仅行高 */
+.ev-pre { line-height: 18px; }                                   /* 前置条件胶囊（12px 单行）：20 → 18 */
+.ip-link .ln { line-height: 20px; }                              /* 产物链接（13px）：20.8 → 20 */
+.ip-sec-h h4 { line-height: 20px; }                              /* 产物小节头（13px）：20.8 → 20 */
+.ip-decide .pre { font-size: 13px; line-height: 20px; color: var(--meta-strong); }  /* 审批说明正文 → 正文档 */
+.material-mismatch { font-size: 13px; line-height: 20px; }       /* 材料不一致说明 → 正文档（var(--amber)/#342C20 语义警示保留） */
+.ip-decide .done-line { font-size: 13px; line-height: 20px; }    /* 已拍板结果行 → 正文档（绿保留） */
+/* ---- 图2 Agent 辅助信息 ---- */
+.agent-run p { font-size: 13px; line-height: 20px; color: var(--meta-strong); }     /* 执行摘要 → 正文档 */
+.agent-detail h4 { line-height: 20px; }                          /* 「实时状态」小节头：22 → 20（字号色保留） */
+/* ---- 图3 技能页 ---- */
+.skill-row small { font-size: 13px; line-height: 20px; color: var(--meta-strong); } /* 技能摘要 → 正文档（双行截断恢复桌面设计尺寸） */
+.chip-row button { color: var(--meta); }                         /* 筛选 chips 未选中态：var(--muted) → var(--meta)（选中/hover 规则各自保留） */
+#skill-count { font-size: 12px; line-height: 18px; color: var(--meta); }            /* 工具计数行 → 辅助档 */
+/* ---- 图4 文件页 ---- */
+.fv-meta { font-size: 12px; line-height: 18px; color: var(--meta); }                /* 预览栏元数据：11.5px → 辅助档 */
+
+/* ================= F01 第 13 轮：历史登记版本信息两行布局 =================
+   任务口径：每条历史登记行 = 左列 28px 版本编号（lf-vno）+ 右列自适应信息（lf-vbody）；
+   单条高度 36px（两行 18px）、条间距 6px；文字 12px 等宽字体、行高 18px；
+   时间独占第二行（分钟精度）。分色三分支：当前版本 var(--ok) / 历史版本 var(--meta) /
+   不可核验版本 var(--amber)（未实测或登记缺字节）。不合并登记、不减少信息。
+   覆盖关系：主规则取 (0,5,0)（.lf-size.lf-reg.lf-vrow 三类同挂），靠源顺序压过
+   r12 :1812 的 .library-file.lf-multi …(0,5,0) height:24px 与 :1809-1811 旧色。 */
+.library-file .lf-lines .lf-size.lf-reg.lf-vrow { display: flex; align-items: center; gap: 6px; height: 36px; max-width: 100%; font-family: var(--font-mono); font-size: 12px; line-height: 18px; }
+.library-file .lf-lines .lf-vrow .lf-vno { flex: none; width: 28px; text-align: center; font-family: inherit; font-weight: 400; }
+.library-file .lf-lines .lf-vrow .lf-vbody { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+.library-file .lf-lines .lf-vrow .lf-vbody > span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.library-file .lf-lines .lf-vrow.lf-cur { color: var(--ok); }   /* 当前版本（登记字节=磁盘实测） */
+.library-file .lf-lines .lf-vrow.lf-hist { color: var(--meta); }  /* 历史版本（实测已知但不等） */
+.library-file .lf-lines .lf-vrow.lf-unver { color: var(--amber); } /* 不可核验（无实测或登记缺字节） */
+
+/* ========== S01（第 12 轮·2026-11-16）：技能摘要两行 + 卡片统一 144px ==========
+   连续 4 轮未修复的根因（基线实测 verify-s01r12-baseline.json）：基础规则 :576
+   `.skill-row small { white-space:nowrap }` (0,1,1)，历代摘要层（:1092/:1300/:1528/:1924）
+   只重设字号/行高/-webkit-line-clamp，从未重设 white-space——nowrap 下文本不换行，
+   line-clamp 2 永远只有 1 行（基线：摘要盒高 20px、ws=nowrap）。
+   本轮规格：卡高统一 144px · 内边距 16px · 圆角 8px · 列/行间距 16px ·
+   标题 14/20 单行省略 · 摘要 13/20 最多 2 行 · 摘要区固定 40px · 摘要→标签 ≥12px ·
+   卡底 var(--card)（=--card，:1088 起同值，此层显式钉死）。
+   排布算术（border-box）：2px 边框 + 32px 边距 + 标题 20 + gap 6 + 摘要 40 + 标签 20 = 120px，
+   余 24px 由 .sk-meta 的 margin-top:auto(:1096) 全部吃进摘要→标签间隔（实测 24px ≥ 12）。
+   标题必须单行：两行标题 40px 时 40+40+20+34=134px，间隔只剩 10px 破 12px 下限；
+   实测全量技能名 ≤30 字符（等宽 14px ≈ 252px < 卡内容宽），单行省略不丢可读性，全名见详情面板。
+   覆盖关系（同特异性源顺序在后取胜）：height/min-height 压 :1295 的 min-height:124px
+   （基线实测卡高 124px 即它）；padding 16/radius 8 压 :1295 的 14px/10px；
+   标题 display:block+nowrap 压 :1296 的 -webkit-box 两行 clamp（无 -webkit-box 显示后
+   line-clamp 失效）；摘要 white-space:normal 解除 :576 的 nowrap，重申 :1300 的 clamp 组合。 */
+.skill-row {
+  height: 144px; min-height: 144px;
+  padding: 16px; border-radius: 10px;   /* R72·S01：圆角 10px（压回本层上方 8px） */
+  background: var(--card);
+}
+.skill-row b {
+  font-size: 14px; line-height: 20px;
+  display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.skill-row small {
+  font-size: 13px; line-height: 20px;
+  height: 40px; flex: 0 0 40px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; white-space: normal;
+}
+#skill-list { gap: 16px; }   /* 列间距=行间距 16px（:1085 已是 16px，此层按本轮规格钉死） */
+
+/* ================= W02（本轮）：审批详情正文档位收口 12px/19px =================
+   任务书规格：正文文字字号 12px、行高 19px。此前 G01 r12（:1883-1887）把
+   .ip-note/.rej-why/.ev-demand/.ev-src 归入 13px/20px、.ip-sec .ip-v 归入
+   12px/18px——本轮以同特异性更后的源顺序把五个正文选择器统一压回 12px/19px。
+   只动字号/行高；颜色沿用 G01 r12 归档值（var(--meta-strong) / var(--meta)），本轮任务书未涉色。 */
+#insp-body .ip-note,
+#insp-body .rej-why,
+#insp-body .ip-sec .ip-v,
+#insp-body .ev-demand,
+#insp-body .ev-src { font-size: 12px; line-height: 19px; }
+
+/* ================= S01（第13轮）：技能网格独立滚动 + 分页不贴边裁卡 =================
+   病根（verify-s01r13 baseline 实测）：#skill-list 虽已 overflow:auto 可滚，但 r11
+   把 padding-bottom 压成 0，描述改多行后卡片变高，第 6 卡 [643→787] 在列表可视底
+   732 之下还有 55px（标签区整段在折叠线下）；滚到底时末卡与容器底 0px 贴边；
+   分页区 56px + margin 24px 超出本轮规格。本轮按任务书逐条钉死：
+     · #skill-list 独立滚动容器：min-height:0; overflow-y:auto; padding-bottom:16px
+       （滚到底末卡与容器底保有 16px，标签不再贴边被裁）
+     · 分页控制区 48px 高，与网格间隔 16px（原 56px/24px）
+     · 卡片改最小高度 144px（原固定 height:144，标签换行时会被裁，min-height 可撑开）
+     · 描述 12px/18px，最多 3 行，超出省略（原 13/20×2 行固定 40px 盒）
+   同特异性更后源顺序覆盖 :639/:1103/:1339/:1811-1812/:1985-1994。 */
+#skill-list {
+  min-height: 0; overflow-y: auto; padding-bottom: 16px;
+}
+#skill-pagination {
+  height: 48px; min-height: 48px;
+  margin: 16px 0 0; padding: 0 4px; align-items: center;
+}
+.skill-row {
+  height: auto; min-height: 144px;
+}
+.skill-row small {
+  font-size: 12px; line-height: 18px;
+  height: auto; flex: none;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; white-space: normal;
+}
+
+/* ================= S01（第 14 轮）：卡片底部标签字号钉底 11px/16px =================
+   任务书：来源标签固定在卡片内底部，字号 11px、行高 16px。卡片底部标签组实际是
+   .sk-tag（角色）/ .sk-cat（类别）——:1322/:1328 已是 11px/16px；旧类 .sk-src（:1119，
+   12px）已不在卡片 DOM 上（来源路径 r11 起只进详情面板）。本层把 11px/16px 显式
+   钉在卡片内标签上作回归护栏，防止后续层再漂移。 */
+.skill-row .sk-tag, .skill-row .sk-cat { font-size: 11px; line-height: 16px; }
+
+/* ================= F01（第 14 轮 / 第 72 轮推广）：文件行三列布局 + 登记行独立两行 =================
+   任务书规格：文件行三列 = 文件信息 minmax(0,1fr) / 版本信息 220px / 操作区域 136px，
+   间距 16px；每条历史版本独立两行——第一行「版本编号 · 字节数 · 8 位哈希前缀」
+   （11px 等宽 / 18px），第二行完整日期时间（12px / 18px）；有效版本 var(--ok)、
+   差异状态 var(--amber)（r13 历史档 var(--meta) 按本轮规格归入差异警示色）。
+   长文件路径在 1fr 列内省略，不挤压 220px 版本列。files.js 的 physButton/fileButton
+   统一输出 .lf-c1（图标+文件信息）/ .lf-meta / .lf-actions 三段。
+   第 72 轮：grid 三列从 .lf-phys (0,3,0) 推广到全部 .library-file（单一登记行同规格），
+   行最小高 84px、内边距 16px；lf-name 13px/20px、lf-src 11px/16px。
+   覆盖关系：三列主规则取 (0,1,0) 压 :578 flex 布局（源顺序在后）；列宽钉死压
+   app-pages 的 lf-meta 190px / lf-actions 150px；版本行结构取 (0,5,0)（与 r13
+   :1955-1961 同特异性，靠更后源顺序压过 28px 左列、36px 行高与 12px 字号）。 */
+.library-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px 136px;
+  gap: 16px;
+  align-items: center;
+  min-height: 84px; padding: 16px;
+}
+.library-file .lf-c1 { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.library-file .lf-c1 > .ic { flex: none; }
+.library-file .lf-c1 .lf-main { flex: 1 1 auto; min-width: 0; }
+.library-file .lf-meta { width: auto; flex: initial; }
+.library-file .lf-actions { width: auto; flex: initial; }
+.library-file .lf-name { font-size: 13px; line-height: 20px; }
+.library-file .lf-src { font-size: 11px; line-height: 16px; }
+.library-file .lf-lines .lf-size.lf-reg.lf-vrow {
+  flex-direction: column; align-items: stretch; gap: 0;
+  height: auto; font-size: 11px; line-height: 18px;
+}
+.library-file .lf-lines .lf-vrow .lf-vl1 { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.library-file .lf-lines .lf-vrow .lf-vl1 > * { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.library-file .lf-lines .lf-vrow .lf-vno { flex: 0 0 auto; width: auto; text-align: left; font-weight: 600; }
+.library-file .lf-lines .lf-vrow .lf-vb { flex: none; font-variant-numeric: tabular-nums; }
+.library-file .lf-lines .lf-vrow .lf-vh { flex: 1 1 auto; min-width: 0; }
+.library-file .lf-lines .lf-vrow .lf-vtime { font-family: var(--font-body); font-size: 12px; line-height: 18px; }
+.library-file .lf-lines .lf-vrow.lf-cur { color: var(--ok); }   /* 有效版本（登记字节=磁盘实测） */
+.library-file .lf-lines .lf-vrow.lf-hist { color: var(--amber); }  /* 差异状态（实测已知但不等） */
+.library-file .lf-lines .lf-vrow.lf-unver { color: var(--amber); } /* 不可核验（无实测或登记缺字节） */
+
+/* ================= 第 73 轮层（GPT 评审 3.0→6.3→8.0）：W01 错误反馈 / S01 分页 56 /
+   F02 操作列 144 / W02 正文 20 / F01 原因行 =================
+   只放第 73 轮任务书的钉死值，全部走 :root token（G02 口径），源顺序在四文件最末。 */
+
+/* W01（严重）：审批被服务端拒绝后的错误反馈——13px/20px，背景 #3B3021、文字 #E5B95E
+   （后两项 = --amber-bg / --amber，workbench 基础层已达标，此处只钉字号行高；
+   审批栏 328px / 固定操作区 64px / 正文 12px-20px 维持不动（:626 为层叠最终值）。 */
+.ip-decide .fb.err { font-size: 13px; line-height: 20px; }
+
+/* S01（严重）：技能分页区独立 56px（r13 曾压到 48，第 73 轮任务书回钉 56）；
+   标签区固定 20px——标签 11px/16px 在 20px 行内垂直居中，不再随换行撑高卡片。 */
+#skill-pagination { height: 56px; min-height: 56px; }
+.skill-row .sk-meta { height: 20px; min-height: 20px; flex: none; overflow: hidden; }
+
+/* F02（一般）：操作列 136→144px；操作文字不换行，操作元素 min-width 76px / 高 36px /
+   内间距 8px；版本哈希行 11px 等宽 / 17px 行高（日期行维持 12px/18px 独立一行）；
+   路径 11px/16px 单行省略（完整路径保留在 title / data 属性里）。
+   F01（第 76 轮）：版本标识行高 17 → 16px（第 76 轮规格 11px 等宽/16px 行高）。 */
+.library-file { grid-template-columns: minmax(0, 1fr) 220px 144px; }
+.library-file .lf-actions { white-space: nowrap; }
+.library-file .lf-actions .lf-locate,
+.library-file .lf-actions .lf-preview { min-width: 76px; height: 36px; padding: 0 8px; }
+.library-file .lf-lines .lf-size.lf-reg.lf-vrow { line-height: 16px; }
+.library-file .lf-src { display: block; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* W02（一般）：审批详情正文 12px/20px + 段落间距 12px；证据标签列固定 64px。
+   面板 328px / 固定操作区 64px #111823 / 正文容器 min-height:0 overflow-y:auto /
+   底部内边距 80px 均已达标，不动。 */
+#insp-body .ip-note, #insp-body .rej-why, #insp-body .ip-sec .ip-v,
+#insp-body .ev-demand, #insp-body .ev-src { font-size: 12px; line-height: 20px; }
+#insp-body .ip-note p + p, #insp-body .rej-why p + p, #insp-body .ip-sec .ip-v p + p,
+#insp-body .ev-demand p + p, #insp-body .ev-src p + p { margin-top: 12px; }
+#insp-body .ev-k { width: 64px; }
+
+/* F01（严重）：不可校验 / 不一致行的红边框与原因行——边框 #E56B6F（token --alert-red），
+   原因说明 12px/18px、#E8A4A7（token --reason-red），max-height 36px = 最多 2 行；
+   不新增任何操作入口，原因文案来自后端真实错误码的映射（files.js）。 */
+.library-file.miss { border-color: var(--alert-red); }
+/* 选择器带 small 提权到 (0,3,1)：压过 app-workbench.css:98 的 .library-file.miss small { color: var(--red) }，
+   否则 miss 行的原因字会被旧层染成故障红 #EA7B76，偏离 F01 的 #E8A4A7 */
+.library-file .lf-reason,
+.library-file.miss small.lf-reason {
+  display: block; margin-top: 2px;
+  font-size: 12px; line-height: 18px; color: var(--reason-red);
+  max-height: 36px; overflow: hidden;
+}
+
+
+
+/* W01（第 79 轮）：内容级核对通过的正面标签——审批条目 .msha 与中央 .hf-tag.shaok
+   都用 --ok（#65D9B1），与异常标签 --amber/#3B3021 同一 12px/18px 标签规范；
+   「指纹 ✓」= 服务端现算 SHA-256 与登记指纹比对通过（大小与内容双一致）。 */
+.ev-file-meta .msha {
+  font-size: 12px; line-height: 18px; color: var(--ok);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.handoff-file .hf-tag.shaok { background: transparent; color: var(--ok); padding: 0; }
+
+/* ================= W02（第 80 轮）：#insp-body 滚动条宽 6px =================
+   任务书规格「滚动条宽6px」。此前全仓只有 #sb-chips 的 scrollbar 规则（还是
+   width:none 隐藏式），审批正文滚动体一直用浏览器默认宽度。只写
+   ::-webkit-scrollbar（不写 scrollbar-width:thin——Chrome 121+ 起标准属性会
+   整体接管并禁用伪元素样式，得到的是「细」而非精确 6px）；滑轨透明、滑块
+   #334155 低调灰，3px 圆角。面板 328px / 底距 80px / 操作区 64px / 正文
+   12px-20px 均不动（app-base.css:389 / app-layers.css:205 已钉死）。 */
+#insp-body::-webkit-scrollbar { width: 6px; }
+#insp-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+#insp-body::-webkit-scrollbar-track { background: transparent; }

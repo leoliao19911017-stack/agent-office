@@ -1,0 +1,109 @@
+{
+  "home": {
+    "oneSentence": "「打算怎么做」做好了，等你拍板",
+    "oneSentenceRect": {
+      "x": 115,
+      "y": 169,
+      "w": 1242,
+      "h": 29
+    },
+    "progressBar": {
+      "trackW": 1242,
+      "fillW": 360,
+      "fillPct": "29%"
+    },
+    "progressText": "第 3 项 / 共 7 项 · 做完 2 项",
+    "topScore": "目标\n8.0\n· 当前\n还没打分",
+    "primaryButtonCount": 1,
+    "primaryButtonLabel": [
+      "确认，就这么做"
+    ],
+    "footButtonCount": 2,
+    "bannedWordsVisible": [],
+    "pastToggleText": "看看已经做完的（2 项）",
+    "uiErrors": 0
+  },
+  "pastExpand": {
+    "ok": true,
+    "doneBefore": 0,
+    "doneAfter": 2,
+    "toggleAfter": "收起"
+  },
+  "log": {
+    "headline": "4 个 AI 都在，现在没人干活",
+    "rosterCount": 4,
+    "roster": [
+      "Lemate Coding 已经有一阵没动静，可能卡住了",
+      "Winter 视频剪辑 在不在干未知（从未接入上报）",
+      "Karina 图文笔记 在不在干未知（从未接入上报）",
+      "Codex 生图·审查 空着，没在干活"
+    ],
+    "eventCount": 30
+  },
+  "settings": {
+    "tabs": [
+      {
+        "label": "常用",
+        "on": true
+      },
+      {
+        "label": "AI 与干活状态",
+        "on": false
+      },
+      {
+        "label": "技能管理",
+        "on": false
+      },
+      {
+        "label": "文件库",
+        "on": false
+      }
+    ],
+    "defaultScoreInput": "8.0",
+    "termRows": 11,
+    "agentsTabSwitchShowsAgentsPage": true,
+    "generalHiddenAfterSwitch": true
+  },
+  "pro": {
+    "reqsW": 248,
+    "inspW": 328,
+    "chainChildren": 4,
+    "pageHidden": false
+  },
+  "navigation": [
+    {
+      "hash": "/",
+      "page": "home",
+      "title": "我的任务 · Leo's Agent Office",
+      "homeHidden": false,
+      "logHidden": true,
+      "setHidden": true
+    },
+    {
+      "hash": "/log",
+      "page": "log",
+      "title": "干活记录 · Leo's Agent Office",
+      "homeHidden": true,
+      "logHidden": false,
+      "setHidden": true
+    },
+    {
+      "hash": "/settings",
+      "page": "settings",
+      "title": "设置 · Leo's Agent Office",
+      "homeHidden": true,
+      "logHidden": true,
+      "setHidden": false
+    },
+    {
+      "hash": "/agents",
+      "page": "settings",
+      "title": "设置 · Leo's Agent Office",
+      "homeHidden": true,
+      "logHidden": true,
+      "setHidden": false,
+      "settingsTabAfterLegacy": true
+    }
+  ],
+  "uiErrorsFinal": 0
+}

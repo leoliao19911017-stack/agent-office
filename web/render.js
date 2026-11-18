@@ -71,9 +71,10 @@ function renderTopbar() {
     rejN = ld.rejected.length;
   }
   if (decN > 0 || rejN > 0) {
+    // TASK-工作台重做：胶囊说人话——「等你拍板」比「待决策」一眼懂
     const parts = [];
-    if (decN > 0) parts.push(`⏸ <b>${decN}</b> 待决策`);
-    if (rejN > 0) parts.push(`↩ <b>${rejN}</b> 待重提`);
+    if (decN > 0) parts.push(`<b>${decN}</b> 件事等你拍板`);
+    if (rejN > 0) parts.push(`<b>${rejN}</b> 件被打回，等重交`);
     pill.hidden = false;
     pill.innerHTML = parts.join(' · ');
     pill.title = `可拍板 ${decN} 项 · 待重提 ${rejN} 项，点击查看清单`;
@@ -107,7 +108,7 @@ function renderStatusbar() {
   } else if (initPhase === 'connected') {
     conn.classList.add('ok');
     connText.textContent = '已连接';
-    conn.title = '指本页与中台 API 的连接；各 Agent 实例健康状态看右侧每枚状态点' +
+    conn.title = '指本页与中台 API 的连接；各 AI 健不健康看右侧每枚状态点' +
       (hubOnline === false ? '（中台 autoloop 未开启，详见设置弹层）' : '');
   } else if (initPhase === 'conn-fail') {
     conn.classList.add('off');
@@ -128,28 +129,27 @@ function renderStatusbar() {
   // 有 lastState 但 state 模块正在报错时是「过期数据」：横幅已标旧，这里如实展示最后已知值。
   const chips = document.getElementById('sb-chips');
   if (!lastState || !Array.isArray(lastState.agents)) {
-    document.getElementById('sb-agents').textContent = '已配置角色 — · 在线实例 —';
+    document.getElementById('sb-agents').textContent = 'AI 在线 —';
     document.getElementById('sb-agents').setAttribute('title', '中台状态尚未读到，等首轮同步完成');
-    document.getElementById('sb-running').textContent = '执行中 —';
+    document.getElementById('sb-running').textContent = '在干活 —';
     document.getElementById('sb-running').setAttribute('title', '中台状态尚未读到，等首轮同步完成');
-    chips.innerHTML = '<span class="sb-note">Agent 状态等待首轮同步…</span>';
+    chips.innerHTML = '<span class="sb-note">AI 状态等待首轮同步…</span>';
     return;
   }
   // TASK-R11/G01：中台全量 agents 的在线统计不再在此另算一套——
   // 底栏主数字与 Agents 页同源（agentStats 名册），避免 7/7 与 4/4 打架。
   const staleNote = modErr.state ? '上一次成功读取的快照（顶部横幅可见时长）' : '';
-  // TASK-R11/G01：底栏与 Agents 页共用 agentStats() 这一份标准化名册——
-  // 这里显示的「一线角色 / 在线实例」就是 Agents 页统计卡上的同一组数字。
-  // 中台注册数（含未启用壳角色）只进 tooltip 说明，不再当主数字与 Agents 页打架。
+  // TASK-工作台重做：底栏只说人话「N 个 AI 在线（另 X 情况不明）」；专业口径
+  // （一线/注册/同源说明）全收进 tooltip，专业视图和 Agents 页签里看全量。
   const st = agentStats();
-  const unknownNote = st.hasUnknown ? `；${st.roster.length - st.firstLine} 个实例未上报（状态未知，不计入在线）` : '';
-  document.getElementById('sb-agents').textContent = `一线角色 ${st.roster.length} · 在线实例 ${st.rosterOnline}${st.hasUnknown ? '（另 ' + (st.roster.length - st.firstLine) + ' 未知）' : ''}`;
-  document.getElementById('sb-agents').setAttribute('title', staleNote || `与 Agents 页同口径（agentStats）：一线角色 ${st.roster.length}、在线实例 ${st.rosterOnline}${unknownNote}。中台共注册角色 ${st.registered == null ? '—' : st.registered} 个（含未启用的壳角色），Agents 页统计卡可见分层`);
+  const unknownNote = st.hasUnknown ? `；${st.roster.length - st.firstLine} 个未上报（状态未知，不计入在线）` : '';
+  document.getElementById('sb-agents').textContent = `AI ${st.rosterOnline} 个在线${st.hasUnknown ? '（另 ' + (st.roster.length - st.firstLine) + ' 个情况不明）' : ''}`;
+  document.getElementById('sb-agents').setAttribute('title', staleNote || `与 Agents 页同口径（agentStats）：一线角色 ${st.roster.length}、在线 ${st.rosterOnline}${unknownNote}。中台共注册角色 ${st.registered == null ? '—' : st.registered} 个（含未启用的壳角色），Agents 页统计卡可见分层`);
   document.getElementById('sb-agents').setAttribute('data-note', '一线口径=Agents页同源');
   const runEl = document.getElementById('sb-running');
-  runEl.textContent = `执行中 ${st.rosterBusy}`;
+  runEl.textContent = `在干活 ${st.rosterBusy}`;
   runEl.classList.toggle('run', st.rosterBusy > 0);
-  runEl.setAttribute('title', staleNote || '一线 Agent 中正在执行的实例数（含重试中），与 Agents 页同口径');
+  runEl.setAttribute('title', staleNote || '正在干活的 AI 数（含重试中），与 Agents 页同口径');
   // R9（评审 Agents）：每个 Agent 一枚状态点+岗位——busy 绿 / idle 灰 / unknown 灰蓝 / down 断连，
   // 点击整排跳到 Agents 页。TASK-R11/G01：chips 同样从 agentStats() 名册渲染，
   // 带 roleId/instanceId，与 Agents 页逐一对应。A02：chip 只报名册的 conn/work 字段，
@@ -159,7 +159,7 @@ function renderStatusbar() {
     const connTxt = !s.loaded ? '未知' : s.conn === 'online' ? '在线' : '离线';
     const workTxt = WORK_CN[s.work] || '未知';
     const state = `连接：${connTxt}｜执行状态：${workTxt}${s.workUnknownWhy ? `（${s.workUnknownWhy}）` : ''}`;
-    return `<button type="button" class="sb-chip ${cls}" title="角色：${esc(s.role)}（ID ${esc(s.roleId)}）｜实例 ${s.loaded ? esc(s.instanceId) : '未上报'}｜${esc(state)}｜点击查看 Agents"><i></i>${esc(s.name)}</button>`;
+    return `<button type="button" class="sb-chip ${cls}" title="角色：${esc(s.role)}（ID ${esc(s.roleId)}）｜编号 ${s.loaded ? esc(s.instanceId) : '未上报'}｜${esc(state)}｜点击查看 AI 明细"><i></i>${esc(s.name)}</button>`;
   }).join('');
 }
 

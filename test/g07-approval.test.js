@@ -96,7 +96,8 @@ const post = (p, body) => fetch(stack.base + p, {
 test('D1 审批链路 UI 闭环：选任务→备注→打回→步骤真实转 failed（服务端档案复核）', async () => {
   const { page, state } = await newPage(browser);
   try {
-    await page.goto(stack.base + '/', { waitUntil: 'commit' });
+    // TASK-工作台重做：三栏工作台（审批面板所在）在 #/pro 专业视图
+    await page.goto(stack.base + '/#/pro', { waitUntil: 'commit' });
     await page.waitForSelector('#reqs-list .req-item', { timeout: 15000 });
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
 
@@ -139,7 +140,8 @@ test('D1 审批链路 UI 闭环：选任务→备注→打回→步骤真实转 
 test('D2 审批版本门禁：登记漂移 → 批准按钮禁用 + approve 409 ARTIFACT_VERSION_DRIFT；打回不受限', async () => {
   const { page, state } = await newPage(browser);
   try {
-    await page.goto(stack.base + '/', { waitUntil: 'commit' });
+    // TASK-工作台重做：三栏工作台（审批面板所在）在 #/pro 专业视图
+    await page.goto(stack.base + '/#/pro', { waitUntil: 'commit' });
     await page.waitForSelector('#reqs-list .req-item', { timeout: 15000 });
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
 
