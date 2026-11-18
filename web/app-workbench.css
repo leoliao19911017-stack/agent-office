@@ -392,7 +392,7 @@
   .ag-idcol .agent-name { font-size: 14px; line-height: 20px; }
   .ag-idcol .agent-role { font-size: 12px; line-height: 18px; }   /* A01（第 72 轮）：辅助文字 12px/18px */
   /* A01（第 75 轮）：连接/执行/上报新鲜度三状态列统一 12px / 行高 18px（原 13/20）。
-     颜色口径：在线 #62C6A0(--green) ｜ 空闲 var(--muted) ｜ 未知/掉线 var(--meta-strong)
+     颜色口径：在线 var(--green) ｜ 空闲 var(--muted) ｜ 未知/掉线 var(--meta-strong)
      ｜ 超时 var(--amber)——「离线/未知」是有判断结论的状态文字，走辅助强调档；
      纯「—」无数据占位才走 var(--faint) #8996A8（见 .ag-hb.off，G01 对比度口径不变） */
   .ag-conn, .ag-work { font-size: 12px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

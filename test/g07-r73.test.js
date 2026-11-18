@@ -22,7 +22,7 @@ import { ROOT, WEB, startStack, launchBrowser, newPage, sleep } from './g07-harn
 const FIX = join(WEB, '.work').replace(/\\/g, '/');
 const fixPath = (n) => `${FIX}/${n}`;
 const DIR_PATH = FIX;                       // 目录登记（EISDIR）
-const PAGEFILE = 'C:/pagefile.sys';         // Windows 实测 EINVAL（statSync 不带权限读系统页文件）
+const PAGEFILE = 'C:/pagefile.sys';         // statSync 错误码因机而异（本机实测 EINVAL/EBUSY），B5 动态取码断言
 
 const shaOf = (t) => createHash('sha256').update(t, 'utf8').digest('hex');
 const iso = (minAgo) => new Date(Date.now() - minAgo * 60000).toISOString();
@@ -562,9 +562,20 @@ test('B5 F01 异常原因行：四类真实错误码文案 + 快照不可用不�
     // EISDIR（登记为目录）
     assert.ok(rows.dir.miss, '目录登记行应不可校验');
     assert.equal(rows.dir.text, '登记路径是目录不是文件（EISDIR），无法当产物校验', `EISDIR 文案，实际「${rows.dir.text}」`);
-    // EINVAL（本机对 pagefile 的真实 statSync 错误码，走未知码统一说明）
-    assert.ok(rows.pagefile.text.includes('未收录进已知分类'), `未知码应统一说明并带出真实码，实际「${rows.pagefile.text}」`);
-    assert.ok(rows.pagefile.text.includes('EINVAL'), `应带出真实错误码 EINVAL，实际「${rows.pagefile.text}」`);
+    // pagefile：本机对系统页文件的真实 statSync 错误码（EINVAL/EBUSY 因机而异）——
+    // 不写死单一码，先从 file-check 拿本机实测 errCode，再断言原因行带出该码。
+    // 码落在已知分类（EACCES/EPERM 等）则应给准确文案，未知码走统一说明——两条分支都算过。
+    const pf = await post('/api/office/file-check', { paths: [PAGEFILE] });
+    const pfCode = pf.body?.results?.[0]?.errCode;
+    assert.ok(typeof pfCode === 'string' && pfCode,
+      `pagefile 应带回真实 errCode，实际 ${JSON.stringify(pf.body).slice(0, 160)}`);
+    const KNOWN = { ENOENT: 1, EACCES: 1, EPERM: 1, EISDIR: 1 };
+    assert.ok(rows.pagefile.text.includes(pfCode),
+      `原因行应带出真实错误码 ${pfCode}，实际「${rows.pagefile.text}」`);
+    if (!KNOWN[pfCode]) {
+      assert.ok(rows.pagefile.text.includes('未收录进已知分类'),
+        `未知码 ${pfCode} 应统一说明并带出真实码，实际「${rows.pagefile.text}」`);
+    }
     // 大小不一致（可读但与登记不符）
     assert.ok(!rows.f.miss, '大小不一致行不是不可读（无双红框语义）');
     const fActual = Buffer.byteLength(CLEAN.f, 'utf8');
@@ -593,7 +604,7 @@ test('B5 F01 异常原因行：四类真实错误码文案 + 快照不可用不�
       return r ? r.textContent.trim() : null;
     });
     assert.ok(cause && cause.includes('ENOENT'), `抽屉原因行应含 ENOENT 映射，实际「${cause}」`);
-    console.log(`[B5] 四类文案落位（${rows.missing.text.slice(0, 10)}… / EISDIR / EINVAL 统一 / 实测 ${fActual}B），12px/18px #E8A4A7 36px，no-snapshot 无 text，抽屉原因行在`);
+    console.log(`[B5] 四类文案落位（${rows.missing.text.slice(0, 10)}… / EISDIR / ${pfCode} 统一 / 实测 ${fActual}B），12px/18px #E8A4A7 36px，no-snapshot 无 text，抽屉原因行在`);
   } finally { await page.close(); }
 });
 

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 81 轮整改执行报告</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0E141C; color: #D6E0ED; font: 14px/22px "Segoe UI", "Microsoft YaHei", sans-serif; padding: 32px 16px 64px; }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 24px; line-height: 32px; color: #fff; }
+  h2 { font-size: 18px; line-height: 26px; color: #fff; border-left: 4px solid #62C6A0; padding-left: 12px; margin-top: 40px; }
+  .meta, .meta li { color: #8996A8; font-size: 12px; line-height: 20px; }
+  .meta { list-style: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+  th, td { border: 1px solid #334257; padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: #172131; color: #fff; white-space: nowrap; }
+  tr:nth-child(even) td { background: #111824; }
+  code, .mono { font-family: Consolas, "Courier New", monospace; font-size: 12px; color: #B8C5D6; }
+  .ok { color: #65D9B1; font-weight: 600; }
+  .warn { color: #E5B95E; font-weight: 600; }
+  .bad { color: #E56B6F; font-weight: 600; }
+  .card { background: #151F2D; border: 1px solid #334257; border-radius: 10px; padding: 16px 20px; margin: 16px 0; }
+  .pill { display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 12px; margin-left: 8px; }
+  .pill.done { background: rgba(98,198,160,.15); color: #65D9B1; }
+  details { margin: 8px 0; }
+  summary { cursor: pointer; color: #78A8F5; font-size: 13px; }
+  .shots { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; margin: 12px 0; }
+  .shots figure { margin: 0; }
+  .shots img { width: 100%; border: 1px solid #334257; border-radius: 8px; }
+  .shots figcaption { font-size: 12px; color: #8996A8; margin-top: 4px; }
+</style>
+</head>
+<body><div class="wrap">
+<h1>第 81 轮整改执行报告</h1>
+<ul class="meta">
+  <li>日期 2026-11-18 · 基线 live r73（http://127.0.0.1:8090）· server.js 未改动，无需重启</li>
+  <li>总览：7 项（0 致命 / 6 严重 / 1 一般）全部 <span class="ok">done</span>；W02 在验收实测中发现并修复一个真缺陷；G01 修复一个机器相关测试缺陷（pagefile 错误码写死 EINVAL，本机实测 EBUSY）</li>
+  <li>测试环境 Node v22.23.2（node:sqlite 可用）。全量套件三次全绿（改 CSS 前 / 后 / 改 app.js 后）：238/238 pass，EXIT=0</li>
+</ul>
+
+<h2>W01（严重）审批提交的原子性文件版本校验 <span class="pill done">done</span></h2>
+<div class="card">
+<p><b>做了什么</b>：零新代码改动（r73-r80 已实现服务端提交时重读物理文件全量 SHA-256 比对），本轮按 6 场景全新实测。</p>
+<table>
+<tr><th>场景</th><th>实测</th></tr>
+<tr><td>① 版本一致</td><td>approve 200，verified:true，成功事件恰 1 条，档案 done，刷新后链路仍 done</td></tr>
+<tr><td>② 内容改大小不变</td><td>409 ARTIFACT_VERSION_DRIFT，0 成功事件，档案不动，打回仍允许（D2）</td></tr>
+<tr><td>③ 大小改</td><td>409 ARTIFACT_VERSION_DRIFT，文案含「实测 X B ≠ 登记 Y B」</td></tr>
+<tr><td>④ 重复提交</td><td>decision 重提 409 不加事件；decide 同 opId 重放单次写回</td></tr>
+<tr><td>⑤ 并发提交</td><td>同拍板两请求 → [200, 409]，成功事件恰 1 条</td></tr>
+<tr><td>⑥ 登记文件被删</td><td>decision/decide 双 404 ARTIFACT_FILE_MISSING，0 事件</td></tr>
+<tr><td>错误反馈样式</td><td>13px/20px，背景 #3B3021，文字 <span class="warn">#E5B95E</span>（L4 实测 rgb 值）</td></tr>
+</table>
+<p><b>未达成</b>：无。</p>
+</div>
+
+<h2>F01（严重）历史版本读取独立快照 <span class="pill done">done</span></h2>
+<div class="card">
+<p><b>做了什么</b>：零新代码改动。修复测试自身缺陷：B5 原把 <code>C:/pagefile.sys</code> 的 statSync 错误码写死 EINVAL，本机真实返回 EBUSY（前端行为正确、测试误报）。改为先经 <code>POST /api/office/file-check</code> 取本机真实 errCode 再断言。</p>
+<p><b>实测</b>：D3 快照命中时服务端独立重算 SHA-256（不拿磁盘当前内容冒充）；D4 快照不匹配 404 无正文、vkey 串台 409；B5 四类真实错误码原因行（ENOENT/EISDIR/EBUSY 动态取码）＋快照不可用不冒充；R3 删除→恢复闭环 ok→miss(ENOENT)→ok。18/18 过。</p>
+<p><b>未达成</b>：无。</p>
+</div>
+
+<h2>S01（严重）技能页第三排卡片裁切 <span class="pill done">done</span></h2>
+<div class="card">
+<p><b>实测</b>（L2，1440×900 与 1280×768 双视口断言全过）：滚到底第 6 卡底边距分页条顶 ≥12px；卡片 144px、间隙 16px、标题 14px/20px、描述 12px/18px 最多 3 行、标签区 20px；分页条固定 56px 不随滚动移动。截图肉眼复核布局完整。</p>
+<p><b>未达成</b>：无。</p>
+</div>
+
+<h2>W02（严重）审批详情独立滚动 <span class="pill done">done · 本轮修真缺陷</span></h2>
+<div class="card">
+<p><b>缺陷</b>：验收实测发现 <code>selectStep</code>（web/app.js）整块重建 <code>#insp-body</code> 时滚动位置丢失——切走再切回回到顶部，违反「切换步骤再切回滚动位置保持」。<b>修复</b>：<code>inspScrollMemo</code> 按「任务:步骤」记忆，切走前存、切回时接续；没看过的步骤明确回顶；selectTask 清空记忆。</p>
+<table>
+<tr><th>指标</th><th>修复前</th><th>修复后</th></tr>
+<tr><td>切 plan→verify 滚动位置</td><td class="bad">1691 → 0（Δ1691px）</td><td class="ok">1691 → 1691（Δ0px）</td></tr>
+<tr><td>正文滚到底：中栏顶 / 左列表 / 首项</td><td colspan="2">Δ 0.00px / Δ 0.00px / Δ 0.00px（右栏 328px，可滚 2703px）</td></tr>
+<tr><td>三档长文 300/1500/3000 字</td><td colspan="2">末行距操作区 ≥12px；正文 12px/20px；底距 80px；操作区 64px #111823；段落间距 12px；滚动条 6px</td></tr>
+</table>
+<p>修复后全量套件 238/238 复跑全绿，零 pageerror / 零 console.error。<b>未达成</b>：无。</p>
+</div>
+
+<h2>A01（严重）Agent 状态三列解耦 <span class="pill done">done</span></h2>
+<div class="card">
+<p><b>实测</b>（verify-a01-r75 四场景矩阵，全部 12px/18px，五列解耦，ALL OK）：</p>
+<table>
+<tr><th>场景</th><th>连接列</th><th>执行列</th><th>新鲜度列</th></tr>
+<tr><td>在线·无上报</td><td>在线 <span class="ok">#62C6A0</span></td><td>未知</td><td>— <span style="color:#8996A8">#8996A8</span></td></tr>
+<tr><td>在线·上报过期</td><td>在线 <span class="ok">#62C6A0</span></td><td>未知</td><td>已过期 · 10:40 <span class="warn">#E5B95E</span></td></tr>
+<tr><td>离线·带新鲜上报</td><td>离线</td><td>未知</td><td>2 分钟前 <span class="ok">#65D9B1</span>（不被离线吞）</td></tr>
+<tr><td>在线·执行中</td><td>在线 <span class="ok">#62C6A0</span></td><td>执行中 #6C9EF1</td><td>30 秒前 <span class="ok">#65D9B1</span></td></tr>
+</table>
+<p>在线不自动推断空闲（g1 执行列=未知）；R1/R2 断言 300 秒阈值明细与断线重连不覆盖执行态。<b>未达成</b>：无。</p>
+</div>
+
+<h2>G01（严重）≥16 组测试 + 分支覆盖 ≥90% <span class="pill done">done</span></h2>
+<div class="card">
+<p><b>通过率</b>：23 个测试文件 <b class="ok">238/238 pass，EXIT=0</b>（三次全绿）；g07-r73 单文件 18 用例 17 固定场景 ≥16。</p>
+<p><b>分支覆盖率</b>（NODE_V8_COVERAGE 149 个覆盖文件，跨进程并集口径，web/verify-r81-branchcov.mjs 可复现）：</p>
+<table>
+<tr><th>模块</th><th>装载</th><th>脚本字符</th><th>处处未执行</th><th>分支臂覆盖</th></tr>
+<tr><td>approval.js</td><td>4</td><td>20552</td><td>365</td><td class="ok">98.2%</td></tr>
+<tr><td>version.js</td><td>5</td><td>10371</td><td>1250</td><td>87.9%</td></tr>
+<tr><td>decision-ops.js</td><td>2</td><td>18663</td><td>0</td><td class="ok">100%</td></tr>
+<tr><td>shared.js（工具层）</td><td>5</td><td>8899</td><td>2132</td><td class="warn">76.0%</td></tr>
+<tr><td><b>审批/版本校验三模块</b></td><td>—</td><td>49586</td><td>1615</td><td class="ok"><b>96.7% ≥90%</b></td></tr>
+<tr><td>含工具层四模块合计</td><td>—</td><td>58485</td><td>3749</td><td>93.6%</td></tr>
+</table>
+<p>诚实披露：node 覆盖看不见浏览器进程（g07 走 Playwright 真实 Chrome），shared/version 未覆盖部分多为渲染路径，上表是<b>下界</b>；shared.js 是工具层，不属任务书指定的审批/版本校验逻辑。</p>
+<p><b>6 场景</b>：审批冲突（B2）/ 重复提交（B3）/ 文件删除（B6）/ 快照缺失（B5·D4）/ API 断线（R2）/ CSS 404（R4 人为注入必被检出——零误报且有检出力）。确认态刷新存活：B1、R3。<b>未达成</b>：无（shared.js 单文件 76% 如实披露如上）。</p>
+</div>
+
+<h2>G02（一般）重复色收口 + 代码红线 <span class="pill done">done</span></h2>
+<div class="card">
+<p><b>收口</b>：<code>--text-soft: #B8C5D6</code>（app-layers 2 处）、<code>--stat-line: #334257</code>（app-pages 1 处）；<code>#62c6a0</code> 最后 1 处收口 var(--green)。值即历史规格字面值，渲染色逐一致（不并入相近档）。</p>
+<p><b>实测</b>：4 个在用 CSS 的 :root 外颜色字面量 99 处，<b class="ok">命中变量值 0 处</b>（live-check-app.css 为存档，未被引用，不在范围）。app.js 有效 <b class="ok">627≤800</b>（总 866）/ server.js 有效 <b class="ok">278≤500</b>（总 401）/ 227 函数最长 <b class="ok">115≤120</b>。依赖：顶层前向引用 0、跨文件顶层写 0（调用期环 208 为普通 script 全局互联合法形态；server ESM 无环）。基础字号 12px/18px 未动；渲染色不变：238/238（含 L1/L2 钉死几何断言）+ 8/8 截图四表全 on。</p>
+<p><b>未达成</b>：无。</p>
+</div>
+
+<h2>四页截图验收（8/8）</h2>
+<div class="shots">
+  <figure><img src="web/verify-assets/r81/r81-workbench-1440x900.png" alt="工作台 1440×900"><figcaption>工作台 1440×900 · 8 条需求</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-agents-1440x900.png" alt="Agents 1440×900"><figcaption>Agents 1440×900 · 4 卡</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-skills-1440x900.png" alt="技能 1440×900"><figcaption>技能 1440×900 · 6 行</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-files-1440x900.png" alt="文件 1440×900"><figcaption>文件 1440×900 · 4 组</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-workbench-1280x768.png" alt="工作台 1280×768"><figcaption>工作台 1280×768</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-agents-1280x768.png" alt="Agents 1280×768"><figcaption>Agents 1280×768</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-skills-1280x768.png" alt="技能 1280×768"><figcaption>技能 1280×768</figcaption></figure>
+  <figure><img src="web/verify-assets/r81/r81-files-1280x768.png" alt="文件 1280×768"><figcaption>文件 1280×768</figcaption></figure>
+</div>
+
+<h2>改动文件与红线</h2>
+<div class="card">
+<table>
+<tr><th>文件</th><th>改动</th><th>条目</th></tr>
+<tr><td>web/app.js</td><td>selectStep 滚动记忆 + selectTask 清空（+16 行）</td><td>W02</td></tr>
+<tr><td>web/app-base.css / app-layers.css / app-pages.css</td><td>3 处活规则色收口 token</td><td>G02</td></tr>
+<tr><td>web/app-workbench.css</td><td>注释口径（无规则改动）</td><td>G02</td></tr>
+<tr><td>test/g07-r73.test.js</td><td>B5 pagefile 错误码动态取码</td><td>F01/G01</td></tr>
+<tr><td>web/verify-r81-{shots,w02-isolation,branchcov}.mjs</td><td>新增证据脚本（非浏览器脚本，无需白名单）</td><td>全局</td></tr>
+</table>
+<p class="mono">行数（wc -l 实测）：app.js 866（有效 627）· server.js 401（有效 278）· CSS 四文件合计 2175（base 695 + workbench 569 + pages 247 + layers 664；app.css 第 5 轮已拆四文件，done.json 的 "app.css" 键给合计）。</p>
+<p>证据文件：web/verify-assets/r81/（PNG ×8 + shots.json + w02-isolation.json + branchcov.json）。</p>
+</div>
+</div></body>
+</html>

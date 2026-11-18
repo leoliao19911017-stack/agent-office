@@ -471,16 +471,27 @@ function selectTask(id, opts = {}) {
   if (!opts.keepView) ui.view = 'chain';
   saveUiPos();
   renderAll();
+  for (const k of Object.keys(inspScrollMemo)) delete inspScrollMemo[k];   // 换需求视图整体回顶，旧记忆不跨需求带
   document.getElementById('center').scrollTop = 0;
   document.getElementById('insp-body').scrollTop = 0;
 }
 
+// W02（第 81 轮）：详情正文按「任务:步骤」记忆滚动位置——切走前存，切回时接续；
+// 轮询重渲染走 withScroll 保位置，唯独 selectStep 是整块重建，不记就回顶。
+// 没看过的步骤不给记忆值，明确回顶（新内容从头上读起）。
+const inspScrollMemo = {};
+
 // TASK-R6（评审 #4）：同 selectTask——反馈/草稿按 key 留存，切步骤不清
 function selectStep(key) {
+  const body = document.getElementById('insp-body');
+  const from = `${ui.taskId}:${ui.stepKey}`;
+  const to = `${ui.taskId}:${key}`;
+  if (body && ui.stepKey != null && from !== to) inspScrollMemo[from] = body.scrollTop;
   ui.stepKey = key;
   saveUiPos();
   withScroll(document.getElementById('center-chain'), renderChain);
   renderInspector();
+  if (body && from !== to && inspScrollMemo[to] != null) body.scrollTop = inspScrollMemo[to];
   scheduleVersionGate();   // W02：切换步骤立即拉这一步的服务端版本判定，不等下一拍轮询
   // 窄屏（≤1099，W02 口径与 app-workbench.css 抽屉断点一致）Inspector 是覆盖层：点步骤就带出来
   if (window.matchMedia('(max-width: 1099px)').matches) {

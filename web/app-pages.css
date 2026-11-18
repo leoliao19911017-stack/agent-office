@@ -25,7 +25,7 @@
     width: 152px; height: 64px; border-radius: 8px;
     display: flex; flex-direction: column; justify-content: center; gap: 2px;
     padding: 12px 16px;
-    background: #172131; border: 1px solid #334257;
+    background: #172131; border: 1px solid var(--stat-line);
     cursor: help;
   }
   .sc-label { font-size: 12px; line-height: 18px; color: var(--muted); }
@@ -112,7 +112,7 @@
   #skill-pagination .btn[disabled] { opacity: .4; cursor: default; }
   #skill-pagination span { font-size: 13px; line-height: 20px; color: var(--muted); }
 
-  /* ---- F01：文件行三列 · 最小 68px · var(--card)（第 9 轮规格，原 #151F2D）/ 边框 #334257（--line）·
+  /* ---- F01：文件行三列 · 最小 68px · var(--card)（第 9 轮规格，原 #151F2D）/ 边框（--line 档）·
        文件信息自适应（最小 300px）· 元信息固定 190px · 操作区固定 150px · 列间距 16px。
        .library-file small（line ~577）的 margin-left:auto 是 (0,1,1)，高于 .lf-src 的 (0,1,0)——
        路径列因此失去宽度约束、长路径溢出挤占元信息列（连续多轮未修复的根因）。
@@ -168,7 +168,7 @@
   .lf-tag.hist { background: #263548; color: #B2BFD1; }
   /* F02（第 8 轮评审）：元信息列维持 190px。异常/未知态 = 标签 + 双行「实测/登记」
      （字号 12px、行高 18px，与 .lf-size 同款数字排版）并排收在 190px 内；
-     放不进时登记行走省略号，不挤邻列。正常态实测值用完成绿 #62C6A0（--green）。 */
+     放不进时登记行走省略号，不挤邻列。正常态实测值用完成绿（--green）。 */
   .library-file .lf-dual { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
   .lf-dual .lf-tag { flex: none; }
   .library-file .lf-lines { display: flex; flex-direction: column; min-width: 0; max-width: 100%; }

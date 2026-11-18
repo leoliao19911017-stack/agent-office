@@ -1,0 +1,60 @@
+{
+  "outcome": "succeeded",
+  "summary": "第81轮7项全部done：5项代码已在r73-r80落地、本轮交付全新实测证据；W02实测发现真缺陷（selectStep重建#insp-body滚动丢失1691→0）并修复（inspScrollMemo记忆，修复后Δ0px）；G01修复B5机器相关测试缺陷（pagefile错误码本机EBUSY非EINVAL，改动态取码）。全量套件三次全绿238/238 EXIT=0；分支覆盖（NODE_V8_COVERAGE 149文件跨进程并集）审批/版本三模块96.7%≥90、四模块93.6%（shared.js 76.0%为工具层node覆盖盲区下界，如实披露）；G02三色收口token后:root外命中变量值0处。四页双视口截图8/8。server.js未改动无需重启。注意：app.css已于第5轮拆为4文件，line_counts的app.css键给四文件合计2175。",
+  "items": [
+    {
+      "code": "W01",
+      "status": "done",
+      "evidence": "6场景实测：①版本一致→approve 200 verified:true 成功事件恰1条 刷新后仍done；②同大小异内容→409 ARTIFACT_VERSION_DRIFT 0成功事件；③大小改→409文案含实测X B≠登记Y B；④重复提交→decision重提409不加事件/decide同opId单次写回；⑤并发→[200,409]成功事件恰1条；⑥文件删除→双404 ARTIFACT_FILE_MISSING 0事件；错误条实测13px/20px 背景#3B3021 文字rgb(229,185,94)=#E5B95E（L4）"
+    },
+    {
+      "code": "F01",
+      "status": "done",
+      "evidence": "D3快照命中服务端独立重算SHA-256不冒充磁盘当前内容；D4快照不匹配404无正文/vkey串台409；B5四类真实错误码（ENOENT/EISDIR/pagefile本机实测EBUSY动态取码）18/18过；R3删除→恢复闭环ok→miss(ENOENT)→ok；修复测试自身缺陷：B5原写死EINVAL本机真实EBUSY"
+    },
+    {
+      "code": "S01",
+      "status": "done",
+      "evidence": "L2双视口1440×900+1280×768断言全过：滚到底第6卡底边距分页条顶≥12px；卡片144px/间隙16px/内边距16px/标题14px20px/描述12px18px最多3行/标签区20px；分页条56px固定不随滚动移动；8/8截图肉眼复核布局完整"
+    },
+    {
+      "code": "W02",
+      "status": "done",
+      "evidence": "实测发现并修复真缺陷：selectStep重建#insp-body滚动丢失，修复前切plan→verify为1691→0（Δ1691px）❌，加inspScrollMemo后1691→1691（Δ0px）✅；正文滚到底（可滚2703px/右栏实测328px）中栏顶Δ0.00px/左列表滚动Δ0.00px/首项Δ0.00px；L4三档长文300/1500/3000字：末行距操作区≥12px、正文12px20px、底距80px、操作区64px、段距12px、滚动条6px；修复后238/238复跑全绿零pageerror"
+    },
+    {
+      "code": "A01",
+      "status": "done",
+      "evidence": "verify-a01四场景矩阵全过（均12px/18px）：在线无上报→在线#62C6A0/未知/—#8996A8；在线上报过期→已过期·10:40 #E5B95E；离线带新鲜上报→2分钟前#65D9B1不被离线吞；在线执行中→执行中#6C9EF1/30秒前#65D9B1；在线不自动推断空闲（g1执行列=未知）；R1/R2断言300秒阈值明细与断线重连不覆盖执行态"
+    },
+    {
+      "code": "G01",
+      "status": "done",
+      "evidence": "238/238 pass EXIT=0共3次全绿（改CSS前/后/改app.js后）；g07单文件18用例17固定场景≥16；分支覆盖（NODE_V8_COVERAGE 149文件跨进程并集）：approval.js 98.2%/decision-ops.js 100%/version.js 87.9%/shared.js 76.0%，审批版本三模块合计96.7%≥90✅、四模块93.6%；shared 76.0%系工具层且node覆盖看不见浏览器进程为下界，如实披露；6场景（审批冲突B2/重复提交B3/文件删除B6/快照缺失B5D4/API断线R2/CSS404 R4人为注入必被检出）全过"
+    },
+    {
+      "code": "G02",
+      "status": "done",
+      "evidence": "4个在用CSS的:root外颜色字面量99处，命中三变量值0处（--text-soft #B8C5D6/--stat-line #334257/--green #62c6a0各仅存于:root定义）；app.js有效627≤800（总866）；server.js有效278≤500（总401）；227函数最长115≤120；顶层前向引用0/跨文件顶层写0；基础字号12px/18px未动；渲染色不变证据=238/238（含L1/L2双视口钉死几何断言）+8/8截图"
+    }
+  ],
+  "files_modified": [
+    "web/app.js",
+    "web/app-base.css",
+    "web/app-layers.css",
+    "web/app-pages.css",
+    "web/app-workbench.css",
+    "test/g07-r73.test.js",
+    "web/verify-r81-shots.mjs",
+    "web/verify-r81-w02-isolation.mjs",
+    "web/verify-r81-branchcov.mjs",
+    "R81-整改执行报告.md",
+    "R81-整改执行报告.html"
+  ],
+  "blocked_by": null,
+  "line_counts": {
+    "app.js": 866,
+    "app.css": 2175,
+    "server.js": 401
+  }
+}

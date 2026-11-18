@@ -122,7 +122,7 @@
 /* ================= F01（第 4 轮）：登记大小逐条核对后的展示口径 =================
    与上方「收尾」辅助档刻意冲突、按本轮任务规格执行（同特异性下源顺序取胜）：
    大小双行是核对结论而非普通辅助文字——12px / 行高 18px / var(--meta-num) / 行间距 4px；
-   异常标签 22px / 圆角 6px / var(--amber-bg) 底 var(--amber) 字；一致态数值用完成绿 #62C6A0；
+   异常标签 22px / 圆角 6px / var(--amber-bg) 底 var(--amber) 字；一致态数值用完成绿 var(--green)；
    行最小高 68px；登记大小不同时逐条分列（步骤号 + 真实登记值），行高自然增长不截断。 */
 .library-file .lf-lines { gap: 4px; }
 .library-file .lf-lines .lf-size { font-size: 12px; line-height: 18px; color: var(--meta-num); }
@@ -204,7 +204,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
 #insp-foot {
   flex: none; height: 64px; padding: 12px 16px;
   /* W02 本轮：底栏规格色按任务书收口——背景 #111823 + 顶部分隔线 1px #334155
-     （此前 r13 的 #111927/#334257 仅色值偏差，几何不动）。 */
+     （此前 r13 的旧底色/旧边框色仅色值偏差，几何不动）。 */
   background: #111823; border-top: 1px solid var(--line);
   box-sizing: border-box;
 }
@@ -225,7 +225,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
 /* 审批卡说明正文按 W01 规格收口：12px/19px；颜色 --meta(var(--meta)) 已是现状，
    G01 层（:1625 附近）把行高压到 18px，这里以更高特异性压回 19px */
 #inspector .ev-src { line-height: 19px; }
-/* 正文段落全量收口：W02 第 10 轮规格是「正文文字 12px/行高 19px/#B8C5D6」，
+/* 正文段落全量收口：W02 第 10 轮规格是「正文文字 12px/行高 19px/软文色档」，
    不止 .ev-src 一处——备注(.ip-note :549 是 13px/#F1ECE2)、打回理由(.rej-why :767
    是 12.5px/1.7)、门禁未到与等待前置说明(.ip-sec .ip-v :389 是 13.5px)、需求原文
    (.ev-demand :931 是 13px/1.6)、测试策略说明(.ev-src 只渲染进本面板，全部三处)
@@ -236,13 +236,13 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
 #insp-body .rej-why,
 #insp-body .ip-sec .ip-v,
 #insp-body .ev-demand,
-#insp-body .ev-src { font-size: 12px; line-height: 19px; color: #B8C5D6; }
+#insp-body .ev-src { font-size: 12px; line-height: 19px; color: var(--text-soft); }
 
 /* ================= F01（第 9 轮）：同一文件多条历史登记的独立校验 =================
    行高封顶 96px（任务书：最小 68px、最大根据内容扩展至 96px）——
    自然数据（汇总两行实测+登记 = 84px）不受影响；构造出的多版本分行超出 96px 时
    按任务书上限截断（overflow:hidden），不再向外无限扩展挤压组内间距。
-   文件行底色改 var(--card)（第 9 轮规格，改动在 :1333 主层），边框 #334257（--line）与
+   文件行底色改 var(--card)（第 9 轮规格，改动在 :1333 主层），边框（--line 档）与
    圆角 8px 维持现状。特异性同 (0,1,0)、置于文件末尾，按源顺序压过前层。 */
 .library-file { max-height: 96px; overflow: hidden; }
 
@@ -281,7 +281,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
    档位口径：辅助正文 12px/18px/var(--meta) · 重要元数据 13px/20px/var(--meta-hi) · 短标签 11px/16px（不得用于多行说明）
    文件路径 12px 等宽/单行截断 · 普通文字对比度 ≥4.5:1
    本轮覆盖关系（源顺序在后取胜）：
-   ① 取代 W02 r10（:1663 一带）#insp-body 正文 12/19/#B8C5D6 → 12/18/var(--meta)（本轮任务口径更新）
+   ① 取代 W02 r10（:1663 一带）#insp-body 正文 12/19/--text-soft → 12/18/var(--meta)（本轮任务口径更新）
    ② 取代 G01 r4（:1604）.skill-path/.fv-path 的 13/20 → 路径归档 12px/18px（颜色 var(--meta-hi) 不变）
    ③ 取代 F01 r4/r11 的数值色 var(--meta-num) → 统一重要元数据色 var(--meta-hi)（亮度更高、对比度更好）；
       .lf-lines/.lf-reg/.hf-val 字号保持 12/18 不升 13/20——F01 r9/r10 的 96px 行高上限 + overflow:hidden，
@@ -370,7 +370,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
 
 /* ========== W02（第 12 轮·2026-11-16）：审批说明正文档位与滚动区收口 ==========
    背景：G01 第 10 轮层（:1760）把 #insp-body 说明文字归并为 12px/18px/var(--meta)，
-   本轮任务书规格为普通说明文字 12px / 行高 19px / 颜色 #B8C5D6、段落间距 12px——
+   本轮任务书规格为普通说明文字 12px / 行高 19px / 颜色 --text-soft 档、段落间距 12px——
    同特异性下源顺序在后取胜，本层整体压回任务书规格。
    顶部内边距 14→12px 已直接改在 :374 基础规则上（同为 (1,0,0)，改源值即可）。
    选择器沿用 W02 第 10 轮层的段落集合（备注 .ip-note / 打回理由 .rej-why /
@@ -380,7 +380,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
 #insp-body .rej-why,
 #insp-body .ip-sec .ip-v,
 #insp-body .ev-demand,
-#insp-body .ev-src { font-size: 12px; line-height: 19px; color: #B8C5D6; }
+#insp-body .ev-src { font-size: 12px; line-height: 19px; color: var(--text-soft); }
 #insp-body .ip-note,
 #insp-body .rej-why,
 #insp-body .ev-demand,
@@ -393,7 +393,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
    文本放不下一律换行或增高容器，禁止缩小字号。 */
 /* G02（第 5 轮）：--meta-strong 生效值 var(--meta-strong) 前移集中,原两处覆盖块移除 */
 
-/* 图1 审批说明（压 W02 r12 的 12/19/#B8C5D6）：备注/打回理由/需求原文/策略说明是
+/* 图1 审批说明（压 W02 r12 的 12/19/--text-soft）：备注/打回理由/需求原文/策略说明是
    阅读型正文 → 正文档；段间距沿用上方 W02 r12 的 margin:12px 0 不动。
    .ip-sec .ip-v 是门禁未到列表内容 → 元数据档。 */
 #insp-body .ip-note,
@@ -435,7 +435,7 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
 /* ================= G01 第 13 轮：四页辅助文字字号/行高/颜色统一归档 =================
    规格：正文 13px/20px/var(--meta-strong)（--meta-strong）· 辅助 12px/18px/var(--meta)（--meta）·
    11px 仅单行短标签 · 标题字号/字重层级不变 · 语义状态色（绿/金/蓝/红、心跳、版本
-   判定）保留 · 卡底 var(--card)、边框 #334257 不动。只改字号/行高/颜色，不动布局、
+   判定）保留 · 卡底 var(--card)、边框色不动。只改字号/行高/颜色，不动布局、
    不动全局控件样式（.btn 系 12.5px 属控件规格，不参与本档）。
    ---- 图1 审批说明（Inspector）---- */
 .insp-head { color: var(--meta); line-height: 18px; }            /* 面板头：var(--muted)/19.2 → 辅助档（字重层级保留） */
