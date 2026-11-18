@@ -1,7 +1,7 @@
 {
   "phase": "after",
   "base": "http://127.0.0.1:8090",
-  "when": "2026-11-16T23:44:33.995Z",
+  "when": "2026-11-17T00:09:28.313Z",
   "viewport": "1440x900",
   "pages": {
     "workbench": [
@@ -240,7 +240,7 @@
       },
       {
         "sel": ".ag-hb.ok",
-        "text": "42 秒前",
+        "text": "36 秒前",
         "fontSize": "12px",
         "lineHeight": "18px",
         "color": "#65D9B1",

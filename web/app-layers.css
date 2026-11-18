@@ -660,5 +660,5 @@ p.agent-role { color: var(--meta); line-height: 18px; } /* 图2 明细区角色�
    #334155 低调灰，3px 圆角。面板 328px / 底距 80px / 操作区 64px / 正文
    12px-20px 均不动（app-base.css:389 / app-layers.css:205 已钉死）。 */
 #insp-body::-webkit-scrollbar { width: 6px; }
-#insp-body::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+#insp-body::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 #insp-body::-webkit-scrollbar-track { background: transparent; }

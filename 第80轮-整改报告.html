@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 80 轮整改报告 — Agent Office</title>
+<style>
+  :root { --bg:#0F1623; --panel:#161F2E; --line:#2A3A52; --text:#E8EEF7; --meta:#B8C5D6; --ok:#65D9B1; --amber:#E5B95E; --err:#E56B6F; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font: 14px/1.7 "Segoe UI", "Microsoft YaHei", sans-serif; padding: 32px 16px 64px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 22px; margin-bottom: 6px; }
+  h2 { font-size: 17px; margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  h3 { font-size: 15px; margin: 18px 0 8px; }
+  .meta { color: var(--meta); font-size: 13px; margin-bottom: 4px; }
+  .meta b { color: var(--text); }
+  .tag { display: inline-block; padding: 1px 8px; border-radius: 9px; font-size: 12px; vertical-align: 1px; }
+  .tag.ok { background: rgba(101,217,177,.14); color: var(--ok); }
+  .tag.warn { background: rgba(229,185,94,.14); color: var(--amber); }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 16px; font-size: 13px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); color: var(--meta); font-weight: 600; white-space: nowrap; }
+  tr:nth-child(even) td { background: rgba(255,255,255,.015); }
+  code { font: 12px/1.5 Consolas, monospace; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; color: var(--ok); }
+  .note { background: var(--panel); border-left: 3px solid var(--amber); padding: 10px 14px; border-radius: 4px; font-size: 13px; color: var(--meta); margin: 10px 0; }
+  ul { padding-left: 22px; } li { margin: 4px 0; }
+  details { margin: 8px 0; } summary { cursor: pointer; color: var(--meta); }
+  .mono { font-family: Consolas, monospace; font-size: 12px; color: var(--meta); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>第 80 轮整改报告 <span class="tag ok">7/7 达标</span></h1>
+  <div class="meta">Agent Office · <b>2026-11-17</b> · 来源：GPT 第 80 轮评审（6.6 → 6.6，目标 8.0）· 7 条：0 致命 / 6 严重 / 1 一般</div>
+  <div class="meta">服务进程：8090 已重启，<code>/api/health</code> 实测 <code>{"ok":true,"autoloop":true,"build":"r73"}</code></div>
+
+  <h2>一、总览</h2>
+  <table>
+    <tr><th>条目</th><th>级别</th><th>结论</th><th>本轮改动</th><th>关键实测</th></tr>
+    <tr><td><b>W01</b></td><td>严重</td><td><span class="tag ok">达标</span></td><td>server-api.mjs 两处审批路由补 404 分码</td><td>六组实测全过；238/238 测试</td></tr>
+    <tr><td><b>F01</b></td><td>严重</td><td><span class="tag ok">达标</span></td><td>无（审计确认已合规）</td><td>verify-f01-r75 ALL OK</td></tr>
+    <tr><td><b>S01</b></td><td>严重</td><td><span class="tag ok">达标</span></td><td>无（审计确认已合规）</td><td>两档视口 gap=16px ≥12px</td></tr>
+    <tr><td><b>W02</b></td><td>严重</td><td><span class="tag ok">达标</span></td><td>app-layers.css 追加滚动条层</td><td>物理宽度实测 6px</td></tr>
+    <tr><td><b>A01</b></td><td>严重</td><td><span class="tag ok">达标</span></td><td>无（审计确认已合规）</td><td>verify-a01-r75 ALL OK</td></tr>
+    <tr><td><b>G01</b></td><td>严重</td><td><span class="tag ok">达标</span></td><td>g07-r73.test.js 新增 B6 用例</td><td>238/238（上轮 237+1）</td></tr>
+    <tr><td><b>G02</b></td><td>一般</td><td><span class="tag ok">达标</span></td><td>硬编码色改 var(--line)</td><td>重复语义色 0；无循环依赖</td></tr>
+  </table>
+
+  <h2>二、逐条明细</h2>
+
+  <h3>W01（严重）提交时服务端文件指纹核验 <span class="tag ok">有代码改动</span></h3>
+  <p><b>改动</b>：<code>web/server-api.mjs</code> 两个审批端点（decide ~:571、decision ~:737）。「文件不存在」与「版本漂移」原共用 409；本轮分码——门禁 <code>why==='missing'</code> 优先判 <b>404 ARTIFACT_FILE_MISSING</b>，内容/大小漂移仍 <b>409 ARTIFACT_VERSION_DRIFT</b>，两端口同口径。指纹展示未动。</p>
+  <table>
+    <tr><th>组</th><th>场景</th><th>结果</th></tr>
+    <tr><td>①</td><td>正常文件 approve</td><td>200；成功事件恰 1 条</td></tr>
+    <tr><td>②</td><td>同大小换内容（8B original→tampered）</td><td>409 ARTIFACT_VERSION_DRIFT「内容已变化」；0 事件；仍 awaiting</td></tr>
+    <tr><td>③</td><td>文件删除</td><td>decision <b>404 ARTIFACT_FILE_MISSING</b>；decide 同 404；0 事件；仍 awaiting</td></tr>
+    <tr><td>④</td><td>版本变更（登记后追加字节）</td><td>409「实测 84B ≠ 登记」；0 事件</td></tr>
+    <tr><td>⑤</td><td>同 opId 重复提交</td><td>decision 重提 409 NOT_ACTIONABLE、事件仍 1；decide 重放 replay:true 单次写回</td></tr>
+    <tr><td>⑥</td><td>两路并发</td><td>[200,409]；事件恰 1；档案落 done 未撕裂</td></tr>
+  </table>
+  <p class="mono">verify-w01-r80.mjs：27 项断言全过。UI 指纹「8fb223df ✓」（实算 SHA-256 前 8 位）· rgb(101,217,177) · 12px/18px · 零异常。截图 verify-w01-r80-panel.png。回归：verify-w01-r79 ALL OK。</p>
+
+  <h3>F01（严重）历史版本不可变读取 <span class="tag ok">复测达标</span></h3>
+  <p>无代码改动。快照缺失 → 404 no-snapshot 且不夹带 text；改当前文件后重读 V1 不变；删除快照报明确错误。<span class="mono">verify-f01-r75 ALL OK；B5 断言 available:false / reason:'no-snapshot' / text:undefined。</span></p>
+
+  <h3>S01（严重）技能页 2 列布局 <span class="tag ok">复测达标</span></h3>
+  <table>
+    <tr><th>视口</th><th>末卡可见底 ↔ 分页顶</th><th>标签可见性</th><th>横向滚动</th></tr>
+    <tr><td>1440×900</td><td>16px（≥12 ✓）</td><td>6/6 全在框内</td><td>无</td></tr>
+    <tr><td>1280×768</td><td>16px（≥12 ✓）</td><td>列表可滚，无遮叠</td><td>无</td></tr>
+  </table>
+  <p class="mono">verify-s01r13 exit=0（打真实 8090）：卡 144px · 2 列 · gap 16px · 分页 56px+16px · 描述 12px/18px clamp=3。</p>
+
+  <h3>W02（严重）审批详情右栏滚动 <span class="tag ok">有代码改动</span></h3>
+  <p><b>改动</b>：<code>web/app-layers.css</code> 追加第 80 轮层（+11 行）：<code>#insp-body::-webkit-scrollbar{width:6px}</code> + 滑块 <code>var(--line)</code>（#334155，圆角 3px）+ 透明滑轨。不写 <code>scrollbar-width:thin</code>（Chrome 121+ 会接管伪元素，得不到精确 6px）。</p>
+  <p class="mono">verify-w02-r80 ALL OK：物理宽度 offsetWidth−clientWidth = 6px · 规则 6px · 滑块 rgb(51,65,85)/3px · 右栏 328px · 操作区 64px · 底距 80px · 正文 12px/20px · 末行距操作区 92px。回归 verify-w02-r75 三档（300/1500/3000 字）ALL OK。</p>
+  <div class="note">测量说明：无头 Chrome 默认叠加式滚动条不占布局，脚本以 ignoreDefaultArgs:['--hide-scrollbars'] + --disable-features=OverlayScrollbar 恢复经典滚动条后实测物理宽度。</div>
+
+  <h3>A01（严重）Agent 三态独立判定 <span class="tag ok">复测达标</span></h3>
+  <p>无代码改动。连接态仅取探测；执行态仅取自报事件；新鲜度仅取 lastReport vs 300s。<span class="mono">verify-a01-r75 ALL OK（新鲜绿 / 过期琥珀 / 无上报「—」灰 / 断连与上报隔离）。</span></p>
+
+  <h3>G01（严重）17 接口契约回归 <span class="tag ok">达标</span></h3>
+  <p>无接口改动；新增 B6 用例（删除 → 双 404、0 事件、档案不动），场景 17→18。</p>
+  <ul>
+    <li>全量 <code>node --test test/*.test.js</code>：<b>238/238 通过</b>（上轮 237 + B6），0 失败</li>
+    <li><code>verify-g01.mjs</code>（真实 8090，1440×900）：exit=0，四页截图 p1~p4（本轮 08:09 生成）</li>
+    <li><code>verify-g01-r79-1280.mjs</code>（1280×768）：ALL OK，四页无横向滚动、零 pageerror</li>
+  </ul>
+
+  <h3>G02（一般）行数与依赖治理 <span class="tag ok">达标</span></h3>
+  <ul>
+    <li>入口有效行：app.js <b>620 ≤ 800</b>，server.js <b>278 ≤ 500</b></li>
+    <li>重复硬编码语义色：<b>0</b>（:root 外 102 处字面量，命中变量值 0；本轮新滑块色曾被抓 1 处，已改 var(--line) 归零）</li>
+    <li>循环依赖：<b>0</b>；防偷工在场：注释 1544 行、throw 71、try 76、catch 84、测试套件 23 个，均未减少</li>
+  </ul>
+
+  <h2>三、行数变化（before → after）</h2>
+  <table>
+    <tr><th>文件</th><th>before</th><th>after</th><th>Δ</th><th>说明</th></tr>
+    <tr><td class="mono">web/app.js</td><td>855</td><td>855</td><td>0</td><td>未动</td></tr>
+    <tr><td class="mono">web/server.js</td><td>401</td><td>401</td><td>0</td><td>未动（依赖模块改动，8090 已重启）</td></tr>
+    <tr><td class="mono">web/server-api.mjs</td><td>921</td><td>931</td><td>+10</td><td>W01 两处 404 分码</td></tr>
+    <tr><td class="mono">web/app-layers.css</td><td>653</td><td>664</td><td>+11</td><td>W02 滚动条层</td></tr>
+    <tr><td class="mono">test/g07-r73.test.js</td><td>765</td><td>785</td><td>+20</td><td>B6 用例 + 夹具</td></tr>
+    <tr><td class="mono">web/verify-w01-r80.mjs</td><td>—</td><td>158</td><td>新增</td><td>W01 六组验证</td></tr>
+    <tr><td class="mono">web/verify-w02-r80.mjs</td><td>—</td><td>106</td><td>新增</td><td>W02 滚动条验证</td></tr>
+  </table>
+
+  <h2>四、未达标与遗留 <span class="tag warn">如实列出</span></h2>
+  <ol>
+    <li><b>单函数 ≤100 行为「推荐」口径，3 个函数超线</b>：server.js:server 101 行、preview.js:fvHistPreview 104 行、server-api.mjs:makeDecisionRoute 115 行（本轮 +4）。均低于「&gt;120 必须拆分」硬线。本轮不拆：拆核心审批路由的回归风险大于收益，留待下轮专项重构。</li>
+    <li><b>server-api.mjs 有效 931 行</b>，超静态脚本内 738 对照线（R71 起既有状态，非本轮引入；任务书入口限额只约束 app.js / server.js，均已达标）。</li>
+  </ol>
+
+  <h2>五、验证产物</h2>
+  <p class="mono">web/verify-w01-r80-panel.png · web/verify-w02-r80-scrollbar.png · web/verify-g01-p1-workbench.png ~ p4-files.png（1440×900 真实 8090）· /tmp/fulltest.log（238/238）</p>
+</div>
+</body>
+</html>
