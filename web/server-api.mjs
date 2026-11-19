@@ -21,6 +21,8 @@ import {
 } from './server-core.mjs';
 // TASK-R87整改 X01/X03：需求讨论自动推进器（服务端模块，不经 STATIC_APP）
 import { kickoffAutoAdvance, startDiscussRecord, discussView } from './server-auto.mjs';
+// X01（让 Agent 状态显示真实情况）：/api/agents/real 只读探测——进程/最近活动/额度
+import { makeAgentsRealRoute } from './server-agents-real.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1286,6 +1288,7 @@ export function createApiRouter(deps) {
   const health = makeHealthRoute(ctx);
   const state = makeStateRoute(ctx);
   const hermes = makeHermesRoute(ctx);
+  const agentsReal = makeAgentsRealRoute(ctx);
   const files = makeFilesRoute(ctx);
   const skills = makeSkillsRoute(ctx);
   const flow = makeFlowRoute(ctx);
@@ -1314,6 +1317,7 @@ export function createApiRouter(deps) {
     if (path === '/api/health' && method === 'GET') return health(req, res);
     if (path === '/api/state' && method === 'GET') return state(req, res);
     if (path === '/api/office/hermes' && method === 'GET') return hermes(req, res);
+    if (path === '/api/agents/real' && method === 'GET') return agentsReal(req, res);
     if (path === '/api/office/files' && method === 'GET') return files(req, res);
     if (path === '/api/office/skills' && method === 'GET') return skills(req, res);
     if (path === '/api/office/flow' && method === 'GET') return flow(req, res);
@@ -1343,6 +1347,7 @@ export function createApiRouter(deps) {
     const known = [
       [/^\/api\/state$/, ['GET']],
       [/^\/api\/health$/, ['GET']],
+      [/^\/api\/agents\/real$/, ['GET']],
       [/^\/api\/cards\/\d+\/answer$/, ['POST']],
       [/^\/api\/cards\/\d+\/resolve$/, ['POST']],
       [/^\/api\/runs\/\d+\/cancel$/, ['POST']],
@@ -1360,7 +1365,7 @@ export function createApiRouter(deps) {
     if (known.some(([re, methods]) => re.test(path) && !methods.includes(method))) {
       throw httpErrorFallback(deps, 405, 'METHOD_NOT_ALLOWED', `${method} ${path} 不支持`);
     }
-    throw httpErrorFallback(deps, 404, 'NOT_FOUND', `${method} ${path} 不存在（本服务只开放 /api/state、/api/health、/api/cards/:id/answer、/api/cards/:id/resolve、/api/runs/:id/cancel、/api/office/decisions、/api/office/decide、/api/office/decision、/api/office/resubmit、/api/office/op-status、/api/office/file-download、/api/office/file-revalidate、/api/office/review、/api/office/new-task、/api/office/discuss）`);
+    throw httpErrorFallback(deps, 404, 'NOT_FOUND', `${method} ${path} 不存在（本服务只开放 /api/state、/api/health、/api/agents/real、/api/cards/:id/answer、/api/cards/:id/resolve、/api/runs/:id/cancel、/api/office/decisions、/api/office/decide、/api/office/decision、/api/office/resubmit、/api/office/op-status、/api/office/file-download、/api/office/file-revalidate、/api/office/review、/api/office/new-task、/api/office/discuss）`);
   };
 }
 

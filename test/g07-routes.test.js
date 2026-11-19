@@ -1,4 +1,4 @@
-// G07-D｜24 个 API 路由清单回归（3 用例）——防止「重构删路由」再次无声发生。
+// G07-D｜25 个 API 路由清单回归（3 用例）——防止「重构删路由」再次无声发生。
 //
 // G07 任务书口径「确认 17 个既有 API 路由没有丢失」：
 //   17 = 固定路径路由（11 GET + 6 POST /api/office/*、/api/state、/api/health）；
@@ -7,6 +7,9 @@
 //   POST /api/office/new-task），冻结清单同步扩到 20 固定 + 3 参数化——只增不减。
 // TASK-R87整改（X03）再增 1 条：GET /api/office/discuss（需求讨论留档，首页
 //   「AI 讨论了什么」块的真实数据源），冻结清单扩到 21 固定 + 3 参数化。
+// TASK-Agent真实状态（X01）再增 1 条：GET /api/agents/real（Claude/Codex 本机
+//   实测三维：进程/最近会话活动/额度，只读探测，出错出 null 不出 500），
+//   冻结清单扩到 22 固定 + 3 参数化。
 //
 // R1 源码静态扫描：路由注册字面量逐一对照冻结清单——删掉任何一条，本用例立刻失败；
 // R2 GET 数据路由业务形状：响应体里必须有真实业务字段（HTTP 200 不作为通过条件）；
@@ -49,6 +52,8 @@ const EXPECTED_FIXED = new Map([
   ['POST /api/office/review', '评审轮次记入'],
   ['POST /api/office/new-task', '首页开新软件制作'],
   ['GET /api/office/discuss', '需求讨论留档查询'],
+  // TASK-Agent真实状态（X01）：Claude/Codex 本机实测三维（进程/活动/额度）
+  ['GET /api/agents/real', 'Agent 本机实测三维'],
 ]);
 const EXPECTED_PARAM = new Map([
   ['POST /api/cards/:id/answer', '提问卡作答'],
@@ -70,7 +75,7 @@ const post = (p, body) => fetch(stack.base + p, {
   return { status: r.status, body: b };
 });
 
-test('R1 源码路由清单：21 条固定 + 3 条参数化全部在（少一条即失败）', () => {
+test('R1 源码路由清单：22 条固定 + 3 条参数化全部在（少一条即失败）', () => {
   // G02（R73）：/api/* 路由体已从 server.js 搬至 server-api.mjs（createApiRouter
   // 工厂），扫描口径跟随拆分：两文件源码并集，路由丢一条立刻失败，与拆分前等效。
   const src = readFileSync(new URL('../web/server.js', import.meta.url), 'utf8')
@@ -83,7 +88,7 @@ test('R1 源码路由清单：21 条固定 + 3 条参数化全部在（少一条
   }
   const missing = [...EXPECTED_FIXED.keys()].filter((k) => !found.has(k));
   assert.deepEqual(missing, [], `server.js 丢了固定路由：${missing.join('、')}（扫描到 ${found.size} 条固定路由）`);
-  assert.equal(found.size, 21, `固定路由应恰好 21 条（G07 17 + 向导化 3 + R87 1），实际扫描到 ${found.size}：${[...found].join('、')}`);
+  assert.equal(found.size, 22, `固定路由应恰好 22 条（G07 17 + 向导化 3 + R87 1 + X01 1），实际扫描到 ${found.size}：${[...found].join('、')}`);
 
   // 参数化：`m = path.match(/…/)`，用样本路径逐条试配（对正则写法不敏感）
   const paramLiterals = [...src.matchAll(/m = path\.match\((\/\^[^\n]*?)\)\)/g)].map((m) => m[1]);
@@ -97,7 +102,7 @@ test('R1 源码路由清单：21 条固定 + 3 条参数化全部在（少一条
   }
   const missParam = [...EXPECTED_PARAM.keys()].filter((k) => !paramFound.includes(k));
   assert.deepEqual(missParam, [], `server.js 丢了参数化代理路由：${missParam.join('、')}`);
-  console.log(`[R1] 固定 21/21 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
+  console.log(`[R1] 固定 22/22 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
 });
 
 test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（200 空壳不算过）', async () => {
@@ -178,6 +183,22 @@ test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（2
   assert.equal(unknownOp.status, 200);
   assert.equal(unknownOp.body.found, false, '未知 opId 应 found:false（不是 404 也不是 500）');
 
+  // 8b) X01 /api/agents/real：claude/codex 两位必须在；探测字段三值域
+  //     （boolean|null——取不到就是 null，不许猜）；任何本机探测异常都不得变 500。
+  //     放在 file 白名单用例之前：本机仓库搬家后白名单根还是旧 C: 盘路径（既有问题），
+  //     file 一族会 403，不能让它挡在本路由的形状检查前面。
+  const ar = await get('/api/agents/real');
+  assert.equal(ar.status, 200, `agents/real 应 200（探测失败也不许 500），实际 ${ar.status}`);
+  assert.ok(ar.body.agents && ar.body.agents.claude && ar.body.agents.codex,
+    `agents/real 应同时含 claude 与 codex，实际 ${JSON.stringify(ar.body).slice(0, 160)}`);
+  for (const k of ['claude', 'codex']) {
+    const a = ar.body.agents[k];
+    assert.ok(typeof a.processAlive === 'boolean' || a.processAlive === null,
+      `${k}.processAlive 应 boolean|null，实际 ${JSON.stringify(a.processAlive)}`);
+    assert.ok(typeof a.rateLimited === 'boolean' || a.rateLimited === null,
+      `${k}.rateLimited 应 boolean|null（取不到就是 null，不许猜 false），实际 ${JSON.stringify(a.rateLimited)}`);
+  }
+
   // 9) /api/office/file：缺参 400；白名单内真实文件读回真实文本与指纹
   const noPath = await get('/api/office/file');
   assert.equal(noPath.status, 400);
@@ -214,7 +235,7 @@ test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（2
   assert.equal(rvBad.status, 400);
   assert.equal(rvBad.body.code, 'BAD_TASK_ID', `应 400/BAD_TASK_ID，实际 ${rvBad.status}/${rvBad.body?.code}`);
 
-  console.log(`[R2] 12 条 GET 路由业务形状全过（skills=12、flow=3×7+X05 四字段、decisions 含 T-G07A/verify、review 空账本如实）`);
+  console.log(`[R2] 13 条 GET 路由业务形状全过（skills=12、flow=3×7+X05 四字段、decisions 含 T-G07A/verify、review 空账本如实、agents/real 三值域）`);
 });
 
 test('R3 POST 协议错误/白名单/下载/代理链：具体业务码 + 403 白名单 + 中台透传', async () => {

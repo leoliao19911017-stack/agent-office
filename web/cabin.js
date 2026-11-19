@@ -74,7 +74,7 @@ function plainTitle(t) {
   return plainDyn(stripped || base || raw);
 }
 // 岗位的人话版（Agents 页签保留原岗位词；首页/干活记录/底栏用这份）
-const ROLE_PLAIN = { lemate: '帮你写代码', winter: '帮你剪视频', karina: '帮你做图文', codex: '帮你生图和把关' };
+const ROLE_PLAIN = { lemate: '帮你写代码', winter: '帮你剪视频', karina: '帮你做图文', claude: '帮你写代码', codex: '帮你生图和把关' };
 function rolePlainOf(r) {
   return (r && ROLE_PLAIN[r.roleId]) || (r && r.role) || 'AI 助手';
 }
@@ -624,6 +624,21 @@ function rosterPlain(st) {
   // 仍严格分开，只在文案里明说，不把「在线」说成「在干活」。
   return st.roster.map((r) => {
     const role = rolePlainOf(r);
+    // X03：Claude / Codex 走本机实测三维——没开就是没开，额度用完就说用完，
+    // 三口径（进程/执行/接活）分开说，取不到一律「未知」，不拿「空闲」兜底。
+    if (r.real) {
+      if (r.alive === false) return { name: r.name, role, text: '进程没开（不是偷懒，是没启动）', cls: 'down' };
+      if (r.can === 'exhausted') {
+        const reset = r.real.rateLimitResetAt ? `，${fmtTime(r.real.rateLimitResetAt)} 重置` : '，重置时间没读到';
+        return { name: r.name, role, text: `额度用完了${reset}`, cls: 'limited' };
+      }
+      if (r.work === 'working') {
+        const fresh = r.hbState === 'ok' && r.hbText && r.hbText !== '—';
+        return { name: r.name, role, cls: 'busy', text: `在干活${fresh ? ` · 上次动静 ${r.hbText}` : ''}` };
+      }
+      if (r.work === 'idle') return { name: r.name, role, text: '进程活着，最近 10 分钟没动静（空闲）', cls: 'idle' };
+      return { name: r.name, role, text: `在不在干活未知${r.workUnknownWhy ? `（${r.workUnknownWhy}）` : ''}`, cls: 'unknown' };
+    }
     if (!r.loaded) return { name: r.name, role, text: '状态未知（没有上报）', cls: 'unknown' };
     if (r.conn !== 'online') return { name: r.name, role, text: '没连上（连接断了，不代表它在偷懒）', cls: 'down' };
     if (r.work === 'working') {
@@ -690,13 +705,15 @@ function onboardStripHtml(t, steps) {
     else if (d && d.exists && (d.messages || []).length) mid = '两位 AI 助手正在讨论软件需要哪些功能';
     else if (d && d.exists && d.phase === 'discussing') mid = 'AI 正在分析你的想法';
     else mid = 'AI 正在整理你想做的软件';
-  } else if (dSt === 'awaiting') mid = '需求文档已生成，等你确认';
+  } else if (dSt === 'awaiting') mid = '需求文档已生成';
   else if (dSt === 'failed') mid = 'AI 正在按你的意见重新讨论';
   else mid = '即将开始讨论需要做哪些功能';
+  // R89：这个进度条只负责「你在整个流程的第几步」，不重复下面的结论。
+  // 原来「等你确认」在进度条、卡片标题、状态栏各说一遍，读起来啰嗦。
   return `<div class="ob-strip" aria-label="新软件的当前进度">
     <span class="ob-done">✓ 已收到你的想法</span>
     <span class="ob-cur">② ${esc(mid)}</span>
-    <span class="ob-fut">③ 等你确认后开始制作</span>
+    <span class="ob-fut">③ 确认后开始制作</span>
   </div>`;
 }
 
@@ -928,13 +945,14 @@ function renderCabin() {
   // TASK-R87整改 X03：需求确认界面必须按 ①AI 讨论了什么 → ②最终准备做什么 →
   // ③需要你决定什么 的顺序读。doc 阶段把 hero 拆成两截，中间插讨论卡和功能卡；
   // 其余阶段维持原结构。
+  // R89 信息密度：三栏压成一栏。
+  // 原来「当前制作的软件 / 当前状态 / 下一步」三块，「当前状态」的值和说明
+  // 跟上面的大标题 nowMain 说的是同一件事，读三遍。现在只留软件名，
+  // 状态由大标题交代，下一步由操作区交代。
   const heroHeadHtml = `
-    <div class="ch-block"><span class="ch-k">当前制作的软件</span>
+    <div class="ch-block"><span class="ch-k">正在做的软件</span>
       <b class="ch-v" title="${esc(titlePlain)}">${esc(titlePlain.length > 22 ? titlePlain.slice(0, 22) + '…' : titlePlain)}</b>
-      <span class="ch-s">更新于 ${esc(fmtTime(t.updatedAt))}${isTestTask(t) ? ' · 测试任务' : ''}</span></div>
-    <div class="ch-block"><span class="ch-k">当前状态</span>
-      <b class="ch-v${actState ? ' as-' + actState : ''}">${esc(actState ? ACT_STATE_CN[actState] || actState : (fSt === 'running' ? '进行中' : decidable ? '等你确认' : '进行中'))}</b>
-      <span class="ch-s">${esc(nowMain.length > 34 ? nowMain.slice(0, 34) + '…' : nowMain)}</span></div>`;
+      <span class="ch-s">更新于 ${esc(fmtTime(t.updatedAt))}${isTestTask(t) ? ' · 测试任务' : ''}</span></div>`;
   const heroActBlockHtml = `
     <div class="ch-block ch-block-act"><span class="ch-k">${focus.key === 'doc' ? '需要你决定什么' : '下一步要做的事'}</span>
       <b class="ch-v">${esc(nextLine)}</b>
@@ -943,10 +961,12 @@ function renderCabin() {
   // R88：主按钮必须留在第一屏（1440×900 / 1280×768 都免滚动）。
   // doc 阶段原本把讨论卡和功能卡排在操作块前面，按钮被顶到 1033px 出屏了。
   // 现在：操作块紧跟三栏信息块；讨论卡和功能卡折进「展开看你确认的内容」，默认展开但限高可滚。
+  // R89 信息密度：讨论原文不再默认展开。默认只给「这次准备做什么」的结论，
+  // 完整讨论折进去，一次点击可达。GPT round-89 明确要求这条。
   const heroHtml = docStage
     ? `<div class="cabin-hero">${heroHeadHtml}${heroActBlockHtml}</div>
-       <details class="cabin-more" open>
-         <summary>展开看你确认的内容（AI 讨论了什么 · 最终准备做什么）</summary>
+       <details class="cabin-more">
+         <summary>AI 讨论了什么 · 最终准备做什么</summary>
          ${discussCardHtml(t)}${featCardHtml(t)}
        </details>`
     : `<div class="cabin-hero">${heroHeadHtml}${planStage ? planHeroHtml(planRead) : ''}${heroActBlockHtml}</div>`;
@@ -1033,6 +1053,10 @@ function renderCabin() {
     steps.map((s) => s.at || '').join(','),
   ].join('|');
   renderChanged('cabin-main', fp, () => {
+    // R89 信息密度：首页是一张「待确认决策单」，不是「执行报告」。
+    // 首屏只放四件事：做到哪了 / 计划做什么 / 确认后会怎样 / 确认还是修改。
+    // 其余（六段旅程、七步历史、AI 状态、评分、讨论原文）全部折叠，一次点击可达。
+    const dormant = !decidable && !planStage && !docStage;
     document.getElementById('cabin-main').innerHTML = `
       ${liveBarHtml(t)}
       ${cabinUI.newOpen ? newTaskHtml(false) : ''}
@@ -1041,22 +1065,27 @@ function renderCabin() {
         ${nowSub ? `<p>${esc(nowSub)}</p>` : ''}
         ${heroHtml}
         ${onboardHtml}
-        <div class="cabin-bar"><i style="width:${pctJourney}%"></i></div>
-        <div class="cabin-progress">第 ${journeyNo} / ${JOURNEY.length} 阶段${journeyLabel ? ' · ' + journeyLabel : ''}</div>
-        ${scoreHtml}
+        ${dormant ? scoreHtml : ''}
       </div>
-      ${planStage || docStage ? '' : featCardHtml(t)}
-      ${journeyHtml(steps, t)}
-      ${reviewCardHtml(t)}
-      ${rosterCardHtml(st)}
-      <div class="cabin-path">
-        <button class="cabin-past-toggle" type="button" data-cabin-past>
-          ${cabinUI.pastOpen ? '收起' : `看看已经做完的（${pastSteps.length} 项）`}
-        </button>
-        ${pathHtml}
-        <details class="ch-detail">
-          <summary>详细信息</summary>
-          <div>内部编号 ${esc(t.id)}${isTestTask(t) ? ' · 测试任务（测完即删，只在高级工作台展示）' : ''}</div>
+      <div class="cabin-detail">
+        <details class="cabin-fold">
+          <summary>看看这个软件做到哪一步了</summary>
+          <div class="cabin-bar"><i style="width:${pctJourney}%"></i></div>
+          <div class="cabin-progress">第 ${journeyNo} / ${JOURNEY.length} 阶段${journeyLabel ? ' · ' + journeyLabel : ''}</div>
+          ${journeyHtml(steps, t)}
+          ${dormant ? '' : scoreHtml}
+          ${reviewCardHtml(t)}
+          ${rosterCardHtml(st)}
+          <div class="cabin-path">
+            <button class="cabin-past-toggle" type="button" data-cabin-past>
+              ${cabinUI.pastOpen ? '收起' : `看看已经做完的（${pastSteps.length} 项）`}
+            </button>
+            ${pathHtml}
+            <details class="ch-detail">
+              <summary>详细信息</summary>
+              <div>内部编号 ${esc(t.id)}${isTestTask(t) ? ' · 测试任务（测完即删，只在高级工作台展示）' : ''}</div>
+            </details>
+          </div>
         </details>
       </div>`;
     restoreCabinDrafts();
@@ -1133,11 +1162,12 @@ function renderCabinFoot(t, steps, focus, key, sh) {
       } else {
         const dis = planBlocked ? ' disabled title="开发计划还没到能确认的状态——三样齐了（功能、步骤、测试）自动恢复"' : '';
         const planErr = planBlocked ? '<div class="cf-err">开发计划还没到能确认的状态（读不到 / 内容不完整 / 系统验证任务）——确认按钮先停用，计划合格后自动恢复。</div>' : '';
+        // R89：卡片里已经有唯一的主按钮，底栏不再放第二个一样的强按钮，
+        // 只留一句指引。同一屏两个「确认」会让人犹豫按哪个。
         foot.innerHTML = `${errHtml}${planErr}
           <div class="cf-row">
-            <button class="btn btn-primary cf-main" type="button" data-decide="approve"${dis}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button>
+            <span class="cf-tip">上面那个黄色的按钮就是你现在唯一要做的事。想改这份内容，点它旁边的链接。</span>
             <button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : '修改这份内容'}</button>
-            <span class="cf-tip">确认后 AI 会接着做下一步</span>
           </div>${noteBox}`;
       }
       return;

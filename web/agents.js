@@ -52,6 +52,7 @@ const ROSTER_DEFS=[
  {roleId:'lemate',name:'Lemate',role:'Coding'},
  {roleId:'winter',name:'Winter',role:'视频剪辑'},
  {roleId:'karina',name:'Karina',role:'图文笔记'},
+ {roleId:'claude',name:'Claude Code',role:'写代码'},
  {roleId:'codex',name:'Codex',role:'生图·审查'},
 ];
 // A02：连接健康 / 执行状态 / 上报新鲜度 —— 三个独立数据字段，一处判定，两处共用。
@@ -109,27 +110,61 @@ function hermesTaskEvent(h){
   return{text:'—',title:t==='未接入上报'?'该入口从未接入任务上报，执行状态未知':null};
  return{text:t};
 }
+// X03：Claude / Codex 的三维状态——进程（活着/没开/未知）、执行（执行中/空闲/未知）、
+// 接活（能/额度用完/未知）。数据只来自 /api/agents/real 的本机实测（app.js 轮询进
+// agentsRealData）：PowerShell 进程数 + 会话日志 mtime + 最新会话尾部的限额报错。
+// 红线：取不到就是未知，不猜；绝不拿「空闲」兜底。
+const ACTIVE_MS=10*60*1000;   // 最近 10 分钟内有会话活动 = 执行中
+const CAN_CN={ok:'能接活',exhausted:'额度用完',unknown:'未知'};
+function realDims(roleId){
+ const d=(agentsRealData&&agentsRealData.agents&&agentsRealData.agents[roleId])||null;
+ if(!d)return{has:false,alive:undefined,work:'unknown',can:'unknown',
+  why:'真实状态接口还没读到（/api/agents/real）',d:null,age:null};
+ const alive=d.processAlive;   // true/false/null（null=探测失败，照实未知）
+ const age=d.lastActivityAt!=null?Date.now()-Date.parse(d.lastActivityAt):null;
+ let work,why=null;
+ if(alive===false){work='unknown';why='进程没开，执行与否不可知';}
+ else if(d.lastActivityAt==null){work='unknown';why=d.scanError||'没读到最近会话活动时间';}
+ else if(age!=null&&age<=ACTIVE_MS){work='working';}
+ else if(alive===true){work='idle';}                       // 进程活着但 10 分钟没动静 = 空闲
+ else{work='unknown';why='活动已超 10 分钟且进程数探测失败，不猜';}
+ const can=d.rateLimited==null?'unknown':(d.rateLimited?'exhausted':'ok');
+ return{has:true,alive,work,can,why,d,age};
+}
 function agentStats(){
  const hubAgents=(lastState&&Array.isArray(lastState.agents))?lastState.agents:null;
  const now=Date.parse(lastState&&lastState.now)||Date.now();
  const hs=(hermesData&&hermesData.agents)||[];
  const roster=ROSTER_DEFS.map(d=>{
-  if(d.roleId==='codex'){
-   const a=hubAgents?hubAgents.find(x=>x.id==='codex'):null;
-   if(!a)return{...d,loaded:false,online:false,busy:false,timeout:false,work:'unknown',connText:'—',workText:WORK_CN.unknown,hbState:'none',hbText:'—',taskText:'—'};
-   const c=connectionOf(a,now);
-   const runs=(lastState?.runs||[]).filter(r=>r.agent==='codex').slice(0,1);
-   const work=a.totals==null?'unknown':(agentBusy(a)?'working':'idle');  // A02：任务计数缺失不推断
-   return{...d,loaded:true,instanceId:a.id,
-    conn:c==='offline'?'offline':'online',
-    online:c!=='offline',work,busy:work==='working',
-    timeout:c==='stale',
-    connText:c==='online'?'在线':c==='stale'?'在线（上报停滞）':'离线',
-    workText:WORK_CN[work],
-    workUnknownWhy:work==='unknown'?'中台未上报任务计数':null,
-    hbState:!a.seenAt?'none':((now-Date.parse(a.seenAt))>REPORT_STALE_MS?'timeout':'ok'),
-    hbText:!a.seenAt?'—':((now-Date.parse(a.seenAt))>REPORT_STALE_MS?`上报已过期 · ${esc(fmtAgo(a.seenAt))}`:esc(fmtAgo(a.seenAt))),
-    taskText:runs.length?esc(runs[0].rule||runs[0].state):'—'};
+  // X03：Claude / Codex 走本机实测三维（进程/执行/接活），不再用中台 seenAt——
+  // seenAt 只是中台刷新时刻（7 个 agent 同一毫秒），判不出谁在干活。
+  if(d.roleId==='claude'||d.roleId==='codex'){
+   const r=realDims(d.roleId);
+   if(!r.has)return{...d,loaded:false,online:false,busy:false,timeout:false,work:'unknown',
+    connText:'—',workText:WORK_CN.unknown,workUnknownWhy:'真实状态接口还没读到（/api/agents/real）',
+    can:'unknown',canText:CAN_CN.unknown,hbState:'none',hbText:'—',taskText:'—'};
+   const dd=r.d;
+   const aliveTxt=r.alive===true?`进程活着（${dd.processCount} 个）`:r.alive===false?'进程没开':'进程未知';
+   const connCls=r.alive===true?'online':r.alive===false?'offline':'none';
+   const hbState=dd.lastActivityAt==null?'none':(r.age>REPORT_STALE_MS?'timeout':'ok');
+   const hbText=dd.lastActivityAt==null?'—':`${esc(fmtAgo(dd.lastActivityAt))}有活动`;
+   let taskText='—',taskTitle=dd.lastActivityFile?`最近会话日志：${dd.lastActivityFile}`:null;
+   if(r.can==='exhausted'){
+    taskText=`额度用完${dd.rateLimitResetAt?`，重置于 ${fmtTime(dd.rateLimitResetAt)}`:''}`;
+    if(dd.rateLimitSample)taskTitle=`报错样本：${dd.rateLimitSample.slice(0,200)}\n${taskTitle||''}`;
+   }else if(dd.lastActivityAt!=null){
+    taskText=`${fmtAgo(dd.lastActivityAt)}有会话活动`;
+   }
+   return{...d,loaded:true,instanceId:(hubAgents&&hubAgents.find(x=>x.id===d.roleId)||{}).id||d.roleId,
+    conn:connCls,online:r.alive===true,work:r.work,busy:r.work==='working',
+    timeout:hbState==='timeout',alive:r.alive,real:dd,
+    connText:aliveTxt,connTitle:dd.processError?`进程探测失败：${dd.processError}`:(dd.processCount!=null?`PowerShell Get-Process ${d.roleId} 实测 ${dd.processCount} 个进程`:null),
+    workText:WORK_CN[r.work],workUnknownWhy:r.work==='unknown'?r.why:null,
+    can:r.can,canText:CAN_CN[r.can],
+    canWhy:r.can==='unknown'?'额度探测不到（取不到就是未知，不猜）':null,
+    canTitle:dd.rateLimitResetAt?`限额重置于 ${fmtTime(dd.rateLimitResetAt)}`:null,
+    hbState,hbText,
+    taskText:esc(taskText),taskTitle:taskTitle?esc(taskTitle):null,taskHist:false};
   }
   const h=hs.find(x=>x.id===d.roleId);
   if(!h)return{...d,loaded:false,online:false,busy:false,timeout:false,work:'unknown',connText:'—',workText:WORK_CN.unknown,hbState:'none',hbText:'—',taskText:'—',taskTitle:'该角色当前没有实例上报'};
@@ -143,6 +178,9 @@ function agentStats(){
    connText:h.online?'在线':'离线',
    workText:WORK_CN[work],
    workUnknownWhy:work==='unknown'?hermesWorkUnknownWhy(h):null,
+   // X03：Hermes 三入口没有额度上报通道——接活维度取不到就是未知，不猜
+   can:'unknown',canText:CAN_CN.unknown,
+   canWhy:'该角色没有额度上报通道',
    hbState:hb.state,hbText:esc(hb.text),hbTitle:hb.title?esc(hb.title):null,
    taskText:esc(ev.text),taskTitle:ev.title?esc(ev.title):null,taskHist:!!ev.hist};
  });
@@ -174,6 +212,37 @@ function agentDetail(a){
  const toks=(u.input==null&&u.output==null)?null:(u.input||0)+(u.output||0);
  const runsHtml=runs.length?runs.map(agentRunHtml).join(''):'<p class="agent-role">最近没有执行记录</p>';
  return `<div class="agent-detail"><h4>当前状态</h4><div class="agent-kv"><span>角色ID（稳定）</span><span>codex</span></div><div class="agent-kv"><span>实例ID</span><span>${esc(a.id)}</span></div><div class="agent-kv"><span>${a.online?'在线':'离线'} · ${a.totals==null?'状态未知':(agentBusy(a)?'工作中':'空闲')}</span><span>${t.retrying==null?'—':t.retrying} 重试中</span></div><div class="agent-kv"><span>最近心跳</span><span>${esc(fmtAgo(a.seenAt))}</span></div><h4>累计工作量</h4><div class="agent-kv"><span>已完成 ${t.done==null?'—':t.done}</span><span>${toks==null?'—':fmtNum(toks)} tokens</span></div><h4>最近 8 条执行记录</h4>${runsHtml}</div>`;
+}
+// X03/X04：Claude / Codex 的明细——三维（进程/执行/接活）全部来自 /api/agents/real
+// 的本机实测，中台档案（done/tokens）只作附注，seenAt 一律不读（它只是中台刷新时刻）。
+function agentRealDetail(r){
+ const dd=r.real||{};
+ const hubA=(lastState&&Array.isArray(lastState.agents)?lastState.agents:[]).find(a=>a.id===r.roleId);
+ const t=(hubA&&hubA.totals)||{};
+ const runs=(lastState?.runs||[]).filter(x=>x.agent===r.roleId).slice(0,8);
+ const runsHtml=runs.length?runs.map(agentRunHtml).join(''):'<p class="agent-role">中台侧最近没有执行记录</p>';
+ const canTxt=(r.canText||CAN_CN.unknown)+(dd.rateLimitResetAt?`，重置于 ${fmtTime(dd.rateLimitResetAt)}`:'');
+ const rows=[
+  ['角色ID（稳定）',r.roleId],
+  ['实例ID',r.instanceId||r.roleId],
+  ['进程状态',`${r.connText||'—'}${dd.processError?`（探测失败：${dd.processError}）`:''}`],
+  ['最近会话活动',dd.lastActivityAt?`${fmtTime(dd.lastActivityAt)}（${fmtAgo(dd.lastActivityAt)}）`:`—（${dd.scanError||'没读到最近会话活动时间'}）`],
+  ['执行状态',r.workText+(r.workUnknownWhy?`（${r.workUnknownWhy}，不推断为空闲）`:'')],
+  ['能不能接活',canTxt],
+ ];
+ let hubBlock='';
+ if(hubA){
+  const u=t.usage||{};
+  const toks=(u.input==null&&u.output==null)?null:(u.input||0)+(u.output||0);
+  hubBlock=`<h4>中台档案（附注）</h4><div class="agent-kv"><span>已完成 ${t.done==null?'—':t.done} 个任务</span><span>${toks==null?'—':fmtNum(toks)} tokens</span></div>`;
+ }else{
+  hubBlock=`<h4>中台档案（附注）</h4><div class="agent-kv"><span>该角色不在中台注册表里</span><span>正常——干活走本机会话，不经过中台</span></div>`;
+ }
+ const quotaSample=dd.rateLimitSample?`<h4>额度报错样本（最新会话尾部实测）</h4><p class="agent-role">${esc(dd.rateLimitSample)}</p>`:'';
+ const noteP=dd.note?`<p class="agent-role">${esc(dd.note)}</p>`:'';
+ return `<div class="agent-detail"><h4>实时状态（本机实测）</h4>${rows.map(([k,v])=>`<div class="agent-kv"><span>${k}</span><span>${esc(String(v))}</span></div>`).join('')}
+ ${hubBlock}${quotaSample}<h4>最近 8 条执行记录（中台侧）</h4>${runsHtml}
+ <p class="agent-role" style="margin-top:10px">这一行不读中台 seenAt（7 个 agent 同一毫秒，判不出谁在干活）。三维状态来自本机实测：PowerShell 进程数、会话日志 mtime、最新会话尾部的限额报错；取不到的维度如实显示「未知」。</p>${noteP}</div>`;
 }
 function renderAgents(){
  // 平级架构：三个 Hermes（Lemate / Winter / Karina）各自是不同场景的需求入口，
@@ -207,26 +276,29 @@ function renderAgents(){
  // 最近动作列只放事件：新鲜自报的任务文本，或带真实事件时间的历史告警；无时间的历史异常显示 —。
  const now=Date.parse(lastState?.now)||Date.now();
  const rowsRoster=st.roster.map(r=>{
-  if(r.roleId==='codex'){
-   const c=codex;
-   return{...r,id:r.roleId,ava:avatarFile('codex'),
-    det:()=>agentDetail(c)};
+  if(r.real){   // X03：Claude / Codex 走本机实测三维，明细同时展示中台档案
+   return{...r,id:r.roleId,ava:avatarFile(r.roleId),
+    det:()=>agentRealDetail(r)};
   }
   const h=hs.find(x=>x.id===r.roleId);
   return{...r,id:r.roleId,ava:avatarFile(r.roleId),
    det:()=>agentHermesDetail(h,r.roleId)};
  });
- const head=`<div class="roster-head"><span></span><span>Agent</span><span>连接健康</span><span>执行状态</span><span>上报新鲜度</span><span>当前需求 / 最近动作</span></div>`;
+ const head=`<div class="roster-head"><span></span><span>Agent</span><span>进程 / 连接</span><span>执行状态</span><span>能不能接活</span><span>最近活动 / 上报</span><span>当前需求 / 最近动作</span></div>`;
  const cards=rowsRoster.map(r=>{
   const sel=r.id===agentUI.selId;
   const workCls=r.work==='working'?'work-working':r.work==='idle'?'work-idle':'work-unknown';
   const hbCls=r.hbState==='timeout'?'stale':r.hbState==='ok'?'ok':'off';
-  const dotCls=r.work==='working'?'run':r.online?(r.timeout?'stale':'ok'):'off';
+  // X04 颜色语义：绿=执行中/能接活，灰=空闲，黄=额度用完，红=进程没开，问号灰=未知
+  const dotCls=r.work==='working'?'run':r.can==='exhausted'?'stale':r.alive===false?'dead':r.online?'ok':'off';
+  const connCls=r.alive===false?'dead':r.online?'ok':'off';
+  const canCls=r.can==='ok'?'ok':r.can==='exhausted'?'limited':'unknown';
   return `<article class="agent-card ${sel?'selected':''}"><button type="button" class="agent-select" data-agent="${esc(r.id)}" aria-expanded="${sel}">
    <span class="ag-ava"><img class="agent-avatar" src="assets/agents/${esc(r.ava)}" alt=""><i class="ava-dot ${dotCls}"></i></span>
    <span class="ag-idcol"><span class="agent-name">${esc(r.name)}<i class="ag-ids" title="角色ID ${esc(r.roleId)}｜实例ID ${r.loaded?esc(r.instanceId):'未上报'}">${esc(r.roleId)}·${r.loaded?esc(r.instanceId):'?'}</i></span><span class="agent-role">${esc(r.role)}</span></span>
-   <span class="ag-conn ${r.online?'ok':'off'}">${r.connText}</span>
-   <span class="ag-work ${workCls}"${r.workUnknownWhy?` title="执行状态未知：${r.workUnknownWhy}（不推断为空闲）"`:''}>${r.workText}</span>
+   <span class="ag-conn ${connCls}"${r.connTitle?` title="${esc(r.connTitle)}"`:''}>${r.connText}</span>
+   <span class="ag-work ${workCls}"${r.workUnknownWhy?` title="执行状态未知：${esc(r.workUnknownWhy)}（不推断为空闲）"`:''}>${r.workText}</span>
+   <span class="ag-can ${canCls}"${r.canWhy?` title="${esc(r.canWhy)}"`:r.canTitle?` title="${esc(r.canTitle)}"`:''}>${r.canText||CAN_CN.unknown}</span>
    <span class="ag-hb ${hbCls}"${r.hbTitle?` title="${r.hbTitle}"`:''}>${r.hbText}</span>
    <span class="ag-task${r.taskHist?' hist':''}"${r.taskTitle?` title="${r.taskTitle}"`:''}>${r.taskText}</span>
   </button>${sel?r.det():''}</article>`;

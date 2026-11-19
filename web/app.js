@@ -132,6 +132,7 @@ const ui = {
 };
 let lastState = null;      // /api/state 最后一次成功数据
 let hermesData = null;     // /api/office/hermes — 三个 Hermes 入口自报状态
+let agentsRealData = null; // X03：/api/agents/real — Claude/Codex 本机实测三维（进程/执行/接活）
 let lastFlow = null;       // /api/office/flow 最后一次成功数据
 let hubOnline = null;      // null 未知 / true / false
 let lastSyncAt = null;     // 最后一次成功同步的时间戳
@@ -227,11 +228,12 @@ async function tick() {
       api('/api/office/flow', undefined, tmo),
       api('/api/office/skills', undefined, tmo),
       api('/api/office/hermes', undefined, tmo),
+      api('/api/agents/real', undefined, tmo),   // X03：Claude/Codex 本机实测三维
     ];
     if (!offline) reqs.push(api('/api/office/decisions', undefined, tmo));  // 离线快照没收录这份，跳过免噪音
     const rs = await Promise.allSettled(reqs);
     firstRound = false;   // 首轮已出结论，之后的请求回到默认超时
-    const [sR, hR, fR, kR, mR, dR] = rs;
+    const [sR, hR, fR, kR, mR, rR, dR] = rs;
 
     hubOnline = hR.status === 'fulfilled' && hR.value && hR.value.autoloop === true;
 
@@ -242,6 +244,13 @@ async function tick() {
     if (hermesOk) { hermesData = mR.value; setMod('hermes', true); }
     else if (mR.status === 'fulfilled') setMod('hermes', false, mR.value.error);   // 接口通了但内部报错
     else setMod('hermes', false, mR.reason && mR.reason.message);
+
+    // X03：/api/agents/real —— 失败时保留上一份好数据（不拿旧值冒充新值，也不清空），
+    // agentsRealData 为 null 时 agentStats 对 claude/codex 如实显示「未知」。
+    if (rR.status === 'fulfilled' && rR.value && rR.value.agents) {
+      agentsRealData = rR.value; setMod('agentsReal', true);
+    } else if (rR.status === 'fulfilled') setMod('agentsReal', false, '返回里没有 agents 字段');
+    else setMod('agentsReal', false, rR.reason && rR.reason.message);
 
     if (fR.status === 'fulfilled' && fR.value) {
       lastFlow = fR.value;
@@ -316,7 +325,7 @@ function applyInitPhase(sR, hR, fR) {
       console.error(`[G06] 连接失败（连续第 ${failStreak} 轮）：/api/health ${phaseReason}` +
         (modErr.state ? `；state: ${modErr.state}` : ''));
     } else {
-      const det = ['state', 'flow', 'skills', 'hermes', 'decisions']
+      const det = ['state', 'flow', 'skills', 'hermes', 'agentsReal', 'decisions']
         .filter((n) => modErr[n]).map((n) => `${n}: ${modErr[n]}`).join('；');
       console.error(`[G06] 数据获取失败（连续第 ${failStreak} 轮）：${det || phaseReason}`);
     }

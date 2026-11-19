@@ -92,13 +92,14 @@ test('A1 首页驾驶舱首屏：任务卡/实况区是真实业务内容，首�
   } finally { await page.close(); }
 });
 
-test('A2 Agents 首屏：名册 4 卡 + 统计卡真实渲染，首轮 ≤3000ms', async () => {
+test('A2 Agents 首屏：名册 5 卡 + 统计卡真实渲染，首轮 ≤3000ms', async () => {
   const { page, state, contentMs } = await openPage('#/agents', '#agent-grid .agent-card');
   try {
+    // X02 后 ROSTER_DEFS 加了 claude（Claude Code·写代码，状态走 /api/agents/real 本机实测），4 卡 → 5 卡
     const cards = await page.locator('#agent-grid .agent-card').count();
-    assert.equal(cards, 4, `Agent 名册应 4 卡（lemate/winter/karina/codex），实际 ${cards}`);
+    assert.equal(cards, 5, `Agent 名册应 5 卡（lemate/winter/karina/claude/codex），实际 ${cards}`);
     const names = (await page.locator('#agent-grid .agent-card').allInnerTexts()).join('|');
-    for (const n of ['Lemate', 'Winter', 'Karina', 'Codex']) {
+    for (const n of ['Lemate', 'Winter', 'Karina', 'Claude Code', 'Codex']) {
       assert.ok(names.includes(n), `名册应含 ${n}，实际：${names.slice(0, 160)}`);
     }
     // 统计卡存在且非空文本（.sc-num 有数字）

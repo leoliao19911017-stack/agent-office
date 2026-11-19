@@ -159,10 +159,22 @@ function renderStatusbar() {
   // 带 roleId/instanceId，与 Agents 页逐一对应。A02：chip 只报名册的 conn/work 字段，
   // 与 Agents 页「连接健康 / 执行状态」列同一判定——执行状态未知就显示未知，不推断成空闲。
   chips.innerHTML = st.roster.map((s) => {
-    const cls = !s.loaded ? 'unknown' : s.work === 'working' ? 'busy' : s.work === 'idle' ? 'idle' : s.conn === 'online' ? 'unknown' : 'down';
-    const connTxt = !s.loaded ? '未知' : s.conn === 'online' ? '在线' : '离线';
-    const workTxt = WORK_CN[s.work] || '未知';
-    const state = `连接：${connTxt}｜执行状态：${workTxt}${s.workUnknownWhy ? `（${s.workUnknownWhy}）` : ''}`;
+    // X04：chip 颜色按最要紧的事排序——红=进程没开 > 黄=额度用完/上报停滞 >
+    // 绿=执行中 > 灰=空闲 > 灰蓝=未知。三维度全进 tooltip。
+    const cls = !s.loaded ? 'unknown'
+      : s.alive === false ? 'down'
+      : s.can === 'exhausted' ? 'limited'
+      : s.work === 'working' ? 'busy'
+      : s.work === 'idle' ? 'idle'
+      : s.timeout ? 'limited'
+      : s.conn === 'online' ? 'unknown' : 'down';
+    // 进程/连接维度：Claude/Codex 报进程（本机实测），Hermes 报连接（心跳）
+    const connTxt = s.real ? (s.connText || '未知') : !s.loaded ? '未知' : s.conn === 'online' ? '在线' : '离线';
+    const workTxt = (WORK_CN[s.work] || '未知') + (s.workUnknownWhy ? `（${s.workUnknownWhy}）` : '');
+    const canTxt = (s.canText || '未知')
+      + (s.can === 'exhausted' && s.real && s.real.rateLimitResetAt ? `（重置于 ${fmtTime(s.real.rateLimitResetAt)}）` : '')
+      + (s.can === 'unknown' && s.canWhy ? `（${s.canWhy}）` : '');
+    const state = `进程/连接：${connTxt}｜执行状态：${workTxt}｜接活：${canTxt}`;
     return `<button type="button" class="sb-chip ${cls}" title="角色：${esc(s.role)}（ID ${esc(s.roleId)}）｜编号 ${s.loaded ? esc(s.instanceId) : '未上报'}｜${esc(state)}｜点击查看 AI 明细"><i></i>${esc(s.name)} · ${esc(rolePlainOf(s))}</button>`;
   }).join('');
 }

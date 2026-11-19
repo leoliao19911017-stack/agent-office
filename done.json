@@ -1,55 +1,54 @@
 {
   "outcome": "succeeded",
-  "summary": "R87 五项全部落地：删掉讨论前审批点（建档即自动推进），需求确认改为唯一确认节点；首页/确认页文案全部挂真实状态；新增真实讨论留档链路（server-auto.mjs + GET /api/office/discuss），不伪造协作过程；六阶段映射到真实步骤；等待用户与 AI 停滞文案分离。test:g07 19/19 全绿（实测 pass 19 fail 0），真实环境端到端走通「不点任何按钮 → 讨论两轮 → 文档生成 → 停在需求确认」。",
+  "summary": "Agent 状态显示真实情况：新增只读探测接口 GET /api/agents/real（PowerShell 进程数 + 会话日志 mtime + 会话尾部限额报错，5s 缓存，出错出 null 不出 500），ROSTER_DEFS 补上 claude（Claude Code·写代码），前端状态判定彻底不读中台 seenAt（7 个 agent 同一毫秒判不出谁在干活）改为三维：进程状态（进程活着（N 个）/进程没开/未知）、执行状态（执行中/空闲/未知，红线：取不到就显示未知，永不用空闲兜底）、接活（能接活/额度用完/未知）。底栏 chips、Agents 名册、首页驾驶舱 roster 同源同色。四项自测全部真实跑过：curl 实测、含 Claude Code 行的截图、伪数据 20 分钟前→空闲、Hermes 三行显示未知。",
   "items": [
     {
       "code": "X01",
       "status": "done",
-      "evidence": "代码：web/server-api.mjs makeNewTaskRoute 在 req=done 读回核验后直接 runFlow(['set',taskId,'doc','--status','running',...])（L1208），无任何审批调用；web/cabin.js STAGE_MAIN 删除 req 条目。真实事件顺序（PORT=8091 + 真实 C:/Tools/agent-autoloop，实测）：12:56:29 建档 readBack req=done、doc=running『AI 已自动开始讨论需求』；12:56:47(T+18s) 讨论留档 phase=discussing/active=true/0条；12:56:55 第1轮真实输出落档；13:00:36 第2轮落档+文档+doc=awaiting；终态 steps=req:done doc:awaiting，plan/brief/deliverable/verify/final 全 pending——全程没点任何按钮，精确停在需求确认节点。老任务未触碰：推进器只写 discuss/<id>.json 与新任务 doc 步骤；resumeInterruptedAuto 只拉 doc=running 且留档 mid-flight 的任务。"
+      "evidence": "接口实测返回（2026-11-19T15:57Z，curl http://127.0.0.1:8090/api/agents/real）：agents.claude={processAlive:true, processCount:10, lastActivityAt:2026-11-19T15:57:25.877Z, lastActivityAgeSec:0, rateLimited:false}；agents.codex={processAlive:true, processCount:4, lastActivityAgeSec:39630, rateLimited:true, rateLimitResetAt:2026-11-19T06:19:00.000Z(=本地14:19，与UI显示一致), rateLimitSample 开头 'usage_limit_exceeded'}。R2 测试 8b 断言已加并跑过：200、claude/codex 必在、processAlive/rateLimited 均 boolean|null 三值域。幂等只读，无新 npm 依赖，未动 /api/state 返回结构，中台 seenAt 字段保留。"
     },
     {
       "code": "X02",
       "status": "done",
-      "evidence": "web/cabin.js：nowMain/nowSub 按 doc 真实状态分支（running→『已收到你的想法，AI 正在分析』/『两位 AI 助手正在讨论软件需要哪些功能』/『AI 正在整理需求文档』；awaiting→『软件需求已经整理好，等你确认』）；featCardHtml 无文档时按 running/failed/error 分支（讨论引擎失败→『功能清单整理停住了』+真实 error，不冒充整理中）。实测：doc=awaiting 时 GET /api/office/flow 返回 activity={activity_state:awaiting_user, current_activity:需求文档已经做好，等你确认}。"
+      "evidence": "Agents 名册实测 5 卡（verify-x-agents-real.mjs → verify-x-agents.json roster 数组）：claude 行 {ids:'claude·claude', conn:'进程活着（10 个）', work:'执行中', can:'能接活', hb:'1 秒前有活动'}，截图 verify-x-agents-roster.png。A2 测试同步为 5 卡（含 'Claude Code' 名字断言），实测 cards=5 过。"
     },
     {
       "code": "X03",
       "status": "done",
-      "evidence": "新增 web/server-auto.mjs（291行）：只跑真实子进程 discuss.mjs（stdout 原文入档，agent 名从 stderr『[discuss] X 成功』解析，解析不出叫『AI 助手』不猜具体是谁）；留档 office-data/discuss/<taskId>.json 原子写。新增路由 GET /api/office/discuss（server-api.mjs L1237-1248，404 清单同步更新）。实测 T-20261119-01 留档 messages=2：第1轮 role=提出方案、第2轮 role=评审与修订 agent=DSH（内容为引擎真实输出，含真实争议点『杯这个单位没有参照标准』）。确认页三块按序：①discussCardHtml 真实讨论记录（拿不到→『暂时无法获取讨论记录』，绝不伪造）②featCardHtml『最终准备做什么』=3条功能+3条不做什么 ③heroActBlockHtml『需要你决定什么』=[确认需求，开始制定计划]+[告诉 AI 哪里需要修改]。"
+      "evidence": "名册读数逐字：claude work=执行中（活动 1 秒前）；codex work=空闲（活动 10 小时前 + 进程活着）；Hermes 三行（lemate/winter/karina）work 全部=未知，workTitle 逐字『执行状态未知：上次自报已过期（不推断为空闲）』『执行状态未知：从未接入上报（不推断为空闲）』，can=未知『该角色没有额度上报通道』。伪数据注入实测（verify-x-agents.json injectIdle）：把 claude lastActivityAt 改到 20 分钟前（processAlive 仍 true）→ 同步读回 work='空闲'、conn='进程活着（10 个）'、hb='20 分钟前有活动'，截图 verify-x-agents-idle-fake.png，截图后复读仍为 '空闲'（injectIdlePostRead）。"
     },
     {
       "code": "X04",
       "status": "done",
-      "evidence": "web/cabin.js journeyStateOf：阶段①理解你的想法=req+doc（doc running→进行中；awaiting/done→已完成），阶段②确认软件功能=doc awaiting→『需要你确认』；STAGE_MAIN 已无 req 条目，『用户审批完成』在需求文档生成前无处可出现（doc 未 awaiting 前阶段①显示进行中、阶段②等待开始）。"
-    },
-    {
-      "code": "X05",
-      "status": "done",
-      "evidence": "web/cabin.js journeyHtml：awaiting 分支按 waiting 步骤真实 at 算天数，days>=1→『这项软件已等待你确认约 N 天，AI 暂时不会继续下一步』，当天→『在等你确认——确认后 AI 会接着做』；stale 分支固定『AI 暂时没有新的工作进展，正在检查』，两套文案互斥；无可靠数据处保留『剩余时间暂时无法估计』。"
+      "evidence": "三处 UI 同源 agentStats()：①底栏 chips title 逐字『进程/连接：进程活着（10 个）｜执行状态：执行中｜接活：能接活』；②Agents 明细面板（verify-x-agents-detail.png）标题『实时状态（本机实测）』，键值对含 [进程状态,进程活着（10 个）]/[最近会话活动,23:43（2 秒前）]/[执行状态,执行中]/[能不能接活,能接活]，附说明『这一行不读中台 seenAt（7 个 agent 同一毫秒，判不出谁在干活）』；③首页驾驶舱 roster（verify-x-cabin.png）：头条『1 个 AI 助手正在干活 · 共 5 个已连接』，Claude 行『在干活 · 上次动静 4 秒前有活动』，Codex 行『额度用完了，14:19 重置』，Lemate『连着，但已经有一阵没动静，可能卡住了』，Winter/Karina『连着，在不在干活未知（从未接入上报）』——Hermes 无一处出现『空闲』兜底。"
     }
   ],
   "hard_requirements": {
-    "test_g07": "19/19 全绿（hermes node v22.23.2 实测：# tests 19 / # pass 19 / # fail 0；test 11 已按 R87 新契约改写：readBack.doc.status=running、activity working+『正在』、GET /api/office/discuss 200 且 exists=true；R1 冻结清单扩为 21 固定+3 参数化）。全套 23 个测试文件另跑一遍：236/238，2 条失败（D1 审批闭环、L1 工作台布局）在干净 HEAD 上同样失败——既有问题，与本轮改动无关（git stash 对照实测）。",
-    "app_js_lines": "app.js 1072 行 ≤ 1400（本轮未改 app.js；前端改动全在 cabin.js 1251 行）",
-    "static_app": "新增文件 web/server-auto.mjs 为服务端 .mjs（与 server-core.mjs/server-api.mjs 同类，不经 STATIC_APP）；浏览器侧无新增 .js（cabin.js 原已在白名单 L333）",
-    "no_fake": "讨论失败路径实测过：测试夹具无 discuss.mjs → ENOENT → phase=error + 真实原因『discuss.mjs 不存在（…）——这台机器没装讨论引擎』落档，页面显示停住而非假装整理中"
+    "self_test_1_curl": "真实 curl 返回见 X01 evidence（fresh 于 2026-11-19T15:57Z，cacheAgeSec:0 非缓存）",
+    "self_test_2_screenshot": "verify-x-agents-roster.png（名册含 Claude Code 行）+ verify-x-agents-detail.png（明细），allPass=true（10/10 检查项）",
+    "self_test_3_fake_idle": "verify-x-agents-idle-fake.png + injectIdle JSON：20 分钟前 → 空闲（进程活着）",
+    "self_test_4_hermes_unknown": "verify-x-agents.json：Hermes 三行 work=未知、can=未知；驾驶舱三行均无『空闲』；检查项 hermesNeverIdle=true、cabinHermesNeverIdle=true"
+  },
+  "tests": {
+    "test:g07": "19 项 19 过 0 挂，全绿（pre-commit hook 强制跑全套 G07 回归，全绿才许提交）。过程中发现的 4 个既有失败（D3/D4/R2/R3，全部 file 白名单 403）已修：对照实验证明与 X 系列无关——git stash -u 后在 HEAD(690df21) 原位重跑同样挂这 4 项；根因是 web/server.js FILE_ROOTS 白名单硬编码仓库旧家 'C:/Users/Administrator/Desktop/...'，仓库已搬到 'E:/DesktopProjects/...'（C: 旧目录仍在，是搬家前副本）。修复=白名单加一项 dirname(HERE)（仓库自身根，搬家自适应，未放宽任何边界——白名单原本就允许本仓库目录）。修后 19/19。本轮相关测试全过：R1 固定 22/22、R2 8b agents/real 三值域、A2 名册 5 卡（cards=5）。"
   },
   "files_modified": [
-    "web/server-auto.mjs（新增，291 行）",
-    "web/server-api.mjs（1370 行：new-task 自动推进 + discuss 路由）",
-    "web/server.js（410 行：import resumeInterruptedAuto + 启动时恢复中断讨论）",
-    "web/cabin.js（1251 行：六阶段/状态文案/确认页三块/讨论卡）",
-    "test/g07-routes.test.js（R1 冻结清单 20→21 固定；test 11 改为 R87 新契约）",
-    "done.json"
+    "web/server-agents-real.mjs (新增：/api/agents/real 探测实现)",
+    "web/server.js (FILE_ROOTS 补仓库根 dirname(HERE)：搬家后白名单失配致 file 一族 403、4 项测试挂、pre-commit 被挡；未放宽边界)",
+    "web/server-api.mjs (挂载新路由)",
+    "web/agents.js (名册三维渲染 + claude 明细 + Hermes 未知)",
+    "web/app.js (agentsRealData 装载 + 状态计算)",
+    "web/render.js",
+    "web/cabin.js (驾驶舱 roster 用真实状态)",
+    "web/app-workbench.css / web/app-cabin.css (五色状态样式)",
+    "web/verify-x-agents-real.mjs (新增：四合一验证脚本)",
+    "test/g07-routes.test.js (R1 22 条 + R2 8b agents/real)",
+    "test/g07-pages.test.js (A2 4 卡→5 卡)"
   ],
-  "blocked_by": [],
+  "blocked_by": null,
   "notes": [
-    "真实环境留了一条验证任务 T-20261119-01（标题『R87 整改验证·喝水记录』）在需求确认节点等你，可确认或忽略。",
-    "8090 端口有一个更早会话遗留的旧代码实例还在跑（build r73 旧进程），未动它——需要的话你自己关。",
-    "done.json 此前处于已删除状态（git D），本轮按契约重写。"
-  ],
-  "line_counts": {
-    "app.js": 1072,
-    "server.js": 410
-  }
+    "8090 端口有看门狗（父进程 52880）自动拉起 server.js，杀掉 node 即重载新代码，本轮结束时 8090 已运行含白名单修复的新代码（health 200）。",
+    "pre-commit hook 在 scripts/hooks（core.hooksPath 配置），提交即跑全套 G07 回归，全绿才放行——本轮没用 --no-verify。",
+    "verify-x-agents-real.mjs 沿用仓库 verify-g01.mjs 的自起 headless Chrome + CDP 惯例（node --experimental-websocket），证据落盘 verify-x-agents.json + 4 张 PNG，allPass=true。"
+  ]
 }

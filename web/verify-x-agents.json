@@ -1,0 +1,188 @@
+{
+  "when": "2026-11-19T15:43:31.263Z",
+  "base": "http://127.0.0.1:8090",
+  "viewport": "1440x900",
+  "shots": [
+    "verify-x-agents-roster.png",
+    "verify-x-agents-detail.png",
+    "verify-x-agents-idle-fake.png",
+    "verify-x-cabin.png"
+  ],
+  "tabClicks": [
+    {
+      "matches": 1,
+      "visible": [
+        true
+      ]
+    }
+  ],
+  "roster": [
+    {
+      "id": "lemate",
+      "ids": "lemate·lemate",
+      "conn": "在线",
+      "work": "未知",
+      "workTitle": "执行状态未知：上次自报已过期（不推断为空闲）",
+      "can": "未知",
+      "canTitle": "该角色没有额度上报通道",
+      "hb": "已过期 · 11/15 00:08",
+      "task": "上次上报已过期 · 11/15 00:08"
+    },
+    {
+      "id": "winter",
+      "ids": "winter·winter",
+      "conn": "在线",
+      "work": "未知",
+      "workTitle": "执行状态未知：从未接入上报（不推断为空闲）",
+      "can": "未知",
+      "canTitle": "该角色没有额度上报通道",
+      "hb": "—",
+      "task": "—"
+    },
+    {
+      "id": "karina",
+      "ids": "karina·karina",
+      "conn": "在线",
+      "work": "未知",
+      "workTitle": "执行状态未知：从未接入上报（不推断为空闲）",
+      "can": "未知",
+      "canTitle": "该角色没有额度上报通道",
+      "hb": "—",
+      "task": "—"
+    },
+    {
+      "id": "claude",
+      "ids": "claude·claude",
+      "conn": "进程活着（10 个）",
+      "work": "执行中",
+      "workTitle": "",
+      "can": "能接活",
+      "canTitle": "",
+      "hb": "1 秒前有活动",
+      "task": "1 秒前有会话活动"
+    },
+    {
+      "id": "codex",
+      "ids": "codex·codex",
+      "conn": "进程活着（4 个）",
+      "work": "空闲",
+      "workTitle": "",
+      "can": "额度用完",
+      "canTitle": "限额重置于 14:19",
+      "hb": "10 小时前有活动",
+      "task": "额度用完，重置于 14:19"
+    }
+  ],
+  "chips": [
+    {
+      "text": "Lemate · 帮你写代码",
+      "title": "角色：Coding（ID lemate）｜编号 lemate｜进程/连接：在线｜执行状态：未知（上次自报已过期）｜接活：未知（该角色没有额度上报通道）｜点击查看 AI 明细"
+    },
+    {
+      "text": "Winter · 帮你剪视频",
+      "title": "角色：视频剪辑（ID winter）｜编号 winter｜进程/连接：在线｜执行状态：未知（从未接入上报）｜接活：未知（该角色没有额度上报通道）｜点击查看 AI 明细"
+    },
+    {
+      "text": "Karina · 帮你做图文",
+      "title": "角色：图文笔记（ID karina）｜编号 karina｜进程/连接：在线｜执行状态：未知（从未接入上报）｜接活：未知（该角色没有额度上报通道）｜点击查看 AI 明细"
+    },
+    {
+      "text": "Claude Code · 帮你写代码",
+      "title": "角色：写代码（ID claude）｜编号 claude｜进程/连接：进程活着（10 个）｜执行状态：执行中｜接活：能接活｜点击查看 AI 明细"
+    },
+    {
+      "text": "Codex · 帮你生图和把关",
+      "title": "角色：生图·审查（ID codex）｜编号 codex｜进程/连接：进程活着（4 个）｜执行状态：空闲｜接活：额度用完（重置于 14:19）｜点击查看 AI 明细"
+    }
+  ],
+  "detail": {
+    "open": true,
+    "headings": [
+      "实时状态（本机实测）",
+      "中台档案（附注）",
+      "最近 8 条执行记录（中台侧）"
+    ],
+    "kvs": [
+      [
+        "角色ID（稳定）",
+        "claude"
+      ],
+      [
+        "实例ID",
+        "claude"
+      ],
+      [
+        "进程状态",
+        "进程活着（10 个）"
+      ],
+      [
+        "最近会话活动",
+        "23:43（2 秒前）"
+      ],
+      [
+        "执行状态",
+        "执行中"
+      ],
+      [
+        "能不能接活",
+        "能接活"
+      ],
+      [
+        "已完成 7 个任务",
+        "511.8K tokens"
+      ]
+    ],
+    "sample": "这一行不读中台 seenAt（7 个 agent 同一毫秒，判不出谁在干活）。三维状态来自本机实测：PowerShell 进程数、会话日志 mtime、最新会话尾部的限额报错；取不到的维度如实显示「未知」。"
+  },
+  "injectIdle": {
+    "ok": true,
+    "injectedAgeMin": 20,
+    "before": {
+      "lastActivityAt": "2026-11-19T15:43:31.171Z",
+      "processAlive": true,
+      "processCount": 10
+    },
+    "conn": "进程活着（10 个）",
+    "work": "空闲",
+    "can": "能接活",
+    "hb": "20 分钟前有活动",
+    "task": "20 分钟前有会话活动"
+  },
+  "injectIdlePostRead": "空闲",
+  "cabinHead": "1 个 AI 助手正在干活 · 共 5 个已连接",
+  "cabinRoster": [
+    {
+      "row": "Lemate · 帮你写代码 连着，但已经有一阵没动静，可能卡住了 检查连接",
+      "state": "连着，但已经有一阵没动静，可能卡住了"
+    },
+    {
+      "row": "Winter · 帮你剪视频 连着，在不在干活未知（从未接入上报） 检查连接",
+      "state": "连着，在不在干活未知（从未接入上报）"
+    },
+    {
+      "row": "Karina · 帮你做图文 连着，在不在干活未知（从未接入上报） 检查连接",
+      "state": "连着，在不在干活未知（从未接入上报）"
+    },
+    {
+      "row": "Claude Code · 帮你写代码 在干活 · 上次动静 4 秒前有活动",
+      "state": "在干活 · 上次动静 4 秒前有活动"
+    },
+    {
+      "row": "Codex · 帮你生图和把关 额度用完了，14:19 重置",
+      "state": "额度用完了，14:19 重置"
+    }
+  ],
+  "checks": {
+    "rosterHasClaudeRow": true,
+    "claudeConnIsProcess": true,
+    "claudeCanReal": true,
+    "detailOpenWithHeadings": true,
+    "idleFakeShowsIdle": true,
+    "hermesNeverIdle": true,
+    "codexRealFromProbe": true,
+    "cabinClaudeRealState": true,
+    "cabinHermesNeverIdle": true,
+    "cabinCodexQuota": true
+  },
+  "allPass": true
+}

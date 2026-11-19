@@ -27,11 +27,14 @@ import { resumeInterruptedAuto } from './server-auto.mjs';
  * 只允许读工作产物所在目录——不接受任意绝对路径，
  * 否则一个 path 参数就能把整台机器读空。
  */
+const HERE = dirname(fileURLToPath(import.meta.url)); // web/ 目录（提前定义，白名单要用）
+
 const FILE_ROOTS = [
   'C:/Tools/agent-autoloop/office-data',
   'C:/Tools/agent-autoloop/output',
   'C:/Tools/agent-autoloop/worker',
   'C:/Users/Administrator/Desktop/Soda Intelligence - AI Native Thinking/Soda Office',
+  dirname(HERE), // 仓库自身根目录（搬家自适应）：产物文件就住在这里；旧 Desktop 硬编码在仓库搬到 E: 后失配致 file 一族全 403
 ];
 
 /** 文本类扩展名：直接回文本；其余回元信息 + 下载链接 */
@@ -49,8 +52,6 @@ function isAllowedPath(p) {
     return n === r || n.startsWith(r + '/');
   });
 }
-
-const HERE = dirname(fileURLToPath(import.meta.url));
 
 // G02（第 5 轮）：AGENT_AUTOLOOP_HOME 读取收口为唯一常量（原先 4 处各读一遍 env）；
 // taskFileOf 收口 6 处 join(AUTOLOOP_HOME,'office-data','tasks',`${id}.json`) 拼接。

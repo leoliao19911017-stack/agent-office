@@ -269,6 +269,7 @@
 .roster-row .cabin-link {flex:none}
 .roster-state {color:var(--muted); flex:1; min-width:0; line-height:1.6}
 .roster-row.stale .roster-state, .roster-row.unknown .roster-state {color:var(--amber)}
+.roster-row.limited .roster-state {color:var(--amber)}   /* X04：额度用完（黄，与 unknown 同色系但语义行文不同） */
 .roster-row.down .roster-state {color:var(--reason-red)}
 
 /* ---- X03：内部代号的收容处（折叠披露；测试任务开关 R86·X02 已下线） ---- */
