@@ -296,3 +296,13 @@
 
 /* ---- X04：决策清单的「查看并确认」引导 ---- */
 .dp-go {margin-left:auto; color:var(--blue); font-size:12px; flex:none}
+
+/* ---- R88：doc 阶段「展开看你确认的内容」折叠区，避免把主按钮挤出第一屏 ---- */
+.cabin-more {margin-top:14px; border:1px solid var(--line); border-radius:12px; background:var(--bg2)}
+.cabin-more > summary {cursor:pointer; padding:12px 16px; font-size:13px; color:var(--muted); list-style:none}
+.cabin-more > summary::-webkit-details-marker {display:none}
+.cabin-more > summary::before {content:'▸ '; color:var(--blue)}
+.cabin-more[open] > summary::before {content:'▾ '}
+.cabin-more[open] > summary {border-bottom:1px solid var(--line); color:var(--text)}
+.cabin-more > .cabin-feat {margin:0; border:none; border-radius:0; border-bottom:1px solid var(--line)}
+.cabin-more > .cabin-feat:last-child {border-bottom:none}

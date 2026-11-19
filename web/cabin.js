@@ -940,8 +940,15 @@ function renderCabin() {
       <b class="ch-v">${esc(nextLine)}</b>
       <span class="ch-act">${heroActHtml}</span></div>`;
   const docStage = focus.key === 'doc';
+  // R88：主按钮必须留在第一屏（1440×900 / 1280×768 都免滚动）。
+  // doc 阶段原本把讨论卡和功能卡排在操作块前面，按钮被顶到 1033px 出屏了。
+  // 现在：操作块紧跟三栏信息块；讨论卡和功能卡折进「展开看你确认的内容」，默认展开但限高可滚。
   const heroHtml = docStage
-    ? `<div class="cabin-hero">${heroHeadHtml}</div>${discussCardHtml(t)}${featCardHtml(t)}<div class="cabin-hero">${heroActBlockHtml}</div>`
+    ? `<div class="cabin-hero">${heroHeadHtml}${heroActBlockHtml}</div>
+       <details class="cabin-more" open>
+         <summary>展开看你确认的内容（AI 讨论了什么 · 最终准备做什么）</summary>
+         ${discussCardHtml(t)}${featCardHtml(t)}
+       </details>`
     : `<div class="cabin-hero">${heroHeadHtml}${planStage ? planHeroHtml(planRead) : ''}${heroActBlockHtml}</div>`;
 
   // ---- 走过的路：完成步默认折叠（✓），当前步高亮（▸），以后灰着（○）
