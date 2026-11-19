@@ -63,7 +63,7 @@ test('A1 首页驾驶舱首屏：任务卡/实况区是真实业务内容，首�
     const nowLine = await page.evaluate(() => document.querySelector('#cabin-main .cabin-now h2').textContent.trim());
     assert.ok(nowLine.length > 0, `「现在干什么」应为真实内容，实际「${nowLine}」`);
     const progText = await page.evaluate(() => (document.querySelector('#cabin-main .cabin-progress') || {}).textContent || '');
-    assert.match(progText, /第 \d+ 项 \/ 共 \d+ 项 · 做完 \d+ 项/, `进度文字应带真实计数，实际「${progText}」`);
+    assert.match(progText, /第 \d+ \/ 6 阶段/, `进度文字应带真实阶段计数，实际「${progText}」`);
 
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
     const ev = await evidence(page);

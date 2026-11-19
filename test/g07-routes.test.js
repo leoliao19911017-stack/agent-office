@@ -1,8 +1,10 @@
-// G07-D｜17 个既有 API 路由清单回归（3 用例）——防止「重构删路由」再次无声发生。
+// G07-D｜20 个 API 路由清单回归（3 用例）——防止「重构删路由」再次无声发生。
 //
-// 任务书口径「确认 17 个既有 API 路由没有丢失」：
+// G07 任务书口径「确认 17 个既有 API 路由没有丢失」：
 //   17 = 固定路径路由（11 GET + 6 POST /api/office/*、/api/state、/api/health）；
 //   另有 3 条参数化中台代理（/api/cards/:id/answer|resolve、/api/runs/:id/cancel），共 20 条一并守护。
+// TASK-向导化改造（X06/X07）新增 3 条固定路由（GET+POST /api/office/review、
+//   POST /api/office/new-task），冻结清单同步扩到 20 固定 + 3 参数化——只增不减。
 //
 // R1 源码静态扫描：路由注册字面量逐一对照冻结清单——删掉任何一条，本用例立刻失败；
 // R2 GET 数据路由业务形状：响应体里必须有真实业务字段（HTTP 200 不作为通过条件）；
@@ -40,6 +42,10 @@ const EXPECTED_FIXED = new Map([
   ['POST /api/office/decide', '决策处理'],
   ['POST /api/office/resubmit', '重新提交'],
   ['POST /api/office/decision', '需求决策'],
+  // TASK-向导化改造（X06 评审轮次账本 / X07 首页开新软件）
+  ['GET /api/office/review', '评审轮次查询'],
+  ['POST /api/office/review', '评审轮次记入'],
+  ['POST /api/office/new-task', '首页开新软件制作'],
 ]);
 const EXPECTED_PARAM = new Map([
   ['POST /api/cards/:id/answer', '提问卡作答'],
@@ -61,8 +67,8 @@ const post = (p, body) => fetch(stack.base + p, {
   return { status: r.status, body: b };
 });
 
-test('R1 源码路由清单：17 条固定 + 3 条参数化全部在（少一条即失败）', () => {
-  // G02（R73）：17 个 /api/* 路由体已从 server.js 搬至 server-api.mjs（createApiRouter
+test('R1 源码路由清单：20 条固定 + 3 条参数化全部在（少一条即失败）', () => {
+  // G02（R73）：/api/* 路由体已从 server.js 搬至 server-api.mjs（createApiRouter
   // 工厂），扫描口径跟随拆分：两文件源码并集，路由丢一条立刻失败，与拆分前等效。
   const src = readFileSync(new URL('../web/server.js', import.meta.url), 'utf8')
     + readFileSync(new URL('../web/server-api.mjs', import.meta.url), 'utf8');
@@ -74,7 +80,7 @@ test('R1 源码路由清单：17 条固定 + 3 条参数化全部在（少一条
   }
   const missing = [...EXPECTED_FIXED.keys()].filter((k) => !found.has(k));
   assert.deepEqual(missing, [], `server.js 丢了固定路由：${missing.join('、')}（扫描到 ${found.size} 条固定路由）`);
-  assert.equal(found.size, 17, `固定路由应恰好 17 条，实际扫描到 ${found.size}：${[...found].join('、')}`);
+  assert.equal(found.size, 20, `固定路由应恰好 20 条（G07 17 + 向导化 3），实际扫描到 ${found.size}：${[...found].join('、')}`);
 
   // 参数化：`m = path.match(/…/)`，用样本路径逐条试配（对正则写法不敏感）
   const paramLiterals = [...src.matchAll(/m = path\.match\((\/\^[^\n]*?)\)\)/g)].map((m) => m[1]);
@@ -88,7 +94,7 @@ test('R1 源码路由清单：17 条固定 + 3 条参数化全部在（少一条
   }
   const missParam = [...EXPECTED_PARAM.keys()].filter((k) => !paramFound.includes(k));
   assert.deepEqual(missParam, [], `server.js 丢了参数化代理路由：${missParam.join('、')}`);
-  console.log(`[R1] 固定 17/17 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
+  console.log(`[R1] 固定 20/20 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
 });
 
 test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（200 空壳不算过）', async () => {
@@ -138,6 +144,23 @@ test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（2
   const verifyStep = a.steps.find((s) => s.key === 'verify');
   assert.equal(verifyStep.status, 'awaiting', `T-G07A verify 应 awaiting，实际 ${verifyStep.status}`);
 
+  // 6b) X05（向导化改造）：每任务附 activity 四字段，四态互斥、字段齐全；
+  //     T-G07A verify 可拍板 → awaiting_user + 「等你确认」；顶层 live 同源。
+  const STATES = ['working', 'awaiting_user', 'idle', 'unknown'];
+  for (const t of flow.body.tasks) {
+    const act = t.activity;
+    assert.ok(act && typeof act.current_activity === 'string' && act.current_activity.length > 0,
+      `${t.id}.activity.current_activity 应为非空字符串，实际 ${JSON.stringify(act)}`);
+    assert.ok(STATES.includes(act.activity_state), `${t.id}.activity_state 应为四态之一，实际 ${act.activity_state}`);
+    assert.ok('activity_updated_at' in act && 'run_id' in act, `${t.id}.activity 四字段必须齐全`);
+  }
+  assert.equal(a.activity.activity_state, 'awaiting_user', `T-G07A verify 可拍板应 awaiting_user，实际 ${JSON.stringify(a.activity)}`);
+  assert.match(a.activity.current_activity, /等你确认/, `T-G07A activity 文案应指向用户确认，实际「${a.activity.current_activity}」`);
+  assert.ok(flow.body.live && STATES.includes(flow.body.live.activity_state),
+    `flow.live.activity_state 应为四态之一，实际 ${JSON.stringify(flow.body.live)}`);
+  assert.equal(flow.body.live.activity_state, 'awaiting_user', `live 头条应继承 T-G07A 的等待确认，实际 ${JSON.stringify(flow.body.live)}`);
+  assert.equal(flow.body.live.taskId, 'T-G07A', `live.taskId 应指向 T-G07A，实际 ${flow.body.live.taskId}`);
+
   // 7) /api/office/decisions：待决策清单真算出 T-G07A verify
   const dec = await get('/api/office/decisions');
   assert.equal(dec.status, 200);
@@ -176,7 +199,19 @@ test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（2
   assert.equal(fvBad.status, 400);
   assert.equal(fvBad.body.code, 'MISSING_IDS', `应 400/MISSING_IDS，实际 ${fvBad.status}/${fvBad.body?.code}`);
 
-  console.log(`[R2] 11 条 GET 路由业务形状全过（skills=12、flow=3×7、decisions 含 T-G07A/verify）`);
+  // 11) X06 /api/office/review GET：T-G07A 还没记过评审 → 空账本如实 exists:false
+  //     （不是 404 也不是 500），上限常量随响应下发，前端不自创返工规则。
+  const rv0 = await get('/api/office/review?taskId=T-G07A');
+  assert.equal(rv0.status, 200);
+  assert.equal(rv0.body.exists, false, `没记过评审应 exists:false，实际 ${JSON.stringify(rv0.body)}`);
+  assert.deepEqual(rv0.body.rounds, []);
+  assert.equal(rv0.body.advice, 'none');
+  assert.equal(rv0.body.limits.maxRounds, 5, '返工上限应为 5 轮');
+  const rvBad = await get('/api/office/review?taskId=');
+  assert.equal(rvBad.status, 400);
+  assert.equal(rvBad.body.code, 'BAD_TASK_ID', `应 400/BAD_TASK_ID，实际 ${rvBad.status}/${rvBad.body?.code}`);
+
+  console.log(`[R2] 12 条 GET 路由业务形状全过（skills=12、flow=3×7+X05 四字段、decisions 含 T-G07A/verify、review 空账本如实）`);
 });
 
 test('R3 POST 协议错误/白名单/下载/代理链：具体业务码 + 403 白名单 + 中台透传', async () => {
@@ -253,5 +288,49 @@ test('R3 POST 协议错误/白名单/下载/代理链：具体业务码 + 403 �
   const wrong = await fetch(stack.base + '/api/health', { method: 'POST' });
   assert.equal(wrong.status, 405, `已知路由错方法应 405，实际 ${wrong.status}`);
 
-  console.log('[R3] POST 具名错误码 + 403 白名单×4 + 下载头 + 代理透传×3 + 405 全过');
+  // 10) X06 /api/office/review POST：具名校验 + 记轮 + 补记执行结果 +
+  //     无进展暂停 / 打满上限 409 / 达标 outcome=pass，全链走真实磁盘账本
+  assert.equal((await post('/api/office/review', {})).body.code, 'BAD_TASK_ID');
+  assert.equal((await post('/api/office/review', { taskId: 'T-G07A' })).body.code, 'BAD_SCORE');
+  assert.equal((await post('/api/office/review', { taskId: 'T-G07A', score: 7 })).body.code, 'BASIS_REQUIRED');
+  assert.equal((await post('/api/office/review', { taskId: 'T-NOSUCH', score: 7, basis: 'x' })).body.code, 'TASK_NOT_FOUND');
+  const r1 = await post('/api/office/review', { taskId: 'T-G07A', score: 6.0, targetScore: 8, basis: '第 1 轮：骨架有了，核心功能缺一半', issues: '导出功能没做', instruction: '补导出功能' });
+  assert.equal(r1.status, 200, `记第 1 轮应 200，实际 ${r1.status}/${JSON.stringify(r1.body)}`);
+  assert.equal(r1.body.rounds.length, 1);
+  assert.equal(r1.body.rounds[0].outcome, 'rework', '6.0 < 8 应记 rework');
+  assert.equal(r1.body.readBack, true, '响应必须是磁盘读回值');
+  // 平分不涨 → 第 3 轮后应建议暂停转人工
+  await post('/api/office/review', { taskId: 'T-G07A', score: 6.0, basis: '第 2 轮：改了一个问题又冒出两个' });
+  const r3 = await post('/api/office/review', { taskId: 'T-G07A', score: 5.5, basis: '第 3 轮：修复没落地，分反而降了' });
+  assert.equal(r3.body.advice, 'pause-no-progress', `连续两轮无进展应建议暂停，实际 ${r3.body.advice}`);
+  // 补记执行结果（Claude 的执行结果写进既有轮次）
+  const back = await post('/api/office/review', { taskId: 'T-G07A', roundNo: 1, result: 'Claude 说已补上导出功能，等下轮评审核实' });
+  assert.equal(back.status, 200);
+  assert.equal(back.body.rounds[0].result, 'Claude 说已补上导出功能，等下轮评审核实');
+  // 达标轮 → pass；打满 5 轮后第 6 轮 409 拒绝（不无限返工）
+  const r4 = await post('/api/office/review', { taskId: 'T-G07A', score: 8.3, basis: '第 4 轮：人工接手指路后达标' });
+  assert.equal(r4.body.rounds[3].outcome, 'pass', '8.3 >= 8 应记 pass');
+  assert.equal(r4.body.advice, 'pass');
+  await post('/api/office/review', { taskId: 'T-G07A', score: 8.4, basis: '第 5 轮：复核保持达标' });
+  const r6 = await post('/api/office/review', { taskId: 'T-G07A', score: 8.5, basis: '第 6 轮' });
+  assert.equal(r6.status, 409, `打满上限后应 409，实际 ${r6.status}`);
+  assert.equal(r6.body.code, 'MAX_ROUNDS_REACHED', `应 MAX_ROUNDS_REACHED，实际 ${r6.body?.code}`);
+
+  // 11) X07 /api/office/new-task POST：真实建档（init+set req done）+ 读回核验 +
+  //     idea 原话入档；空 idea 400 具名
+  assert.equal((await post('/api/office/new-task', {})).body.code, 'IDEA_REQUIRED');
+  const nt = await post('/api/office/new-task', { idea: 'G07 验证：帮我做一个记录每天喝水杯数的小工具' });
+  assert.equal(nt.status, 200, `新任务应 200，实际 ${nt.status}/${JSON.stringify(nt.body)}`);
+  assert.match(nt.body.taskId, /^T-\d{8}-01$/, `新 ID 应为当天序号格式，实际 ${nt.body.taskId}`);
+  assert.equal(nt.body.readBack.req.status, 'done', 'req 应记 done（原始需求原话存档）');
+  assert.equal(nt.body.readBack.req.note, 'G07 验证：帮我做一个记录每天喝水杯数的小工具', 'idea 原话必须一字不差入档');
+  assert.equal(nt.body.readBack.req.by, 'Leo（工作台·新需求）');
+  // 建完后 flow 里能看到它，activity 是真实的排队态
+  const flow2 = await get('/api/office/flow');
+  const created = flow2.body.tasks.find((t) => t.id === nt.body.taskId);
+  assert.ok(created, `新任务应出现在 flow 列表，实际 ${flow2.body.tasks.map((t) => t.id).join('、')}`);
+  assert.equal(created.activity.activity_state, 'idle', `新任务应排队 idle，实际 ${JSON.stringify(created.activity)}`);
+  assert.match(created.activity.current_activity, /排着队/, '排队态文案应如实说还没开始');
+
+  console.log('[R3] POST 具名错误码 + 403 白名单×4 + 下载头 + 代理透传×3 + 405 + review 账本全链 + 新任务读回核验 全过');
 });

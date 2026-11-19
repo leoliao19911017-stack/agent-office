@@ -655,6 +655,117 @@ function handleAction(el, pop) {
   }
 }
 
+/* ================= TASK-向导化改造：开新软件 / 录评审 / 自动返工（X07/X06/X02） ================= */
+
+// X07：把一句想法交给 AI（POST /api/office/new-task）。成功后关表单、清草稿、立即拉一轮
+// 数据并选中新任务——用户视角：说完想法，下一拍就看到「AI 正在整理你的想法」。
+// 新用户从首页到提交需求两次点击（＋开始制作新软件 → 开始和 AI 讨论），不进任何设置页。
+let newTaskBusy = false;   // 防双击重复建任务（后端也会按日期序号兜底，双保险）
+async function submitNewTask() {
+  if (newTaskBusy) return;
+  const ideaEl = document.getElementById('newtask-idea');
+  const hint = document.getElementById('newtask-hint');
+  const idea = (ideaEl && ideaEl.value || '').trim();
+  if (!idea) { if (hint) hint.textContent = '先用一两句话写下你想做什么'; if (ideaEl) ideaEl.focus(); return; }
+  const scoreEl = document.getElementById('newtask-score');
+  const wantScore = scoreEl ? parseFloat(scoreEl.value) : NaN;
+  if (hint) hint.textContent = '';
+  newTaskBusy = true;
+  try {
+    const d = await api('/api/office/new-task', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ idea }),
+    });
+    // 目标分只落在这个软件上：没改就不写（保持跟随默认值），绝不偷偷改用户存的默认偏好
+    if (Number.isFinite(wantScore) && Math.abs(wantScore - defaultScore()) > 0.01) {
+      setTargetScore(d.taskId, Math.round(Math.min(10, Math.max(5, wantScore)) * 2) / 2);
+    }
+    cabinUI.newOpen = false;
+    cabinDrafts.delete('newtask-idea');
+    cabinDrafts.delete('newtask-score');
+    showToast(`已创建「${d.title}」，AI 正在整理你的想法`);
+    await tick();
+    selectTask(d.taskId);
+  } catch (e) {
+    if (hint) hint.textContent = `创建失败：${(e && e.message) || '稍后再试'}`;
+  } finally {
+    newTaskBusy = false;
+  }
+}
+
+// X06：录入一轮评审（POST /api/office/review，得分依据必填）。写完作废评审缓存重拉，
+// 评审卡的「第 N 轮 / 建议动作」和 verify 主按钮（是否换「自动按建议继续改进」）立刻跟上。
+let reviewBusy = false;
+async function saveReviewRound() {
+  if (reviewBusy) return;
+  const t = currentTask();
+  if (!t) return;
+  const hint = document.getElementById('review-hint');
+  const scoreEl = document.getElementById('review-score');
+  const score = scoreEl ? parseFloat(scoreEl.value) : NaN;
+  if (!Number.isFinite(score) || score < 0 || score > 10) {
+    if (hint) hint.textContent = '得分填 0-10 之间的数字';
+    if (scoreEl) scoreEl.focus();
+    return;
+  }
+  const basisEl = document.getElementById('review-basis');
+  const basis = (basisEl && basisEl.value || '').trim();
+  if (!basis) { if (hint) hint.textContent = '得分依据必填——凭什么给这个分'; if (basisEl) basisEl.focus(); return; }
+  if (hint) hint.textContent = '';
+  const body = {
+    taskId: t.id,
+    score: Math.round(score * 10) / 10,
+    basis,
+    targetScore: targetScoreOf(t.id),
+  };
+  const ver = ((document.getElementById('review-ver') || {}).value || '').trim();
+  if (ver) body.reviewedVersion = ver;
+  const issues = ((document.getElementById('review-issues') || {}).value || '').trim();
+  if (issues) body.issues = issues;
+  const instruction = ((document.getElementById('review-instruction') || {}).value || '').trim();
+  if (instruction) body.instruction = instruction;
+  reviewBusy = true;
+  try {
+    await api('/api/office/review', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    cabinUI.reviewOpen = false;
+    for (const id of ['review-score', 'review-ver', 'review-basis', 'review-issues', 'review-instruction']) cabinDrafts.delete(id);
+    reviewCache.taskId = null;   // 作废缓存，下一拍强制重拉服务端台账
+    showToast('这一轮评审已记录');
+    await tick();
+    renderCabin();
+  } catch (e) {
+    if (hint) hint.textContent = `保存失败：${(e && e.message) || '稍后再试'}`;
+  } finally {
+    reviewBusy = false;
+  }
+}
+
+// X02/X06：「自动按建议继续改进」——评审台账里有修改指令就直接带上指令走既有打回通道；
+// 没写指令就先展开备注框让 Leo 写清楚这轮要改什么（不拿空指令打回）。
+function reworkFromReview() {
+  const t = currentTask();
+  if (!t) return;
+  const last = reviewLatest(t);
+  if (last && last.instruction) {
+    decisionNotes.set(t.id + '/' + ui.stepKey, String(`按第${last.no}轮评审意见改进：${last.instruction}`).slice(0, 500));
+    cabinUI.noteOpen = false;
+    submitDecision('reject');
+    renderCabin();
+  } else {
+    cabinUI.noteOpen = true;
+    renderCabin();
+    const h = document.getElementById('cabin-note-hint');
+    if (h) h.textContent = '写清楚这轮要改什么，AI 会按这个继续改进';
+    const ta = document.getElementById('cabin-note-input');
+    if (ta) ta.focus();
+  }
+}
+
 // 顶栏两个响应式开关的视觉状态同步
 function syncToggleStates() {
   document.getElementById('tb-insp-toggle').classList.toggle('on', document.body.classList.contains('insp-open'));
@@ -761,7 +872,8 @@ function route(){
   const el=document.getElementById(id);if(name===activePage)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
  }
  document.body.classList.remove('insp-open','reqs-open');syncToggleStates();
- document.title=({home:'我的任务',log:'干活记录',settings:'设置',workbench:'工作台 · 专业视图'})[activePage]+" · Leo's Agent Office";
+ // TASK-向导化改造（X03）：「专业视图」统一叫「高级工作台」——只改展示名，路由 /pro 与内部 page 标识不动
+ document.title=({home:'我的任务',log:'干活记录',settings:'设置',workbench:'高级工作台'})[activePage]+" · Leo's Agent Office";
  document.getElementById('step-files').close();renderModules();
  saveUiPos();  // 记住最后停在哪一页，刷新不丢
 }
@@ -846,6 +958,15 @@ document.addEventListener('click',e=>{
  if(b.hasAttribute('data-clear-file-filters')){clearFileFilters();saveUiPos();renderFiles();}
  // ===== TASK-工作台重做：驾驶舱交互 =====
  if(b.dataset.cabinTask){selectTask(b.dataset.cabinTask);renderCabin();return}
+ // ===== TASK-向导化改造：开新软件 / 评审表单 / 自动返工 / 高级工作台直达 =====
+ if(b.hasAttribute('data-cabin-newopen')){cabinUI.newOpen=true;renderCabin();const ta=document.getElementById('newtask-idea');if(ta)ta.focus();return}
+ if(b.hasAttribute('data-cabin-newclose')){cabinUI.newOpen=false;renderCabin();return}
+ if(b.hasAttribute('data-cabin-newgo')){submitNewTask();return}
+ if(b.hasAttribute('data-cabin-rework')){reworkFromReview();return}
+ if(b.hasAttribute('data-review-open')){cabinUI.reviewOpen=true;renderCabin();const sc=document.getElementById('review-score');if(sc)sc.focus();return}
+ if(b.hasAttribute('data-review-close')){cabinUI.reviewOpen=false;renderCabin();return}
+ if(b.hasAttribute('data-review-save')){saveReviewRound();return}
+ if(b.hasAttribute('data-open-pro')){location.hash='/pro';return}
  if(b.hasAttribute('data-cabin-past')){cabinUI.pastOpen=!cabinUI.pastOpen;renderCabin();return}
  if(b.hasAttribute('data-cabin-note')){cabinUI.noteOpen=!cabinUI.noteOpen;renderCabin();return}
  if(b.hasAttribute('data-cabin-scoreedit')){cabinUI.scoreEdit=true;renderCabin();return}

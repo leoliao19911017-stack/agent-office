@@ -177,7 +177,7 @@ test('P1 首页驾驶舱初始化：页面就绪 + 五个全局 CSS 全部 200 +
       text: (document.querySelector('#cabin-main .cabin-progress') || {}).textContent || '',
     }));
     assert.ok(prog.bar, '进度条应渲染');
-    assert.match(prog.text, /第 \d+ 项 \/ 共 \d+ 项 · 做完 \d+ 项/, `进度文字应带真实计数，实际「${prog.text}」`);
+    assert.match(prog.text, /第 \d+ \/ 6 阶段/, `进度文字应带真实阶段计数，实际「${prog.text}」`);
     const cssStatus = await page.evaluate(async () => {
       const names = ['app-base.css', 'app-workbench.css', 'app-pages.css', 'app-layers.css', 'app-cabin.css'];
       const out = {};

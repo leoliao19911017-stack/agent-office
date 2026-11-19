@@ -113,3 +113,119 @@
 .set-terms td {padding:7px 10px; border-bottom:1px solid var(--line); color:var(--muted); vertical-align:top}
 .set-terms td:nth-child(2) {color:var(--faint); width:24px}
 .set-terms td b {color:var(--text); font-weight:600}
+
+/* ================================================================
+   TASK-向导化改造（2026-11-18）：首屏三块 / 实况广播 / 功能清单 /
+   六段旅程 / 评审返工 / 开新软件。仍只用 app-base.css 的色彩令牌。
+   ================================================================ */
+
+/* ---- X05：AI 工作实况广播条（首页最顶上，一行说清 AI 在干嘛） ---- */
+.cabin-live {display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:14px; flex:none;
+  border:1px solid var(--line); border-radius:10px; padding:9px 14px; font-size:13px; background:var(--card)}
+.cabin-live b {color:var(--text); font-weight:600; flex:none}
+.cabin-live time {margin-left:auto; color:var(--faint); font-size:11px; font-variant-numeric:tabular-nums; flex:none}
+.lv-dot {width:8px; height:8px; border-radius:50%; flex:none; background:var(--faint)}
+.lv-text {color:var(--muted); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1}
+.cabin-live.lv-working {border-color:var(--amber)}
+.cabin-live.lv-working .lv-dot {background:var(--amber); animation:lv-pulse 1.6s ease-in-out infinite}
+.cabin-live.lv-wait {border-color:var(--blue)}
+.cabin-live.lv-wait .lv-dot {background:var(--blue)}
+.cabin-live.lv-idle {color:var(--muted)}
+@keyframes lv-pulse {0%,100% {opacity:1} 50% {opacity:.35}}
+
+/* ---- X01：首屏三块（当前制作的软件 / 当前状态 / 下一步要做的事） ---- */
+.cabin-hero {display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:12px; margin-top:14px}
+.ch-block {background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px 14px;
+  display:flex; flex-direction:column; gap:4px; min-width:0}
+.ch-k {font-size:11px; color:var(--faint); letter-spacing:.04em}
+.ch-v {font-size:15px; color:var(--text); font-weight:600; line-height:1.45; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap}
+.ch-s {font-size:12px; color:var(--muted); line-height:1.5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+/* 当前状态块：四态各有颜色（在线≠在干活，颜色也分开） */
+.ch-v.as-working {color:var(--amber)}
+.ch-v.as-awaiting_user {color:var(--blue)}
+.ch-v.as-idle {color:var(--muted)}
+.ch-v.as-unknown {color:var(--faint); font-weight:500}
+
+/* ---- X01：你的软件将包含（doc 文档里真实列出的功能清单） ---- */
+.cabin-feat {margin-top:14px; flex:none; background:var(--card); border:1px solid var(--line);
+  border-radius:12px; padding:16px 20px}
+.cj-h {margin:0 0 10px; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.03em}
+.cf-list {margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+  gap:6px 18px; font-size:13px; color:var(--text-soft); line-height:1.6}
+.cf-list li {padding-left:16px; position:relative; overflow-wrap:anywhere}
+.cf-list li::before {content:'✓'; position:absolute; left:0; color:var(--green); font-size:11px}
+
+/* ---- X04：六段制作旅程（内部七步一个不改，只折成六段给人看） ---- */
+.cabin-journey {margin-top:14px; flex:none; background:var(--card); border:1px solid var(--line);
+  border-radius:12px; padding:16px 20px}
+.jtrack {display:flex; align-items:stretch; gap:6px; flex-wrap:wrap}
+.jstage {display:flex; flex-direction:column; gap:2px; padding:8px 12px; border-radius:10px; min-width:104px;
+  border:1px solid transparent; flex:1}
+.jstage b {font-size:13px; font-weight:600; line-height:1.4}
+.js-no {font-size:12px; line-height:1}
+.js-state {font-size:11px; color:var(--faint)}
+.j-arrow {align-self:center; color:var(--faint); font-size:16px; flex:none}
+.js-done b {color:var(--muted); font-weight:500}
+.js-done .js-no, .js-done .js-state {color:var(--green)}
+.js-confirm b {color:var(--amber)}
+.js-confirm .js-state {color:var(--amber)}
+.js-wait {opacity:.55}
+.js-wait b {color:var(--muted); font-weight:500}
+.js-cur {border-color:var(--line); background:var(--panel)}
+.js-confirm.js-cur {border-color:var(--amber)}
+.js-cur .js-no {color:var(--blue)}
+.js-cur.js-confirm .js-no {color:var(--amber)}
+
+/* ---- X06：评审与自动改进（目标分 / 轮次台账 / 达标·返工·暂停） ---- */
+.cabin-review {margin-top:14px; flex:none; background:var(--card); border:1px solid var(--line);
+  border-radius:12px; padding:16px 20px}
+.cr-head {display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+.cr-head h3 {margin:0; font-size:13px; color:var(--muted); font-weight:600; letter-spacing:.03em}
+.cr-k {font-size:12px; color:var(--faint)}
+.cr-k b {color:var(--meta-hi); font-variant-numeric:tabular-nums}
+.cr-na {margin:4px 0 0; font-size:13px; color:var(--muted); line-height:1.7}
+.cr-pass {font-size:13px; color:var(--green); background:transparent; border:1px solid var(--green);
+  border-radius:8px; padding:8px 12px; margin:6px 0; line-height:1.6}
+.cr-work {font-size:13px; color:var(--amber); border:1px solid var(--amber); border-radius:8px;
+  padding:8px 12px; margin:6px 0; line-height:1.6}
+.cr-stop {font-size:13px; color:var(--reason-red); border:1px solid var(--reason-red); border-radius:8px;
+  padding:8px 12px; margin:6px 0; line-height:1.7; display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+.cr-stop .btn {height:30px; font-size:12px; flex:none}
+.cr-stop-tip {font-size:12px; color:var(--faint); flex-basis:100%}
+.cr-round {border-top:1px solid var(--line); padding:4px 0}
+.cr-round summary {display:flex; align-items:baseline; gap:10px; font-size:13px; color:var(--text);
+  cursor:pointer; padding:8px 2px; list-style:none}
+.cr-round summary::-webkit-details-marker {display:none}
+.cr-round summary::before {content:'▸'; color:var(--faint); font-size:11px; transition:transform .15s}
+.cr-round[open] summary::before {transform:rotate(90deg)}
+.cr-round summary b {color:var(--meta-hi); font-variant-numeric:tabular-nums}
+.cr-round summary time {margin-left:auto; color:var(--faint); font-size:11px; font-variant-numeric:tabular-nums}
+.cr-round dl {margin:0 0 10px; padding:2px 14px 0; display:grid; grid-template-columns:88px 1fr; gap:4px 12px;
+  font-size:12px; line-height:1.6}
+.cr-round dt {color:var(--faint)}
+.cr-round dd {margin:0; color:var(--muted); overflow-wrap:anywhere}
+.cr-pend {color:var(--faint); font-style:italic}
+.cr-form {border-top:1px solid var(--line); margin-top:6px; padding-top:12px; display:flex;
+  flex-direction:column; gap:8px}
+.crf-row {display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:13px; color:var(--muted)}
+.crf-row input {width:88px}
+.cr-form textarea, .cr-form input[type="text"], .cr-form input:not([type]) {width:100%; resize:vertical}
+.cr-add {margin-top:8px}
+
+/* ---- X07：开始制作新软件（一个问题 + 一个输入框 + 一个按钮） ---- */
+.cabin-new {margin-top:14px; flex:none; background:var(--card); border:1px dashed var(--blue);
+  border-radius:14px; padding:18px 22px}
+.cabin-new h3 {margin:0 0 8px; font-size:17px; color:var(--text); font-weight:600; line-height:1.45}
+.cn-q {margin:0 0 10px; font-size:14px; color:var(--muted)}
+.cabin-new textarea {width:100%; resize:vertical; min-height:64px; margin-bottom:10px}
+.cn-row {display:flex; align-items:center; gap:14px; flex-wrap:wrap}
+.cn-score {font-size:13px; color:var(--muted); display:inline-flex; align-items:center; gap:6px}
+.cn-score input {width:64px}
+.cn-tip {margin:10px 0 0; font-size:12px; color:var(--faint); line-height:1.7}
+
+/* 任务条里的固定入口（不占 cabin-task 类：g07 门禁按 .cabin-task 数任务数） */
+.cabin-newbtn {display:inline-flex; align-items:center; padding:8px 14px; flex:none;
+  border:1px dashed var(--blue); border-radius:10px; background:var(--card); color:var(--blue);
+  font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap}
+.cabin-newbtn:hover {background:var(--hover)}

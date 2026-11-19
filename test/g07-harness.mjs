@@ -218,18 +218,32 @@ export function buildFixtureHome(hubPort, extraTasks = []) {
     'process.stdout.write(JSON.stringify({ generatedAt: now, agents }));',
   ].join('\n'));
   // flow.mjs 存根（R73/W01-④）：decide/resubmit 走本子进程写回档案。真实 flow.mjs 属于
-  // agent-autoloop，夹具不复刻全部 CLI，只实现 server.js 用到的 `set` 子命令：
-  // 读 office-data/tasks/<id>.json → 改步骤状态/at/by/note → 原子写回 → 打印 {ok:true}。
+  // agent-autoloop，夹具不复刻全部 CLI，只实现 server.js 用到的 `init` 与 `set` 子命令
+  // （TASK-向导化改造 X07 的 /api/office/new-task 还会调 init）：
+  // init = 建 7 槽骨架档案；set = 读 office-data/tasks/<id>.json → 改步骤状态/at/by/note
+  // → 原子写回 → 打印 {ok:true}。
   // server 端 execFlowWriteAndVerify 随后自行读回核验，不信任本存根的 stdout。
   writeFileSync(join(home, 'flow.mjs'), [
     '#!/usr/bin/env node',
-    '// G07 夹具存根：只实现 server.js 会调用的 flow.mjs set 子命令',
+    '// G07 夹具存根：只实现 server.js 会调用的 flow.mjs init / set 子命令',
     "import { readFileSync, writeFileSync, renameSync } from 'node:fs';",
     "import { join, dirname } from 'node:path';",
     "import { fileURLToPath } from 'node:url';",
     'const home = dirname(fileURLToPath(import.meta.url));',
     'const a = process.argv.slice(2);',
-    "if (a[0] !== 'set') { process.stdout.write(JSON.stringify({ ok: false, error: 'stub 只支持 set' })); process.exit(1); }",
+    "const atomic = (file, rec) => { const tmp = file + '.g07stub'; writeFileSync(tmp, JSON.stringify(rec, null, 1)); renameSync(tmp, file); };",
+    "if (a[0] === 'init') {",
+    "  // 与真实 flow.mjs init 对齐：新建 7 槽全 pending 骨架（title 为 argv[4]）",
+    "  const KEYS = ['req','doc','plan','brief','deliverable','verify','final'];",
+    "  const now = new Date().toISOString();",
+    "  const rec = { id: a[1], title: a[2] || a[1], createdAt: now, updatedAt: now, steps: {} };",
+    "  for (const k of KEYS) rec.steps[k] = { status: 'pending', at: null, note: '', files: [], by: null };",
+    "  const file = join(home, 'office-data', 'tasks', a[1] + '.json');",
+    '  atomic(file, rec);',
+    "  process.stdout.write(JSON.stringify({ ok: true, id: rec.id, steps: KEYS.length }));",
+    '  process.exit(0);',
+    '}',
+    "if (a[0] !== 'set') { process.stdout.write(JSON.stringify({ ok: false, error: 'stub 只支持 init/set' })); process.exit(1); }",
     'const [, taskId, stepKey, ...flags] = a;',
     "const flag = (k) => { const i = flags.indexOf('--' + k); return i >= 0 ? flags[i + 1] : undefined; };",
     "const file = join(home, 'office-data', 'tasks', taskId + '.json');",
@@ -241,9 +255,7 @@ export function buildFixtureHome(hubPort, extraTasks = []) {
     "const note = flag('note');",
     'if (note != null) st.note = note;',
     'rec.updatedAt = st.at;',
-    'const tmp = file + ".g07stub";',
-    'writeFileSync(tmp, JSON.stringify(rec, null, 1));',
-    'renameSync(tmp, file);',
+    'atomic(file, rec);',
     'process.stdout.write(JSON.stringify({ ok: true }));',
   ].join('\n'));
   return home;

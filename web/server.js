@@ -15,7 +15,8 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, normalize, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // G02 拆分（R73 第 73 轮收口）：决策闭环核心（纯逻辑）在 server-core.mjs，由
-// server-api.mjs 直接引用；17 个 /api/* 路由也在 server-api.mjs（createApiRouter
+// server-api.mjs 直接引用；/api/* 路由（G02 时 17 个，TASK-向导化改造后 20 个）
+// 也在 server-api.mjs（createApiRouter
 // 工厂注入环境依赖）。本文件只剩启动配置、HTTP 小工具、静态白名单与错误收口。
 import { createApiRouter } from './server-api.mjs';
 
@@ -373,7 +374,7 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    // G02（R73 第 73 轮）：17 个 /api/* 路由整体搬至 server-api.mjs（createApiRouter
+    // G02（R73 第 73 轮）：/api/* 路由整体搬至 server-api.mjs（createApiRouter
     // 工厂注入依赖），路由体逐字未动，协议/状态码/错误码不变；405/404 兜底随路由走，
     // 非 /api/ 路径在这里兜底。
     if (path.startsWith('/api/')) {

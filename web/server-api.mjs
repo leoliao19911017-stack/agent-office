@@ -1,5 +1,6 @@
 // server-api.mjs — G02（R73 第 73 轮）从 server.js 拆出的 /api/* 路由层。
-// 纯代码搬移：17 个路由体逐字未动（含 405/404 兜底），协议、状态码、错误码、
+// 纯代码搬移：17 个路由体逐字未动（含 405/404 兜底）；TASK-向导化改造新增
+// /api/office/review（GET/POST）与 /api/office/new-task（POST），共 20 个路由。协议、状态码、错误码、
 // 响应字段全部与拆分前一致；依赖经 createApiRouter 工厂注入（对齐 server-core.mjs
 // 的 createDecisionCore 注入风格）。决策核心六件套在本模块内实例化一次，
 // 与拆分前 server.js 单实例行为等价。owner key 仍只在进程内存，不进本文件。
@@ -8,7 +9,7 @@
 // 处理器，路由体逐字搬入未改动；api() 收敛为纯派发 + 405/404 兜底（逐字保留）。
 // 决策核心仍只实例化一次，17 个处理器共享，与拆分前行为等价。
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, writeFileSync, renameSync, mkdirSync, existsSync } from 'node:fs';
 import { join, normalize, extname } from 'node:path';
 import {
   STEP_DEFS, WORKBENCH_WRITER, computeDecisions, execFlowWriteAndVerify,
@@ -87,8 +88,158 @@ function makeSkillsRoute(deps) {
   };
 }
 
-// /api/office/flow —— 需求流水线：8 步全貌（读 office-data/tasks/*.json）
+// ---- X05（TASK-向导化改造）：AI 活动四字段 --------------------------------
+// 统一口径：current_activity（在干什么，人话）/ activity_state（working |
+// awaiting_user | idle | unknown 四态互斥）/ activity_updated_at（最近一次
+// 状态变化时间）/ run_id（关联的 Autoloop run，没有就 null）。
+// 「在线」是连接口径（/api/office/hermes），绝不混进四态冒充「正在干活」。
+// 步骤人话与 cabin.js 的 X03 术语表同源同值——这里只是展示字典，不改业务标识。
+
+// 各步骤「AI 正在为你……」的动词（display only，不改 STEP_DEFS 的 key/name）
+const ACTIVITY_DOING = {
+  req: '整理你的想法', doc: '整理需求文档', plan: '制定开发计划',
+  brief: '准备派活说明', deliverable: '开发软件', verify: '检查做得怎么样',
+  final: '准备最终交付',
+};
+// 各步骤的小白叫法（与 cabin.js STEP_HUMAN 同值）
+const ACTIVITY_STEP_CN = {
+  req: '你的想法', doc: '需求文档', plan: '开发计划', brief: '派活说明',
+  deliverable: '软件成品', verify: '检查结果', final: '最终交接',
+};
+
+/** 单任务的 activity 四字段（由真实步骤状态推导，不写死任何文案占位） */
+function activityOfTask(rec, steps, decidableKeys) {
+  const updatedAt = rec.updatedAt || null;
+  const lastRunId = (() => {
+    for (let i = steps.length - 1; i >= 0; i -= 1) {
+      const rs = steps[i].runs || [];
+      if (rs.length) return String(rs[rs.length - 1].runId || '') || null;
+    }
+    return null;
+  })();
+  const running = steps.find((s) => s.status === 'running') || null;
+  if (running) {
+    return {
+      current_activity: `AI 正在为你${ACTIVITY_DOING[running.key] || '处理'}（${ACTIVITY_STEP_CN[running.key] || running.name}）`,
+      activity_state: 'working',
+      activity_updated_at: running.at || updatedAt,
+      run_id: lastRunId,
+    };
+  }
+  // decidableKeys 来自 computeDecisions 的 items——「真可拍板」而不是「awaiting 了」。
+  // 但 gate+pending（可拍板但材料还没交）不能播报「已经做好等你确认」——只有
+  // 真正交上来的 awaiting 才是「等你确认」，gate 空挂着仍按排队播报。
+  const waiting = steps.find((s) => decidableKeys.has(s.key) && s.status === 'awaiting') || null;
+  if (waiting) {
+    return {
+      current_activity: `${ACTIVITY_STEP_CN[waiting.key] || waiting.name}已经做好，等你确认`,
+      activity_state: 'awaiting_user',
+      activity_updated_at: waiting.at || updatedAt,
+      run_id: lastRunId,
+    };
+  }
+  const failed = steps.find((s) => s.status === 'failed') || null;
+  if (failed) {
+    return {
+      current_activity: `${ACTIVITY_STEP_CN[failed.key] || failed.name}被打回了，等 AI 修改后重新交上来`,
+      activity_state: 'idle',
+      activity_updated_at: failed.at || updatedAt,
+      run_id: lastRunId,
+    };
+  }
+  if (steps.every((s) => s.status === 'done')) {
+    return {
+      current_activity: '这个软件已经全部做完，可以查看成果',
+      activity_state: 'idle',
+      activity_updated_at: updatedAt,
+      run_id: lastRunId,
+    };
+  }
+  const next = steps.find((s) => s.status !== 'done') || null;
+  return {
+    current_activity: next
+      ? `排着队，下一步是${ACTIVITY_STEP_CN[next.key] || next.name}（还没开始）`
+      : '暂时无法确认 AI 在做什么',
+    activity_state: next ? 'idle' : 'unknown',
+    activity_updated_at: updatedAt,
+    run_id: lastRunId,
+  };
+}
+
+/**
+ * 直读 office-data/hermes-status/*.json 自报（不经子进程——flow 每 3 秒被轮询，
+ * 每次起一个 hermes-status.mjs 太重）。过期阈值 2 分钟，与 hermes-status.mjs
+ * read 的降级语义一致：过期 → state 按 idle、task 标「上次上报已过期」。
+ * 在线与否不在这里判——那要读心跳，归 /api/office/hermes。
+ */
+function readHermesReports(base) {
+  const dir = join(base, 'office-data', 'hermes-status');
+  const reports = [];
+  const errors = [];
+  try {
+    const now = Date.now();
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.json'))) {
+      try {
+        const r = JSON.parse(readFileSync(join(dir, f), 'utf8'));
+        if (!r || !r.id || !r.reportedAt) continue;
+        const ageMs = now - Date.parse(r.reportedAt);
+        if (!Number.isFinite(ageMs)) continue;
+        const fresh = ageMs <= 2 * 60 * 1000;
+        reports.push({
+          id: r.id, name: r.name || r.id,
+          state: fresh ? (r.state === 'working' ? 'working' : 'idle') : 'idle',
+          task: fresh ? (r.task || '') : '（上次上报已过期）',
+          reportedAt: r.reportedAt, fresh,
+        });
+      } catch (err) {
+        errors.push({ file: f, message: err.message });
+      }
+    }
+  } catch {
+    // 目录不存在 = 从来没有自报，是真空，不算错误
+  }
+  return { reports, errors };
+}
+
+/** 顶层 live：系统级「AI 正在干什么」头条（优先正在跑的任务 > 等确认 > 新鲜自报） */
+function liveHeadline(tasks, hermesReports) {
+  const runningTask = tasks.find((t) => t.activity && t.activity.activity_state === 'working');
+  if (runningTask) {
+    return { ...runningTask.activity, source: 'task', taskId: runningTask.id, taskTitle: runningTask.title };
+  }
+  const waitingTask = tasks.find((t) => t.activity && t.activity.activity_state === 'awaiting_user');
+  if (waitingTask) {
+    return { ...waitingTask.activity, source: 'task', taskId: waitingTask.id, taskTitle: waitingTask.title };
+  }
+  const freshWorking = hermesReports.find((r) => r.fresh && r.state === 'working');
+  if (freshWorking) {
+    return {
+      current_activity: `${freshWorking.name}正在做：${freshWorking.task || '（没写具体任务）'}`,
+      activity_state: 'working',
+      activity_updated_at: freshWorking.reportedAt,
+      run_id: null, source: 'hermes', taskId: null, taskTitle: null,
+    };
+  }
+  const freshIdle = hermesReports.find((r) => r.fresh);
+  if (freshIdle) {
+    return {
+      current_activity: 'AI 助手空闲，现在没有正在进行的活',
+      activity_state: 'idle',
+      activity_updated_at: freshIdle.reportedAt,
+      run_id: null, source: 'hermes', taskId: null, taskTitle: null,
+    };
+  }
+  return {
+    current_activity: tasks.length ? '现在没有 AI 正在干活的任务' : '还没有开始任何软件制作',
+    activity_state: 'idle',
+    activity_updated_at: null,
+    run_id: null, source: 'none', taskId: null, taskTitle: null,
+  };
+}
+
+// /api/office/flow —— 需求流水线：7 步全貌（读 office-data/tasks/*.json）
 // 这是「以需求为主线」的视图，跟以 Agent 为主线的 /api/state 互补。
+// TASK-向导化改造（X05）：每个任务附 activity 四字段；顶层附 live 头条。
 function makeFlowRoute(deps) {
   const { AUTOLOOP_HOME, sendJson } = deps;
   return async (req, res) => {
@@ -97,6 +248,7 @@ function makeFlowRoute(deps) {
     // TASK-R2：逐文件隔离——一个损坏的任务档案只报它自己的错，
     // 不能拖垮整批需求。「部分数据 + 坏文件清单」好过「全空」。
     let tasks = [];
+    const recs = [];
     const readErrors = [];
     try {
       const files = readdirSync(dir).filter((f) => f.endsWith('.json'));
@@ -108,6 +260,7 @@ function makeFlowRoute(deps) {
           readErrors.push({ file: f, message: err.message });
           continue;
         }
+        recs.push(rec);
         const steps = STEP_DEFS.map((d) => {
           const v = (rec.steps && rec.steps[d.key]) || { status: 'pending' };
           return {
@@ -137,7 +290,32 @@ function makeFlowRoute(deps) {
       // ENOENT = 还没有任何任务档案，是真「空」；其余目录级错误必须上报（TASK-R3）
       if (!err || err.code !== 'ENOENT') readErrors.push({ file: '(tasks 目录)', message: `目录读取失败：${err ? err.message : '未知错误'}` });
     }
-    sendJson(res, 200, { generatedAt: new Date().toISOString(), tasks, errors: readErrors });
+    // X05：可拍板键集合复用 /api/office/decisions 的同一条规则（computeDecisions），
+    // 「等你确认」的判定不另起炉灶——两端口径必须一致。
+    const decidableByTask = new Map();
+    try {
+      const { items } = computeDecisions(recs);
+      for (const it of items) {
+        if (!decidableByTask.has(it.taskId)) decidableByTask.set(it.taskId, new Set());
+        decidableByTask.get(it.taskId).add(it.stepKey);
+      }
+    } catch (err) {
+      readErrors.push({ file: '(decisions)', message: `可拍板集合计算失败：${err ? err.message : '未知错误'}` });
+    }
+    for (const t of tasks) {
+      const rec = recs.find((r) => r.id === t.id) || null;
+      t.activity = rec
+        ? activityOfTask(rec, t.steps, decidableByTask.get(t.id) || new Set())
+        : { current_activity: '暂时无法确认这个任务的状态', activity_state: 'unknown', activity_updated_at: null, run_id: null };
+    }
+    const { reports: hermesReports, errors: hermesErrors } = readHermesReports(AUTOLOOP_HOME);
+    const live = liveHeadline(tasks, hermesReports);
+    sendJson(res, 200, {
+      generatedAt: new Date().toISOString(),
+      tasks, live,
+      hermesReports,
+      errors: readErrors.concat(hermesErrors),
+    });
     return;
   };
 }
@@ -823,6 +1001,221 @@ function makeFileDownloadRoute(deps) {
   };
 }
 
+// ---- X06（TASK-向导化改造）：评审轮次账本 ----------------------------------
+// 存储位置 office-data/review-rounds/<taskId>.json（新目录，不碰 tasks/*.json
+// 的业务档案）。此前全链路没有任何分数数据源——GPT 评审分数只活在聊天里，
+// 工作台只能「还没打分」。这个端点把「目标分数 / 本轮得分 / 第 N 轮改进中」
+// 变成有账可查的真实数据。写入原子（tmp + rename），响应 = 磁盘读回值。
+// 返工上限与暂停条件在服务端定死并随 GET 下发，前端不许自创：
+//   maxRounds=5（同一任务最多记 5 轮评审）；
+//   stopIfNoProgressRounds=2（连续 2 轮得分不涨就建议暂停，转人工）。
+
+const REVIEW_LIMITS = { maxRounds: 5, stopIfNoProgressRounds: 2 };
+
+function reviewFileOf(AUTOLOOP_HOME, taskId) {
+  return join(AUTOLOOP_HOME, 'office-data', 'review-rounds', `${taskId}.json`);
+}
+
+function readReviewStore(AUTOLOOP_HOME, taskId) {
+  try {
+    const raw = JSON.parse(readFileSync(reviewFileOf(AUTOLOOP_HOME, taskId), 'utf8'));
+    if (!raw || Array.isArray(raw) || typeof raw !== 'object') return null;
+    return { taskId: raw.taskId || taskId, targetScore: raw.targetScore ?? null, rounds: Array.isArray(raw.rounds) ? raw.rounds : [] };
+  } catch {
+    return null;
+  }
+}
+
+/** 派生建议：none 没轮次 / pass 已达标 / rework 继续改进 / pause-* 建议停转人工 */
+function reviewAdvice(store) {
+  const rounds = store ? store.rounds : [];
+  if (!rounds.length) return 'none';
+  const last = rounds[rounds.length - 1];
+  if (last.outcome === 'pass') return 'pass';
+  if (rounds.length >= REVIEW_LIMITS.maxRounds) return 'pause-max-rounds';
+  // 连续多少轮（从最后一轮往前数）得分没有比上一轮高
+  let noProgress = 0;
+  for (let i = rounds.length - 1; i >= 1; i -= 1) {
+    if (Number(rounds[i].score) <= Number(rounds[i - 1].score)) noProgress += 1;
+    else break;
+  }
+  if (noProgress >= REVIEW_LIMITS.stopIfNoProgressRounds) return 'pause-no-progress';
+  return 'rework';
+}
+
+// GET /api/office/review?taskId=X —— 轮次历史 + 目标分 + 上限 + 派生建议
+function makeReviewGetRoute(deps) {
+  const { PORT, AUTOLOOP_HOME, httpError, sendJson } = deps;
+  return async (req, res) => {
+    const q = new URL(req.url, `http://127.0.0.1:${PORT}`);
+    const taskId = String(q.searchParams.get('taskId') || '').trim();
+    if (!/^[A-Za-z0-9_-]+$/.test(taskId)) throw httpError(400, 'BAD_TASK_ID', 'taskId 只能是字母数字_-');
+    const store = readReviewStore(AUTOLOOP_HOME, taskId);
+    sendJson(res, 200, {
+      generatedAt: new Date().toISOString(),
+      taskId,
+      targetScore: store ? store.targetScore : null,
+      rounds: store ? store.rounds : [],
+      limits: REVIEW_LIMITS,
+      advice: reviewAdvice(store),
+      // 账本还没建 ≠ 出错——新任务没打过分是常态，前端按「还没打分」展示
+      exists: store !== null,
+    });
+    return;
+  };
+}
+
+// POST /api/office/review —— 两种模式：
+//   记一轮：{ taskId, score, basis, reviewedVersion?, issues?, instruction?, result?, targetScore? }
+//   补记执行结果：{ taskId, roundNo, result }
+// score 达到 targetScore（取本次传入或账本既有，缺省 8.0）记 outcome=pass，否则 rework。
+function makeReviewPostRoute(deps) {
+  const { AUTOLOOP_HOME, httpError, sendJson, readJsonBody, taskFileOf } = deps;
+  return async (req, res) => {
+    const body = await readJsonBody(req);
+    const taskId = String(body.taskId || '');
+    if (!/^[A-Za-z0-9_-]+$/.test(taskId)) throw httpError(400, 'BAD_TASK_ID', 'taskId 只能是字母数字_-');
+    // 任务档案必须真实存在——不允许给空气记评审分
+    try { statSync(taskFileOf(taskId)); }
+    catch { throw httpError(404, 'TASK_NOT_FOUND', `任务档案不存在：${taskId}`); }
+
+    const clampText = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+    const store = readReviewStore(AUTOLOOP_HOME, taskId) || { taskId, targetScore: null, rounds: [] };
+    const lockKey = `review/${taskId}`;
+    if (!lockDecision(lockKey)) throw httpError(409, 'WRITE_IN_FLIGHT', '这个任务的评审账本正有写入在途，稍等再操作');
+
+    try {
+      if (body.roundNo !== undefined) {
+        // ---- 补记模式：把「Claude 的执行结果」写进已存在的某一轮 ----
+        const no = Number(body.roundNo);
+        const result = clampText(body.result, 2000);
+        if (!Number.isInteger(no) || no < 1) throw httpError(400, 'BAD_ROUND_NO', 'roundNo 必须是正整数');
+        if (result === '') throw httpError(400, 'RESULT_REQUIRED', 'result 必须是非空字符串（≤2000 字）');
+        const round = store.rounds.find((r) => r.no === no);
+        if (!round) throw httpError(404, 'ROUND_NOT_FOUND', `第 ${no} 轮不存在（这个任务目前有 ${store.rounds.length} 轮）`);
+        round.result = result;
+        round.resultAt = new Date().toISOString();
+      } else {
+        // ---- 记一轮模式 ----
+        const score = Number(body.score);
+        const basis = clampText(body.basis, 2000);
+        if (body.score === undefined || !Number.isFinite(score) || score < 0 || score > 10) {
+          throw httpError(400, 'BAD_SCORE', 'score 必须是 0-10 之间的数字');
+        }
+        if (basis === '') throw httpError(400, 'BASIS_REQUIRED', 'basis（得分依据）必填，≤2000 字');
+        if (store.rounds.length >= REVIEW_LIMITS.maxRounds) {
+          throw httpError(409, 'MAX_ROUNDS_REACHED', `这个任务已记满 ${REVIEW_LIMITS.maxRounds} 轮评审，不能再自动返工；请人工接手处理`);
+        }
+        if (body.targetScore !== undefined) {
+          const ts = Number(body.targetScore);
+          if (!Number.isFinite(ts) || ts < 0 || ts > 10) throw httpError(400, 'BAD_TARGET_SCORE', 'targetScore 必须是 0-10 之间的数字');
+          store.targetScore = ts;
+        }
+        const target = store.targetScore ?? 8.0;
+        const prev = store.rounds[store.rounds.length - 1] || null;
+        const no = prev ? prev.no + 1 : 1;
+        store.rounds.push({
+          no,
+          at: new Date().toISOString(),
+          reviewer: 'Leo（工作台）',
+          reviewedVersion: clampText(body.reviewedVersion, 200),
+          score: Math.round(score * 10) / 10,
+          targetScore: target,
+          basis,
+          issues: clampText(body.issues, 2000),
+          instruction: clampText(body.instruction, 2000),
+          result: clampText(body.result, 2000),
+          resultAt: null,
+          outcome: score >= target ? 'pass' : 'rework',
+        });
+      }
+
+      // 原子写：同目录 tmp → rename 顶替；写完重读磁盘作为响应（不拿发出当写成了）
+      const file = reviewFileOf(AUTOLOOP_HOME, taskId);
+      mkdirSync(join(AUTOLOOP_HOME, 'office-data', 'review-rounds'), { recursive: true });
+      const tmp = join(join(AUTOLOOP_HOME, 'office-data', 'review-rounds'), `.${taskId}.tmp-${Date.now()}.json`);
+      writeFileSync(tmp, JSON.stringify(store, null, 2), 'utf8');
+      renameSync(tmp, file);
+      const readBack = readReviewStore(AUTOLOOP_HOME, taskId);
+      if (!readBack) throw httpError(500, 'REVIEW_WRITE_FAILED', '写回了但读不回来——账本状态未知，请刷新后核对');
+      sendJson(res, 200, {
+        ok: true, taskId,
+        targetScore: readBack.targetScore,
+        rounds: readBack.rounds,
+        limits: REVIEW_LIMITS,
+        advice: reviewAdvice(readBack),
+        readBack: true,
+      });
+      return;
+    } finally {
+      unlockDecision(lockKey);
+    }
+  };
+}
+
+// ---- X07（TASK-向导化改造）：从首页开一个新软件制作 ------------------------
+// POST /api/office/new-task { idea, title? }
+// 真实创建：子进程 flow.mjs init（建 7 步骨架）+ flow.mjs set req done
+// （idea 作为「原始需求」原话存档，by=Leo（工作台·新需求））。响应是写后
+// 从磁盘读回的档案摘要——不拿「命令发出去了」冒充「建成了」。
+// 不改任何既有任务的 ID/文件名/版本；新 ID 形如 T-YYYYMMDD-NN（当天序号）。
+function makeNewTaskRoute(deps) {
+  const { AUTOLOOP_HOME, httpError, sendJson, readJsonBody } = deps;
+  return async (req, res) => {
+    const body = await readJsonBody(req);
+    const idea = typeof body.idea === 'string' ? body.idea.trim() : '';
+    if (idea === '') throw httpError(400, 'IDEA_REQUIRED', 'idea 必填：你想让 AI 帮你做一个什么软件');
+    if (idea.length > 2000) throw httpError(400, 'IDEA_TOO_LONG', 'idea 太长了（≤2000 字），拆成几句先聊最要紧的');
+    const title = typeof body.title === 'string' && body.title.trim()
+      ? body.title.trim().slice(0, 80)
+      : idea.slice(0, 30).trim() || '新软件';
+
+    const { execFile } = await import('node:child_process');
+    const runFlow = (args) => new Promise((resolve, reject) => {
+      execFile(process.execPath, [join(AUTOLOOP_HOME, 'flow.mjs'), ...args],
+        { timeout: 15000, maxBuffer: 1024 * 1024 },
+        (err, stdout) => { if (err) reject(err); else resolve(stdout); });
+    });
+
+    // 新 ID：T-YYYYMMDD-NN，扫当天已有档案取下一个序号；撞满 99 个直接报满
+    const dir = join(AUTOLOOP_HOME, 'office-data', 'tasks');
+    const ymd = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    let taskId = null;
+    for (let seq = 1; seq <= 99; seq += 1) {
+      const cand = `T-${ymd}-${String(seq).padStart(2, '0')}`;
+      if (!existsSync(join(dir, `${cand}.json`))) { taskId = cand; break; }
+    }
+    if (!taskId) throw httpError(409, 'DAILY_LIMIT', `今天已经建了 99 个任务（T-${ymd}-01…99），明天再来或手工建档案`);
+
+    const lockKey = `${taskId}/req`;
+    if (!lockDecision(lockKey)) throw httpError(409, 'WRITE_IN_FLIGHT', '正有人在写这个新任务，稍等再试');
+    try {
+      await runFlow(['init', taskId, title]);
+      await runFlow(['set', taskId, 'req', '--status', 'done', '--note', idea, '--by', 'Leo（工作台·新需求）']);
+      // 读回核验：档案存在、id/title/req 状态全部对上才算建成
+      let rec;
+      try { rec = JSON.parse(readFileSync(join(dir, `${taskId}.json`), 'utf8')); }
+      catch { throw httpError(500, 'NEW_TASK_UNCONFIRMED', `flow.mjs 执行完但读不回档案 ${taskId}.json——任务可能没建成，请刷新列表核对`); }
+      const reqStep = (rec.steps && rec.steps.req) || {};
+      if (rec.id !== taskId || reqStep.status !== 'done' || (reqStep.note || '') !== idea) {
+        throw httpError(500, 'NEW_TASK_MISMATCH', '读回的档案与写入意图不一致，任务状态未知，请刷新核对');
+      }
+      sendJson(res, 200, {
+        ok: true, taskId, title,
+        createdAt: rec.createdAt || null,
+        readBack: {
+          id: rec.id, title: rec.title, updatedAt: rec.updatedAt || null,
+          req: { status: reqStep.status, note: reqStep.note || '', by: reqStep.by || null },
+        },
+        verified: true,
+      });
+      return;
+    } finally {
+      unlockDecision(lockKey);
+    }
+  };
+}
+
 // /api/cards/:id/answer
 function makeCardsAnswerRoute(deps) {
   const { sendJson, readJsonBody, handleAnswer } = deps;
@@ -851,7 +1244,7 @@ function makeRunsCancelRoute(deps) {
 }
 
 export function createApiRouter(deps) {
-  // 决策核心六件套实例化一次，17 个处理器共享——与拆分前 server.js 单实例行为等价。
+  // 决策核心六件套实例化一次，全部处理器共享——与拆分前 server.js 单实例行为等价。
   const core = createDecisionCore({
     AUTOLOOP_HOME: deps.AUTOLOOP_HOME, httpError: deps.httpError, sendJson: deps.sendJson,
   });
@@ -873,6 +1266,10 @@ export function createApiRouter(deps) {
   const resubmit = makeResubmitRoute(ctx);
   const decision = makeDecisionRoute(ctx);
   const fileDownload = makeFileDownloadRoute(ctx);
+  // TASK-向导化改造（X06/X07）：评审轮次账本 + 首页开新软件制作
+  const reviewGet = makeReviewGetRoute(ctx);
+  const reviewPost = makeReviewPostRoute(ctx);
+  const newTask = makeNewTaskRoute(ctx);
   const cardsAnswer = makeCardsAnswerRoute(ctx);
   const cardsResolve = makeCardsResolveRoute(ctx);
   const runsCancel = makeRunsCancelRoute(ctx);
@@ -896,6 +1293,9 @@ export function createApiRouter(deps) {
     if (path === '/api/office/resubmit' && method === 'POST') return resubmit(req, res);
     if (path === '/api/office/decision' && method === 'POST') return decision(req, res);
     if (path === '/api/office/file-download' && method === 'GET') return fileDownload(req, res);
+    if (path === '/api/office/review' && method === 'GET') return reviewGet(req, res);
+    if (path === '/api/office/review' && method === 'POST') return reviewPost(req, res);
+    if (path === '/api/office/new-task' && method === 'POST') return newTask(req, res);
 
     let m;
     if ((m = path.match(/^\/api\/cards\/(\d+)\/answer$/)) && method === 'POST') return cardsAnswer(req, res, m[1]);
@@ -917,11 +1317,13 @@ export function createApiRouter(deps) {
       [/^\/api\/office\/op-status$/, ['GET']],
       [/^\/api\/office\/file-download$/, ['GET']],
       [/^\/api\/office\/file-revalidate$/, ['POST']],
+      [/^\/api\/office\/review$/, ['GET', 'POST']],
+      [/^\/api\/office\/new-task$/, ['POST']],
     ];
     if (known.some(([re, methods]) => re.test(path) && !methods.includes(method))) {
       throw httpErrorFallback(deps, 405, 'METHOD_NOT_ALLOWED', `${method} ${path} 不支持`);
     }
-    throw httpErrorFallback(deps, 404, 'NOT_FOUND', `${method} ${path} 不存在（本服务只开放 /api/state、/api/health、/api/cards/:id/answer、/api/cards/:id/resolve、/api/runs/:id/cancel、/api/office/decisions、/api/office/decide、/api/office/decision、/api/office/resubmit、/api/office/op-status、/api/office/file-download、/api/office/file-revalidate）`);
+    throw httpErrorFallback(deps, 404, 'NOT_FOUND', `${method} ${path} 不存在（本服务只开放 /api/state、/api/health、/api/cards/:id/answer、/api/cards/:id/resolve、/api/runs/:id/cancel、/api/office/decisions、/api/office/decide、/api/office/decision、/api/office/resubmit、/api/office/op-status、/api/office/file-download、/api/office/file-revalidate、/api/office/review、/api/office/new-task）`);
   };
 }
 
