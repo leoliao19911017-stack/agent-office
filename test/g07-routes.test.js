@@ -1,10 +1,12 @@
-// G07-D｜20 个 API 路由清单回归（3 用例）——防止「重构删路由」再次无声发生。
+// G07-D｜24 个 API 路由清单回归（3 用例）——防止「重构删路由」再次无声发生。
 //
 // G07 任务书口径「确认 17 个既有 API 路由没有丢失」：
 //   17 = 固定路径路由（11 GET + 6 POST /api/office/*、/api/state、/api/health）；
 //   另有 3 条参数化中台代理（/api/cards/:id/answer|resolve、/api/runs/:id/cancel），共 20 条一并守护。
 // TASK-向导化改造（X06/X07）新增 3 条固定路由（GET+POST /api/office/review、
 //   POST /api/office/new-task），冻结清单同步扩到 20 固定 + 3 参数化——只增不减。
+// TASK-R87整改（X03）再增 1 条：GET /api/office/discuss（需求讨论留档，首页
+//   「AI 讨论了什么」块的真实数据源），冻结清单扩到 21 固定 + 3 参数化。
 //
 // R1 源码静态扫描：路由注册字面量逐一对照冻结清单——删掉任何一条，本用例立刻失败；
 // R2 GET 数据路由业务形状：响应体里必须有真实业务字段（HTTP 200 不作为通过条件）；
@@ -46,6 +48,7 @@ const EXPECTED_FIXED = new Map([
   ['GET /api/office/review', '评审轮次查询'],
   ['POST /api/office/review', '评审轮次记入'],
   ['POST /api/office/new-task', '首页开新软件制作'],
+  ['GET /api/office/discuss', '需求讨论留档查询'],
 ]);
 const EXPECTED_PARAM = new Map([
   ['POST /api/cards/:id/answer', '提问卡作答'],
@@ -67,7 +70,7 @@ const post = (p, body) => fetch(stack.base + p, {
   return { status: r.status, body: b };
 });
 
-test('R1 源码路由清单：20 条固定 + 3 条参数化全部在（少一条即失败）', () => {
+test('R1 源码路由清单：21 条固定 + 3 条参数化全部在（少一条即失败）', () => {
   // G02（R73）：/api/* 路由体已从 server.js 搬至 server-api.mjs（createApiRouter
   // 工厂），扫描口径跟随拆分：两文件源码并集，路由丢一条立刻失败，与拆分前等效。
   const src = readFileSync(new URL('../web/server.js', import.meta.url), 'utf8')
@@ -80,7 +83,7 @@ test('R1 源码路由清单：20 条固定 + 3 条参数化全部在（少一条
   }
   const missing = [...EXPECTED_FIXED.keys()].filter((k) => !found.has(k));
   assert.deepEqual(missing, [], `server.js 丢了固定路由：${missing.join('、')}（扫描到 ${found.size} 条固定路由）`);
-  assert.equal(found.size, 20, `固定路由应恰好 20 条（G07 17 + 向导化 3），实际扫描到 ${found.size}：${[...found].join('、')}`);
+  assert.equal(found.size, 21, `固定路由应恰好 21 条（G07 17 + 向导化 3 + R87 1），实际扫描到 ${found.size}：${[...found].join('、')}`);
 
   // 参数化：`m = path.match(/…/)`，用样本路径逐条试配（对正则写法不敏感）
   const paramLiterals = [...src.matchAll(/m = path\.match\((\/\^[^\n]*?)\)\)/g)].map((m) => m[1]);
@@ -94,7 +97,7 @@ test('R1 源码路由清单：20 条固定 + 3 条参数化全部在（少一条
   }
   const missParam = [...EXPECTED_PARAM.keys()].filter((k) => !paramFound.includes(k));
   assert.deepEqual(missParam, [], `server.js 丢了参数化代理路由：${missParam.join('、')}`);
-  console.log(`[R1] 固定 20/20 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
+  console.log(`[R1] 固定 21/21 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
 });
 
 test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（200 空壳不算过）', async () => {
@@ -318,6 +321,9 @@ test('R3 POST 协议错误/白名单/下载/代理链：具体业务码 + 403 �
 
   // 11) X07 /api/office/new-task POST：真实建档（init+set req done）+ 读回核验 +
   //     idea 原话入档；空 idea 400 具名
+  //     R87·X01 新契约：建档即自动推进——req done 后 doc 立即 running（AI 自动讨论，
+  //     不再有「确认想法」审批），讨论留档同步起头（GET /api/office/discuss 可读）。
+  //     （原断言 idle/排着队 属于被删掉的旧流程，按新流程口径改。）
   assert.equal((await post('/api/office/new-task', {})).body.code, 'IDEA_REQUIRED');
   const nt = await post('/api/office/new-task', { idea: 'G07 验证：帮我做一个记录每天喝水杯数的小工具' });
   assert.equal(nt.status, 200, `新任务应 200，实际 ${nt.status}/${JSON.stringify(nt.body)}`);
@@ -325,12 +331,18 @@ test('R3 POST 协议错误/白名单/下载/代理链：具体业务码 + 403 �
   assert.equal(nt.body.readBack.req.status, 'done', 'req 应记 done（原始需求原话存档）');
   assert.equal(nt.body.readBack.req.note, 'G07 验证：帮我做一个记录每天喝水杯数的小工具', 'idea 原话必须一字不差入档');
   assert.equal(nt.body.readBack.req.by, 'Leo（工作台·新需求）');
-  // 建完后 flow 里能看到它，activity 是真实的排队态
+  assert.equal(nt.body.readBack.doc.status, 'running', 'R87·X01：建档后 doc 应立即 running（AI 自动开始讨论，无审批卡点）');
+  // 建完后 flow 里能看到它，activity 是真实的自动推进态（正在讨论，不是排队）
   const flow2 = await get('/api/office/flow');
   const created = flow2.body.tasks.find((t) => t.id === nt.body.taskId);
   assert.ok(created, `新任务应出现在 flow 列表，实际 ${flow2.body.tasks.map((t) => t.id).join('、')}`);
-  assert.equal(created.activity.activity_state, 'idle', `新任务应排队 idle，实际 ${JSON.stringify(created.activity)}`);
-  assert.match(created.activity.current_activity, /排着队/, '排队态文案应如实说还没开始');
+  assert.equal(created.activity.activity_state, 'working', `R87·X01：新任务应 working（AI 正在讨论），实际 ${JSON.stringify(created.activity)}`);
+  assert.match(created.activity.current_activity, /正在/, '推进态文案应说 AI 正在做');
+  // R87·X03：讨论留档路由通、且建档后立即可读（同步起头，不靠后台时序）
+  const dsc = await get(`/api/office/discuss?taskId=${nt.body.taskId}`);
+  assert.equal(dsc.status, 200, `discuss 路由应 200，实际 ${dsc.status}`);
+  assert.equal(dsc.body.ok, true);
+  assert.equal(dsc.body.exists, true, '建档后讨论留档应已存在');
 
   console.log('[R3] POST 具名错误码 + 403 白名单×4 + 下载头 + 代理透传×3 + 405 + review 账本全链 + 新任务读回核验 全过');
 });

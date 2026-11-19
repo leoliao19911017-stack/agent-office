@@ -14,8 +14,9 @@ const STEP_HUMAN = {
   deliverable: '做出来的东西', verify: '检查结果', final: '最后交接',
 };
 // X02：主按钮文案按阶段变化（「确认 X，开始 Y」句式，告诉用户点下去会发生什么）
+// TASK-R87整改 X01：删掉 req 档——「确认想法」这道审批整个没了（新任务 req 落档
+// 即 done，AI 自动讨论）；唯一的确认点是 doc（确认需求文档）。
 const STAGE_MAIN = {
-  req: '确认想法，开始整理需求',
   doc: '确认需求，开始制定计划',
   plan: '确认计划，开始开发',
   brief: '确认安排，AI 开始开发',
@@ -92,7 +93,29 @@ const JOURNEY = [
 ];
 // 一段的展示状态：已完成 / 进行中 / 需要你确认 / 等待开始（打回重做算「进行中」，
 // 它是检查并改进的一部分；「需要你确认」只认真的交了东西上来 awaiting）
+// TASK-R87整改 X04：①② 段按真实流程钉死对应关系——
+//   ① 理解你的想法 = 提交 + AI 自动讨论 + 生成文档（文档到确认点才算完成；
+//     新流程 req 落档即 done、doc 在跑 → ①进行中，绝不出「用户审批完成」）
+//   ② 确认软件功能 = 用户确认已生成的文档（doc awaiting 才亮「需要你确认」）
 function journeyStateOf(stage, steps) {
+  const byKey = (k) => steps.find((x) => x.key === k);
+  if (stage.no === 1) {
+    const req = byKey('req'); const doc = byKey('doc');
+    if (doc && (doc.status === 'awaiting' || doc.status === 'done' || doc.status === 'skipped')) return '已完成';
+    if (doc && (doc.status === 'running' || doc.status === 'failed')) return '进行中';
+    // 老任务停在「确认想法」的：那是它的真实状态，照实显示
+    if (req && req.status === 'awaiting' && waitingOnOf(req, steps).length === 0) return '需要你确认';
+    if (req && (req.status === 'done' || req.status === 'skipped')) return '进行中';
+    return '等待开始';
+  }
+  if (stage.no === 2) {
+    const doc = byKey('doc');
+    if (!doc) return '等待开始';
+    if (doc.status === 'awaiting' && waitingOnOf(doc, steps).length === 0) return '需要你确认';
+    if (doc.status === 'done' || doc.status === 'skipped') return '已完成';
+    if (doc.status === 'failed') return '进行中';   // 被打回重改也算这一段在进行
+    return '等待开始';                              // running 是第 ① 段的工作
+  }
   const ss = stage.keys.map((k) => steps.find((x) => x.key === k)).filter(Boolean);
   if (!ss.length) return '等待开始';
   if (ss.some((x) => x.status === 'awaiting' && waitingOnOf(x, steps).length === 0)) return '需要你确认';
@@ -125,14 +148,21 @@ function journeyHtml(steps, t) {
   let why = { cls: '', text: '六段全部完成' };
   if (curIdx >= 0) {
     const st = JOURNEY[curIdx];
-    const ss = st.keys.map((k) => steps.find((x) => x.key === k)).filter(Boolean);
+    // TASK-R87整改 X04：第 ① 段的实况要把 doc 一起看（讨论/写文档都发生在这一段）
+    const ss = (st.no === 1 ? ['req', 'doc'] : st.keys)
+      .map((k) => steps.find((x) => x.key === k)).filter(Boolean);
     const lastAt = Math.max(0, ...ss.map((x) => (x.at ? Date.parse(x.at) : 0)));
-    if (ss.some((x) => x.status === 'awaiting' && waitingOnOf(x, steps).length === 0)) {
-      why = { cls: '', text: '在等你确认——确认后 AI 会接着做' };
+    const waiting = ss.find((x) => x.status === 'awaiting' && waitingOnOf(x, steps).length === 0);
+    if (waiting) {
+      // TASK-R87整改 X05：「在等你」和「AI 卡住」分开——等你只报等待天数，
+      // 不冒充超时；天数来自该步骤档案的真实时间戳
+      const days = waiting.at ? Math.floor((Date.now() - Date.parse(waiting.at)) / 86400000) : 0;
+      why = { cls: '', text: days >= 1 ? `这项软件已等待你确认约 ${days} 天，AI 暂时不会继续下一步` : '在等你确认——确认后 AI 会接着做' };
     } else if (ss.some((x) => x.status === 'failed')) {
       why = { cls: 'jmeta-stale', text: '被打回了，AI 正在按你的意见改' };
     } else if (ss.some((x) => x.status === 'running') && lastAt && Date.now() - lastAt > STALE_STEP_MS) {
-      why = { cls: 'jmeta-stale', text: '这一步已有较长时间没有新进展，正在检查是否需要重试' };
+      // TASK-R87整改 X05：AI 卡住的原话，绝不和「在等你」混说
+      why = { cls: 'jmeta-stale', text: 'AI 暂时没有新的工作进展，正在检查' };
     } else if (ss.some((x) => x.status === 'running')) {
       why = { cls: '', text: 'AI 正在做这一段' };
     } else {
@@ -281,10 +311,16 @@ function stepDocSource(t, stepKey) {
 function docFeatSource(t) {
   return stepDocSource(t, 'doc');
 }
-function parseFeatBullets(text) {
-  const out = [];
+// TASK-R87整改 X03②：清单抽两组——功能 + 明确「不做什么」（出现在
+// 「不做什么」标题之后的条目归不做桶）。抽不出来就留空，不编条目。
+function parseFeatLists(text) {
+  const feat = [];
+  const notdo = [];
   const seen = new Set();
+  let inNot = false;
   for (const raw of String(text).split(/\r?\n/)) {
+    if (/不做什么|不做的|明确不做|排除范围/.test(raw)) { inNot = true; continue; }
+    if (/功能清单|软件将包含|核心功能/.test(raw)) { inNot = false; }
     const m = raw.match(/^\s{0,3}(?:[-*•]|\d{1,2}[.、)])\s+(.+?)\s*$/);
     if (!m) continue;
     const s = m[1]
@@ -294,10 +330,10 @@ function parseFeatBullets(text) {
       .trim();
     if (s.length < 2 || s.length > 60 || seen.has(s)) continue;
     seen.add(s);
-    out.push(s);
-    if (out.length >= 5) break;
+    if (inNot) { if (notdo.length < 5) notdo.push(s); }
+    else if (feat.length < 5) feat.push(s);
   }
-  return out;
+  return { feat, notdo };
 }
 function ensureFeat(t) {
   const f = docFeatSource(t);
@@ -313,8 +349,8 @@ function ensureFeat(t) {
       let out;
       if (!d || !d.exists || d.kind !== 'text') out = { kind: 'unreadable' };
       else {
-        const bullets = parseFeatBullets(d.text || '');
-        out = bullets.length ? { kind: 'ok', bullets, name: d.name, path: f.path }
+        const lists = parseFeatLists(d.text || '');
+        out = lists.feat.length ? { kind: 'ok', bullets: lists.feat, notdo: lists.notdo, name: d.name, path: f.path }
           : { kind: 'nofeat', name: d.name, path: f.path };
       }
       out.at = Date.now();
@@ -330,10 +366,29 @@ function featCardHtml(t) {
   let body = '';
   if (feat.kind === 'ok') {
     body = `<ul class="cf-list">${feat.bullets.map((b) => `<li>${esc(plainDyn(b))}</li>`).join('')}</ul>`;
+    // X03②：明确「不做什么」和功能清单一样来自文档原文
+    if (feat.notdo && feat.notdo.length) {
+      body += `<p class="cf-notdo-h">明确不做什么</p><ul class="cf-list cf-notdo">${feat.notdo.map((b) => `<li>${esc(plainDyn(b))}</li>`).join('')}</ul>`;
+    }
   } else if (feat.kind === 'loading') {
     body = `<p class="cr-na">正在读取需求文档…</p>`;
   } else if (feat.kind === 'nodoc') {
-    body = `<p class="cr-na">需求文档还没交上来——AI 整理好并经你确认后，这里会列出你的软件将包含的功能。</p>`;
+    // TASK-R87整改 X02：按 doc 真实状态说话——后端确实在干活才说「正在整理」，
+    // 没开始/停住了都照实说，不许假装
+    const doc = (t.steps || []).find((s) => s.key === 'doc');
+    const ds = doc ? doc.status : 'pending';
+    if (ds === 'running') {
+      const d = ensureDiscuss(t);
+      body = d && d.exists && d.phase === 'error'
+        ? '<p class="cr-na">功能清单整理停住了，原因见上面的状态说明。</p>'
+        : '<p class="cr-na">正在整理功能清单，完成后会在这里显示。</p>';
+    } else if (ds === 'failed') {
+      body = '<p class="cr-na">AI 正在按你的意见重新整理功能清单。</p>';
+    } else if (ds === 'awaiting') {
+      body = '<p class="cr-na">功能清单还没登记到文档里——点开需求文档全文核对。</p>';
+    } else {
+      body = '<p class="cr-na">功能清单还没开始整理——AI 讨论完、生成需求文档后，这里会列出你的软件将包含的功能。</p>';
+    }
   } else if (feat.kind === 'offline') {
     body = `<p class="cr-na">离线快照没收录文档内容，连上服务后展示。</p>`;
   } else if (feat.kind === 'unreadable') {
@@ -341,7 +396,72 @@ function featCardHtml(t) {
   } else if (feat.kind === 'nofeat') {
     body = `<p class="cr-na">需求文档里没有逐条列出功能清单。${src ? `<span class="cp-file" data-open-file="${esc(src.path)}" role="button" tabindex="0">看需求文档全文</span>` : ''}</p>`;
   }
-  return `<div class="cabin-feat"><h3 class="cj-h">你的软件将包含</h3>${body}</div>`;
+  return `<div class="cabin-feat"><h3 class="cj-h">最终准备做什么</h3>${body}</div>`;
+}
+
+/* ================= TASK-R87整改 X03①：AI 讨论了什么（真实讨论留档） =================
+   数据源 = GET /api/office/discuss（server-auto.mjs 落档的 discuss.mjs 真实子进程
+   输出原文，agent 名来自引擎 stderr 真实诊断）。硬约束（GPT 原话）：讨论消息不能
+   用预设文案冒充真实 Agent 输出；留档拿不到就明说「暂时无法获取讨论记录」，
+   不伪造协作过程。 */
+const discussCache = new Map();   // taskId -> {view, at}
+const discussPending = new Set();
+const DISCUSS_TTL = 15000;        // 15s 内不重复拉（讨论一轮要好几分钟，不用盯太紧）
+function ensureDiscuss(t) {
+  const doc = (t.steps || []).find((s) => s.key === 'doc');
+  const eligible = doc && ['running', 'awaiting', 'failed'].includes(doc.status);
+  const c = discussCache.get(t.id);
+  if (c && Date.now() - c.at < DISCUSS_TTL) return c.view;
+  if (!eligible) return c ? c.view : null;
+  if (offline) return c ? c.view : { exists: false };
+  if (discussPending.has(t.id)) return c ? c.view : { loading: true };
+  discussPending.add(t.id);
+  api('/api/office/discuss?taskId=' + encodeURIComponent(t.id))
+    .then((d) => { discussCache.set(t.id, { view: d && d.ok ? d : { exists: false }, at: Date.now() }); })
+    .catch(() => { discussCache.set(t.id, { view: { exists: false }, at: Date.now() }); })
+    .finally(() => { discussPending.delete(t.id); if (activePage === 'home') renderCabin(); });
+  return c ? c.view : { loading: true };
+}
+// 指纹用的压缩视图（内容一变就触发重画）
+function discussFpOf(d) {
+  if (!d) return 'nd';
+  if (d.loading) return 'ld';
+  return [d.exists ? 1 : 0, d.phase || '', (d.messages || []).length, String(d.error || '').slice(0, 60)].join('~');
+}
+function discussCardHtml(t) {
+  const d = ensureDiscuss(t);
+  if (!d) return '';
+  let body = '';
+  if (d.loading) {
+    body = '<p class="cr-na">正在读取讨论记录…</p>';
+  } else if (!d.exists) {
+    body = '<p class="cr-na">暂时无法获取讨论记录——这个软件的讨论原文没有留档（老任务或留档丢失）。这里只展示真实讨论，不伪造协作过程。</p>';
+  } else {
+    const msgs = Array.isArray(d.messages) ? d.messages : [];
+    const real = msgs.filter((m) => m && m.round && m.text);
+    if (d.phase === 'error' && d.error) {
+      body += `<p class="cr-na">这轮讨论没有跑成，真实原因：${esc(String(d.error).slice(0, 160))}</p>`;
+    }
+    if (real.length) {
+      body += real.map((m) => `
+        <div class="cd-msg">
+          <div class="cd-meta"><b>${esc(plainDyn(String(m.agent || 'AI 助手')))}</b>
+            <span>${esc(m.role || '讨论')} · 第 ${Number(m.round)} 轮${m.at ? ' · ' + esc(fmtTime(m.at)) : ''}</span></div>
+          <p>${esc(String(m.text).slice(0, 600))}${String(m.text).length > 600 ? '…' : ''}</p>
+        </div>`).join('');
+      body += `<details class="cd-full"><summary>看全部讨论原文（${real.length} 条）</summary>${real.map((m) => `
+        <div class="cd-msg"><div class="cd-meta"><b>${esc(plainDyn(String(m.agent || 'AI 助手')))}</b><span>第 ${Number(m.round)} 轮</span></div><pre>${esc(String(m.text))}</pre></div>`).join('')}</details>`;
+    } else if (d.phase === 'discussing') {
+      body += '<p class="cr-na">讨论刚开场，AI 还没说出第一条——有了立刻显示原文。</p>';
+    } else if (d.phase === 'writing') {
+      body += '<p class="cr-na">讨论完成，AI 正在把结论写进需求文档。</p>';
+    } else if (d.phase === 'done') {
+      body += '<p class="cr-na">讨论留档里没有可展示的消息（可点开下方需求文档全文核对）。</p>';
+    }
+    const sys = msgs.filter((m) => m && m.kind === 'system').slice(-1);
+    if (sys.length) body += `<p class="cd-sys">${esc(String(sys[0].text).slice(0, 200))}</p>`;
+  }
+  return `<div class="cabin-discuss"><h3 class="cj-h">AI 讨论了什么</h3>${body}</div>`;
 }
 
 /* ================= R85·X01 + R86·X01：开发计划预览（确认前必须把真计划摆出来） =================
@@ -561,10 +681,18 @@ function onboardStripHtml(t, steps) {
     || (t.updatedAt && Date.now() - Date.parse(t.updatedAt) < 15 * 60 * 1000);
   if (!fresh) return '';   // 老任务停在这里不算「正在入伙」，按普通旅程展示，不冒充
   const dSt = doc ? doc.status : 'pending';
-  const mid = dSt === 'running' ? 'AI 正在讨论需要做哪些功能'
-    : dSt === 'awaiting' ? '需求文档已生成，等你确认'
-    : dSt === 'failed' ? 'AI 正在按你的意见重新讨论'
-    : '即将开始讨论需要做哪些功能';
+  // TASK-R87整改 X01：文案跟着真实讨论进度走（任务书状态表口径），停住了不冒充在跑
+  const d = ensureDiscuss(t);
+  let mid;
+  if (dSt === 'running') {
+    if (d && d.exists && d.phase === 'error') mid = 'AI 的需求讨论停住了';
+    else if (d && d.exists && d.phase === 'writing') mid = 'AI 正在整理需求文档';
+    else if (d && d.exists && (d.messages || []).length) mid = '两位 AI 助手正在讨论软件需要哪些功能';
+    else if (d && d.exists && d.phase === 'discussing') mid = 'AI 正在分析你的想法';
+    else mid = 'AI 正在整理你想做的软件';
+  } else if (dSt === 'awaiting') mid = '需求文档已生成，等你确认';
+  else if (dSt === 'failed') mid = 'AI 正在按你的意见重新讨论';
+  else mid = '即将开始讨论需要做哪些功能';
   return `<div class="ob-strip" aria-label="新软件的当前进度">
     <span class="ob-done">✓ 已收到你的想法</span>
     <span class="ob-cur">② ${esc(mid)}</span>
@@ -680,14 +808,16 @@ function renderCabin() {
   const steps = (t.steps || []).slice().sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
   if (!steps.length) { wrap.innerHTML = '<div class="cabin-loading">这个软件还没有步骤档案。</div>'; foot.innerHTML = ''; return; }
 
-  // 焦点步：真交了东西等你确认（awaiting+前置齐） > 门开了但还没交（gate+pending 预确认）
-  // > 被打回 > 进行中 > 等前置 > 全做完停最后一格。ui.stepKey 对齐焦点步，
+  // 焦点步：真交了东西等你确认（awaiting+前置齐） > 被打回 > 进行中 > 等前置
+  // > 首个未完成 > 全做完停最后一格。ui.stepKey 对齐焦点步，
   // 主按钮走全局 data-decide 委托，submitDecision 读的就是 ui.taskId/ui.stepKey。
+  // TASK-R87整改 X01：删掉「门开了但还没交（gate+pending）」预确认档——
+  // 讨论前那道审批没了，AI 自动开工，用户只在新需求文档交上来（awaiting）时出手。
   const focus = steps.find((x) => x.status === 'awaiting' && waitingOnOf(x, t.steps).length === 0)
-    || steps.find((x) => x.gate === true && x.status === 'pending' && waitingOnOf(x, t.steps).length === 0)
     || steps.find((x) => x.status === 'failed')
     || steps.find((x) => x.status === 'running')
     || steps.find((x) => x.status === 'awaiting')
+    || steps.find((x) => x.status !== 'done' && x.status !== 'skipped')
     || steps[steps.length - 1];
   ui.stepKey = focus.key;
 
@@ -695,7 +825,9 @@ function renderCabin() {
   const doneN = steps.filter((s) => s.status === 'done' || s.status === 'skipped').length;
   const pct = total ? Math.round(doneN / total * 100) : 0;
   const fSt = focus.status || 'pending';
-  const decidable = isDecidable(focus, t.steps);
+  // TASK-R87整改 X01：向导口径的「轮到你了」只认真的交了东西（awaiting+前置齐）。
+  // gate+pending 不再算——那正是被删掉的讨论前审批（专业视图 isDecidable 不动）。
+  const decidable = fSt === 'awaiting' && waitingOnOf(focus, t.steps).length === 0;
   const st = agentStats();
   const busyLine = rosterBusyLine(st);
   const target = targetScoreOf(t.id);
@@ -713,10 +845,33 @@ function renderCabin() {
   const planBlocked = planStage && decidable && fSt === 'awaiting' && (!planRead || planRead.kind !== 'ok');
 
   // ---- X01 三块之首与 h2：当前状态一句话（优先吃后端 X05 activity 四字段）----
+  // TASK-R87整改 X01/X02：需求阶段（doc）优先走「真实讨论进度」分支——文案逐行
+  // 对上任务书状态表；后端确实在干活才说「正在」，停住了照实说，不冒充。
   const act = t.activity;
   const actState = act && act.activity_state ? act.activity_state : '';
   let nowMain = '', nowSub = '';
-  if (act && act.current_activity) {
+  const dsc = focus.key === 'doc' ? ensureDiscuss(t) : null;
+  if (focus.key === 'doc' && fSt === 'running') {
+    if (dsc && dsc.exists && dsc.phase === 'error') {
+      nowMain = 'AI 的需求讨论停住了';
+      nowSub = dsc.error ? String(dsc.error).slice(0, 100) : '原因暂时查不到；可以重新提交想法，或去高级工作台看步骤档案';
+    } else if (dsc && dsc.exists && dsc.phase === 'writing') {
+      nowMain = 'AI 正在整理需求文档';
+      nowSub = busyLine || '讨论完成，正在把结论写成文档';
+    } else if (dsc && dsc.exists && dsc.phase === 'discussing' && (dsc.messages || []).length) {
+      nowMain = '两位 AI 助手正在讨论软件需要哪些功能';
+      nowSub = `已聊了 ${(dsc.messages || []).length} 条，往下能看到讨论原文`;
+    } else if (dsc && dsc.exists && dsc.phase === 'discussing') {
+      nowMain = '已收到你的想法，AI 正在分析';
+      nowSub = '你的原始想法已收到，接下来会整理成具体的软件功能。';
+    } else {
+      nowMain = 'AI 正在整理你想做的软件';
+      nowSub = '你的原始想法已收到，接下来会整理成具体的软件功能。';
+    }
+  } else if (focus.key === 'doc' && fSt === 'awaiting' && decidable) {
+    nowMain = '软件需求已经整理好，等你确认';
+    nowSub = '看下面 AI 讨论出来的功能和「不做什么」，确认后开始制定开发计划';
+  } else if (act && act.current_activity) {
     nowMain = plainDyn(act.current_activity);
     const parts = [];
     if (act.activity_updated_at) parts.push(`更新于 ${fmtTime(act.activity_updated_at)}`);
@@ -744,6 +899,14 @@ function renderCabin() {
   const titlePlain = plainTitle(t);
   const nextLine = (() => {
     const nm = stepHumanName(focus, steps);
+    // TASK-R87整改 X01：需求阶段的下一步说法跟新流程走
+    if (focus.key === 'doc') {
+      if (fSt === 'running') return '等 AI 讨论完、整理出需求文档';
+      if (fSt === 'awaiting' && decidable) return '确认这份软件需求，开始制定计划';
+      if (fSt === 'awaiting') return `「${nm}」在等前面的步骤完成`;
+      if (fSt === 'failed') return `AI 正在按你的意见改「${nm}」`;
+      return `下一步是「${nm}」（还没开始）`;
+    }
     if (decidable && fSt === 'awaiting') return `等你确认「${nm}」`;
     if (decidable) return `等 AI 交上「${nm}」`;
     if (fSt === 'failed') return `AI 正在按你的意见改「${nm}」`;
@@ -758,23 +921,28 @@ function renderCabin() {
     : rework
       ? `<button class="btn btn-primary" type="button" data-cabin-rework>${esc(STAGE_MAIN_REWORK)}</button><button class="cabin-link" type="button" data-cabin-note>修改这份内容</button>`
     : (decidable && obj)
-      ? `<button class="btn btn-primary" type="button" data-decide="approve"${planBlocked ? ' disabled title="开发计划还没到能确认的状态——三样齐了（功能、步骤、测试）自动恢复"' : ''}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button><button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : '修改这份内容'}</button>`
+      ? `<button class="btn btn-primary" type="button" data-decide="approve"${planBlocked ? ' disabled title="开发计划还没到能确认的状态——三样齐了（功能、步骤、测试）自动恢复"' : ''}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button><button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : focus.key === 'doc' ? '告诉 AI 哪里需要修改' : '修改这份内容'}</button>`
     : fSt === 'failed'
       ? '<button class="btn btn-primary" type="button" data-decide="resubmit">让它重新交上来</button>'
     : '<span class="ch-act-wait">现在不用你操作，轮到你的那一刻按钮会亮起来</span>';
-  const heroHtml = `
-  <div class="cabin-hero">
+  // TASK-R87整改 X03：需求确认界面必须按 ①AI 讨论了什么 → ②最终准备做什么 →
+  // ③需要你决定什么 的顺序读。doc 阶段把 hero 拆成两截，中间插讨论卡和功能卡；
+  // 其余阶段维持原结构。
+  const heroHeadHtml = `
     <div class="ch-block"><span class="ch-k">当前制作的软件</span>
       <b class="ch-v" title="${esc(titlePlain)}">${esc(titlePlain.length > 22 ? titlePlain.slice(0, 22) + '…' : titlePlain)}</b>
       <span class="ch-s">更新于 ${esc(fmtTime(t.updatedAt))}${isTestTask(t) ? ' · 测试任务' : ''}</span></div>
     <div class="ch-block"><span class="ch-k">当前状态</span>
       <b class="ch-v${actState ? ' as-' + actState : ''}">${esc(actState ? ACT_STATE_CN[actState] || actState : (fSt === 'running' ? '进行中' : decidable ? '等你确认' : '进行中'))}</b>
-      <span class="ch-s">${esc(nowMain.length > 34 ? nowMain.slice(0, 34) + '…' : nowMain)}</span></div>
-    ${planStage ? planHeroHtml(planRead) : ''}
-    <div class="ch-block ch-block-act"><span class="ch-k">下一步要做的事</span>
+      <span class="ch-s">${esc(nowMain.length > 34 ? nowMain.slice(0, 34) + '…' : nowMain)}</span></div>`;
+  const heroActBlockHtml = `
+    <div class="ch-block ch-block-act"><span class="ch-k">${focus.key === 'doc' ? '需要你决定什么' : '下一步要做的事'}</span>
       <b class="ch-v">${esc(nextLine)}</b>
-      <span class="ch-act">${heroActHtml}</span></div>
-  </div>`;
+      <span class="ch-act">${heroActHtml}</span></div>`;
+  const docStage = focus.key === 'doc';
+  const heroHtml = docStage
+    ? `<div class="cabin-hero">${heroHeadHtml}</div>${discussCardHtml(t)}${featCardHtml(t)}<div class="cabin-hero">${heroActBlockHtml}</div>`
+    : `<div class="cabin-hero">${heroHeadHtml}${planStage ? planHeroHtml(planRead) : ''}${heroActBlockHtml}</div>`;
 
   // ---- 走过的路：完成步默认折叠（✓），当前步高亮（▸），以后灰着（○）
   const pastSteps = steps.filter((s) => (s.status === 'done' || s.status === 'skipped') && s.no < focus.no);
@@ -787,7 +955,7 @@ function renderCabin() {
         <span class="cp-mark">▸</span>
         <div class="cp-main">
           <b>${esc(stepHumanName(s, steps))}</b>
-          <span class="cp-state">${decidable && fSt === 'awaiting' ? '做好了，等你确认' : decidable ? '门开了，还没交东西' : fSt === 'failed' ? '被你打回了' : fSt === 'running' ? '正在做' : fSt === 'done' || fSt === 'skipped' ? '已完成' : '还没开始'}</span>
+          <span class="cp-state">${decidable && fSt === 'awaiting' ? '做好了，等你确认' : fSt === 'failed' ? '被你打回了' : fSt === 'running' ? '正在做' : fSt === 'done' || fSt === 'skipped' ? '已完成' : '还没开始'}</span>
           ${s.note ? `<p class="cp-note">${esc(String(s.note).slice(0, 100))}</p>` : ''}
           ${cabinFilesHtml(s)}
         </div>
@@ -836,13 +1004,17 @@ function renderCabin() {
   const pctJourney = Math.round((jStates.filter((s) => s === '已完成').length / JOURNEY.length) * 100);
 
   const onboardHtml = onboardStripHtml(t, steps);
+  // R87：讨论留档（phase/条数/错误摘要）与「不做什么」清单参与指纹——
+  // 讨论每多一条真实消息，页面立刻重画，不等人
+  const dscFp = focus.key === 'doc' ? discussFpOf(dsc) : 'nd';
   const fp = [
     t.id, focus.key, fSt, decidable, nowMain, actState,
     steps.map((s) => s.status).join(','),
     steps.map((s) => (s.files || []).map((f) => (f.history || []).length).join('.')).join(';'),
     cabinUI.pastOpen, cabinUI.scoreEdit, cabinUI.newOpen, target,
     pastSteps.length, busyLine,
-    feat.kind, (feat.bullets || []).join('·'), (feat.path || ''),
+    feat.kind, (feat.bullets || []).join('·'), (feat.notdo || []).join('·'), (feat.path || ''),
+    dscFp,
     JOURNEY.map((jst) => journeyStateOf(jst, steps)).join(','),
     rd ? `${(rd.rounds || []).length}|${rd.advice}|${lastR ? lastR.score : ''}|${lastR && lastR.result ? 'r' : ''}` : 'nord',
     cabinUI.reviewOpen,
@@ -866,7 +1038,7 @@ function renderCabin() {
         <div class="cabin-progress">第 ${journeyNo} / ${JOURNEY.length} 阶段${journeyLabel ? ' · ' + journeyLabel : ''}</div>
         ${scoreHtml}
       </div>
-      ${planStage ? '' : featCardHtml(t)}
+      ${planStage || docStage ? '' : featCardHtml(t)}
       ${journeyHtml(steps, t)}
       ${reviewCardHtml(t)}
       ${rosterCardHtml(st)}
@@ -884,7 +1056,7 @@ function renderCabin() {
   });
 
   // ---- 底部：与 hero 卡同一套状态/动作（R85·X02 两处入口不分叉） ----
-  renderCabinFoot(t, steps, focus, key, { idx, obj, rework, pending, planStage, planBlocked });
+  renderCabinFoot(t, steps, focus, key, { idx, obj, rework, pending, planStage, planBlocked, decidable });
 }
 
 // 做出来的东西：只报名字和改过几版（版本数来自登记历史，真实可数）
@@ -901,7 +1073,11 @@ function cabinFilesHtml(s) {
 
 function renderCabinFoot(t, steps, focus, key, sh) {
   const fSt = focus.status || 'pending';
-  const decidable = isDecidable(focus, t.steps);
+  // R87·X01：与 hero 卡同一口径——只认真的交了东西（awaiting+前置齐）才亮确认；
+  // sh 里带了 renderCabin 算好的值就优先用，不带（老调用）按同规则现算
+  const decidable = sh && sh.decidable != null
+    ? sh.decidable
+    : (fSt === 'awaiting' && waitingOnOf(focus, t.steps).length === 0);
   const idx = sh && sh.idx != null ? sh.idx : steps.findIndex((x) => x.key === focus.key);
   const pending = sh && sh.pending != null ? sh.pending : pendingOps.has(key);
   const err = decisionResult && decisionResult.key === key && decisionResult.msg ? decisionResult.msg : '';

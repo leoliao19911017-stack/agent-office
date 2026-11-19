@@ -19,6 +19,8 @@ import {
   approvalObjectOfRec, taskDemandView,
   createDecisionCore,
 } from './server-core.mjs';
+// TASK-R87整改 X01/X03：需求讨论自动推进器（服务端模块，不经 STATIC_APP）
+import { kickoffAutoAdvance, startDiscussRecord, discussView } from './server-auto.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1200,19 +1202,51 @@ function makeNewTaskRoute(deps) {
       if (rec.id !== taskId || reqStep.status !== 'done' || (reqStep.note || '') !== idea) {
         throw httpError(500, 'NEW_TASK_MISMATCH', '读回的档案与写入意图不一致，任务状态未知，请刷新核对');
       }
+      // TASK-R87整改 X01：删掉「确认想法」审批。req 落档后立即把 doc 推成 running
+      // ——AI 自动开始讨论，不再问用户要不要；讨论留档同步起头（phase=discussing），
+      // 之后由 kickoffAutoAdvance 真跑两轮讨论 → 生成文档 → doc=awaiting 停在唯一确认点。
+      await runFlow(['set', taskId, 'doc', '--status', 'running', '--note', 'AI 已自动开始讨论需求', '--by', '苏打工作台·自动推进']);
+      const rec2 = JSON.parse(readFileSync(join(dir, `${taskId}.json`), 'utf8'));
+      const docStep = (rec2.steps && rec2.steps.doc) || {};
+      if (docStep.status !== 'running') {
+        throw httpError(500, 'NEW_TASK_MISMATCH', 'doc 步骤没有进入 running，自动推进没启动，请刷新核对');
+      }
+      // 讨论留档同步起头：紧接着 GET /api/office/discuss 一定读得到（不靠后台时序）
+      startDiscussRecord({ AUTOLOOP_HOME, taskId, title });
       sendJson(res, 200, {
         ok: true, taskId, title,
         createdAt: rec.createdAt || null,
         readBack: {
           id: rec.id, title: rec.title, updatedAt: rec.updatedAt || null,
           req: { status: reqStep.status, note: reqStep.note || '', by: reqStep.by || null },
+          doc: { status: docStep.status, note: docStep.note || '', by: docStep.by || null },
         },
         verified: true,
       });
+      // 响应发完再后台推进（25 分钟一轮的讨论不能挂在 HTTP 请求上）；失败会如实
+      // 落在讨论留档（phase=error + 真实原因），页面据此说「停住了」，不冒充进行中。
+      kickoffAutoAdvance({ AUTOLOOP_HOME, taskId, title, idea }).catch(() => {});
       return;
     } finally {
       unlockDecision(lockKey);
     }
+  };
+}
+
+// ---- TASK-R87整改 X03：需求讨论留档只读视图 -------------------------------
+// GET /api/office/discuss?taskId=T-...
+// 返回真实讨论留档（phase/messages/error 全部来自 server-auto.mjs 落档的原文）。
+// 拿不到就是 exists:false —— 前端据此显示「暂时无法获取讨论记录」，绝不伪造。
+function makeDiscussRoute(deps) {
+  const { AUTOLOOP_HOME, httpError, sendJson } = deps;
+  return async (req, res) => {
+    const u = new URL(req.url, 'http://localhost');
+    const taskId = (u.searchParams.get('taskId') || '').trim();
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(taskId)) {
+      throw httpError(400, 'BAD_TASK_ID', 'taskId 必填（字母数字_-，≤64 字符）');
+    }
+    sendJson(res, 200, { ok: true, taskId, ...discussView(AUTOLOOP_HOME, taskId) });
+    return;
   };
 }
 
@@ -1270,6 +1304,7 @@ export function createApiRouter(deps) {
   const reviewGet = makeReviewGetRoute(ctx);
   const reviewPost = makeReviewPostRoute(ctx);
   const newTask = makeNewTaskRoute(ctx);
+  const discuss = makeDiscussRoute(ctx);
   const cardsAnswer = makeCardsAnswerRoute(ctx);
   const cardsResolve = makeCardsResolveRoute(ctx);
   const runsCancel = makeRunsCancelRoute(ctx);
@@ -1296,6 +1331,7 @@ export function createApiRouter(deps) {
     if (path === '/api/office/review' && method === 'GET') return reviewGet(req, res);
     if (path === '/api/office/review' && method === 'POST') return reviewPost(req, res);
     if (path === '/api/office/new-task' && method === 'POST') return newTask(req, res);
+    if (path === '/api/office/discuss' && method === 'GET') return discuss(req, res);
 
     let m;
     if ((m = path.match(/^\/api\/cards\/(\d+)\/answer$/)) && method === 'POST') return cardsAnswer(req, res, m[1]);
@@ -1319,11 +1355,12 @@ export function createApiRouter(deps) {
       [/^\/api\/office\/file-revalidate$/, ['POST']],
       [/^\/api\/office\/review$/, ['GET', 'POST']],
       [/^\/api\/office\/new-task$/, ['POST']],
+      [/^\/api\/office\/discuss$/, ['GET']],
     ];
     if (known.some(([re, methods]) => re.test(path) && !methods.includes(method))) {
       throw httpErrorFallback(deps, 405, 'METHOD_NOT_ALLOWED', `${method} ${path} 不支持`);
     }
-    throw httpErrorFallback(deps, 404, 'NOT_FOUND', `${method} ${path} 不存在（本服务只开放 /api/state、/api/health、/api/cards/:id/answer、/api/cards/:id/resolve、/api/runs/:id/cancel、/api/office/decisions、/api/office/decide、/api/office/decision、/api/office/resubmit、/api/office/op-status、/api/office/file-download、/api/office/file-revalidate、/api/office/review、/api/office/new-task）`);
+    throw httpErrorFallback(deps, 404, 'NOT_FOUND', `${method} ${path} 不存在（本服务只开放 /api/state、/api/health、/api/cards/:id/answer、/api/cards/:id/resolve、/api/runs/:id/cancel、/api/office/decisions、/api/office/decide、/api/office/decision、/api/office/resubmit、/api/office/op-status、/api/office/file-download、/api/office/file-revalidate、/api/office/review、/api/office/new-task、/api/office/discuss）`);
   };
 }
 

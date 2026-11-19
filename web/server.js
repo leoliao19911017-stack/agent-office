@@ -19,6 +19,8 @@ import { fileURLToPath } from 'node:url';
 // 也在 server-api.mjs（createApiRouter
 // 工厂注入环境依赖）。本文件只剩启动配置、HTTP 小工具、静态白名单与错误收口。
 import { createApiRouter } from './server-api.mjs';
+// TASK-R87整改 X01：需求讨论自动推进器——重启后恢复中断的讨论（只碰新建流程任务）
+import { resumeInterruptedAuto } from './server-auto.mjs';
 
 /**
  * 产物库允许读取的根目录白名单。
@@ -397,6 +399,9 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`Soda Agent 工作台  http://127.0.0.1:${PORT}  build=${BUILD_VERSION}`);
   console.log(`代理到中台        ${HUB}（owner key 已从 config.json 载入内存，不出服务端）`);
+  // TASK-R87整改 X01：服务重启时，把中断在半路（讨论中/写文档中）的新流程任务
+  // 重新拉起推进；phase=error 和老任务（doc=pending）一律不碰。
+  resumeInterruptedAuto(AUTOLOOP_HOME).catch(() => {});
 });
 
 process.on('SIGINT', () => {

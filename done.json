@@ -1,35 +1,55 @@
 {
   "outcome": "succeeded",
-  "summary": "R86 三条整改全部完成并实测通过：X01 计划合格性从内容判定（功能/步骤/测试三样齐才亮确认按钮，验证任务明说'这是一次系统验证任务'不伪装）；X02 普通首页隐藏测试任务（展示层过滤，数据不动，待确认计数不混入，全测场景显示空状态'你还没有开始制作软件'）；X03 确认前先读计划（当前状态→3~5条计划摘要→查看完整计划→主按钮在最后，1280×768 一屏不滚动）。实测探针 test/r86-verify.mjs 19/19 项通过，G07 门禁回归 19/19 exit 0，app.js 1072 行 ≤1400。",
+  "summary": "R87 五项全部落地：删掉讨论前审批点（建档即自动推进），需求确认改为唯一确认节点；首页/确认页文案全部挂真实状态；新增真实讨论留档链路（server-auto.mjs + GET /api/office/discuss），不伪造协作过程；六阶段映射到真实步骤；等待用户与 AI 停滞文案分离。test:g07 19/19 全绿（实测 pass 19 fail 0），真实环境端到端走通「不点任何按钮 → 讨论两轮 → 文档生成 → 停在需求确认」。",
   "items": [
     {
       "code": "X01",
       "status": "done",
-      "evidence": "test/r86-verify.mjs 实测 19/19 中 X01 全过：①完整计划（含功能清单/实施步骤/测试方法三节）→ 确认按钮 disabled=false、摘要 5 条来自真实文件内容；②验证夹具内容（'验证夹具 A：同版本不同登记时间…'）→ disabled=true，明示'这是一次系统验证任务，不是软件开发计划'；③空文件 → disabled=true，提示'还不完整'；④丢失文件 → disabled=true，提示'暂时无法读取'+重试按钮。四份计划文件写在 .r86-tmp/（FILE_ROOTS 白名单内）真实字节+真实 sha256 注册，跑完即删"
+      "evidence": "代码：web/server-api.mjs makeNewTaskRoute 在 req=done 读回核验后直接 runFlow(['set',taskId,'doc','--status','running',...])（L1208），无任何审批调用；web/cabin.js STAGE_MAIN 删除 req 条目。真实事件顺序（PORT=8091 + 真实 C:/Tools/agent-autoloop，实测）：12:56:29 建档 readBack req=done、doc=running『AI 已自动开始讨论需求』；12:56:47(T+18s) 讨论留档 phase=discussing/active=true/0条；12:56:55 第1轮真实输出落档；13:00:36 第2轮落档+文档+doc=awaiting；终态 steps=req:done doc:awaiting，plan/brief/deliverable/verify/final 全 pending——全程没点任何按钮，精确停在需求确认节点。老任务未触碰：推进器只写 discuss/<id>.json 与新任务 doc 步骤；resumeInterruptedAuto 只拉 doc=running 且留档 mid-flight 的任务。"
     },
     {
       "code": "X02",
       "status": "done",
-      "evidence": "test/r86-verify.mjs 实测：混合场景（测试任务更新时间最新+真实需求较旧）→ 首页任务条仅 1 条真实需求、默认选中'真实需求'不是最新测试任务、顶栏胶囊'1 件事等你拍板'（测试审批未计入）、/pro 高级工作台 2 条全在（数据不动）；全测试场景 → 首页空状态 h2='你还没有开始制作软件'+开始按钮存在、胶囊隐藏、/pro 仍 1 条"
+      "evidence": "web/cabin.js：nowMain/nowSub 按 doc 真实状态分支（running→『已收到你的想法，AI 正在分析』/『两位 AI 助手正在讨论软件需要哪些功能』/『AI 正在整理需求文档』；awaiting→『软件需求已经整理好，等你确认』）；featCardHtml 无文档时按 running/failed/error 分支（讨论引擎失败→『功能清单整理停住了』+真实 error，不冒充整理中）。实测：doc=awaiting 时 GET /api/office/flow 返回 activity={activity_state:awaiting_user, current_activity:需求文档已经做好，等你确认}。"
     },
     {
       "code": "X03",
       "status": "done",
-      "evidence": "1280×768 视口实测（test/r86-verify.mjs 输出）：viewport=768、#page-home scrollTop=0、计划摘要底=619px、查看完整计划链接底=606px、确认按钮底=739px（全部 ≤768 不滚动），摘要 5 条（3~5 范围内），DOM 顺序 planBeforeAct=true（摘要在主按钮之前），disabled=false。截图留证：test/r86-x03-1280x768.png"
+      "evidence": "新增 web/server-auto.mjs（291行）：只跑真实子进程 discuss.mjs（stdout 原文入档，agent 名从 stderr『[discuss] X 成功』解析，解析不出叫『AI 助手』不猜具体是谁）；留档 office-data/discuss/<taskId>.json 原子写。新增路由 GET /api/office/discuss（server-api.mjs L1237-1248，404 清单同步更新）。实测 T-20261119-01 留档 messages=2：第1轮 role=提出方案、第2轮 role=评审与修订 agent=DSH（内容为引擎真实输出，含真实争议点『杯这个单位没有参照标准』）。确认页三块按序：①discussCardHtml 真实讨论记录（拿不到→『暂时无法获取讨论记录』，绝不伪造）②featCardHtml『最终准备做什么』=3条功能+3条不做什么 ③heroActBlockHtml『需要你决定什么』=[确认需求，开始制定计划]+[告诉 AI 哪里需要修改]。"
+    },
+    {
+      "code": "X04",
+      "status": "done",
+      "evidence": "web/cabin.js journeyStateOf：阶段①理解你的想法=req+doc（doc running→进行中；awaiting/done→已完成），阶段②确认软件功能=doc awaiting→『需要你确认』；STAGE_MAIN 已无 req 条目，『用户审批完成』在需求文档生成前无处可出现（doc 未 awaiting 前阶段①显示进行中、阶段②等待开始）。"
+    },
+    {
+      "code": "X05",
+      "status": "done",
+      "evidence": "web/cabin.js journeyHtml：awaiting 分支按 waiting 步骤真实 at 算天数，days>=1→『这项软件已等待你确认约 N 天，AI 暂时不会继续下一步』，当天→『在等你确认——确认后 AI 会接着做』；stale 分支固定『AI 暂时没有新的工作进展，正在检查』，两套文案互斥；无可靠数据处保留『剩余时间暂时无法估计』。"
     }
   ],
+  "hard_requirements": {
+    "test_g07": "19/19 全绿（hermes node v22.23.2 实测：# tests 19 / # pass 19 / # fail 0；test 11 已按 R87 新契约改写：readBack.doc.status=running、activity working+『正在』、GET /api/office/discuss 200 且 exists=true；R1 冻结清单扩为 21 固定+3 参数化）。全套 23 个测试文件另跑一遍：236/238，2 条失败（D1 审批闭环、L1 工作台布局）在干净 HEAD 上同样失败——既有问题，与本轮改动无关（git stash 对照实测）。",
+    "app_js_lines": "app.js 1072 行 ≤ 1400（本轮未改 app.js；前端改动全在 cabin.js 1251 行）",
+    "static_app": "新增文件 web/server-auto.mjs 为服务端 .mjs（与 server-core.mjs/server-api.mjs 同类，不经 STATIC_APP）；浏览器侧无新增 .js（cabin.js 原已在白名单 L333）",
+    "no_fake": "讨论失败路径实测过：测试夹具无 discuss.mjs → ENOENT → phase=error + 真实原因『discuss.mjs 不存在（…）——这台机器没装讨论引擎』落档，页面显示停住而非假装整理中"
+  },
   "files_modified": [
-    "web/cabin.js",
-    "web/app.js",
-    "web/render.js",
-    "web/decision-ops.js",
-    "web/app-cabin.css",
-    "test/g07-harness.mjs",
-    "test/r86-verify.mjs"
+    "web/server-auto.mjs（新增，291 行）",
+    "web/server-api.mjs（1370 行：new-task 自动推进 + discuss 路由）",
+    "web/server.js（410 行：import resumeInterruptedAuto + 启动时恢复中断讨论）",
+    "web/cabin.js（1251 行：六阶段/状态文案/确认页三块/讨论卡）",
+    "test/g07-routes.test.js（R1 冻结清单 20→21 固定；test 11 改为 R87 新契约）",
+    "done.json"
   ],
-  "blocked_by": null,
+  "blocked_by": [],
+  "notes": [
+    "真实环境留了一条验证任务 T-20261119-01（标题『R87 整改验证·喝水记录』）在需求确认节点等你，可确认或忽略。",
+    "8090 端口有一个更早会话遗留的旧代码实例还在跑（build r73 旧进程），未动它——需要的话你自己关。",
+    "done.json 此前处于已删除状态（git D），本轮按契约重写。"
+  ],
   "line_counts": {
     "app.js": 1072,
-    "server.js": 405
+    "server.js": 410
   }
 }
