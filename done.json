@@ -1,58 +1,35 @@
 {
   "outcome": "succeeded",
-  "summary": "第85轮整改完成：不加新功能，把现有路走通。X01-X08 全部落地并实机验证（live 8090 + playwright 实测取证），X10 达标（app.js 1069行≤1400）。确认前先看真计划（不可读即停用按钮）、主按钮进 hero 卡双视口免滚动可见、首页零内部代码、拍板清单/进度/评审/roster 全部说人话且数据来自真实档案。全量测试 238 个：236 过 / 2 败——该 2 败（g02-flows D1、g07-r72 L1）经 git stash 基线对照确认为 HEAD 既有失败（向导化改造后 #/ 为首页、工作台隐藏导致旧选择器不可见），非本轮回归；任务书门禁 g07-pages+g07-r73 22/22 全绿，g02-branches 61/61 全绿（本轮引入的 3 个 decision-ops VM 回归已用 typeof 守卫修复）。",
+  "summary": "R86 三条整改全部完成并实测通过：X01 计划合格性从内容判定（功能/步骤/测试三样齐才亮确认按钮，验证任务明说'这是一次系统验证任务'不伪装）；X02 普通首页隐藏测试任务（展示层过滤，数据不动，待确认计数不混入，全测场景显示空状态'你还没有开始制作软件'）；X03 确认前先读计划（当前状态→3~5条计划摘要→查看完整计划→主按钮在最后，1280×768 一屏不滚动）。实测探针 test/r86-verify.mjs 19/19 项通过，G07 门禁回归 19/19 exit 0，app.js 1072 行 ≤1400。",
   "items": [
     {
       "code": "X01",
       "status": "done",
-      "evidence": "live 8090 三阶段实测（.probe 脚本，fixture 改前备份、结束已恢复）：A 文件在→计划卡摘要来自 plan 步骤注册文件 fixture-time.md 的真实行「F01 验证夹具 A：同版本不同登记时间…」，主按钮可用(disabled=false)；B 移走文件→「开发计划暂时无法读取，请重试」+主按钮 disabled=true+title「开发计划暂时无法读取——先看到真实计划再确认」+footer 按钮同步 disabled=true+错误条「读到真实计划后自动恢复」；C 恢复文件→摘要与按钮自动恢复。数据源 GET /api/office/file（移走后实测返回 exists:false）。实现：cabin.js:340-406（planCache/planSummary/ensurePlanRead/planCardHtml，摘要取文件真实行，绝不拿需求文档顶替）"
+      "evidence": "test/r86-verify.mjs 实测 19/19 中 X01 全过：①完整计划（含功能清单/实施步骤/测试方法三节）→ 确认按钮 disabled=false、摘要 5 条来自真实文件内容；②验证夹具内容（'验证夹具 A：同版本不同登记时间…'）→ disabled=true，明示'这是一次系统验证任务，不是软件开发计划'；③空文件 → disabled=true，提示'还不完整'；④丢失文件 → disabled=true，提示'暂时无法读取'+重试按钮。四份计划文件写在 .r86-tmp/（FILE_ROOTS 白名单内）真实字节+真实 sha256 注册，跑完即删"
     },
     {
       "code": "X02",
       "status": "done",
-      "evidence": "双视口 playwright 实测主按钮 [data-decide=approve] boundingBox：1440×900 → (130,467,154×40) 视口内；1280×768 → (130,487,154×40) 视口内，均免滚动可见。截图证据 shots/r85-x02-1440x900.png、shots/r85-x02-1280x768.png。主按钮「确认计划，开始开发」直接位于「下一步要做的事」hero 卡内（cabin.js heroActHtml），次按钮「计划需要修改」同级；「点下方按钮即可」文案已删（nextLine 分支）；footer 动作条同状态同动作（renderCabinFoot 共享 planBlocked）"
+      "evidence": "test/r86-verify.mjs 实测：混合场景（测试任务更新时间最新+真实需求较旧）→ 首页任务条仅 1 条真实需求、默认选中'真实需求'不是最新测试任务、顶栏胶囊'1 件事等你拍板'（测试审批未计入）、/pro 高级工作台 2 条全在（数据不动）；全测试场景 → 首页空状态 h2='你还没有开始制作软件'+开始按钮存在、胶囊隐藏、/pro 仍 1 条"
     },
     {
       "code": "X03",
       "status": "done",
-      "evidence": "自动化扫描 #page-home innerText，5 类 pattern（TEST-编号/独立代码词 F01·R73 式/版本hash/内部路径/裸AI名）：真实任务视图（隐藏测试任务后选「AI 助手 Office 可视化」）全文 0 命中；测试任务视图唯一命中经 DOM TreeWalker 溯源为计划摘要 UL.cf-list 转写的 fixture 文件内容（任务产物正文，非界面代码）。任务卡标题经 plainTitle 剥离编号（cabin.js:56，TEST 前缀+带分隔符粘连代码词），测试任务带「测试任务 ·」标签且可隐藏（开关实测生效）；AI 名全部带角色后缀（rolePlainOf：帮你写代码/剪视频/做图文/生图和把关）；内部编号仅存于「详细信息」<details> 折叠区（默认不可见）"
-    },
-    {
-      "code": "X04",
-      "status": "done",
-      "evidence": "live 实测：顶栏胶囊「5 件事等你拍板」→ 弹层 5 行全部为「软件名｜等你确认｜步骤人话｜查看并确认 ›」格式（如「EaseDraw 专注模式接入工作台 | 等你确认 | 做出来的东西 | 查看并确认 ›」），每行 data-goto-home 直达首页对应任务（新手不进专业工作台）；等待时长读步骤真实时间戳（stp.at→ago，「打算怎么做 · 3 天前」），「已等待 3 天前」叠加语病已修。实现：decision-ops.js renderDecisionPop（跨文件符号 typeof 守卫，g02 VM 单测兼容）+ app.js data-goto-home 委托"
-    },
-    {
-      "code": "X05",
-      "status": "done",
-      "evidence": "live 实测 TEST-F01R10 进度区 jmeta 四要素全部真实数据：「何时开始 11/15 16:00 | 最近更新 11/17 00:16 | 在等你确认——确认后 AI 会接着做 | 剩余时间暂时无法估计（还没有可靠的历史耗时记录）」——时间取步骤真实时间戳，等待原因四态诊断（被打回正在改/长时间无进展需检查/在等你/正在做），无历史耗时绝不编造 ETA。实现：cabin.js journeyHtml（STALE_STEP_MS=30min 四态）"
-    },
-    {
-      "code": "X06",
-      "status": "done",
-      "evidence": "live 实测评审卡：「评审与自动改进 | 目标 8.0 分 | 还没打过分。AI 交出成果后，把这一轮的分数和依据记在这里；没到目标分，AI 会按你的修改指令自动接着改。| 和 AI 一起评审」——每轮分数+依据留档、入口文案已从「+ 录一轮评审」改为「和 AI 一起评审」（cabin.js reviewCardHtml）"
-    },
-    {
-      "code": "X07",
-      "status": "done",
-      "evidence": "live 实测首页 roster 卡：「4 个 AI 助手都在，现在没人干活｜每个 AI 在干嘛」可展开；首页只显示当前任务相关 AI 状态（非全员在线轰炸），「在线」不再等同「正在干活」——rosterHeadline 区分 都在/有人掉线/失联 三态，未知/失联行提供「检查连接」动作（data-roster-check→tick 立即拉新并上报时间），连接健康/任务执行/状态新鲜度三口径分离（stale→amber、down→red）。实现：cabin.js rosterCardHtml + app.js data-cabin-roster/data-roster-check 委托"
-    },
-    {
-      "code": "X08",
-      "status": "done",
-      "evidence": "新建软件自动进需求讨论：app.js:703 submitNewTask 成功后 cabinFresh.set 标记刚建任务并选中之；cabin.js:510 onboardStripHtml 渲染三步入伙条「✓ 已收到你的想法 → AI 正在讨论需要做哪些功能 → 等你确认后开始制作」（按 doc 步骤真实状态四态：running/awaiting/failed/未开始），显示条件=req已done且doc未完成且(刚建或15分钟内更新)，cabin.js:782 注入 hero 区。全程无 GPT/Codex/Claude 模型选择（新建对话框仅收集想法）。未在实机走新建提交（避免写业务档案），实现链路+触发条件经代码核对，覆盖首页路径的 g07-pages/g07-r73 22/22 全绿"
+      "evidence": "1280×768 视口实测（test/r86-verify.mjs 输出）：viewport=768、#page-home scrollTop=0、计划摘要底=619px、查看完整计划链接底=606px、确认按钮底=739px（全部 ≤768 不滚动），摘要 5 条（3~5 范围内），DOM 顺序 planBeforeAct=true（摘要在主按钮之前），disabled=false。截图留证：test/r86-x03-1280x768.png"
     }
   ],
   "files_modified": [
     "web/cabin.js",
+    "web/app.js",
     "web/render.js",
     "web/decision-ops.js",
-    "web/app.js",
-    "web/app-cabin.css"
+    "web/app-cabin.css",
+    "test/g07-harness.mjs",
+    "test/r86-verify.mjs"
   ],
   "blocked_by": null,
   "line_counts": {
-    "app.js": 1069,
+    "app.js": 1072,
     "server.js": 405
   }
 }

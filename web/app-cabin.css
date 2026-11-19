@@ -271,14 +271,28 @@
 .roster-row.stale .roster-state, .roster-row.unknown .roster-state {color:var(--amber)}
 .roster-row.down .roster-state {color:var(--reason-red)}
 
-/* ---- X03：内部代号的收容处（折叠披露 + 测试任务开关） ---- */
+/* ---- X03：内部代号的收容处（折叠披露；测试任务开关 R86·X02 已下线） ---- */
 .ch-detail {margin-top:10px; font-size:12px; color:var(--faint)}
 .ch-detail summary {cursor:pointer; list-style:none; padding:2px 0}
 .ch-detail summary::-webkit-details-marker {display:none}
 .ch-detail summary::before {content:'▸ '; font-size:11px}
 .ch-detail[open] summary::before {content:'▾ '}
 .ch-detail div {color:var(--faint); padding:4px 0; line-height:1.6}
-.ct-hidehint {font-size:12px; color:var(--faint); align-self:center; white-space:nowrap}
+
+/* ================================================================
+   R86·第 86 轮整改：让「确认」这个动作站得住。只加样式，复用色彩令牌。
+   ================================================================ */
+
+/* ---- X03：计划摘要进主操作卡（hero 通栏，当前状态与主按钮之间，先读再确认） ---- */
+.ch-plan {grid-column:1/-1; background:var(--panel); border:1px solid var(--line); border-radius:10px;
+  padding:12px 14px; display:flex; flex-direction:column; gap:6px; min-width:0}
+.ch-plan .cf-list {grid-template-columns:1fr; gap:4px}   /* 单列 3~5 条，纵向好读，1280 宽不滚 */
+
+/* ---- X02：没有真实软件需求时的首页空状态 ---- */
+.cabin-empty {margin-top:14px; flex:none; background:var(--card); border:1px dashed var(--line);
+  border-radius:14px; padding:36px 24px; text-align:center; display:flex; flex-direction:column;
+  gap:14px; align-items:center}
+.cabin-empty h2 {margin:0; font-size:18px; color:var(--text); font-weight:600}
 
 /* ---- X04：决策清单的「查看并确认」引导 ---- */
 .dp-go {margin-left:auto; color:var(--blue); font-size:12px; flex:none}

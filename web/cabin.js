@@ -344,11 +344,12 @@ function featCardHtml(t) {
   return `<div class="cabin-feat"><h3 class="cj-h">你的软件将包含</h3>${body}</div>`;
 }
 
-/* ================= R85·X01：开发计划预览（确认前必须把真计划摆出来） =================
+/* ================= R85·X01 + R86·X01：开发计划预览（确认前必须把真计划摆出来） =================
    数据源 = plan 步骤登记的文件内容（GET /api/office/file），与 feat 同一套
-   缓存/在途/60s TTL 模式。读不到 → 明说「读不出来」并停用确认按钮；
-   摘要取的是计划文件里真实存在的行（标题/条目都算），绝不拿需求文档顶替计划文档，
-   也不编一个固定的「三段式」结构。 */
+   缓存/在途/60s TTL 模式。摘要取的是计划文件里真实存在的行（标题/条目都算），
+   绝不拿需求文档顶替计划文档，也不编一个固定的「三段式」结构。
+   R86 收紧判定口径：文件能读 ≠ 计划能确认——内容里找得到三类结构
+   （功能项 / 实施步骤 / 测试方法）才放行确认，否则一律拦下。 */
 const planCache = new Map();   // path\0versionKey -> {kind, lines?, name?, path?, at}
 const planPending = new Set();
 function planSummary(text) {
@@ -369,6 +370,23 @@ function planSummary(text) {
   }
   return out;
 }
+/* R86·X01：计划内容合格性——只看内容，不看文件名/路径。
+   合格 = 三类结构都能从内容里找到：① 功能项（要做哪些功能）② 实施步骤（分几步、产出什么）
+   ③ 测试方法（怎么测、怎么判合格）。关键词必须搭上「结构证据」（≥2 个条目或 ≥2 个分节），
+   光有词没有结构不算。验证/测试性质的登记（满篇「验证夹具/回归验证」且没有功能结构）
+   单独标成 verifyTask，明说是系统验证任务，不许冒充普通软件开发计划。 */
+function planQuality(text) {
+  const s = String(text || '');
+  const lines = s.split(/\r?\n/);
+  const listN = lines.filter((l) => /^\s{0,6}(?:[-*•·]|\d{1,2}[.、)])\s+\S/.test(l)).length;
+  const headN = lines.filter((l) => /^\s{0,6}#{1,4}\s+\S/.test(l)).length;
+  const structured = listN >= 2 || headN >= 2;
+  const hasFeat = structured && /(功能|特性|feature)/i.test(s);
+  const hasStep = structured && /(步骤|阶段|实施|step|phase)/i.test(s);
+  const hasTest = structured && /(测试|验收|判定|通过标准|test)/i.test(s);
+  const verifyHit = (s.match(/验证|夹具|fixture|回归验证/g) || []).length;
+  return { qualified: hasFeat && hasStep && hasTest, verifyTask: !hasFeat && verifyHit >= 2 };
+}
 function ensurePlanRead(t) {
   const f = stepDocSource(t, 'plan');
   if (!f) return { kind: 'nofile' };
@@ -383,9 +401,21 @@ function ensurePlanRead(t) {
       let out;
       if (!d || !d.exists || d.kind !== 'text') out = { kind: 'unreadable' };
       else {
-        const lines = planSummary(d.text || '');
-        out = lines.length ? { kind: 'ok', lines, name: d.name, path: f.path }
-          : { kind: 'empty', name: d.name, path: f.path };
+        const text = d.text || '';
+        const q = planQuality(text);
+        const lines = planSummary(text);
+        // R86·X01：三样齐全（功能/步骤/测试）才放行；缺任意一样 → 还不完整；
+        // 验证/测试性质 → 明说这是系统验证任务，不冒充开发计划；
+        // 摘不出真实条目同样不放行——摘要为空时不许默认批准。
+        if (!q.qualified) {
+          out = q.verifyTask
+            ? { kind: 'verify', goal: lines[0] || '', name: d.name, path: f.path }
+            : { kind: 'incomplete', name: d.name, path: f.path };
+        } else {
+          out = lines.length
+            ? { kind: 'ok', lines: lines.slice(0, 5), name: d.name, path: f.path }
+            : { kind: 'incomplete', name: d.name, path: f.path };
+        }
       }
       out.at = Date.now();
       planCache.set(key, out);
@@ -394,15 +424,21 @@ function ensurePlanRead(t) {
     .finally(() => { planPending.delete(key); if (activePage === 'home') renderCabin(); });
   return c || { kind: 'loading' };
 }
-function planCardHtml(t, plan) {
+/* R86·X03：计划摘要搬进主操作卡（hero 通栏），顺序钉死：当前状态 → 摘要 3~5 条 →
+   查看完整计划 → 主按钮在最下面。不再另设一张与主按钮同重量的计划卡。 */
+function planHeroHtml(plan) {
   let body = '';
   if (plan.kind === 'ok') {
     body = `
     <ul class="cf-list">${plan.lines.map((l) => `<li>${esc(stripCodes(plainDyn(l)))}</li>`).join('')}</ul>
     <div class="plan-sub">
       <span class="cp-file" data-open-file="${esc(plan.path)}" role="button" tabindex="0">查看完整开发计划</span>
-      <span class="plan-tip">计划有问题？可以告诉 AI 哪里需要修改，改好再确认。</span>
+      <span class="plan-tip">计划有问题？点左边看全文，或点「计划需要修改」告诉 AI。</span>
     </div>`;
+  } else if (plan.kind === 'verify') {
+    body = `<p class="cr-na"><b>这是一次系统验证任务，不是软件开发计划。</b>目标是：${esc(stripCodes(plainDyn(plan.goal || '验证系统自身的登记与审批流程')))}。它不会给你做出新软件——需要处理请到「高级工作台」。</p>`;
+  } else if (plan.kind === 'incomplete') {
+    body = `<p class="cr-na">AI 生成的开发计划还不完整，正在补充——三样齐了才亮确认按钮：要做哪些功能、分几步做、怎么测。</p>`;
   } else if (plan.kind === 'loading') {
     body = `<p class="cr-na">正在读取开发计划…</p>`;
   } else if (plan.kind === 'offline') {
@@ -412,13 +448,13 @@ function planCardHtml(t, plan) {
   } else {
     body = `<p class="cr-na">开发计划暂时无法读取，请重试。<button class="cabin-link" type="button" data-plan-retry>重试读取</button></p>`;
   }
-  return `<div class="cabin-feat"><h3 class="cj-h">开发计划（确认前先过目）</h3>${body}</div>`;
+  return `<div class="ch-plan"><span class="ch-k">开发计划（确认前先过目）</span>${body}</div>`;
 }
 
 /* ================= 页面状态 ================= */
 let settingsTab = 'general';            // 设置页当前页签：general | agents | skills | files
 const cabinUI = { pastOpen: false, noteOpen: false, scoreEdit: false, tasksOpen: false, newOpen: false, reviewOpen: false,
-  hideTest: false, rosterOpen: false };   // R85·X03 隐藏测试任务 / X07 展开名册
+  rosterOpen: false };   // X07 展开名册（R86·X02：hideTest 下线——测试任务在首页固定隐藏，开关不再需要）
 // 新建软件/评审表单的草稿：轮询重渲染不丢正在打的字（按输入框 id 存，重建后回填）
 const cabinDrafts = new Map();
 const DRAFT_IDS = ['newtask-idea', 'newtask-score', 'review-score', 'review-ver', 'review-basis', 'review-issues', 'review-instruction'];
@@ -604,33 +640,42 @@ function renderCabin() {
     return;
   }
   const tasks = lastFlow.tasks || [];
-  if (!tasks.length) {
-    // X07：首页空状态 = 开新软件的唯一入口（同一个问题、同一个输入框）
-    wrap.innerHTML = liveBarHtml({ id: '' }) + newTaskHtml(true);
-    document.getElementById('cabin-tasks').innerHTML = '';
+  // R86·X02：首页只认真实软件需求——测试任务只在展示层隐藏（数据不动），归高级工作台
+  const realTasks = tasks.filter((x) => !isTestTask(x));
+  if (!realTasks.length) {
+    // X07：首页空状态 = 开新软件的唯一入口；R86·X02：没有真实需求（含只剩测试任务）同样是空状态
+    wrap.innerHTML = liveBarHtml({ id: '' }) + (cabinUI.newOpen ? newTaskHtml(true) : `
+      <div class="cabin-empty">
+        <h2>你还没有开始制作软件</h2>
+        <button class="btn btn-primary" type="button" data-cabin-newopen>开始制作第一个软件</button>
+      </div>`);
+    document.getElementById('cabin-tasks').innerHTML =
+      '<button type="button" class="cabin-newbtn" data-cabin-newopen title="从头开始，AI 帮你做一个新软件">＋ 开始制作新软件</button>';
     foot.innerHTML = '';
     restoreCabinDrafts();
     return;
   }
 
   // 任务条：+ 开始制作新软件（X07 固定入口）+ 全部任务 + 人话状态
-  // R85·X03：标题走 plainTitle（内部代号只留在「详细信息」），测试任务带标记且可整组隐藏
-  const stripTasks = cabinUI.hideTest ? tasks.filter((x) => !isTestTask(x)) : tasks;
-  renderChanged('cabin-tasks', tasks.map((t) => `${t.id}:${cabinTaskState(t)}:${t.title}`).join('|') + '#' + cabinUI.hideTest, () => {
+  // R85·X03：标题走 plainTitle（内部代号只留在「详细信息」）
+  // R86·X02：测试任务在首页固定隐藏（要看测试去高级工作台 /pro），指纹按过滤后的清单算
+  renderChanged('cabin-tasks', realTasks.map((t) => `${t.id}:${cabinTaskState(t)}:${t.title}`).join('|'), () => {
     const el = document.getElementById('cabin-tasks');
     el.innerHTML = `
     <button type="button" class="cabin-newbtn" data-cabin-newopen title="从头开始，AI 帮你做一个新软件">＋ 开始制作新软件</button>
-    ${stripTasks.length ? stripTasks.slice(0, 12).map((t) => {
+    ${realTasks.slice(0, 12).map((t) => {
       const title = plainTitle(t);
       return `
       <button type="button" class="cabin-task${t.id === ui.taskId ? ' cur' : ''}" data-cabin-task="${esc(t.id)}" title="${esc(title)}">
         <b>${esc(title.length > 16 ? title.slice(0, 16) + '…' : title)}</b>
-        <span>${isTestTask(t) ? '测试任务 · ' : ''}${esc(cabinTaskState(t))}</span>
+        <span>${esc(cabinTaskState(t))}</span>
       </button>`;
-    }).join('') : '<span class="ct-hidehint">测试任务都隐藏了——在下面「详细信息」里点「显示测试任务」恢复</span>'}`;
+    }).join('')}`;
   });
 
-  const t = currentTask();
+  let t = currentTask();
+  // R86·X02：选中项是被隐藏的测试任务时（如从高级工作台带回的位置），切到最近一条真实需求
+  if (t && isTestTask(t)) { ui.taskId = realTasks[0].id; t = currentTask(); }
   if (!t) { wrap.innerHTML = '<div class="cabin-loading">请在上面的任务条里选一个软件。</div>'; foot.innerHTML = ''; return; }
   const steps = (t.steps || []).slice().sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
   if (!steps.length) { wrap.innerHTML = '<div class="cabin-loading">这个软件还没有步骤档案。</div>'; foot.innerHTML = ''; return; }
@@ -661,7 +706,8 @@ function renderCabin() {
   const obj = decidable ? approvalObjectOf(t, focus, t.steps, idx) : null;
   const rework = focus.key === 'verify' && decidable && verifyNeedsRework(t);
   const pending = pendingOps.has(key);
-  // R85·X01：计划阶段先读真实计划文件——读到「ok」才允许点确认，其余一律禁用
+  // R86·X01：计划阶段先读真实计划文件并做内容判定——三样齐（功能/步骤/测试）才允许确认，
+  // 读不到 / 不完整 / 系统验证任务一律禁用（kind 只有 'ok' 放行，空摘要也不放行）
   const planStage = focus.key === 'plan';
   const planRead = planStage ? ensurePlanRead(t) : null;
   const planBlocked = planStage && decidable && fSt === 'awaiting' && (!planRead || planRead.kind !== 'ok');
@@ -712,7 +758,7 @@ function renderCabin() {
     : rework
       ? `<button class="btn btn-primary" type="button" data-cabin-rework>${esc(STAGE_MAIN_REWORK)}</button><button class="cabin-link" type="button" data-cabin-note>修改这份内容</button>`
     : (decidable && obj)
-      ? `<button class="btn btn-primary" type="button" data-decide="approve"${planBlocked ? ' disabled title="开发计划暂时无法读取——先看到真实计划再确认"' : ''}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button><button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : '修改这份内容'}</button>`
+      ? `<button class="btn btn-primary" type="button" data-decide="approve"${planBlocked ? ' disabled title="开发计划还没到能确认的状态——三样齐了（功能、步骤、测试）自动恢复"' : ''}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button><button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : '修改这份内容'}</button>`
     : fSt === 'failed'
       ? '<button class="btn btn-primary" type="button" data-decide="resubmit">让它重新交上来</button>'
     : '<span class="ch-act-wait">现在不用你操作，轮到你的那一刻按钮会亮起来</span>';
@@ -724,6 +770,7 @@ function renderCabin() {
     <div class="ch-block"><span class="ch-k">当前状态</span>
       <b class="ch-v${actState ? ' as-' + actState : ''}">${esc(actState ? ACT_STATE_CN[actState] || actState : (fSt === 'running' ? '进行中' : decidable ? '等你确认' : '进行中'))}</b>
       <span class="ch-s">${esc(nowMain.length > 34 ? nowMain.slice(0, 34) + '…' : nowMain)}</span></div>
+    ${planStage ? planHeroHtml(planRead) : ''}
     <div class="ch-block ch-block-act"><span class="ch-k">下一步要做的事</span>
       <b class="ch-v">${esc(nextLine)}</b>
       <span class="ch-act">${heroActHtml}</span></div>
@@ -800,9 +847,9 @@ function renderCabin() {
     rd ? `${(rd.rounds || []).length}|${rd.advice}|${lastR ? lastR.score : ''}|${lastR && lastR.result ? 'r' : ''}` : 'nord',
     cabinUI.reviewOpen,
     live ? `${live.activity_state}|${live.current_activity}|${live.taskId}|${live.activity_updated_at || ''}` : 'nolive',
-    // R85：计划摘要/名册/入伙条/测试任务开关都参与指纹，内容一变就重画
-    cabinUI.hideTest ? 'hide' : 'show', cabinUI.rosterOpen ? 'ropen' : 'rclosed',
-    planStage ? (planRead ? `${planRead.kind}|${(planRead.lines || []).join('·')}` : 'loading') : 'noplan',
+    // R86：计划判定（kind/摘要/验证目标）/名册/入伙条都参与指纹，内容一变就重画
+    cabinUI.rosterOpen ? 'ropen' : 'rclosed',
+    planStage ? (planRead ? `${planRead.kind}|${(planRead.lines || []).join('·')}|${planRead.goal || ''}` : 'loading') : 'noplan',
     onboardHtml ? 'ob' : 'noob', rosterHeadline(st),
     steps.map((s) => s.at || '').join(','),
   ].join('|');
@@ -819,7 +866,7 @@ function renderCabin() {
         <div class="cabin-progress">第 ${journeyNo} / ${JOURNEY.length} 阶段${journeyLabel ? ' · ' + journeyLabel : ''}</div>
         ${scoreHtml}
       </div>
-      ${planStage ? planCardHtml(t, planRead) : featCardHtml(t)}
+      ${planStage ? '' : featCardHtml(t)}
       ${journeyHtml(steps, t)}
       ${reviewCardHtml(t)}
       ${rosterCardHtml(st)}
@@ -830,8 +877,7 @@ function renderCabin() {
         ${pathHtml}
         <details class="ch-detail">
           <summary>详细信息</summary>
-          <div>内部编号 ${esc(t.id)}${isTestTask(t) ? ' · 测试任务（测完即删）' : ''}</div>
-          <button class="cabin-link" type="button" data-cabin-hidetest>${cabinUI.hideTest ? '显示测试任务' : '隐藏测试任务'}</button>
+          <div>内部编号 ${esc(t.id)}${isTestTask(t) ? ' · 测试任务（测完即删，只在高级工作台展示）' : ''}</div>
         </details>
       </div>`;
     restoreCabinDrafts();
@@ -902,8 +948,8 @@ function renderCabinFoot(t, steps, focus, key, sh) {
             <span class="cf-tip">${lastR && lastR.instruction ? `按第 ${lastR.no} 轮评审意见继续改` : '先在下面写清楚这轮要改什么'}（目标 ${targetScoreOf(t.id).toFixed(1)} 分，上一轮 ${Number(lastR ? lastR.score : 0).toFixed(1)} 分）</span>
           </div>${noteBox}`;
       } else {
-        const dis = planBlocked ? ' disabled title="开发计划暂时无法读取——先看到真实计划再确认"' : '';
-        const planErr = planBlocked ? '<div class="cf-err">开发计划暂时无法读取，请重试——确认按钮先停用，读到真实计划后自动恢复。</div>' : '';
+        const dis = planBlocked ? ' disabled title="开发计划还没到能确认的状态——三样齐了（功能、步骤、测试）自动恢复"' : '';
+        const planErr = planBlocked ? '<div class="cf-err">开发计划还没到能确认的状态（读不到 / 内容不完整 / 系统验证任务）——确认按钮先停用，计划合格后自动恢复。</div>' : '';
         foot.innerHTML = `${errHtml}${planErr}
           <div class="cf-row">
             <button class="btn btn-primary cf-main" type="button" data-decide="approve"${dis}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button>

@@ -60,16 +60,19 @@ function renderTopbar() {
   // 待决策琥珀胶囊（TASK-R2，TASK-R5 评审 #5 修订）：入口同时看两件事——
   // 可拍板数 + 待重提数。之前只数可拍板，任务全在「已打回待重提」时入口整个
   // 消失，而那正是最需要入口的时候（点进去直达重提）。任一非零就显示。
+  // R86·X02：计数不混入首页藏起来的测试任务审批（isTestTask 只在展示层过滤）——
+  // 测试任务和它的审批都归高级工作台 /pro 处理。
   const pill = document.getElementById('tb-decision');
+  const notTest = (d) => !isTestTask({ id: d && d.taskId, title: d && d.taskTitle });
   let decN = null, rejN = null;
   if (decisionsData && Array.isArray(decisionsData.items)) {
-    decN = decisionsData.items.length;
-    rejN = Array.isArray(decisionsData.rejected) ? decisionsData.rejected.length : 0;
+    decN = decisionsData.items.filter(notTest).length;
+    rejN = Array.isArray(decisionsData.rejected) ? decisionsData.rejected.filter(notTest).length : 0;
   }
   if (decN == null) {
     const ld = localDecisions();   // 离线/接口失败：前端用同一口径本地兜底
-    decN = ld.items.length;
-    rejN = ld.rejected.length;
+    decN = ld.items.filter(notTest).length;
+    rejN = ld.rejected.filter(notTest).length;
   }
   if (decN > 0 || rejN > 0) {
     // TASK-工作台重做：胶囊说人话——「等你拍板」比「待决策」一眼懂

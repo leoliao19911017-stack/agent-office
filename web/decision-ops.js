@@ -142,9 +142,20 @@ function localDecisions() {
 
 function renderDecisionPop() {
   const pop = document.getElementById('decision-pop');
-  const src = (decisionsData && Array.isArray(decisionsData.items))
+  let src = (decisionsData && Array.isArray(decisionsData.items))
     ? decisionsData
     : localDecisions();
+  // R86·X02：测试任务的审批不进这个弹层——弹层按钮落在首页（data-goto-home），
+  // 而首页固定隐藏测试任务；测试审批在高级工作台处理。decision-ops.js 先于
+  // cabin.js 加载，isTestTask 同样走 typeof 守卫（g02 VM 单测时不过滤），
+  // 且只复制不改写全局 decisionsData。
+  const notTest = (d) => !(typeof isTestTask === 'function' && isTestTask({ id: d.taskId, title: d.taskTitle }));
+  if (Array.isArray(src.items)) {
+    src = { ...src,
+      items: src.items.filter(notTest),
+      rejected: (src.rejected || []).filter(notTest),
+      blocked: (src.blocked || []).filter(notTest) };
+  }
   const generated = (decisionsData && decisionsData.generatedAt)
     ? ` · 数据 ${esc(fmtTime(decisionsData.generatedAt))}` : '';
 

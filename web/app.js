@@ -182,13 +182,17 @@ function currentTask() {
 // 可能没有任何可处理的事。默认优先落在「有可拍板步骤」的需求上，
 // 其次「有待重提」的，最后才是第一条；并直接选中该步骤，Inspector
 // 立即给出决策面板，而不是让用户自己在链里找。
+// R86·X02：首页不默认选中测试任务——候选池先滤掉 isTestTask（只是展示层过滤，
+// 数据不动），没有真实需求时才落回测试任务（首页自己会给空状态，专业视图照常）。
 function ensureSelection() {
   const tasks = (lastFlow && lastFlow.tasks) || [];
   if (!tasks.length) { ui.taskId = null; ui.stepKey = null; return; }
   if (!tasks.some((t) => t.id === ui.taskId)) {
-    const pick = tasks.find((t) => (t.steps || []).some((s) => isDecidable(s, t.steps)))
-      || tasks.find((t) => (t.steps || []).some((s) => s.status === 'failed'))
-      || tasks[0];
+    const real = tasks.filter((t) => !isTestTask(t));
+    const pool = real.length ? real : tasks;
+    const pick = pool.find((t) => (t.steps || []).some((s) => isDecidable(s, t.steps)))
+      || pool.find((t) => (t.steps || []).some((s) => s.status === 'failed'))
+      || pool[0];
     ui.taskId = pick.id;
     const pickStep = (pick.steps || []).find((s) => isDecidable(s, pick.steps) || s.status === 'failed');
     ui.stepKey = pickStep ? pickStep.key : null;
@@ -985,8 +989,7 @@ document.addEventListener('click',e=>{
  if(b.hasAttribute('data-review-save')){saveReviewRound();return}
  if(b.hasAttribute('data-open-pro')){location.hash='/pro';return}
  if(b.hasAttribute('data-cabin-past')){cabinUI.pastOpen=!cabinUI.pastOpen;renderCabin();return}
- // R85·X03：测试任务整组显隐 / R85·X07：名册展开与检查连接 / R85·X01：计划重读
- if(b.hasAttribute('data-cabin-hidetest')){cabinUI.hideTest=!cabinUI.hideTest;renderCabin();return}
+ // R85·X07：名册展开与检查连接 / R85·X01：计划重读（R86·X02：测试任务显隐开关下线，测试固定归 /pro）
  if(b.hasAttribute('data-cabin-roster')){cabinUI.rosterOpen=!cabinUI.rosterOpen;renderCabin();return}
  if(b.hasAttribute('data-roster-check')){tick();return}
  if(b.hasAttribute('data-plan-retry')){planCache.clear();renderCabin();return}

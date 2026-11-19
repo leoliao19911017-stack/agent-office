@@ -169,14 +169,17 @@ function skillEntries() {
 
 // extraTasks：追加的需求档案（g07-approval 的 D 系列注入漂移/历史版本任务）。
 // 只写进本次调用方自己的临时 home，不影响 A/B/C/R 夹具的 3 任务断言。
-export function buildFixtureHome(hubPort, extraTasks = []) {
+// opts.noBase（R86 实测 test/r86-verify.mjs 用）：true 时不写 A/B/C 三条基础档案，
+// 只写 extraTasks——「全是测试任务」等纯净场景；缺省行为与 G07 用例完全一致。
+export function buildFixtureHome(hubPort, extraTasks = [], opts = {}) {
   const home = mkdtempSync(join(tmpdir(), 'g07-autoloop-'));
   const od = join(home, 'office-data');
   mkdirSync(join(od, 'tasks'), { recursive: true });
   writeFileSync(join(home, 'config.json'), JSON.stringify({
     url: `http://127.0.0.1:${hubPort}`, owner: 'g07-stub-owner-key',
   }));
-  for (const rec of [...taskRecords(), ...extraTasks]) {
+  const recs = opts.noBase ? extraTasks : [...taskRecords(), ...extraTasks];
+  for (const rec of recs) {
     writeFileSync(join(od, 'tasks', `${rec.id}.json`), JSON.stringify(rec, null, 1));
   }
   writeFileSync(join(od, 'skills.json'), JSON.stringify({
@@ -308,10 +311,10 @@ export async function startServer(home) {
 
 /* ---------------- 一键起整套 + 收尾 ---------------- */
 
-export async function startStack(extraTasks = []) {
+export async function startStack(extraTasks = [], opts = {}) {
   const hub = await startHub();
   const hubPort = hub.address().port;
-  const home = buildFixtureHome(hubPort, extraTasks);
+  const home = buildFixtureHome(hubPort, extraTasks, opts);
   const srv = await startServer(home);
   return {
     hub, home, base: srv.base, child: srv.child, getLogs: srv.getLogs,
