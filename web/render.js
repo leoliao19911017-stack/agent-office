@@ -51,7 +51,8 @@ function renderDataBanner() {
 function renderTopbar() {
   const t = currentTask();
   // G06：无任务且处于失败态时，顶部状态信息如实标注（不是空占位「—」）
-  document.getElementById('tb-task').textContent = t ? t.title
+  // R85·X03：顶栏任务名不带内部代号（代号收进任务「详细信息」）
+  document.getElementById('tb-task').textContent = t ? plainTitle(t)
     : initPhase === 'conn-fail' ? '连接失败'
     : initPhase === 'data-fail' ? '数据获取失败'
     : '—';
@@ -159,7 +160,7 @@ function renderStatusbar() {
     const connTxt = !s.loaded ? '未知' : s.conn === 'online' ? '在线' : '离线';
     const workTxt = WORK_CN[s.work] || '未知';
     const state = `连接：${connTxt}｜执行状态：${workTxt}${s.workUnknownWhy ? `（${s.workUnknownWhy}）` : ''}`;
-    return `<button type="button" class="sb-chip ${cls}" title="角色：${esc(s.role)}（ID ${esc(s.roleId)}）｜编号 ${s.loaded ? esc(s.instanceId) : '未上报'}｜${esc(state)}｜点击查看 AI 明细"><i></i>${esc(s.name)}</button>`;
+    return `<button type="button" class="sb-chip ${cls}" title="角色：${esc(s.role)}（ID ${esc(s.roleId)}）｜编号 ${s.loaded ? esc(s.instanceId) : '未上报'}｜${esc(state)}｜点击查看 AI 明细"><i></i>${esc(s.name)} · ${esc(rolePlainOf(s))}</button>`;
   }).join('');
 }
 

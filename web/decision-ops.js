@@ -148,22 +148,46 @@ function renderDecisionPop() {
   const generated = (decisionsData && decisionsData.generatedAt)
     ? ` · 数据 ${esc(fmtTime(decisionsData.generatedAt))}` : '';
 
+  // R85·X04：每行都是可办的事——软件名称｜确认内容｜已等待时间｜查看并确认。
+  // data-goto-home 落在「我的任务」页（新手不进专业工作台）；等待时长读步骤真实时间戳。
+  // 模块契约：decision-ops.js 在 index.html 里先于 cabin.js 加载，不得硬引用其符号——
+  // plainTitle/STEP_HUMAN 用 typeof 守卫，浏览器全量加载时取真值，g02 VM 单测时降级。
+  const waitAgoOf = (d) => {
+    const tk = ((lastFlow && lastFlow.tasks) || []).find((x) => x.id === d.taskId);
+    const stp = tk && (tk.steps || []).find((x) => x.key === d.stepKey);
+    return stp && stp.at ? ago(stp.at) : '';   // ago 自带相对口径（「3 天前」），不再叠「已等待」
+  };
+  const nameOf = (d) => {
+    const tk = ((lastFlow && lastFlow.tasks) || []).find((x) => x.id === d.taskId);
+    if (!tk) return String(d.taskTitle || d.taskId);
+    return typeof plainTitle === 'function' ? plainTitle(tk) : String(tk.title || tk.id);
+  };
+  const stepNameOf = (d) =>
+    (typeof STEP_HUMAN !== 'undefined' && STEP_HUMAN[d.stepKey]) || d.stepName || '';
   let html = '';
   if (src.items.length) {
-    html += src.items.map(d => `
-      <button class="dp-item" type="button" data-goto="${esc(d.taskId)}|${esc(d.stepKey)}">
-        <span class="d-line"><b>${esc(d.stepName)}</b><span class="dp-kind ${d.kind === 'gate' ? 'is-gate' : ''}">${d.kind === 'gate' ? '门禁' : '待确认'}</span></span>
-        <span class="d-task">${esc(d.taskTitle || d.taskId)}</span>
-      </button>`).join('');
+    html += src.items.map(d => {
+      const wait = waitAgoOf(d);
+      return `
+      <button class="dp-item" type="button" data-goto-home="${esc(d.taskId)}|${esc(d.stepKey)}">
+        <span class="d-line"><b>${esc(nameOf(d))}</b><span class="dp-kind ${d.kind === 'gate' ? 'is-gate' : ''}">${d.kind === 'gate' ? '门禁' : '等你确认'}</span></span>
+        <span class="d-task">${esc(stepNameOf(d))}${wait ? ' · ' + esc(wait) : ''}</span>
+        <span class="dp-go">查看并确认 ›</span>
+      </button>`;
+    }).join('');
   }
-  // TASK-R3：已打回的步骤在弹层里也要能一眼看到、一键直达（同一个 data-goto 路径）
+  // TASK-R3：已打回的步骤在弹层里也要能一眼看到、一键直达（同一个 data-goto-home 路径）
   const rej = src.rejected || [];
   if (rej.length) {
-    html += rej.map(d => `
-      <button class="dp-item dp-rejected" type="button" data-goto="${esc(d.taskId)}|${esc(d.stepKey)}" title="${esc(d.note || '未登记打回理由')}">
-        <span class="d-line"><b>${esc(d.stepName)}</b><span class="dp-kind is-rejected">已打回</span></span>
-        <span class="d-task">${esc(d.taskTitle || d.taskId)}${d.note ? ' · ' + esc(d.note) : ''}</span>
-      </button>`).join('');
+    html += rej.map(d => {
+      const wait = waitAgoOf(d);
+      return `
+      <button class="dp-item dp-rejected" type="button" data-goto-home="${esc(d.taskId)}|${esc(d.stepKey)}" title="${esc(d.note || '未登记打回理由')}">
+        <span class="d-line"><b>${esc(nameOf(d))}</b><span class="dp-kind is-rejected">已打回</span></span>
+        <span class="d-task">${esc(stepNameOf(d))}${wait ? ' · ' + esc(wait) : ''}${d.note ? ' · ' + esc(String(d.note).slice(0, 40)) : ''}</span>
+        <span class="dp-go">去处理 ›</span>
+      </button>`;
+    }).join('');
   }
   if (src.blocked.length) {
     html += src.blocked.map(d => `

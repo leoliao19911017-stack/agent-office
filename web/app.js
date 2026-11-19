@@ -548,6 +548,22 @@ document.addEventListener('click', (ev) => {
     return;
   }
 
+  // R85·X04：决策清单的新手路径——落在「我的任务」页就地看、就地确认，不进专业工作台
+  const goHome = ev.target.closest('[data-goto-home]');
+  if (goHome) {
+    const [taskId, stepKey] = goHome.dataset.gotoHome.split('|');
+    dpop.hidden = true;
+    closeFileView();
+    const nav = () => {
+      selectTask(taskId, { keepView: true });
+      ui.stepKey = stepKey;
+      if (activePage === 'home') renderCabin();
+    };
+    if (location.hash !== '#/' && location.hash !== '') { location.hash = '/'; setTimeout(nav, 0); }
+    else nav();
+    return;
+  }
+
   const pill = ev.target.closest('[data-open-step-files]');
   if (pill) {
     if (pill.disabled) return;
@@ -684,6 +700,7 @@ async function submitNewTask() {
     cabinUI.newOpen = false;
     cabinDrafts.delete('newtask-idea');
     cabinDrafts.delete('newtask-score');
+    cabinFresh.set(d.taskId, Date.now());   // R85·X08：标记「刚建的」，首页给三步入伙条
     showToast(`已创建「${d.title}」，AI 正在整理你的想法`);
     await tick();
     selectTask(d.taskId);
@@ -968,6 +985,11 @@ document.addEventListener('click',e=>{
  if(b.hasAttribute('data-review-save')){saveReviewRound();return}
  if(b.hasAttribute('data-open-pro')){location.hash='/pro';return}
  if(b.hasAttribute('data-cabin-past')){cabinUI.pastOpen=!cabinUI.pastOpen;renderCabin();return}
+ // R85·X03：测试任务整组显隐 / R85·X07：名册展开与检查连接 / R85·X01：计划重读
+ if(b.hasAttribute('data-cabin-hidetest')){cabinUI.hideTest=!cabinUI.hideTest;renderCabin();return}
+ if(b.hasAttribute('data-cabin-roster')){cabinUI.rosterOpen=!cabinUI.rosterOpen;renderCabin();return}
+ if(b.hasAttribute('data-roster-check')){tick();return}
+ if(b.hasAttribute('data-plan-retry')){planCache.clear();renderCabin();return}
  if(b.hasAttribute('data-cabin-note')){cabinUI.noteOpen=!cabinUI.noteOpen;renderCabin();return}
  if(b.hasAttribute('data-cabin-scoreedit')){cabinUI.scoreEdit=true;renderCabin();return}
  if(b.hasAttribute('data-cabin-savescore')){

@@ -44,6 +44,39 @@ const PLAIN_WORDS = [
 function plainDyn(s) {
   return PLAIN_WORDS.reduce((acc, [from, to]) => acc.split(from).join(to), String(s));
 }
+// R86：计划/需求正文里常带「F01」「TEST-F01R10」这类内部代号前缀，
+// 首屏一个都不许露（GPT 硬门槛：有一个未解释技术词就封顶 5.0）。
+// 只剥开头的代号词，正文里的中文内容原样保留。
+function stripCodes(s) {
+  return String(s)
+    .replace(/^\s*(?:\[?\s*(?:TEST-)?[A-Z]{1,3}[-_]?\d{1,4}(?:R\d+)?\s*\]?[\s:：·、\-—]*)+/i, '')
+    .replace(/^\s*(?:编号|代号)\s*[:：]?\s*(?:TEST-)?[A-Z]{1,3}[-_]?\d{1,4}\S*\s*[\s:：·、\-—]*/i, '')
+    .trim();
+}
+
+/* ---- R85·X03：内部编号不上面首屏；测试任务可标记可隐藏；AI 名字带人话岗位 ----
+   只动展示层：档案数据、专业视图、Agents 页签一字不改。
+   编号只在「详细信息」折叠块里出现；裸 AI 名字一律带「帮你做什么」后缀。 */
+const cabinFresh = new Map();   // R85·X08：新建任务 -> 创建时刻（会话内有效，判断「刚建的」）
+function isTestTask(t) {
+  return /^TEST-/i.test(String((t && t.id) || '')) || String((t && t.title) || '').includes('测完即删');
+}
+// 标题的人话版：非测试任务原样（保住 g07 夹具标题）；测试任务剥掉「纯编号词」和测完即删除标记
+function plainTitle(t) {
+  const raw = String((t && t.title) || '');
+  const base = raw.replace(/[〔［（(\s]*测完即删[)）\]］〕\s]*/g, '').trim();
+  if (!isTestTask(t)) return plainDyn(base || raw);
+  const kept = base.split(/\s+/).filter((w) => w && !/^(?:TEST[-—_]?)?(?:F|R)\d{1,4}(?:R\d{1,4})?$/i.test(w));
+  // 编号与业务词连写（没隔空格）时再剥一次行首编号，分隔符只认空格/·/冒号/逗号——
+  // 不认「-」，R73-W01 这类复合编号是业务名的一部分，剥了会把标题拆残
+  const stripped = kept.join(' ').replace(/^(?:TEST[-—_]?)?(?:F|R)\d{1,4}(?:R\d{1,4})?(?=[\s·:：,，]|$)/i, '').trim();
+  return plainDyn(stripped || base || raw);
+}
+// 岗位的人话版（Agents 页签保留原岗位词；首页/干活记录/底栏用这份）
+const ROLE_PLAIN = { lemate: '帮你写代码', winter: '帮你剪视频', karina: '帮你做图文', codex: '帮你生图和把关' };
+function rolePlainOf(r) {
+  return (r && ROLE_PLAIN[r.roleId]) || (r && r.role) || 'AI 助手';
+}
 
 /* ================= X04：七步流水线 → 用户可见的六段旅程 =================
    内部 7 步（req/doc/plan/brief/deliverable/verify/final）一个不改，
@@ -67,7 +100,11 @@ function journeyStateOf(stage, steps) {
   if (ss.some((x) => x.status === 'running' || x.status === 'failed')) return '进行中';
   return '等待开始';
 }
-function journeyHtml(steps) {
+/* ---- R85·X05：旅程下方给真实时间口径——何时开始/最近更新来自步骤档案的真实时间戳；
+   当前段四态（在等你确认 / 正在改 / 可能卡住 / 在等前置）；没有历史耗时就明说估不了，
+   绝不编一个倒计时。 ---- */
+const STALE_STEP_MS = 30 * 60 * 1000;   // 超过 30 分钟没动静算「可能卡住」
+function journeyHtml(steps, t) {
   const states = JOURNEY.map((st) => journeyStateOf(st, steps));
   const curIdx = states.findIndex((s) => s !== '已完成');
   const marks = ['①', '②', '③', '④', '⑤', '⑥'];
@@ -80,7 +117,34 @@ function journeyHtml(steps) {
       <span class="js-state">${esc(s)}</span>
     </div>`;
   }).join('<span class="j-arrow" aria-hidden="true">›</span>');
-  return `<div class="cabin-journey"><h3 class="cj-h">制作旅程</h3><div class="jtrack">${items}</div></div>`;
+  const ats = steps.map((s) => (s.at ? Date.parse(s.at) : NaN)).filter(Number.isFinite);
+  const upd = t && t.updatedAt ? Date.parse(t.updatedAt) : NaN;
+  if (Number.isFinite(upd)) ats.push(upd);
+  const started = ats.length ? fmtTime(new Date(Math.min(...ats)).toISOString()) : '—';
+  const updated = ats.length ? fmtTime(new Date(Math.max(...ats)).toISOString()) : '—';
+  let why = { cls: '', text: '六段全部完成' };
+  if (curIdx >= 0) {
+    const st = JOURNEY[curIdx];
+    const ss = st.keys.map((k) => steps.find((x) => x.key === k)).filter(Boolean);
+    const lastAt = Math.max(0, ...ss.map((x) => (x.at ? Date.parse(x.at) : 0)));
+    if (ss.some((x) => x.status === 'awaiting' && waitingOnOf(x, steps).length === 0)) {
+      why = { cls: '', text: '在等你确认——确认后 AI 会接着做' };
+    } else if (ss.some((x) => x.status === 'failed')) {
+      why = { cls: 'jmeta-stale', text: '被打回了，AI 正在按你的意见改' };
+    } else if (ss.some((x) => x.status === 'running') && lastAt && Date.now() - lastAt > STALE_STEP_MS) {
+      why = { cls: 'jmeta-stale', text: '这一步已有较长时间没有新进展，正在检查是否需要重试' };
+    } else if (ss.some((x) => x.status === 'running')) {
+      why = { cls: '', text: 'AI 正在做这一段' };
+    } else {
+      why = { cls: '', text: '在等前面的步骤完成' };
+    }
+  }
+  const meta = `<div class="jmeta">
+    <span>何时开始 ${esc(started)}</span><span>最近更新 ${esc(updated)}</span>
+    <span class="${why.cls}">${esc(why.text)}</span>
+    <span class="jmeta-eta">剩余时间暂时无法估计（还没有可靠的历史耗时记录）</span>
+  </div>`;
+  return `<div class="cabin-journey"><h3 class="cj-h">制作旅程</h3><div class="jtrack">${items}</div>${meta}</div>`;
 }
 
 /* ================= 目标分（每个任务一份，默认 8.0，可改；X07 新建时不偷偷覆盖） =================
@@ -197,7 +261,7 @@ function reviewCardHtml(t) {
         <button class="cabin-link" type="button" data-review-close>收起</button>
         <button class="btn btn-primary" type="button" data-review-save>保存这轮评审</button>
       </div>
-    </div>` : `<button class="cabin-link cr-add" type="button" data-review-open>+ 录一轮评审</button>`;
+    </div>` : `<button class="cabin-link cr-add" type="button" data-review-open>和 AI 一起评审</button>`;
   return `<div class="cabin-review">${head}${statusHtml}${roundRows}${formHtml}</div>`;
 }
 
@@ -206,12 +270,16 @@ function reviewCardHtml(t) {
    没交文档/读不出来/没有清单条目 → 各自如实说明，不编功能点。 */
 const featCache = new Map();   // path\0versionKey -> {kind, bullets?, name?, at}
 const featPending = new Set();
-function docFeatSource(t) {
-  const doc = (t.steps || []).find((s) => s.key === 'doc');
-  if (!doc) return null;
-  const files = dedupFiles(doc.files || []);
+// R85·X01：抽成通用「某步骤登记的第一份文件」；doc 用它取需求文档，plan 用它取开发计划
+function stepDocSource(t, stepKey) {
+  const st = (t.steps || []).find((s) => s.key === stepKey);
+  if (!st) return null;
+  const files = dedupFiles(st.files || []);
   if (!files.length) return null;
   return files[0];
+}
+function docFeatSource(t) {
+  return stepDocSource(t, 'doc');
 }
 function parseFeatBullets(text) {
   const out = [];
@@ -276,9 +344,81 @@ function featCardHtml(t) {
   return `<div class="cabin-feat"><h3 class="cj-h">你的软件将包含</h3>${body}</div>`;
 }
 
+/* ================= R85·X01：开发计划预览（确认前必须把真计划摆出来） =================
+   数据源 = plan 步骤登记的文件内容（GET /api/office/file），与 feat 同一套
+   缓存/在途/60s TTL 模式。读不到 → 明说「读不出来」并停用确认按钮；
+   摘要取的是计划文件里真实存在的行（标题/条目都算），绝不拿需求文档顶替计划文档，
+   也不编一个固定的「三段式」结构。 */
+const planCache = new Map();   // path\0versionKey -> {kind, lines?, name?, path?, at}
+const planPending = new Set();
+function planSummary(text) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of String(text || '').split(/\r?\n/)) {
+    const s = raw
+      .replace(/^\s{0,6}#{1,4}\s+/, '')
+      .replace(/^\s{0,3}(?:[-*•·]|\d{1,2}[.、)])\s+/, '')
+      .replace(/\*\*(.+?)\*\*/g, '$1')
+      .replace(/`([^`]*)`/g, '$1')
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .trim();
+    if (!s || /^[-=*]{3,}$/.test(s) || s.length > 90 || seen.has(s)) continue;
+    seen.add(s);
+    out.push(s);
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+function ensurePlanRead(t) {
+  const f = stepDocSource(t, 'plan');
+  if (!f) return { kind: 'nofile' };
+  const key = f.path + '\u0000' + versionKeyOf(f);
+  const c = planCache.get(key);
+  if (c && Date.now() - c.at < 60000) return c;
+  if (offline) return { kind: 'offline' };
+  if (planPending.has(key)) return c || { kind: 'loading' };
+  planPending.add(key);
+  api('/api/office/file?path=' + encodeURIComponent(f.path))
+    .then((d) => {
+      let out;
+      if (!d || !d.exists || d.kind !== 'text') out = { kind: 'unreadable' };
+      else {
+        const lines = planSummary(d.text || '');
+        out = lines.length ? { kind: 'ok', lines, name: d.name, path: f.path }
+          : { kind: 'empty', name: d.name, path: f.path };
+      }
+      out.at = Date.now();
+      planCache.set(key, out);
+    })
+    .catch(() => { planCache.set(key, { kind: 'unreadable', at: Date.now() }); })
+    .finally(() => { planPending.delete(key); if (activePage === 'home') renderCabin(); });
+  return c || { kind: 'loading' };
+}
+function planCardHtml(t, plan) {
+  let body = '';
+  if (plan.kind === 'ok') {
+    body = `
+    <ul class="cf-list">${plan.lines.map((l) => `<li>${esc(stripCodes(plainDyn(l)))}</li>`).join('')}</ul>
+    <div class="plan-sub">
+      <span class="cp-file" data-open-file="${esc(plan.path)}" role="button" tabindex="0">查看完整开发计划</span>
+      <span class="plan-tip">计划有问题？可以告诉 AI 哪里需要修改，改好再确认。</span>
+    </div>`;
+  } else if (plan.kind === 'loading') {
+    body = `<p class="cr-na">正在读取开发计划…</p>`;
+  } else if (plan.kind === 'offline') {
+    body = `<p class="cr-na">离线快照没收录计划内容，连上服务后展示。</p>`;
+  } else if (plan.kind === 'nofile') {
+    body = `<p class="cr-na">还没收到开发计划文件——AI 交上来后会先摆在这里给你过目，再谈确认。</p>`;
+  } else {
+    body = `<p class="cr-na">开发计划暂时无法读取，请重试。<button class="cabin-link" type="button" data-plan-retry>重试读取</button></p>`;
+  }
+  return `<div class="cabin-feat"><h3 class="cj-h">开发计划（确认前先过目）</h3>${body}</div>`;
+}
+
 /* ================= 页面状态 ================= */
 let settingsTab = 'general';            // 设置页当前页签：general | agents | skills | files
-const cabinUI = { pastOpen: false, noteOpen: false, scoreEdit: false, tasksOpen: false, newOpen: false, reviewOpen: false };
+const cabinUI = { pastOpen: false, noteOpen: false, scoreEdit: false, tasksOpen: false, newOpen: false, reviewOpen: false,
+  hideTest: false, rosterOpen: false };   // R85·X03 隐藏测试任务 / X07 展开名册
 // 新建软件/评审表单的草稿：轮询重渲染不丢正在打的字（按输入框 id 存，重建后回填）
 const cabinDrafts = new Map();
 const DRAFT_IDS = ['newtask-idea', 'newtask-score', 'review-score', 'review-ver', 'review-basis', 'review-issues', 'review-instruction'];
@@ -324,17 +464,20 @@ function renderScorePill() {
 
 /* ================= AI 状态人话（干活记录与名册共用 agentStats()） ================= */
 function rosterPlain(st) {
+  // R85·X03：岗位词走人话版（Coding→帮你写代码）；X07：连接/执行/新鲜度三口径
+  // 仍严格分开，只在文案里明说，不把「在线」说成「在干活」。
   return st.roster.map((r) => {
-    if (!r.loaded) return { name: r.name, role: r.role, text: '状态未知（没有上报）', cls: 'unknown' };
-    if (r.conn !== 'online') return { name: r.name, role: r.role, text: '没连上', cls: 'down' };
+    const role = rolePlainOf(r);
+    if (!r.loaded) return { name: r.name, role, text: '状态未知（没有上报）', cls: 'unknown' };
+    if (r.conn !== 'online') return { name: r.name, role, text: '没连上（连接断了，不代表它在偷懒）', cls: 'down' };
     if (r.work === 'working') {
       const fresh = r.hbState === 'ok' && r.hbText && r.hbText !== '—';
-      return { name: r.name, role: r.role, cls: 'busy',
+      return { name: r.name, role, cls: 'busy',
         text: `在干活${fresh ? ` · 上次动静 ${r.hbText}` : ''}${r.taskText && r.taskText !== '—' ? ` · ${r.taskText}` : ''}` };
     }
-    if (r.work === 'idle') return { name: r.name, role: r.role, text: '空着，没在干活', cls: 'idle' };
-    if (r.hbState === 'timeout') return { name: r.name, role: r.role, text: '已经有一阵没动静，可能卡住了', cls: 'unknown' };
-    return { name: r.name, role: r.role, text: `在不在干未知${r.workUnknownWhy ? `（${r.workUnknownWhy}）` : ''}`, cls: 'unknown' };
+    if (r.work === 'idle') return { name: r.name, role, text: '连着，但没接到活', cls: 'idle' };
+    if (r.hbState === 'timeout') return { name: r.name, role, text: '连着，但已经有一阵没动静，可能卡住了', cls: 'unknown' };
+    return { name: r.name, role, text: `连着，在不在干活未知${r.workUnknownWhy ? `（${r.workUnknownWhy}）` : ''}`, cls: 'unknown' };
   });
 }
 function rosterHeadline(st) {
@@ -352,6 +495,45 @@ function rosterBusyLine(st) {
   if (b.hbState === 'timeout') return `${b.name} 已经有一阵没动静了，可能卡住了`;
   if (b.hbState === 'ok' && b.hbText && b.hbText !== '—') return `${b.name} 在干活 · 上次动静 ${b.hbText}`;
   return `${b.name} 在干活`;
+}
+
+/* ---- R85·X07：首页名册卡——只报「谁在干嘛」这一件事，默认一行结论可展开。
+     连接健康 / 任务执行 / 上报新鲜度三口径在每行里分开说；情况不明的行给「检查连接」。 ---- */
+function rosterCardHtml(st) {
+  const head = rosterHeadline(st);
+  const rows = cabinUI.rosterOpen ? `<div class="roster-rows">${rosterPlain(st).map((r) => `
+    <div class="roster-row ${r.cls}">
+      <b>${esc(r.name)} · ${esc(r.role)}</b>
+      <span class="roster-state">${esc(r.text)}</span>
+      ${r.cls === 'unknown' || r.cls === 'down' ? '<button class="cabin-link" type="button" data-roster-check>检查连接</button>' : ''}
+    </div>`).join('')}</div>` : '';
+  return `<div class="cabin-roster">
+    <div class="roster-h"><b>${esc(head)}</b>
+      <button class="cabin-link" type="button" data-cabin-roster>${cabinUI.rosterOpen ? '收起明细' : '每个 AI 在干嘛'}</button></div>
+    ${rows}</div>`;
+}
+
+/* ---- R85·X08：刚建软件的入伙三步——已收到你的想法 → AI 正在讨论需要做哪些功能
+     →（文档生成后）需求文档已生成，等你确认。只对「刚建」且还停在讨论期的任务显示，
+     新建全程没有选模型这一步。 ---- */
+function onboardStripHtml(t, steps) {
+  const g = (k) => steps.find((s) => s.key === k);
+  const req = g('req'), doc = g('doc');
+  if (!req || req.status !== 'done') return '';                       // 想法还没落档
+  if (doc && (doc.status === 'done' || doc.status === 'skipped')) return '';   // 已过了讨论期
+  const fresh = cabinFresh.has(t.id)
+    || (t.updatedAt && Date.now() - Date.parse(t.updatedAt) < 15 * 60 * 1000);
+  if (!fresh) return '';   // 老任务停在这里不算「正在入伙」，按普通旅程展示，不冒充
+  const dSt = doc ? doc.status : 'pending';
+  const mid = dSt === 'running' ? 'AI 正在讨论需要做哪些功能'
+    : dSt === 'awaiting' ? '需求文档已生成，等你确认'
+    : dSt === 'failed' ? 'AI 正在按你的意见重新讨论'
+    : '即将开始讨论需要做哪些功能';
+  return `<div class="ob-strip" aria-label="新软件的当前进度">
+    <span class="ob-done">✓ 已收到你的想法</span>
+    <span class="ob-cur">② ${esc(mid)}</span>
+    <span class="ob-fut">③ 等你确认后开始制作</span>
+  </div>`;
 }
 
 /* ================= 任务的人话状态（任务条 chip 用，优先吃后端 X05 四态） ================= */
@@ -432,18 +614,20 @@ function renderCabin() {
   }
 
   // 任务条：+ 开始制作新软件（X07 固定入口）+ 全部任务 + 人话状态
-  renderChanged('cabin-tasks', tasks.map((t) => `${t.id}:${cabinTaskState(t)}:${t.title}`).join('|'), () => {
+  // R85·X03：标题走 plainTitle（内部代号只留在「详细信息」），测试任务带标记且可整组隐藏
+  const stripTasks = cabinUI.hideTest ? tasks.filter((x) => !isTestTask(x)) : tasks;
+  renderChanged('cabin-tasks', tasks.map((t) => `${t.id}:${cabinTaskState(t)}:${t.title}`).join('|') + '#' + cabinUI.hideTest, () => {
     const el = document.getElementById('cabin-tasks');
     el.innerHTML = `
     <button type="button" class="cabin-newbtn" data-cabin-newopen title="从头开始，AI 帮你做一个新软件">＋ 开始制作新软件</button>
-    ${tasks.slice(0, 12).map((t) => {
-      const title = plainDyn(t.title);
+    ${stripTasks.length ? stripTasks.slice(0, 12).map((t) => {
+      const title = plainTitle(t);
       return `
       <button type="button" class="cabin-task${t.id === ui.taskId ? ' cur' : ''}" data-cabin-task="${esc(t.id)}" title="${esc(title)}">
         <b>${esc(title.length > 16 ? title.slice(0, 16) + '…' : title)}</b>
-        <span>${esc(cabinTaskState(t))}</span>
+        <span>${isTestTask(t) ? '测试任务 · ' : ''}${esc(cabinTaskState(t))}</span>
       </button>`;
-    }).join('')}`;
+    }).join('') : '<span class="ct-hidehint">测试任务都隐藏了——在下面「详细信息」里点「显示测试任务」恢复</span>'}`;
   });
 
   const t = currentTask();
@@ -472,6 +656,16 @@ function renderCabin() {
   const target = targetScoreOf(t.id);
   const key = `${t.id}/${focus.key}`;
 
+  // ---- R85 共享判定：hero 卡和底栏同一套状态/同一套按钮，绝不分叉 ----
+  const idx = steps.findIndex((x) => x.key === focus.key);
+  const obj = decidable ? approvalObjectOf(t, focus, t.steps, idx) : null;
+  const rework = focus.key === 'verify' && decidable && verifyNeedsRework(t);
+  const pending = pendingOps.has(key);
+  // R85·X01：计划阶段先读真实计划文件——读到「ok」才允许点确认，其余一律禁用
+  const planStage = focus.key === 'plan';
+  const planRead = planStage ? ensurePlanRead(t) : null;
+  const planBlocked = planStage && decidable && fSt === 'awaiting' && (!planRead || planRead.kind !== 'ok');
+
   // ---- X01 三块之首与 h2：当前状态一句话（优先吃后端 X05 activity 四字段）----
   const act = t.activity;
   const actState = act && act.activity_state ? act.activity_state : '';
@@ -492,7 +686,7 @@ function renderCabin() {
     nowMain = `「${stepHumanName(focus, steps)}」被你打回了`;
     nowSub = focus.note ? `你的意见：${String(focus.note).slice(0, 80)}` : 'AI 改好后会再交上来';
   } else if (fSt === 'done' || fSt === 'skipped') {
-    nowMain = `「${plainDyn(t.title)}」全部做完了 ✓`;
+    nowMain = `「${plainTitle(t)}」全部做完了 ✓`;
     nowSub = `目标 ${target.toFixed(1)} 分 · ${reviewLatest(t) ? `最后一轮 ${Number(reviewLatest(t).score).toFixed(1)} 分` : '还没有评分记录'}`;
   } else {
     nowMain = `「${stepHumanName(focus, steps)}」还没开始`;
@@ -500,28 +694,39 @@ function renderCabin() {
   }
 
   // ---- X01 三块：当前制作的软件 / 当前状态 / 下一步要做的事 ----
-  const titlePlain = plainDyn(t.title);
+  // R85·X03：标题不带内部代号；R85·X02：主按钮直接放进第三块，首屏不滚就能点
+  const titlePlain = plainTitle(t);
   const nextLine = (() => {
     const nm = stepHumanName(focus, steps);
-    if (decidable && fSt === 'awaiting') return `等你确认「${nm}」——点下方按钮即可`;
-    if (decidable) return `等 AI 交上「${nm}」——可以先催它，也可以等`;
+    if (decidable && fSt === 'awaiting') return `等你确认「${nm}」`;
+    if (decidable) return `等 AI 交上「${nm}」`;
     if (fSt === 'failed') return `AI 正在按你的意见改「${nm}」`;
     if (fSt === 'running') return `等 AI 做完「${nm}」`;
     if (fSt === 'awaiting') return `「${nm}」在等前面的步骤完成`;
     if (fSt === 'done' || fSt === 'skipped') return '全部完成，去查看成果';
     return `下一步是「${nm}」（还没开始）`;
   })();
+  const heroActHtml = pending ? '<span class="ch-act-wait">已提交，正在确认结果…</span>'
+    : (decidable && obj && obj.kind === 'none')
+      ? `<button class="btn btn-primary" type="button" data-cabin-note>${planStage ? '它还没交计划，我去催' : '它没交东西，我去催'}</button>`
+    : rework
+      ? `<button class="btn btn-primary" type="button" data-cabin-rework>${esc(STAGE_MAIN_REWORK)}</button><button class="cabin-link" type="button" data-cabin-note>修改这份内容</button>`
+    : (decidable && obj)
+      ? `<button class="btn btn-primary" type="button" data-decide="approve"${planBlocked ? ' disabled title="开发计划暂时无法读取——先看到真实计划再确认"' : ''}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button><button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : '修改这份内容'}</button>`
+    : fSt === 'failed'
+      ? '<button class="btn btn-primary" type="button" data-decide="resubmit">让它重新交上来</button>'
+    : '<span class="ch-act-wait">现在不用你操作，轮到你的那一刻按钮会亮起来</span>';
   const heroHtml = `
   <div class="cabin-hero">
     <div class="ch-block"><span class="ch-k">当前制作的软件</span>
       <b class="ch-v" title="${esc(titlePlain)}">${esc(titlePlain.length > 22 ? titlePlain.slice(0, 22) + '…' : titlePlain)}</b>
-      <span class="ch-s">编号 ${esc(t.id)}</span></div>
+      <span class="ch-s">更新于 ${esc(fmtTime(t.updatedAt))}${isTestTask(t) ? ' · 测试任务' : ''}</span></div>
     <div class="ch-block"><span class="ch-k">当前状态</span>
       <b class="ch-v${actState ? ' as-' + actState : ''}">${esc(actState ? ACT_STATE_CN[actState] || actState : (fSt === 'running' ? '进行中' : decidable ? '等你确认' : '进行中'))}</b>
       <span class="ch-s">${esc(nowMain.length > 34 ? nowMain.slice(0, 34) + '…' : nowMain)}</span></div>
-    <div class="ch-block"><span class="ch-k">下一步要做的事</span>
-      <b class="ch-v">${esc(nextLine.split('——')[0])}</b>
-      <span class="ch-s">${esc(nextLine.includes('——') ? nextLine.split('——')[1] : '')}</span></div>
+    <div class="ch-block ch-block-act"><span class="ch-k">下一步要做的事</span>
+      <b class="ch-v">${esc(nextLine)}</b>
+      <span class="ch-act">${heroActHtml}</span></div>
   </div>`;
 
   // ---- 走过的路：完成步默认折叠（✓），当前步高亮（▸），以后灰着（○）
@@ -583,6 +788,7 @@ function renderCabin() {
   const journeyLabel = jCur < 0 ? '全部完成' : `${JOURNEY[jCur].label} · ${jStates[jCur]}`;
   const pctJourney = Math.round((jStates.filter((s) => s === '已完成').length / JOURNEY.length) * 100);
 
+  const onboardHtml = onboardStripHtml(t, steps);
   const fp = [
     t.id, focus.key, fSt, decidable, nowMain, actState,
     steps.map((s) => s.status).join(','),
@@ -594,6 +800,11 @@ function renderCabin() {
     rd ? `${(rd.rounds || []).length}|${rd.advice}|${lastR ? lastR.score : ''}|${lastR && lastR.result ? 'r' : ''}` : 'nord',
     cabinUI.reviewOpen,
     live ? `${live.activity_state}|${live.current_activity}|${live.taskId}|${live.activity_updated_at || ''}` : 'nolive',
+    // R85：计划摘要/名册/入伙条/测试任务开关都参与指纹，内容一变就重画
+    cabinUI.hideTest ? 'hide' : 'show', cabinUI.rosterOpen ? 'ropen' : 'rclosed',
+    planStage ? (planRead ? `${planRead.kind}|${(planRead.lines || []).join('·')}` : 'loading') : 'noplan',
+    onboardHtml ? 'ob' : 'noob', rosterHeadline(st),
+    steps.map((s) => s.at || '').join(','),
   ].join('|');
   renderChanged('cabin-main', fp, () => {
     document.getElementById('cabin-main').innerHTML = `
@@ -603,24 +814,31 @@ function renderCabin() {
         <h2>${esc(nowMain)}</h2>
         ${nowSub ? `<p>${esc(nowSub)}</p>` : ''}
         ${heroHtml}
+        ${onboardHtml}
         <div class="cabin-bar"><i style="width:${pctJourney}%"></i></div>
         <div class="cabin-progress">第 ${journeyNo} / ${JOURNEY.length} 阶段${journeyLabel ? ' · ' + journeyLabel : ''}</div>
         ${scoreHtml}
       </div>
-      ${featCardHtml(t)}
-      ${journeyHtml(steps)}
+      ${planStage ? planCardHtml(t, planRead) : featCardHtml(t)}
+      ${journeyHtml(steps, t)}
       ${reviewCardHtml(t)}
+      ${rosterCardHtml(st)}
       <div class="cabin-path">
         <button class="cabin-past-toggle" type="button" data-cabin-past>
           ${cabinUI.pastOpen ? '收起' : `看看已经做完的（${pastSteps.length} 项）`}
         </button>
         ${pathHtml}
+        <details class="ch-detail">
+          <summary>详细信息</summary>
+          <div>内部编号 ${esc(t.id)}${isTestTask(t) ? ' · 测试任务（测完即删）' : ''}</div>
+          <button class="cabin-link" type="button" data-cabin-hidetest>${cabinUI.hideTest ? '显示测试任务' : '隐藏测试任务'}</button>
+        </details>
       </div>`;
     restoreCabinDrafts();
   });
 
-  // ---- 底部：唯一主按钮 ----
-  renderCabinFoot(t, steps, focus, key);
+  // ---- 底部：与 hero 卡同一套状态/动作（R85·X02 两处入口不分叉） ----
+  renderCabinFoot(t, steps, focus, key, { idx, obj, rework, pending, planStage, planBlocked });
 }
 
 // 做出来的东西：只报名字和改过几版（版本数来自登记历史，真实可数）
@@ -635,16 +853,19 @@ function cabinFilesHtml(s) {
   return `<div class="cp-files">${rows}${files.length > 4 ? `<span class="cp-file-more">等 ${files.length} 份</span>` : ''}</div>`;
 }
 
-function renderCabinFoot(t, steps, focus, key) {
+function renderCabinFoot(t, steps, focus, key, sh) {
   const fSt = focus.status || 'pending';
   const decidable = isDecidable(focus, t.steps);
-  const idx = steps.findIndex((x) => x.key === focus.key);
-  const pending = pendingOps.has(key);
+  const idx = sh && sh.idx != null ? sh.idx : steps.findIndex((x) => x.key === focus.key);
+  const pending = sh && sh.pending != null ? sh.pending : pendingOps.has(key);
   const err = decisionResult && decisionResult.key === key && decisionResult.msg ? decisionResult.msg : '';
   // X02：verify 的主按钮文案看评审台账——最新一轮未达标 →「自动按建议继续改进」
-  const rework = focus.key === 'verify' && decidable && verifyNeedsRework(t);
+  const rework = sh && sh.rework != null ? sh.rework : (focus.key === 'verify' && decidable && verifyNeedsRework(t));
+  // R85·X01：计划读不到 → 确认按钮停用（与 hero 卡同一判定，不分叉）
+  const planBlocked = !!(sh && sh.planBlocked);
+  const planStage = !!(sh && sh.planStage);
   const lastR = reviewLatest(t);
-  const fp = [key, fSt, decidable, cabinUI.noteOpen, pending, err, rework,
+  const fp = [key, fSt, decidable, cabinUI.noteOpen, pending, err, rework, planBlocked,
     lastR ? lastR.no : '',
     approvalObjectOf(t, focus, t.steps, idx).kind].join('|');
   renderChanged('cabin-foot', fp, () => {
@@ -655,7 +876,7 @@ function renderCabinFoot(t, steps, focus, key) {
     }
     const errHtml = err ? `<div class="cf-err">${esc(err)}</div>` : '';
     if (decidable) {
-      const obj = approvalObjectOf(t, focus, t.steps, idx);
+      const obj = sh && sh.obj ? sh.obj : approvalObjectOf(t, focus, t.steps, idx);
       const noteBox = cabinUI.noteOpen ? `
         <div class="cf-note">
           <textarea id="cabin-note-input" maxlength="500" rows="3" placeholder="告诉 AI 哪些地方需要调整（打回/催材料时必填）"></textarea>
@@ -669,7 +890,7 @@ function renderCabinFoot(t, steps, focus, key) {
         // 拿不出可审的东西：没有「通过」可点，唯一真实动作是催交材料
         foot.innerHTML = `${errHtml}
           <div class="cf-row">
-            <button class="btn btn-primary cf-main" type="button" data-cabin-note>${cabinUI.noteOpen ? '在写要求…' : '它没交东西，我去催'}</button>
+            <button class="btn btn-primary cf-main" type="button" data-cabin-note>${cabinUI.noteOpen ? '在写要求…' : (planStage ? '它还没交计划，我去催' : '它没交东西，我去催')}</button>
             <span class="cf-tip">这一步还没交上可看的东西，先说清楚缺什么</span>
           </div>${noteBox}`;
       } else if (rework) {
@@ -681,10 +902,12 @@ function renderCabinFoot(t, steps, focus, key) {
             <span class="cf-tip">${lastR && lastR.instruction ? `按第 ${lastR.no} 轮评审意见继续改` : '先在下面写清楚这轮要改什么'}（目标 ${targetScoreOf(t.id).toFixed(1)} 分，上一轮 ${Number(lastR ? lastR.score : 0).toFixed(1)} 分）</span>
           </div>${noteBox}`;
       } else {
-        foot.innerHTML = `${errHtml}
+        const dis = planBlocked ? ' disabled title="开发计划暂时无法读取——先看到真实计划再确认"' : '';
+        const planErr = planBlocked ? '<div class="cf-err">开发计划暂时无法读取，请重试——确认按钮先停用，读到真实计划后自动恢复。</div>' : '';
+        foot.innerHTML = `${errHtml}${planErr}
           <div class="cf-row">
-            <button class="btn btn-primary cf-main" type="button" data-decide="approve">${esc(STAGE_MAIN[focus.key] || '我确认')}</button>
-            <button class="cabin-link" type="button" data-cabin-note>修改这份内容</button>
+            <button class="btn btn-primary cf-main" type="button" data-decide="approve"${dis}>${esc(STAGE_MAIN[focus.key] || '我确认')}</button>
+            <button class="cabin-link" type="button" data-cabin-note>${planStage ? '计划需要修改' : '修改这份内容'}</button>
             <span class="cf-tip">确认后 AI 会接着做下一步</span>
           </div>${noteBox}`;
       }
@@ -727,7 +950,7 @@ function renderLog() {
         else if (ds === 'running') verb = '正在做';
         else if (ds === 'awaiting') verb = waitingOnOf(s, t.steps).length === 0 ? '交上来，等你拍板' : '交上来了';
         else if (ds === 'failed') verb = '被你打回了';
-        if (verb) events.push({ at: s.at, by: s.by, verb, name: stepHumanName(s, t.steps), task: plainDyn(t.title) });
+        if (verb) events.push({ at: s.at, by: s.by, verb, name: stepHumanName(s, t.steps), task: plainTitle(t) });
       }
     }
     events.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));

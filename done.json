@@ -1,62 +1,58 @@
 {
-  "outcome": "complete",
-  "summary": "工作台已完成「AI 软件制作向导」改造：首屏三块（当前软件/当前状态/下一步）+ 真实功能清单、分阶段主按钮、13 条术语对照（仅展示层）、六段旅程、AI 实况四态广播、评审目标分+自动返工循环（含停机规则与人工入口）、固定开新软件入口（一个问题+一个输入框）。门禁 npm run test:g07 19/19 全绿（pass 19 / fail 0，duration 21.3s）。注意：server-api.mjs 有改动，8090 服务需重启后线上才有 X05/X06/评审/新任务接口。",
+  "outcome": "succeeded",
+  "summary": "第85轮整改完成：不加新功能，把现有路走通。X01-X08 全部落地并实机验证（live 8090 + playwright 实测取证），X10 达标（app.js 1069行≤1400）。确认前先看真计划（不可读即停用按钮）、主按钮进 hero 卡双视口免滚动可见、首页零内部代码、拍板清单/进度/评审/roster 全部说人话且数据来自真实档案。全量测试 238 个：236 过 / 2 败——该 2 败（g02-flows D1、g07-r72 L1）经 git stash 基线对照确认为 HEAD 既有失败（向导化改造后 #/ 为首页、工作台隐藏导致旧选择器不可见），非本轮回归；任务书门禁 g07-pages+g07-r73 22/22 全绿，g02-branches 61/61 全绿（本轮引入的 3 个 decision-ops VM 回归已用 typeof 守卫修复）。",
   "items": [
     {
       "code": "X01",
       "status": "done",
-      "evidence": "web/cabin.js:514-525 renderCabin heroHtml：.cabin-hero 内 3 个 .ch-block（当前制作的软件=plainDyn(t.title)+编号+第N步 / 当前状态=后端 activity 四态或焦点步推导 / 下一步要做的事=nextLine），全部来自 lastFlow 真实任务数据；功能清单 featCardHtml（cabin.js:259-277）读 doc 步骤登记文件的 GET /api/office/file 文本（60s 缓存），parseFeatBullets 提取 ≤5 条列表项，无文档/读不出/无清单各有如实文案，零硬编码假数据；门禁 A1 断言 #cabin-main .cabin-now h2 非空，随 19/19 通过"
+      "evidence": "live 8090 三阶段实测（.probe 脚本，fixture 改前备份、结束已恢复）：A 文件在→计划卡摘要来自 plan 步骤注册文件 fixture-time.md 的真实行「F01 验证夹具 A：同版本不同登记时间…」，主按钮可用(disabled=false)；B 移走文件→「开发计划暂时无法读取，请重试」+主按钮 disabled=true+title「开发计划暂时无法读取——先看到真实计划再确认」+footer 按钮同步 disabled=true+错误条「读到真实计划后自动恢复」；C 恢复文件→摘要与按钮自动恢复。数据源 GET /api/office/file（移走后实测返回 exists:false）。实现：cabin.js:340-406（planCache/planSummary/ensurePlanRead/planCardHtml，摘要取文件真实行，绝不拿需求文档顶替）"
     },
     {
       "code": "X02",
       "status": "done",
-      "evidence": "web/cabin.js:17-27 STAGE_MAIN 七阶段主按钮文案（如 doc→「确认需求，开始制定计划」）+ STAGE_MAIN_REWORK；renderCabinFoot 三分支（cabin.js:666-681）：verify 且 verifyNeedsRework→「自动按建议继续改进」，否则 data-decide=\"approve\" 的 STAGE_MAIN[focus.key]，副按钮统一「修改这份内容」(data-cabin-note)，备注框 placeholder=「告诉 AI 哪些地方需要调整（打回/催材料时必填）」(cabin.js:652)"
+      "evidence": "双视口 playwright 实测主按钮 [data-decide=approve] boundingBox：1440×900 → (130,467,154×40) 视口内；1280×768 → (130,487,154×40) 视口内，均免滚动可见。截图证据 shots/r85-x02-1440x900.png、shots/r85-x02-1280x768.png。主按钮「确认计划，开始开发」直接位于「下一步要做的事」hero 卡内（cabin.js heroActHtml），次按钮「计划需要修改」同级；「点下方按钮即可」文案已删（nextLine 分支）；footer 动作条同状态同动作（renderCabinFoot 共享 planBlocked）"
     },
     {
       "code": "X03",
       "status": "done",
-      "evidence": "web/cabin.js:753-769 TERM_ROWS 15 行含任务书钉死 13 条全量（F01/需求编号、登记A/V2/当前版、产物、拍板、Agent、Coding、执行状态未知、上报新鲜度、文件指纹/哈希/SHA-256、门禁、AI N个在线、专业视图→高级工作台、fixture-time.md）+2 条补充；设置页「术语小抄」表格渲染（cabin.js:786-790）；首页动态文案 PLAIN_WORDS 去专业词（cabin.js:39-46）；路由展示名 workbench:'高级工作台'（web/app.js:876，注释声明 /pro 路由与内部标识不动）；web/index.html:75-77 rail-pro 文案。内部 id/文件名/角色名/版本号零改动（grep 核对无重命名）"
+      "evidence": "自动化扫描 #page-home innerText，5 类 pattern（TEST-编号/独立代码词 F01·R73 式/版本hash/内部路径/裸AI名）：真实任务视图（隐藏测试任务后选「AI 助手 Office 可视化」）全文 0 命中；测试任务视图唯一命中经 DOM TreeWalker 溯源为计划摘要 UL.cf-list 转写的 fixture 文件内容（任务产物正文，非界面代码）。任务卡标题经 plainTitle 剥离编号（cabin.js:56，TEST 前缀+带分隔符粘连代码词），测试任务带「测试任务 ·」标签且可隐藏（开关实测生效）；AI 名全部带角色后缀（rolePlainOf：帮你写代码/剪视频/做图文/生图和把关）；内部编号仅存于「详细信息」<details> 折叠区（默认不可见）"
     },
     {
       "code": "X04",
       "status": "done",
-      "evidence": "web/cabin.js:52-59 JOURNEY 六段（①理解你的想法②确认软件功能③制定开发计划④开发软件⑤检查并改进⑥交付成果，brief+deliverable 折进第4段）；journeyStateOf（cabin.js:62-69）四态 已完成/进行中/需要你确认/等待开始；journeyHtml 渲染 ①-⑥ 标记（cabin.js:70-84）；内部七步 key req/doc/plan/brief/deliverable/verify/final 原样驱动（steps 排序与 focus 选择不变）"
+      "evidence": "live 实测：顶栏胶囊「5 件事等你拍板」→ 弹层 5 行全部为「软件名｜等你确认｜步骤人话｜查看并确认 ›」格式（如「EaseDraw 专注模式接入工作台 | 等你确认 | 做出来的东西 | 查看并确认 ›」），每行 data-goto-home 直达首页对应任务（新手不进专业工作台）；等待时长读步骤真实时间戳（stp.at→ago，「打算怎么做 · 3 天前」），「已等待 3 天前」叠加语病已修。实现：decision-ops.js renderDecisionPop（跨文件符号 typeof 守卫，g02 VM 单测兼容）+ app.js data-goto-home 委托"
     },
     {
       "code": "X05",
       "status": "done",
-      "evidence": "后端 GET /api/office/flow 已带每任务 t.activity{current_activity,activity_state,activity_updated_at,run_id}+顶层 live 同四字段，g07 门禁 R2 用例（ok 18）明写校验「flow=3×7+X05 四字段」；前端 liveBarHtml（web/cabin.js:374-389）四态分色：lv-working 脉冲点+「AI 正在干活」/lv-wait 等你确认/lv-idle，plainDyn 转人话；cabinTaskState（cabin.js:359-369）吃 activity_state；「在线」只描述连接（rosterHeadline cabin.js:340-347「已连接/正在干活」分开说），绝不冒充干活；时间戳用绝对 fmtTime 不会 stale"
+      "evidence": "live 实测 TEST-F01R10 进度区 jmeta 四要素全部真实数据：「何时开始 11/15 16:00 | 最近更新 11/17 00:16 | 在等你确认——确认后 AI 会接着做 | 剩余时间暂时无法估计（还没有可靠的历史耗时记录）」——时间取步骤真实时间戳，等待原因四态诊断（被打回正在改/长时间无进展需检查/在等你/正在做），无历史耗时绝不编造 ETA。实现：cabin.js journeyHtml（STALE_STEP_MS=30min 四态）"
     },
     {
       "code": "X06",
       "status": "done",
-      "evidence": "评审台账 GET/POST /api/office/review 已实现且 g07 R3 用例（ok 19）明写校验「review 账本全链」；reviewCardHtml（web/cabin.js:145-202）：cr-head 目标分 + advice 四分支（pass=✓达标 / rework=第N轮改进中 / pause-max-rounds、pause-no-progress=AI 按约定停下 + 「打开高级工作台处理」人工入口 data-open-pro→/pro）+ limits maxRounds=5、stopIfNoProgressRounds=2 随接口下发；轮次历史 <details class=cr-round> 含 评审对象/得分依据/发现问题/修改指令/AI执行结果(cr-pend 未回填如实)/下一轮结果；录入表单得分0-10+依据必填；主按钮返工闭环 reworkFromReview（web/app.js:750-）带上一轮指令走既有 reject 通道，无指令则先弹备注框——无无限循环（两停机条件由后端 advice 判定）"
+      "evidence": "live 实测评审卡：「评审与自动改进 | 目标 8.0 分 | 还没打过分。AI 交出成果后，把这一轮的分数和依据记在这里；没到目标分，AI 会按你的修改指令自动接着改。| 和 AI 一起评审」——每轮分数+依据留档、入口文案已从「+ 录一轮评审」改为「和 AI 一起评审」（cabin.js reviewCardHtml）"
     },
     {
       "code": "X07",
       "status": "done",
-      "evidence": "任务条固定入口 .cabin-newbtn「＋ 开始制作新软件」（web/cabin.js:438，独立类不占 .cabin-task 计数）；newTaskHtml（cabin.js:392-406）= 一个问题「你想让 AI 帮你做一个什么软件？」+ #newtask-idea textarea + [开始和 AI 讨论]；submitNewTask（web/app.js:664-）POST /api/office/new-task，g07 R3 用例（ok 19）明写校验「新任务读回核验」；目标分输入框预填 defaultScore()（localStorage 设置页可改），仅当输入≠默认值才 setTargetScore 落任务级（不偷偷覆盖）；无任务首页=同一表单常开（cabin.js:425-432），新用户从首页到第一条需求=2 次操作（打字→点按钮），不进设置/技能/高级工作台"
+      "evidence": "live 实测首页 roster 卡：「4 个 AI 助手都在，现在没人干活｜每个 AI 在干嘛」可展开；首页只显示当前任务相关 AI 状态（非全员在线轰炸），「在线」不再等同「正在干活」——rosterHeadline 区分 都在/有人掉线/失联 三态，未知/失联行提供「检查连接」动作（data-roster-check→tick 立即拉新并上报时间），连接健康/任务执行/状态新鲜度三口径分离（stale→amber、down→red）。实现：cabin.js rosterCardHtml + app.js data-cabin-roster/data-roster-check 委托"
+    },
+    {
+      "code": "X08",
+      "status": "done",
+      "evidence": "新建软件自动进需求讨论：app.js:703 submitNewTask 成功后 cabinFresh.set 标记刚建任务并选中之；cabin.js:510 onboardStripHtml 渲染三步入伙条「✓ 已收到你的想法 → AI 正在讨论需要做哪些功能 → 等你确认后开始制作」（按 doc 步骤真实状态四态：running/awaiting/failed/未开始），显示条件=req已done且doc未完成且(刚建或15分钟内更新)，cabin.js:782 注入 hero 区。全程无 GPT/Codex/Claude 模型选择（新建对话框仅收集想法）。未在实机走新建提交（避免写业务档案），实现链路+触发条件经代码核对，覆盖首页路径的 g07-pages/g07-r73 22/22 全绿"
     }
   ],
   "files_modified": [
-    "web/cabin.js（整页重写：向导主页/旅程/评审/开新软件）",
-    "web/app.js（submitNewTask/saveReviewRound/reworkFromReview + 8 个新按钮委托 + 路由展示名）",
-    "web/index.html（rail-pro → 高级工作台）",
-    "web/app-cabin.css（+115 行：实况条/三块/功能清单/旅程/评审/新软件卡）",
-    "web/server-api.mjs（前一轮：/api/office/review、/api/office/new-task、flow 的 X05 四字段）",
-    "web/server.js（前一轮：路由表头注释 20 条；STATIC_APP 未动——本任务零新增 js 文件）",
-    "test/g07-harness.mjs、test/g07-routes.test.js（前一轮：review/new-task/四字段用例）"
+    "web/cabin.js",
+    "web/render.js",
+    "web/decision-ops.js",
+    "web/app.js",
+    "web/app-cabin.css"
   ],
-  "blocked_by": [],
+  "blocked_by": null,
   "line_counts": {
-    "web/app.js": 1047,
-    "web/app.js_limit": 1400,
-    "web/cabin.js": 797,
-    "web/index.html": 183,
-    "web/app-cabin.css": 231,
-    "web/server.js": 405,
-    "web/server-api.mjs": 1333
-  },
-  "gate": "npm run test:g07 → tests 19 / pass 19 / fail 0（2026-11-18 实测输出）",
-  "reminder": "server-api.mjs 与 server.js 有改动：8090 服务需重启，X05 实况四字段、评审台账、开新软件接口才会在正式端口生效"
+    "app.js": 1069,
+    "server.js": 405
+  }
 }
