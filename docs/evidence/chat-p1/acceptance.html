@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Chat P1 验收证据（A1-A7）</title>
+<style>
+  :root { --ink:#1f2430; --sub:#5b6472; --line:#e3e6ec; --ok:#0a7d43; --bad:#b3261e; --bg:#faf9f6; --card:#fff; --code:#f4f2ec; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.75 "Microsoft YaHei",system-ui,sans-serif; }
+  main { max-width:860px; margin:0 auto; padding:40px 24px 80px; }
+  h1 { font-size:24px; margin:0 0 6px; }
+  .meta { color:var(--sub); font-size:13px; margin-bottom:28px; }
+  .meta b { color:var(--ink); font-weight:600; }
+  details { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 18px; margin:14px 0; }
+  summary { cursor:pointer; font-weight:600; font-size:16px; list-style:none; display:flex; align-items:center; gap:10px; }
+  summary::before { content:"▸"; color:var(--sub); transition:.15s; }
+  details[open] summary::before { transform:rotate(90deg); }
+  .tag { font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px; margin-left:auto; white-space:nowrap; }
+  .tag.ok { color:var(--ok); background:#e7f4ec; }
+  .tag.core { color:#7a4c00; background:#fdf0dc; }
+  pre { background:var(--code); border-radius:8px; padding:12px 14px; overflow-x:auto; font:12.5px/1.6 Consolas,monospace; color:#333; }
+  blockquote { margin:8px 0; padding:8px 14px; border-left:3px solid #c9c2b4; background:#f7f5ef; border-radius:0 8px 8px 0; color:#4a4f5a; }
+  .note { background:#fdf6e9; border:1px solid #efdfb8; border-radius:8px; padding:10px 14px; font-size:13.5px; color:#6b5a22; }
+  ul { margin:6px 0; padding-left:22px; }
+  li { margin:3px 0; }
+  code { background:var(--code); padding:1px 5px; border-radius:4px; font-size:13px; }
+</style>
+</head>
+<body>
+<main>
+<h1>Agent Chat P1 验收证据（A1-A7）</h1>
+<div class="meta">
+  日期 <b>2026-11-24</b>（本地 2026-11-23 20:11–20:17 UTC）·
+  服务 <b>http://127.0.0.1:8090</b> ·
+  正式对话 <b>th-16e11b96a0</b> · 坏 session 对话 <b>th-99d89d4373</b><br>
+  Agent Office 登记：task <b>t-20261123201623-0fc3b4</b> · attempt <b>a-5ed9efbe-mwtphwpf</b> · checkpoint <b>ck-mwtphx1j-8383d9</b>
+</div>
+
+<div class="note">复现材料：<code>scripts/chat-v1/p1-acceptance/</code>（请求体 json + 轮询脚本 poll.mjs）。请求体必须走 UTF-8 文件（<code>curl --data-binary @file</code>）——命令行内联中文会被 Windows 按 GBK 转码，claude 会收到乱码；这是调用方编码问题，产品链路全程 UTF-8 正常（A2-A4 对话内容可证）。</div>
+
+<details open><summary>A1 建 thread<span class="tag ok">通过</span></summary>
+<pre>POST /api/chat/threads  {"agent_id":"claude","title":"P1 验收对话（正式）"}
+→ HTTP 201
+{"ok":true,"thread_id":"th-16e11b96a0","thread":{"agent_id":"claude",
+ "provider_session_id":null,"mode":"discuss",...}}</pre>
+</details>
+
+<details><summary>A2 发消息有真实回复<span class="tag ok">通过</span></summary>
+<p>msg1 =「你好，我是Leo。我最喜欢的数字是 42，养了一只叫「汽水」的猫。请记住这两件事，等下我会考你。」<br>
+状态流转：<code>starting → running → completed</code>（约 42 秒），turn <code>ct-7ebe9c59e0</code>。</p>
+<blockquote>Leo 你好！两条都记下了：最喜欢的数字 <b>42</b>；猫「汽水」🐱<br>
+不过得诚实说明：当前会话处于计划模式（只读），我不能写任何文件……我已查过记忆目录（memory/），目前只有 parallel-sessions-shared-worktree.md 一条……</blockquote>
+<p>它真的调了只读工具去查 memory 目录——chat_events 里 <code>tool×3</code> 可证。</p>
+</details>
+
+<details><summary>A3 第 3 条体现第 1 条<span class="tag ok">通过</span></summary>
+<p>msg3 =「第三句：我在第一句话里告诉过你两件关于我的事，你还记得吗？请原样复述这两件事。」</p>
+<blockquote>记得，原样复述：1. 你最喜欢的数字是 <b>42</b>；2. 你养了一只叫「<b>汽水</b>」的猫。（另外你开头自报了名字是 Leo。）</blockquote>
+</details>
+
+<details><summary>A4「我刚才第一句说了什么？」一字不差<span class="tag core">核心 · 通过</span></summary>
+<p>msg4 =「我刚才第一句说了什么？请一字不差地引用原文。」（turn <code>ct-8055ee74e7</code>）</p>
+<blockquote>你第一句的原文是：<br>「你好，我是Leo。我最喜欢的数字是 42，养了一只叫「汽水」的猫。请记住这两件事，等下我会考你。」</blockquote>
+<p>与 msg1 逐字一致——<b>真多轮上下文成立</b>（同一 provider session 续聊，不是每轮新会话）。</p>
+</details>
+
+<details><summary>A5 第 2 条起走 --resume<span class="tag ok">通过</span></summary>
+<pre>chat_turns（th-16e11b96a0）：
+ct-7ebe9c59e0  completed  resume=0   （首轮 --session-id 新建）
+ct-3837ea2a02  completed  resume=1   （--resume）
+ct-eecd8d7dd2  completed  resume=1   （--resume）
+ct-8055ee74e7  completed  resume=1   （--resume）</pre>
+<ul>
+  <li>provider_session_id 全程稳定：<code>1a04c048-b2ed-4227-8f8a-4258286e2ea9</code>（首轮回填后不变）</li>
+  <li>chat_events：<code>started</code>×1（首轮）+ <code>restoring</code>×3（续聊轮），与 resume 列互证；续聊消息的 202 响应里 turn.status 即为 <code>restoring</code></li>
+</ul>
+</details>
+
+<details><summary>A6 三表落库<span class="tag ok">通过</span></summary>
+<pre>chat_threads  3 行（含 th-16e11b96a0，provider_session_id=1a04c048-…）
+chat_messages 8 行（user/assistant 交替，status=sent/complete，seq 1-8）
+chat_turns    4 行（status=completed，带 started_at/ended_at）
+chat_events   40 行（started 1 / restoring 3 / delta 12 / tool 3 / status 17 / completed 4）</pre>
+</details>
+
+<details><summary>A7 坏 session id → 失败态<span class="tag ok">通过</span></summary>
+<p>手工把 provider_session_id 塞成 <code>00000000-dead-beef-0000-000000000000</code> 后发消息（thread <code>th-99d89d4373</code>，turn <code>ct-0ab0e6bb50</code>）：</p>
+<pre>status=interrupted resume=true
+error={"kind":"session_not_found","label":"会话已丢失",
+       "message":"Claude 找不到会话 00000000-…（No conversation found with session ID）",
+       "retryable":true}</pre>
+<ul>
+  <li>终态 <code>interrupted</code>，<b>不是 completed</b>；助手消息 interrupted（空内容不冒充回复）</li>
+  <li>引擎清掉坏 session 引用（→ null），并追加 system 消息说明下一句会新开 会话、旧上下文不带过去</li>
+  <li>说明：任务书原文写「状态是 failed」。本实现状态词汇表（chat-state.mjs 十态）没有裸 'failed'——有明确证据的失败落 <code>interrupted</code> + error.kind。判据核心（不冒充 completed、失败原因如实可见）满足。</li>
+</ul>
+</details>
+
+<details><summary>过程中发现并修复的问题</summary>
+<ul>
+  <li><b>首请求轮次被启动对账误伤</b>：引擎懒初始化时 reconcileOnStartup 把刚入库的 queued 轮次当成「重启残留」落成 interrupted。修复：POST 处理器先取引擎（对账先跑）再建轮次（web/api-chat.mjs 已带注释）。修复后复测通过。</li>
+  <li><b>调用方编码坑（非产品缺陷）</b>：curl 命令行内联中文经 GBK 转码后成乱码，claude 如实回复「收到乱码」（thread th-ea421adfb5 留档）。改 UTF-8 文件体后全链路正常；前端 fetch 接入无此问题。</li>
+</ul>
+</details>
+
+<details><summary>本次接线改动清单</summary>
+<ul>
+  <li>新增 <code>web/api-chat.mjs</code>：聊天三路由，405/400/404 语义对齐 api-tasks.mjs</li>
+  <li><code>web/server-api.mjs</code>：+2 处（import 与派发挂载，未动既有路由）</li>
+  <li><code>web/server.js</code>：无改动（P1 无前端页面，静态白名单不需新增；P4 才做面板）</li>
+  <li>服务重启：旧 PID 41944 → 现行 37556，日志 <code>web/web-8090.out</code></li>
+</ul>
+</details>
+</main>
+</body>
+</html>

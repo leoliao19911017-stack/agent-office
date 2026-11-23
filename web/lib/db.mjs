@@ -10,6 +10,8 @@
 //   task_steps      任务步骤（tasks 表只存任务头，步骤单独成表，避免把 JSON 塞进任务行）
 //   migrate_ledger  旧 JSON 迁移账本（同一文件同一内容只迁一次）
 //   schema_meta     建表版本，供后续迁移判断
+// v2（TASK-AgentChat V1）另加聊天六张表 chat_threads / chat_messages / chat_turns /
+// chat_events / chat_approvals / chat_summaries，与任务三张表互相独立（见 SCHEMA_V2_CHAT）。
 //
 // 整个项目只有本文件创建数据库连接；其它模块一律接收 db 参数，便于测试隔离。
 
@@ -22,7 +24,96 @@ export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
+
+/**
+ * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
+ *
+ * 与 tasks / attempts / events 完全独立（ADR-03）：聊天只写这六张表，一行都不往任务三张表写。
+ * 状态机 evaluateAgentStatuses 只读 attempts + events，所以它看不见聊天——普通聊天不会让
+ * Agent 卡片从 unknown 变成 running，也不会挂到正在执行任务的 Session 上。
+ *
+ * 三个 ID 不许混（任务书 §四）：
+ *   thread_id            Agent Office 自己的聊天编号（th-…）
+ *   provider_session_id  Claude / DSH 真正的 Session ID（首轮建立后回填）
+ *   turn_id              一次用户输入 + 对应执行的唯一编号（ct-…）
+ * chat_turns.attempt_id 是「这一轮聊天的一次 CLI 调用」编号（ca-…），与任务表 attempts
+ * 的 a-… 不是一回事；关联任务时另用 task_id / task_attempt_id 两列做只读引用。
+ */
+const SCHEMA_V2_CHAT = `
+CREATE TABLE IF NOT EXISTS chat_threads (
+  thread_id            TEXT PRIMARY KEY,
+  agent_id             TEXT NOT NULL,
+  provider_session_id  TEXT,
+  workspace            TEXT,
+  mode                 TEXT NOT NULL DEFAULT 'discuss',
+  task_id              TEXT,
+  task_attempt_id      TEXT,
+  title                TEXT,
+  created_at           TEXT NOT NULL,
+  updated_at           TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  message_id   TEXT PRIMARY KEY,
+  thread_id    TEXT NOT NULL REFERENCES chat_threads(thread_id),
+  turn_id      TEXT,
+  role         TEXT NOT NULL,
+  content      TEXT NOT NULL,
+  status       TEXT NOT NULL,
+  error_json   TEXT,
+  seq          INTEGER NOT NULL,
+  event_seq    INTEGER,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_turns (
+  turn_id              TEXT PRIMARY KEY,
+  thread_id            TEXT NOT NULL REFERENCES chat_threads(thread_id),
+  attempt_id           TEXT NOT NULL,
+  user_message_id      TEXT,
+  assistant_message_id TEXT,
+  status               TEXT NOT NULL,
+  provider             TEXT NOT NULL,
+  resume               INTEGER NOT NULL DEFAULT 0,
+  retry_of_turn_id     TEXT,
+  error_json           TEXT,
+  started_at           TEXT,
+  ended_at             TEXT,
+  created_at           TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_events (
+  event_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+  turn_id    TEXT NOT NULL REFERENCES chat_turns(turn_id),
+  seq        INTEGER NOT NULL,
+  type       TEXT NOT NULL,
+  payload    TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE (turn_id, seq)
+);
+
+CREATE TABLE IF NOT EXISTS chat_approvals (
+  approval_id TEXT PRIMARY KEY,
+  turn_id     TEXT NOT NULL REFERENCES chat_turns(turn_id),
+  action      TEXT NOT NULL,
+  decision    TEXT,
+  decided_at  TEXT,
+  created_at  TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS chat_summaries (
+  thread_id       TEXT PRIMARY KEY REFERENCES chat_threads(thread_id),
+  summary         TEXT NOT NULL,
+  covered_turn_id TEXT NOT NULL,
+  updated_at      TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_chat_threads_agent  ON chat_threads(agent_id, updated_at);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_thread ON chat_messages(thread_id, seq);
+CREATE INDEX IF NOT EXISTS idx_chat_turns_thread    ON chat_turns(thread_id, created_at);
+`;
 
 /**
  * 建表 SQL。用 IF NOT EXISTS，保证重复调用安全。
@@ -126,6 +217,7 @@ CREATE INDEX IF NOT EXISTS idx_steps_task       ON task_steps(task_id, seq);
 /** 迁移清单：以后加表/加列时追加一项，版本号递增，已有库只跑增量。 */
 const MIGRATIONS = [
   { version: 1, up(db) { db.exec(SCHEMA_V1); } },
+  { version: 2, up(db) { db.exec(SCHEMA_V2_CHAT); } },
 ];
 
 /** 已打开的连接缓存：同一个 db 文件在一个进程里只建一个连接。 */

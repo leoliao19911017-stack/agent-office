@@ -1,0 +1,1 @@
+{"title":"Agent Chat P1：数据表 + claude adapter + 最简聊天（HTTP 轮询）","acceptance":"A1 建 thread；A2 claude 真实回复；A3 第 3 条体现第 1 条；A4 一字不差引用第一句；A5 第 2 条起 --resume；A6 三表落库；A7 坏 session id 落失败态不冒充 completed。证据：scripts/chat-v1/p1-acceptance/ 与 docs/evidence/chat-p1/。","steps":[{"key":"deliverable","name":"交付"},{"key":"verify","name":"验收"}]}

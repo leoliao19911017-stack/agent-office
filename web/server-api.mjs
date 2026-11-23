@@ -26,6 +26,9 @@ import { makeAgentsRealRoute } from './server-agents-real.mjs';
 // P0 地基：任务/事件/检查点/三独立状态 API（/api/tasks*、/api/agents/status-v2）。
 // 路由体在 api-tasks.mjs；这里只做挂载，不重复任何状态判定。
 import { handleTasksApi } from './api-tasks.mjs';
+// Agent Chat V1 P1：聊天三路由（POST /api/chat/threads、GET|POST …/:id/messages）。
+// 路由体在 api-chat.mjs，同样只做挂载。
+import { handleChatApi } from './api-chat.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1321,6 +1324,12 @@ export function createApiRouter(deps) {
     // 任务 API 自己负责 405，未匹配返回 false，原路由行为不变。
     if (path === '/api/tasks' || path.startsWith('/api/tasks/') || path === '/api/agents/status-v2') {
       const handled = await handleTasksApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
+    // Agent Chat P1 层：聊天三路由，同任务 API 的挂载约定（自己管 405，未匹配返回 false）。
+    if (path === '/api/chat/threads' || path.startsWith('/api/chat/threads/')) {
+      const handled = await handleChatApi(req, res, path, method, ctx);
       if (handled) return;
     }
 

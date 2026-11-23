@@ -335,6 +335,10 @@ const server = createServer(async (req, res) => {
         '/theme.js': 'application/javascript; charset=utf-8',
         '/render.js': 'application/javascript; charset=utf-8',
         '/offline-snapshot.js': 'application/javascript; charset=utf-8',
+        // TASK-看板复刻CrommaCode：新增只读看板（独立文件，不改 cabin / app / index）
+        '/board-cromma.html': 'text/html; charset=utf-8',
+        '/board-cromma.css': 'text/css; charset=utf-8',
+        '/board-cromma.js': 'application/javascript; charset=utf-8',
       };
       if (STATIC_APP[path]) {
         let buf;
@@ -373,6 +377,61 @@ const server = createServer(async (req, res) => {
       res.writeHead(200, {
         'content-type': MIME[ext],
         'cache-control': segs.length === 2 ? 'public, max-age=86400' : 'no-cache',
+      });
+      res.end(method === 'HEAD' ? undefined : buf);
+      return;
+    }
+
+    // TASK-看板V2：品牌 icon（24×24 单色 SVG，单段文件名，禁目录穿越）
+    if ((method === 'GET' || method === 'HEAD') && path.startsWith('/icons/')) {
+      const seg = path.slice('/icons/'.length);
+      if (!/^[A-Za-z0-9._-]+\.svg$/.test(seg) || seg.includes('..')) {
+        throw httpError(404, 'NOT_FOUND', '资源不存在');
+      }
+      let buf;
+      try { buf = readFileSync(join(HERE, 'icons', seg)); }
+      catch { throw httpError(404, 'NOT_FOUND', '资源不存在'); }
+      res.writeHead(200, { 'content-type': 'image/svg+xml; charset=utf-8', 'cache-control': 'no-cache' });
+      res.end(method === 'HEAD' ? undefined : buf);
+      return;
+    }
+
+    // TASK-看板V2：EaseDraw 完整 Web 页面（iframe 嵌入，保留它自己的 ./app.css、./js/*、./ui/*、./p/*）
+    // 仅 GET/HEAD；相对路径靠 /easedraw/ 尾斜杠解析，裸 /easedraw 先 302 过去。
+    if ((method === 'GET' || method === 'HEAD') && path === '/easedraw') {
+      res.writeHead(302, { location: '/easedraw/' });
+      res.end();
+      return;
+    }
+    if ((method === 'GET' || method === 'HEAD') && path.startsWith('/easedraw/')) {
+      let rel = path.slice('/easedraw/'.length);
+      if (rel === '' || rel.endsWith('/')) rel += 'index.html';
+      let decoded;
+      try { decoded = decodeURIComponent(rel); }
+      catch { throw httpError(404, 'NOT_FOUND', '资源不存在'); }
+      const segs = decoded.split('/');
+      const last = segs[segs.length - 1];
+      const dot = last.lastIndexOf('.');
+      const ext = dot >= 0 ? last.slice(dot).toLowerCase() : '';
+      const MIME = {
+        '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+        '.js': 'application/javascript; charset=utf-8', '.webp': 'image/webp',
+        '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
+        '.svg': 'image/svg+xml', '.woff': 'font/woff', '.woff2': 'font/woff2',
+        '.ico': 'image/x-icon', '.json': 'application/json; charset=utf-8',
+        '.mp3': 'audio/mpeg', '.m4a': 'audio/mp4', '.webm': 'video/webm',
+      };
+      const safe = segs.length <= 3
+        && segs.every((s) => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(s))
+        && !decoded.includes('..') && MIME[ext] !== undefined;
+      if (!safe) throw httpError(404, 'NOT_FOUND', '资源不存在');
+      let buf;
+      try { buf = readFileSync(join(HERE, 'easedraw', ...segs)); }
+      catch { throw httpError(404, 'NOT_FOUND', '资源不存在'); }
+      const immutable = ext === '.webp' || ext === '.woff' || ext === '.woff2';
+      res.writeHead(200, {
+        'content-type': MIME[ext],
+        'cache-control': immutable ? 'public, max-age=86400' : 'no-cache',
       });
       res.end(method === 'HEAD' ? undefined : buf);
       return;
