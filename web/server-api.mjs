@@ -23,6 +23,9 @@ import {
 import { kickoffAutoAdvance, startDiscussRecord, discussView } from './server-auto.mjs';
 // X01（让 Agent 状态显示真实情况）：/api/agents/real 只读探测——进程/最近活动/额度
 import { makeAgentsRealRoute } from './server-agents-real.mjs';
+// P0 地基：任务/事件/检查点/三独立状态 API（/api/tasks*、/api/agents/status-v2）。
+// 路由体在 api-tasks.mjs；这里只做挂载，不重复任何状态判定。
+import { handleTasksApi } from './api-tasks.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1314,6 +1317,13 @@ export function createApiRouter(deps) {
 
   // 派发层：只做路径/方法匹配与兜底，路由体在各 maker 内（R75 G02 拆分）。
   return async function api(req, res, path, method) {
+    // P0 地基层：先交给任务 API 匹配；不是它的路径再走原有路由。
+    // 任务 API 自己负责 405，未匹配返回 false，原路由行为不变。
+    if (path === '/api/tasks' || path.startsWith('/api/tasks/') || path === '/api/agents/status-v2') {
+      const handled = await handleTasksApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
     if (path === '/api/health' && method === 'GET') return health(req, res);
     if (path === '/api/state' && method === 'GET') return state(req, res);
     if (path === '/api/office/hermes' && method === 'GET') return hermes(req, res);

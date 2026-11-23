@@ -23,6 +23,19 @@ after(async () => {
   await stack?.stop();
 });
 
+// 解析主题 token 的实际计算色：R90 双主题下 --ok/--amber 不再是 app-base 里的旧字面值，
+// 断言必须跟当前主题的 token 对齐，而不是把某一套主题的色值焊死在测试里。
+async function tokenColor(page, name) {
+  return page.evaluate((n) => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(${n})`;
+    document.body.appendChild(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  }, name);
+}
+
 // 打点导航：goto(commit) → 等业务选择器。返回 { page, state, contentMs }
 async function openPage(hash, businessSelector, timeout = 15000) {
   const { page, state } = await newPage(browser);
@@ -50,15 +63,18 @@ async function evidence(page) {
   });
 }
 
-test('A1 首页驾驶舱首屏：任务卡/实况区是真实业务内容，首轮 ≤3000ms', async () => {
+test('A1 首页驾驶舱首屏：项目行/实况区是真实业务内容，首轮 ≤3000ms', async () => {
   // TASK-工作台重做：#/ 首页已是任务驾驶舱（我的任务），三栏工作台在 #/pro 专业视图。
+  // R90 布局重排：任务条 #cabin-tasks 已删，任务清单挪到左侧 PROJECTS
+  // （#projects-list .proj-item，一项目一行）。夹具 3 条需求都没有 project 字段，
+  // 按 renderProjects 的分组规则「没有 project 字段 → 任务即项目」，所以应有 3 行。
   // 首屏口径量驾驶舱；需求列表 + 交付链的业务断言原样搬到 #/pro 再验，不删不降。
-  const { page, state, contentMs } = await openPage('#/', '#cabin-tasks .cabin-task');
+  const { page, state, contentMs } = await openPage('#/', '#projects-list .proj-item');
   try {
-    const cards = await page.locator('#cabin-tasks .cabin-task').count();
-    assert.ok(cards >= 3, `任务卡应 ≥3（夹具 3 条），实际 ${cards}`);
-    const titles = (await page.locator('#cabin-tasks .cabin-task b').allInnerTexts()).join('|');
-    assert.ok(titles.includes('G07 首屏验证需求'), `任务卡应含夹具标题，实际：${titles.slice(0, 120)}`);
+    const cards = await page.locator('#projects-list .proj-item').count();
+    assert.ok(cards >= 3, `项目行应 ≥3（夹具 3 条需求 → 3 个项目），实际 ${cards}`);
+    const titles = (await page.locator('#projects-list .proj-item .proj-name').allInnerTexts()).join('|');
+    assert.ok(titles.includes('G07 首屏验证需求'), `项目行应含夹具标题，实际：${titles.slice(0, 120)}`);
     // 实况区一句话非空 + 进度文字带真实计数（业务内容，不是空壳）
     const nowLine = await page.evaluate(() => document.querySelector('#cabin-main .cabin-now h2').textContent.trim());
     assert.ok(nowLine.length > 0, `「现在干什么」应为真实内容，实际「${nowLine}」`);
@@ -68,7 +84,7 @@ test('A1 首页驾驶舱首屏：任务卡/实况区是真实业务内容，首�
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
     const ev = await evidence(page);
     assert.equal(ev.connText, '已连接');
-    assert.equal(ev.connColor, 'rgb(101, 217, 177)', `连接区颜色实测 ${ev.connColor}`);
+    assert.equal(ev.connColor, await tokenColor(page, '--ok'), `连接区颜色应为当前主题 --ok，实测 ${ev.connColor}`);
     assert.equal(ev.fontSize, '12px');
     assert.equal(ev.uiErrors, 0, `__uiErrors 应为 0，实际 ${ev.uiErrors}：${state.pageErrors.join(' || ')}`);
     assert.equal(state.pageErrors.length, 0, state.pageErrors.join(' || '));

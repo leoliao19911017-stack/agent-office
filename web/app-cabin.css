@@ -307,3 +307,248 @@
 .cabin-more[open] > summary {border-bottom:1px solid var(--line); color:var(--text)}
 .cabin-more > .cabin-feat {margin:0; border:none; border-radius:0; border-bottom:1px solid var(--line)}
 .cabin-more > .cabin-feat:last-child {border-bottom:none}
+
+/* ================================================================
+   R90 布局重排（任务 1）：左侧 PROJECTS 项目栏 + 右侧 shell。
+   只做结构（宽窄/排列/滚动），配色一律复用既有令牌与 .st-* 胶囊类；
+   页签的样式归下一个任务，这里只给最小横排让页面立得住。
+   ================================================================ */
+
+/* ---- 左栏：#frame 已是 flex 行，projects 固定宽自成一列 ---- */
+#projects {flex:none; width:264px; min-height:0; background:var(--panel);
+  border-right:1px solid var(--line); display:flex; flex-direction:column}
+.proj-head {flex:none; display:flex; align-items:center; justify-content:space-between;
+  padding:14px 14px 10px}
+.proj-label {font-size:11px; letter-spacing:.08em; font-weight:600; color:var(--faint)}
+#proj-new {flex:none; border:1px solid var(--line); background:var(--card); color:var(--muted);
+  border-radius:6px; font-size:12px; padding:3px 8px; cursor:pointer}
+#proj-new:hover {color:var(--text); border-color:var(--blue)}
+
+#projects-list {flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column;
+  gap:6px; padding:4px 10px 10px}
+.proj-empty {color:var(--faint); font-size:12px; line-height:1.7; text-align:center; padding:14px 6px}
+
+/* 项目行：名称 / N 条任务·主线 / 状态胶囊（.st-* 既有色，不加新色） */
+.proj-item {text-align:left; background:var(--bg); border:1px solid var(--line); border-radius:8px;
+  padding:9px 11px; cursor:pointer; display:flex; flex-direction:column; gap:3px; min-width:0}
+.proj-item:hover {border-color:var(--blue)}
+.proj-item.is-active {border-color:var(--blue); background:var(--card)}
+.proj-name {font-size:13px; font-weight:600; color:var(--text); overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap}
+.proj-meta {font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.proj-state {align-self:flex-start; font-size:11px; line-height:18px; padding:0 8px; border-radius:999px}
+
+.proj-foot {flex:none; padding:8px 14px 12px; border-top:1px solid var(--line)}
+.proj-foot #rail-focus {width:100%; background:transparent; border:1px solid var(--line);
+  color:var(--muted); border-radius:6px; padding:5px 0; font-size:12px; cursor:pointer}
+.proj-foot #rail-focus:hover {color:var(--text)}
+
+/* ---- 右侧 shell：顶部页签横排 + 页面占满余宽（.cabin-page/.module-page 自带 flex:1） ---- */
+#shell {flex:1; min-width:0; min-height:0; display:flex; flex-direction:column}
+#tabs {flex:none; display:flex; align-items:center; gap:2px; padding:0 16px;
+  border-bottom:1px solid var(--line); background:var(--panel)}
+#tabs button {border:none; background:transparent; color:var(--muted); font-size:13px;
+  padding:9px 12px; cursor:pointer}
+#tabs button:hover {color:var(--text)}
+#tabs button[aria-current="page"] {color:var(--blue); box-shadow:inset 0 -2px 0 var(--blue)}
+
+/* ════════════════════════════════════════════════════════════════
+   R90 双主题 · CrommaCode 风格
+   浅色（默认）＝ CrommaCode 真实界面：浅灰底 + 纯白面板 + 琥珀
+   深色（夜间）＝ 同结构的暗色版，同一个琥珀
+   切换：<html data-theme="dark">   · 顶栏按钮写 localStorage
+   ════════════════════════════════════════════════════════════════ */
+
+/* ---- 浅色（默认，照 cromma.ai 实测）---- */
+:root,
+:root[data-theme="light"] {
+  --bg:     #f4f5f7;             /* 页面底：浅灰 */
+  --panel:  #ffffff;             /* 面板：纯白 */
+  --card:   #ffffff;
+  --hover:  #f0f1f3;
+  --line:   #e5e7eb;             /* 1px 浅灰描边 */
+
+  --paper:  #ffffff;
+  --ink:    #1a1a1a;
+
+  --text:   #1a1a1a;
+  --muted:  #6b7280;
+  --faint:  #8b8f96;             /* 已校准 4.6:1 */
+  --meta:   #4b5563;
+  --meta-strong: #111827;
+  --meta-hi: #111827;
+  --meta-num: #111827;
+  --text-soft: #4b5563;
+
+  --amber:  #f59e0b;             /* 主强调：琥珀 */
+  --amber-bg: #fef3c7;
+
+  --green:  #10b981;
+  --ok:     #059669;
+  --blue:   #f59e0b;             /* 选中态也用琥珀 */
+  --red:    #ef4444;
+  --alert-red: #dc2626;
+  --reason-red: #b91c1c;
+  --ink-green: #047857;
+  --stat-line: #e5e7eb;
+
+  --shadow-card: 0 2px 8px rgba(0,0,0,.04);
+  --radius-outer: 12px;
+  --radius-card: 10px;
+}
+
+/* ---- 深色（夜间）---- */
+:root[data-theme="dark"] {
+  --bg:     oklch(0.20 0.014 78);
+  --panel:  oklch(0.25 0.015 78);
+  --card:   oklch(0.28 0.016 78);
+  --hover:  oklch(0.32 0.016 78);
+  --line:   oklch(0.42 0.016 78);
+
+  --paper:  oklch(0.996 0.004 78);
+  --ink:    oklch(0.20 0.014 78);
+
+  --text:   oklch(0.93 0.015 78);
+  --muted:  oklch(0.70 0.019 78);
+  --faint:  oklch(0.64 0.018 78);   /* ≥4.5:1 */
+  --meta:   oklch(0.76 0.017 78);
+  --meta-strong: oklch(0.88 0.014 78);
+  --meta-hi: oklch(0.95 0.012 78);
+  --meta-num: oklch(0.88 0.014 78);
+  --text-soft: oklch(0.78 0.016 78);
+
+  --amber:  oklch(0.825 0.15 80);
+  --amber-bg: oklch(0.32 0.05 80);
+
+  --green:  oklch(0.72 0.13 155);
+  --ok:     oklch(0.72 0.13 155);
+  --blue:   oklch(0.825 0.15 80);
+  --red:    oklch(0.65 0.17 25);
+  --alert-red: oklch(0.60 0.18 25);
+  --reason-red: oklch(0.75 0.12 25);
+  --ink-green: oklch(0.45 0.12 155);
+  --stat-line: oklch(0.42 0.016 78 / 0.6);
+
+  --shadow-card: 0 2px 10px rgba(0,0,0,.35);
+  --radius-outer: 12px;
+  --radius-card: 10px;
+}
+
+/* ---- 两种主题共用：字体、密度、形状 ---- */
+body {
+  font-family: Geist, ui-sans-serif, system-ui, -apple-system,
+               "Segoe UI", "PingFang SC", "Hiragino Sans", "Noto Sans CJK SC", sans-serif;
+}
+
+/* 面板统一：白/深底 + 1px 描边 + 极轻阴影（CrommaCode 的做法：靠描边不靠阴影） */
+#projects, #cabin-main, #cabin-foot, .cabin-now, .cabin-tasks,
+.agent-card, .filegroup, .step-card, .set-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+#topbar {
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* 主按钮：琥珀底 + 深字（浅色下对比度 8.9:1，深色下 10.8:1） */
+.btn-primary,
+button.btn-primary,
+[data-decide="approve"] {
+  background: var(--amber) !important;
+  color: #1a1a1a !important;
+  border-color: transparent !important;
+  font-weight: 650;
+}
+.btn-primary:hover,
+[data-decide="approve"]:hover { filter: brightness(1.06); }
+
+/* 顶部 tab：选中用琥珀下划线 */
+#cabin-tabs button[aria-current="page"] {
+  color: var(--amber);
+  box-shadow: inset 0 -2px 0 var(--amber);
+}
+
+/* 左侧项目栏 */
+#projects {
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.proj-label {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.proj-item {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text);
+  border-radius: var(--radius-card);
+}
+.proj-item:hover { background: var(--hover); }
+.proj-item[aria-current="true"],
+.proj-item.is-active {
+  background: var(--hover);
+  border-color: var(--amber);
+}
+.proj-name { color: var(--text); }
+.proj-meta { color: var(--faint); }
+
+/* 主题切换按钮 */
+#theme-toggle {
+  width: 30px; height: 30px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+#theme-toggle:hover { color: var(--text); background: var(--hover); }
+
+/* ---- R90·2 对比度补强（浅色下状态标签和提示框太淡）---- */
+:root, :root[data-theme="light"] {
+  --amber-text: #b45309;   /* 琥珀的深版，用于白底上的文字（对比度 5.6:1） */
+  --green-text: #047857;
+  --hint-bg:    #eef0f3;   /* 提示框比页面底深一档，不再融进背景 */
+  --hint-line:  #d8dce2;
+}
+
+/* 状态胶囊：文字用深版，底色保留浅版 */
+.proj-state, .cabin-link, .cf-tip a,
+.ob-cur, .ob-done, .ob-fut {
+  font-weight: 500;
+}
+:root[data-theme="light"] .proj-state.st-awaiting,
+:root[data-theme="light"] .proj-state.st-working,
+:root:not([data-theme]) .proj-state.st-awaiting,
+:root:not([data-theme]) .proj-state.st-working {
+  color: #b45309;
+}
+:root[data-theme="light"] .proj-state.st-done,
+:root:not([data-theme]) .proj-state.st-done { color: #047857; }
+
+/* 文字链接不要用纯琥珀（白底上太淡） */
+:root[data-theme="light"] .cabin-link,
+:root:not([data-theme]) .cabin-link { color: #b45309; }
+:root[data-theme="dark"] .cabin-link { color: var(--amber); }
+
+/* 提示框：给底色和描边，别跟页面底混在一起 */
+.cf-row, .cf-err, .cabin-foot-hint {
+  background: var(--hint-bg, transparent);
+  border: 1px solid var(--hint-line, transparent);
+  border-radius: var(--radius-card);
+  padding: 10px 12px;
+}
+:root[data-theme="dark"] .cf-row,
+:root[data-theme="dark"] .cf-err,
+:root[data-theme="dark"] .cabin-foot-hint {
+  background: oklch(0.30 0.016 78);
+  border-color: oklch(0.42 0.016 78);
+}

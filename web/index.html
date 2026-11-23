@@ -12,6 +12,11 @@
 <link rel="stylesheet" href="app-layers.css">
 <!-- TASK-工作台重做：小白三页（我的任务/干活记录/设置）样式，最后加载压轴 -->
 <link rel="stylesheet" href="app-cabin.css">
+<!-- R90 双主题：head 内联，避免深色用户看到白屏闪一下 -->
+<script>
+try{if(localStorage.getItem('agentoffice-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}
+</script>
+<script src="theme.js"></script>
 </head>
 <body>
 
@@ -24,6 +29,7 @@
   <!-- TASK-工作台重做：目标分常驻顶栏（有任务才显示，点击跳「我的任务」改分） -->
   <button id="tb-score" type="button" hidden></button>
   <span class="tb-spacer"></span>
+  <button id="theme-toggle" type="button" title="切换深色 / 浅色" aria-label="切换深色浅色">◐</button>
   <input id="tb-search-input" type="search" placeholder="筛选需求…" hidden autocomplete="off">
   <button id="tb-reqs-toggle" class="tb-icon" type="button" title="需求列表" aria-label="切换需求列表">
     
@@ -57,30 +63,34 @@
 <div id="decision-pop" hidden></div>
 
 <!-- ================= 导航 + 页面 ================= -->
-<!-- TASK-工作台重做：一级导航 4 个收成 3 个人话页 + 专业视图入口；
-     Agents/技能/文件 三页没删，挪进「设置」页签（#page-settings 内），旧链接自动跳转 -->
+<!-- R90 布局重排（按 CrommaCode 结构，方案 B）：左侧 PROJECTS 项目栏 + 顶部页签。
+     页签：总览 | Agent | 文件 | 记录 | 高级（+设置）。技能管理仍在「设置」页签里；
+     旧链接 /agents /skills /files /pro 都不作废，route() 折算到对应页。 -->
 <div id="frame">
-  <nav id="rail" aria-label="主导航">
-    <div class="rail-logo" aria-hidden="true">L</div>
-    <button id="rail-home" class="rail-item" aria-current="page" title="我的任务">
-      <span>我的任务</span>
-    </button>
-    <button id="rail-log" class="rail-item" type="button" title="干活记录">
-      <span>干活记录</span>
-    </button>
-    <button id="rail-settings" class="rail-item" type="button" title="设置">
-      <span>设置</span>
-    </button>
-    <div class="rail-spacer"></div>
-    <button id="rail-pro" class="rail-item" type="button" title="高级工作台（原专业视图 · 三栏工作台）">
-      <span>高级工作台</span>
-    </button>
-    <button id="rail-focus" class="rail-item" type="button" title="打开 EaseDraw 专注模式">
-      <span>专注</span>
-    </button>
+  <!-- 左：PROJECTS 项目栏（X01：项目名/N 条任务·主线/状态，全部从任务数据真实聚合） -->
+  <aside id="projects" aria-label="项目列表">
+    <div class="proj-head">
+      <span class="proj-label">PROJECTS</span>
+      <button id="proj-new" type="button" title="开始制作新软件">＋ 新软件</button>
+    </div>
+    <div id="projects-list"></div>
+    <div class="proj-foot">
+      <button id="rail-focus" type="button" title="打开 EaseDraw 专注模式"><span>专注</span></button>
+    </div>
+  </aside>
+
+  <!-- 右：shell = 顶部页签 + 六个页面 -->
+  <div id="shell">
+  <nav id="tabs" aria-label="页面导航">
+    <button id="tab-home" type="button" aria-current="page">总览</button>
+    <button id="tab-agents" type="button">Agent</button>
+    <button id="tab-files" type="button">文件</button>
+    <button id="tab-log" type="button">记录</button>
+    <button id="tab-pro" type="button" title="高级工作台（三栏专业视图）">高级</button>
+    <button id="tab-settings" type="button">设置</button>
   </nav>
 
-  <section id="page-workbench" class="workbench-page" aria-label="工作台">
+  <section id="page-workbench" class="workbench-page" aria-label="工作台" hidden>
   <!-- 左：需求列表 248px -->
   <aside id="reqs" aria-label="需求列表">
     <div class="reqs-head">需求 · <b id="reqs-count">—</b><button id="btn-overview" type="button">全部需求</button></div>
@@ -102,31 +112,33 @@
   </aside>
   </section>
 
-  <!-- ================= TASK-工作台重做：我的任务（驾驶舱） ================= -->
-  <section id="page-home" class="cabin-page" aria-label="我的任务">
-    <div id="cabin-tasks"></div>
+  <!-- ================= R90：总览（驾驶舱；任务选择挪去左侧 PROJECTS） ================= -->
+  <section id="page-home" class="cabin-page" aria-label="总览">
     <div id="cabin-main"></div>
     <div id="cabin-foot"></div>
   </section>
 
-  <!-- ================= TASK-工作台重做：干活记录 ================= -->
+  <!-- ================= R90：Agent 页（原设置页签提升为一级页，渲染器不动） ================= -->
+  <section id="page-agents" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">THE ATELIER</span><h1>Agents</h1></div><div id="agent-stats" aria-label="角色与实例统计"></div></header><p class="page-scope" id="agent-scope"></p><div id="agent-grid"></div></section>
+
+  <!-- ================= R90：文件页（原设置页签提升为一级页，渲染器不动） ================= -->
+  <section id="page-files" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">COLLECTED WORK</span><h1>文件</h1></div><p id="file-count"></p></header><div id="file-toolbar" hidden><input id="file-search" type="search" placeholder="搜索文件名或路径…" aria-label="搜索文件"><select id="file-task" aria-label="按需求筛选"></select><select id="file-step" aria-label="按步骤筛选"></select><select id="file-type" aria-label="按类型筛选"></select><select id="file-agent" aria-label="按 Agent 筛选"></select><select id="file-sort" aria-label="排序"><option value="recent">最近更新</option><option value="name">名称</option><option value="demand">按需求</option></select><label class="file-only"><input type="checkbox" id="file-only-toggle" checked><span>只看有产物</span></label></div><div id="file-groups"></div></section>
+
+  <!-- ================= 干活记录 ================= -->
   <section id="page-log" class="cabin-page" aria-label="干活记录" hidden>
     <div id="log-body"></div>
   </section>
 
-  <!-- ================= TASK-工作台重做：设置（旧 Agents/技能/文件 三页挪到页签里） ================= -->
+  <!-- ================= R90：设置（技能管理仍是这里的页签；Agents/文件 已提升为一级页） ================= -->
   <section id="page-settings" aria-label="设置" hidden>
     <nav class="set-tabs" aria-label="设置分区">
       <button type="button" data-settab="general" class="on">常用</button>
-      <button type="button" data-settab="agents">AI 与干活状态</button>
       <button type="button" data-settab="skills">技能管理</button>
-      <button type="button" data-settab="files">文件库</button>
     </nav>
     <div id="set-general" class="module-page"></div>
-    <section id="page-agents" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">THE ATELIER</span><h1>Agents</h1></div><div id="agent-stats" aria-label="角色与实例统计"></div></header><p class="page-scope" id="agent-scope"></p><div id="agent-grid"></div></section>
-    <section id="page-skills" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">TOOLS & CRAFT</span><h1>技能</h1></div><p id="skill-count"></p></header><div class="skill-tools"><input id="skill-search" aria-label="搜索技能" placeholder="搜索技能名称或用途"><div class="skill-filter-rows"><div class="skill-filter-row"><span class="sfr-label">用途</span><div id="skill-cat-filters" class="chip-row" role="group" aria-label="按用途筛选"></div></div><div class="skill-filter-row"><span class="sfr-label">来源</span><div id="skill-filters" class="chip-row" role="group" aria-label="按来源筛选"></div></div></div></div><div class="skill-layout"><div class="skill-list-column"><div id="skill-list"></div><div id="skill-pagination" class="pagination"></div></div><aside id="skill-detail" class="skilldetail" aria-label="技能详情" hidden></aside></div></section>
-    <section id="page-files" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">COLLECTED WORK</span><h1>文件</h1></div><p id="file-count"></p></header><div id="file-toolbar" hidden><input id="file-search" type="search" placeholder="搜索文件名或路径…" aria-label="搜索文件"><select id="file-task" aria-label="按需求筛选"></select><select id="file-step" aria-label="按步骤筛选"></select><select id="file-type" aria-label="按类型筛选"></select><select id="file-agent" aria-label="按 Agent 筛选"></select><select id="file-sort" aria-label="排序"><option value="recent">最近更新</option><option value="name">名称</option><option value="demand">按需求</option></select><label class="file-only"><input type="checkbox" id="file-only-toggle" checked><span>只看有产物</span></label></div><div id="file-groups"></div></section>
+    <section id="page-skills" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">TOOLS &amp; CRAFT</span><h1>技能</h1></div><p id="skill-count"></p></header><div class="skill-tools"><input id="skill-search" aria-label="搜索技能" placeholder="搜索技能名称或用途"><div class="skill-filter-rows"><div class="skill-filter-row"><span class="sfr-label">用途</span><div id="skill-cat-filters" class="chip-row" role="group" aria-label="按用途筛选"></div></div><div class="skill-filter-row"><span class="sfr-label">来源</span><div id="skill-filters" class="chip-row" role="group" aria-label="按来源筛选"></div></div></div></div><div class="skill-layout"><div class="skill-list-column"><div id="skill-list"></div><div id="skill-pagination" class="pagination"></div></div><aside id="skill-detail" class="skilldetail" aria-label="技能详情" hidden></aside></div></section>
   </section>
+  </div><!-- /#shell -->
 </div>
 <dialog id="step-files"><div class="picker-heading"><h3>选择产物</h3><button class="btn btn-ghost" data-close-picker>关闭</button></div><div id="step-file-list"></div></dialog>
 

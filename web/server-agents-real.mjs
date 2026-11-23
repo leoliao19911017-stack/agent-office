@@ -28,6 +28,14 @@ const CACHE_TTL_MS = 5000;
 const TAIL_BYTES = 128 * 1024;
 const CLAUDE_LIMIT_MARK = '已达到 5 小时的使用上限';
 
+/** ISO 时间 → 本地「MM/DD HH:mm」，只用于给人看的说明文字 */
+function fmtLocal(iso) {
+  const t = new Date(iso);
+  if (Number.isNaN(t.getTime())) return String(iso);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${p(t.getMonth() + 1)}/${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}`;
+}
+
 /** PowerShell 数进程。失败 → null（取不到就是未知，不许猜 0）。 */
 function psCount(name) {
   return new Promise((resolve) => {
@@ -198,7 +206,9 @@ function probeCodex() {
         );
         if (marker >= 0) {
           out.rateLimited = true;
-          // 「try again at …」文本在 codex_error_info 标记之前，得搜整个尾部
+          // 「try again at …」文本在 codex_error_info 标记之前，得搜整个尾部。
+          // R90 修：原文用弯引号 You’ve，不是直引号；而且 message 里还有 "Upgrade to Pro"
+          // 这类干扰。直接找 "try again at H:MM AM/PM" 这一段最稳。
           const m = tail.match(/try again at (\d{1,2}):(\d{2})\s*(AM|PM)/i);
           if (m) {
             let h = Number(m[1]) % 12;
@@ -212,6 +222,21 @@ function probeCodex() {
           }
           const stop = tail.indexOf('\n', marker);
           out.rateLimitSample = tail.slice(marker, stop > 0 ? stop : marker + 160);
+          // R90 修：rateLimited 不能只看「日志里出现过限额报错」——
+          // 那是一条历史记录，重置时间过了就该恢复。按重置时间判：
+          //   resetAt 已过  → 额度恢复了，rateLimited=false
+          //   resetAt 未到  → rateLimited=true
+          //   resetAt 没读到 → 保守判 true，但标记 resetUnknown
+          if (out.rateLimitResetAt) {
+            const resetMs = Date.parse(out.rateLimitResetAt);
+            if (Number.isFinite(resetMs) && resetMs <= Date.now()) {
+              out.rateLimited = false;
+              out.note = `上次限额已于 ${fmtLocal(out.rateLimitResetAt)} 重置；历史日志里的 usage_limit_exceeded 是旧记录`;
+              out.rateLimitExpired = true;
+            }
+          } else {
+            out.rateLimitResetUnknown = true;
+          }
         } else {
           out.rateLimited = false;
         }

@@ -393,8 +393,8 @@ async function scheduleFileCheck(force = false) {
   withScroll(document.getElementById('insp-body'), renderInspector);   // 红标只影响 Inspector
   // TASK-R3：核实结果刷新只重渲染 Inspector 是漏的——文件库页的红标/字节/哈希
   // 同样吃这份数据，路径集没变它就一直显示旧核实结果。
-  // TASK-工作台重做：文件页挪进设置页签，判据从 activePage 改看当前页签。
-  if (activePage === 'settings' && settingsTab === 'files') renderFiles();
+  // R90：文件页升一级页，直接看 activePage。
+  if (activePage === 'files') renderFiles();
 }
 
 /* G02：W02 审批版本取数（scheduleVersionGate/dedupFiles）→ version.js */
@@ -441,14 +441,15 @@ function restoreUiPos() {
       const t = tasks.find((x) => x.id === ui.taskId);
       if (t && (t.steps || []).some((s) => s.key === p.stepKey)) ui.stepKey = p.stepKey;
     }
-    // TASK-工作台重做：页面集换成 home/log/settings/workbench；老存档停在
-    // agents/skills/files 页的，折算成「设置页的对应页签」再跳，位置不丢。
-    const tabOfPage = { agents: 'agents', skills: 'skills', files: 'files' };
-    if (p.page && tabOfPage[p.page]) { settingsTab = tabOfPage[p.page]; location.hash = '/settings'; }
-    else if (['home', 'log', 'settings', 'workbench'].includes(p.page) && p.page !== 'home') {
-      location.hash = { log: '/log', settings: '/settings', workbench: '/pro' }[p.page] || '/';
-    }
-    if (['general', 'agents', 'skills', 'files'].includes(p.settingsTab)) settingsTab = p.settingsTab;
+    // R90 布局重排：agents/files 升一级页，老存档停在它们的直接跳对应 hash；
+    // skills 仍在设置页里当子页签（route() 会把 /skills 原地折算成设置+技能）。
+    const hashOfPage = { agents: '/agents', files: '/files', skills: '/skills', log: '/log', settings: '/settings', workbench: '/pro' };
+    if (p.page && hashOfPage[p.page]) location.hash = hashOfPage[p.page];
+    // 老存档的 settingsTab 可能还是 agents/files（设置页旧页签）——升一级页跳过去
+    if (p.settingsTab === 'agents') location.hash = '/agents';
+    if (p.settingsTab === 'files') location.hash = '/files';
+    if (p.settingsTab === 'skills') settingsTab = 'skills';
+    if (p.settingsTab === 'general') settingsTab = 'general';
     // R9：技能页与文件页的检索状态接回（选择器/输入框的值在各自 render 时回填）
     if (typeof p.skillQuery === 'string') { skillQuery = p.skillQuery; document.getElementById('skill-search').value = p.skillQuery; }
     if (typeof p.skillFilter === 'string' && p.skillFilter) skillFilter = p.skillFilter;
@@ -889,21 +890,22 @@ function showToast(msg,kind){
 const fingerprints={};
 function renderChanged(id,data,fn){const key=JSON.stringify(data);if(fingerprints[id]===key)return;fingerprints[id]=key;withScroll(document.getElementById(id),fn)}
 function route(){
- // TASK-工作台重做：一级页收成 我的任务/干活记录/设置 三个人话页；原三栏工作台
- // 挪到 #/pro 专业视图。旧链接 /agents /skills /files 不作废——折算成设置页页签再跳。
+ // R90 布局重排：六个一级页 home/agents/files/log/workbench(settings) 由顶部页签接管。
+ // 旧链接不作废：/agents /files 本来就是一级页；/skills 仍指设置页里的技能子页签——
+ // 直接原地渲染成「设置页+技能页签」，不重写 hash（重写会多压一条历史，后退退不出去）。
  const path=location.hash.slice(1)||'/';
- const tabOf={'/agents':'agents','/skills':'skills','/files':'files'};
- if(tabOf[path]){settingsTab=tabOf[path];location.hash='/settings';return}
- activePage=({'/':'home','/log':'log','/settings':'settings','/pro':'workbench'})[path]||'home';
+ if(path==='/skills'){settingsTab='skills';activePage='settings'}
+ else activePage=({'/':'home','/agents':'agents','/files':'files','/log':'log','/pro':'workbench','/settings':'settings'})[path]||'home';
  document.body.dataset.page=activePage;
- for(const name of ['home','log','settings','workbench'])document.getElementById('page-'+name).hidden=name!==activePage;
+ for(const name of ['home','agents','files','log','workbench','settings'])document.getElementById('page-'+name).hidden=name!==activePage;
  if(activePage==='settings')syncSettingsTabs();
- for(const [id,name] of Object.entries({'rail-home':'home','rail-log':'log','rail-settings':'settings','rail-pro':'workbench'})){
-  const el=document.getElementById(id);if(name===activePage)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
+ for(const [id,name] of Object.entries({'tab-home':'home','tab-agents':'agents','tab-files':'files','tab-log':'log','tab-pro':'workbench','tab-settings':'settings'})){
+  const el=document.getElementById(id);if(!el)continue;
+  if(name===activePage)el.setAttribute('aria-current','page');else el.removeAttribute('aria-current');
  }
  document.body.classList.remove('insp-open','reqs-open');syncToggleStates();
  // TASK-向导化改造（X03）：「专业视图」统一叫「高级工作台」——只改展示名，路由 /pro 与内部 page 标识不动
- document.title=({home:'我的任务',log:'干活记录',settings:'设置',workbench:'高级工作台'})[activePage]+" · Leo's Agent Office";
+ document.title=({home:'总览',agents:'Agents',files:'文件',log:'干活记录',workbench:'高级工作台',settings:'设置'})[activePage]+" · Leo's Agent Office";
  document.getElementById('step-files').close();renderModules();
  saveUiPos();  // 记住最后停在哪一页，刷新不丢
 }
@@ -958,23 +960,26 @@ function renderSkills(){
 }
 /* G02：文件视图（fileButton/physButton/renderFiles/筛选/绑定）→ files.js */
 function renderModules(){
- // TASK-工作台重做：新增三页的分发。设置页里三个挪进来的旧页照旧用原渲染器，
- // 只是换了个住处；目标分小徽标在所有页常驻（有任务才显示）。
+ // R90 布局重排：agents/files 升一级页，分发跟着走；设置页里只剩 常用/技能 两个子页签。
+ // 目标分小徽标在所有页常驻（有任务才显示）。
  renderScorePill();
+ // R90：左侧 PROJECTS 项目栏所有页常驻（renderCabin 只管总览主区，不再管任务条）
+ renderProjects();
  if(activePage==='home')renderCabin();
  if(activePage==='log')renderLog();
+ if(activePage==='agents')withScroll(document.getElementById('page-agents'),renderAgents);
+ if(activePage==='files')withScroll(document.getElementById('page-files'),renderFiles);
  if(activePage==='settings'){
   if(settingsTab==='general')renderSettingsGeneral();
-  if(settingsTab==='agents')withScroll(document.getElementById('page-agents'),renderAgents);
   if(settingsTab==='skills')renderSkills();
-  if(settingsTab==='files')withScroll(document.getElementById('page-files'),renderFiles);
  }
 }
 document.addEventListener('click',e=>{
  const b=e.target.closest('button');if(!b)return;
- const routes={'rail-home':'/','rail-log':'/log','rail-settings':'/settings','rail-pro':'/pro'};
+ // R90：顶部页签点谁跳谁的 hash，route() 统一收口（tab-pro → /pro → page-workbench）
+ const routes={'tab-home':'/','tab-agents':'/agents','tab-files':'/files','tab-log':'/log','tab-pro':'/pro','tab-settings':'/settings'};
  if(routes[b.id]){location.hash=routes[b.id];return}
- // TASK-工作台重做：设置页页签切换（旧 agents/skills/files 三页现在住在这里）
+ // 设置页子页签（常用/技能管理）：就地切换，不动一级页 hash
  if(b.dataset.settab){settingsTab=b.dataset.settab;syncSettingsTabs();renderModules();saveUiPos();return}
  if(b.dataset.agent){agentUI.selId=agentUI.selId===b.dataset.agent?null:b.dataset.agent;renderAgents()}
  if(b.dataset.page&&!b.disabled){skillPage+=Number(b.dataset.page);skillScroll=0;renderSkills();document.getElementById('skill-list').scrollTop=0;saveUiPos()}
@@ -988,6 +993,11 @@ document.addEventListener('click',e=>{
  if(b.hasAttribute('data-clear-file-filters')){clearFileFilters();saveUiPos();renderFiles();}
  // ===== TASK-工作台重做：驾驶舱交互 =====
  if(b.dataset.cabinTask){selectTask(b.dataset.cabinTask);renderCabin();return}
+ // R90：左侧 PROJECTS 行点击 = 选中该任务并回总览看它（selectTask 自带 renderAll）
+ if(b.dataset.projTask){selectTask(b.dataset.projTask);if(activePage!=='home')location.hash='/';return}
+ // R90：左侧「＋ 新软件」= 旧任务条入口搬家（与 data-cabin-newopen 同一动作）；
+ // 跨页跳转时 hashchange 是异步的，聚焦等新页渲染完再做
+ if(b.id==='proj-new'){cabinUI.newOpen=true;if(activePage!=='home')location.hash='/';else renderCabin();setTimeout(()=>{const ta=document.getElementById('newtask-idea');if(ta)ta.focus()},0);return}
  // ===== TASK-向导化改造：开新软件 / 评审表单 / 自动返工 / 高级工作台直达 =====
  if(b.hasAttribute('data-cabin-newopen')){cabinUI.newOpen=true;renderCabin();const ta=document.getElementById('newtask-idea');if(ta)ta.focus();return}
  if(b.hasAttribute('data-cabin-newclose')){cabinUI.newOpen=false;renderCabin();return}
@@ -1038,7 +1048,9 @@ document.addEventListener('keydown',e=>{
  if((e.key==='Enter'||e.key===' ')&&e.target.matches('.track-node')){e.preventDefault();selectStep(e.target.dataset.step)}
 });
 for(const [id,name] of Object.entries({'rail-home':'board','rail-log':'clock','rail-settings':'settings','rail-pro':'chevron','rail-focus':'focus','tb-search':'search','tb-settings':'settings','tb-reqs-toggle':'board','tb-insp-toggle':'chevron'})){
- const el=document.getElementById(id);el.querySelector('svg,img')?.remove();el.insertAdjacentHTML('afterbegin',iconPNG(name, el.classList.contains('rail-item')?20:18));
+ // R90 布局重排：rail-* 大多已删（rail-focus 挪进 PROJECTS 底部），元素不在就跳过
+ const el=document.getElementById(id);if(!el)continue;
+ el.querySelector('svg,img')?.remove();el.insertAdjacentHTML('afterbegin',iconPNG(name, el.classList.contains('rail-item')?20:18));
 }
 route();
 

@@ -572,7 +572,7 @@ function planHeroHtml(plan) {
 }
 
 /* ================= 页面状态 ================= */
-let settingsTab = 'general';            // 设置页当前页签：general | agents | skills | files
+let settingsTab = 'general';            // 设置页当前子页签：general | skills（agents/files 已升一级页，不再住这里）
 const cabinUI = { pastOpen: false, noteOpen: false, scoreEdit: false, tasksOpen: false, newOpen: false, reviewOpen: false,
   rosterOpen: false };   // X07 展开名册（R86·X02：hideTest 下线——测试任务在首页固定隐藏，开关不再需要）
 // 新建软件/评审表单的草稿：轮询重渲染不丢正在打的字（按输入框 id 存，重建后回填）
@@ -594,12 +594,14 @@ function restoreCabinDrafts() {
   }
 }
 
-// 设置页签切换：按钮高亮 + 四个子面板显隐
+// 设置页签切换：按钮高亮 + 子面板显隐。
+// R90：agents/files 升一级页后设置页只剩 常用/技能 两个子面板；
+// page-agents/page-files 的显隐归 route() 管，这里不再越权。
 function syncSettingsTabs() {
   document.querySelectorAll('#page-settings [data-settab]').forEach((b) => {
     b.classList.toggle('on', b.dataset.settab === settingsTab);
   });
-  for (const [tab, id] of [['general', 'set-general'], ['agents', 'page-agents'], ['skills', 'page-skills'], ['files', 'page-files']]) {
+  for (const [tab, id] of [['general', 'set-general'], ['skills', 'page-skills']]) {
     const el = document.getElementById(id);
     if (el) el.hidden = tab !== settingsTab;
   }
@@ -731,6 +733,80 @@ function cabinTaskState(t) {
   return '进行中';
 }
 
+/* ================= R90：左侧 PROJECTS 项目栏（任务即项目，一任务一行） =================
+   数据从 lastFlow.tasks 真实聚合，不新建接口。系统现在没有「项目」概念、任务间无父子
+   关系：任务档案一旦出现 project/projectId（或 meta.project）这类字段就按字段聚合；
+   找不到就严格一任务一行，不自己发明分组规则。
+   组内主线：awaiting 且可拍板（前序全 done）> 最近 updatedAt > 都没有就不标。
+   状态四态吃步骤档案真实状态：全 done/skipped=做完了；awaiting 可拍板=等你确认；
+   failed=被你打回了；其他=进行中（颜色胶囊复用 .st-* 既有类，不加新色）。
+   测试任务与首页同口径（R86·X02：只在展示层隐藏，要看去高级工作台）。
+   点击行 = selectTask 该任务（复用 renderCabin 的既有链路），非总览页先回总览。 */
+function projGroupKeyOf(t) {
+  const g = t.project || t.projectId || (t.meta && t.meta.project) || '';
+  return g ? String(g) : null;
+}
+
+// 项目行状态四态（纯展示文案，判定吃步骤档案）
+function projStateOf(t) {
+  const ss = t.steps || [];
+  if (ss.length && ss.every((s) => s.status === 'done' || s.status === 'skipped')) return ['做完了', 'st-done'];
+  if (ss.some((s) => s.status === 'awaiting' && waitingOnOf(s, ss).length === 0)) return ['等你确认', 'st-awaiting'];
+  if (ss.some((s) => s.status === 'failed')) return ['被你打回了', 'st-failed'];
+  return ['进行中', 'st-running'];
+}
+
+function renderProjects() {
+  const box = document.getElementById('projects-list');
+  if (!box) return;
+  // 数据未到/读失败：如实占位（与 renderCabin 同口径，不拿空数据冒充）
+  if (!lastFlow) {
+    const failed = modErr.flow && !modOkAt.flow;
+    renderChanged('projects-list', failed ? 'failed' : 'loading', () => {
+      const el = document.getElementById('projects-list');
+      if (el) el.innerHTML = `<div class="proj-empty">${failed ? '任务清单读取失败，原因见页面顶部' : '正在读取任务…'}</div>`;
+    });
+    return;
+  }
+  const realTasks = (lastFlow.tasks || []).filter((x) => !isTestTask(x));
+  if (!realTasks.length) {
+    renderChanged('projects-list', 'empty', () => {
+      const el = document.getElementById('projects-list');
+      if (el) el.innerHTML = '<div class="proj-empty">还没有软件<br>点上方「＋ 新软件」开始</div>';
+    });
+    return;
+  }
+  // 分组：有 project 类字段按字段聚合；没有 → 任务即项目
+  const groups = new Map();
+  for (const t of realTasks) {
+    const k = projGroupKeyOf(t);
+    if (!k) { groups.set('#task:' + t.id, { name: plainTitle(t), tasks: [t] }); continue; }
+    if (!groups.has(k)) groups.set(k, { name: k, tasks: [] });
+    groups.get(k).tasks.push(t);
+  }
+  const rows = [...groups.values()].map((g) => {
+    // 主线：awaiting 且可拍板 > 最近 updatedAt（组里就一条时主线就是它）> 不标
+    const main = g.tasks.find((t) => (t.steps || []).some((s) => s.status === 'awaiting' && waitingOnOf(s, t.steps).length === 0))
+      || g.tasks.slice().sort((a, b) => Date.parse(b.updatedAt || 0) - Date.parse(a.updatedAt || 0))[0]
+      || null;
+    const [stateTxt, stateCls] = projStateOf(main || g.tasks[0]);
+    const mainName = main ? plainTitle(main) : '';
+    return { id: main ? main.id : '', name: g.name, n: g.tasks.length, mainName, stateTxt, stateCls };
+  });
+  // 指纹带选中态：换行高亮跟着走，内容没变就不动 DOM
+  const fp = rows.map((r) => `${r.id}:${r.name}:${r.n}:${r.mainName}:${r.stateTxt}`).join('|') + '#' + (ui.taskId || '');
+  renderChanged('projects-list', fp, () => {
+    const el = document.getElementById('projects-list');
+    if (!el) return;
+    el.innerHTML = rows.map((r) => `
+      <button type="button" class="proj-item${r.id && r.id === ui.taskId ? ' is-active' : ''}" data-proj-task="${esc(r.id)}" title="${esc(r.mainName || r.name)}">
+        <b class="proj-name">${esc(r.name)}</b>
+        <span class="proj-meta">${r.n} 条任务${r.mainName ? ` · 主线：${esc(r.mainName)}` : ''}</span>
+        <span class="proj-state ${r.stateCls}">${esc(r.stateTxt)}</span>
+      </button>`).join('');
+  });
+}
+
 /* ================= X05：AI 工作实况广播（数据来自 /api/office/flow 的 live 字段） =================
    四态分得清清楚楚：working 在干活 / awaiting_user 等你确认 / idle 空闲 / unknown 暂时无法确认。
    「在线」绝不冒充「正在干活」——连接情况只在底栏与干活记录页说。 */
@@ -794,34 +870,20 @@ function renderCabin() {
         <h2>你还没有开始制作软件</h2>
         <button class="btn btn-primary" type="button" data-cabin-newopen>开始制作第一个软件</button>
       </div>`);
-    document.getElementById('cabin-tasks').innerHTML =
-      '<button type="button" class="cabin-newbtn" data-cabin-newopen title="从头开始，AI 帮你做一个新软件">＋ 开始制作新软件</button>';
+    // R90：任务条已删，入口交给左侧 PROJECTS 的「＋ 新软件」（renderProjects）
     foot.innerHTML = '';
     restoreCabinDrafts();
     return;
   }
 
-  // 任务条：+ 开始制作新软件（X07 固定入口）+ 全部任务 + 人话状态
-  // R85·X03：标题走 plainTitle（内部代号只留在「详细信息」）
-  // R86·X02：测试任务在首页固定隐藏（要看测试去高级工作台 /pro），指纹按过滤后的清单算
-  renderChanged('cabin-tasks', realTasks.map((t) => `${t.id}:${cabinTaskState(t)}:${t.title}`).join('|'), () => {
-    const el = document.getElementById('cabin-tasks');
-    el.innerHTML = `
-    <button type="button" class="cabin-newbtn" data-cabin-newopen title="从头开始，AI 帮你做一个新软件">＋ 开始制作新软件</button>
-    ${realTasks.slice(0, 12).map((t) => {
-      const title = plainTitle(t);
-      return `
-      <button type="button" class="cabin-task${t.id === ui.taskId ? ' cur' : ''}" data-cabin-task="${esc(t.id)}" title="${esc(title)}">
-        <b>${esc(title.length > 16 ? title.slice(0, 16) + '…' : title)}</b>
-        <span>${esc(cabinTaskState(t))}</span>
-      </button>`;
-    }).join('')}`;
-  });
+  // R90：任务条（#cabin-tasks）随布局重排删除，任务清单挪到左侧 PROJECTS
+  // （renderProjects，app.js renderModules 每轮调用）；「＋ 开始制作新软件」
+  // 入口 = 左侧栏顶部「＋ 新软件」（#proj-new）。这里只管主区内容。
 
   let t = currentTask();
   // R86·X02：选中项是被隐藏的测试任务时（如从高级工作台带回的位置），切到最近一条真实需求
   if (t && isTestTask(t)) { ui.taskId = realTasks[0].id; t = currentTask(); }
-  if (!t) { wrap.innerHTML = '<div class="cabin-loading">请在上面的任务条里选一个软件。</div>'; foot.innerHTML = ''; return; }
+  if (!t) { wrap.innerHTML = '<div class="cabin-loading">请在左侧项目列表里选一个软件。</div>'; foot.innerHTML = ''; return; }
   const steps = (t.steps || []).slice().sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
   if (!steps.length) { wrap.innerHTML = '<div class="cabin-loading">这个软件还没有步骤档案。</div>'; foot.innerHTML = ''; return; }
 

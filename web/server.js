@@ -332,6 +332,7 @@ const server = createServer(async (req, res) => {
         '/preview.js': 'application/javascript; charset=utf-8',
         '/agents.js': 'application/javascript; charset=utf-8',
         '/cabin.js': 'application/javascript; charset=utf-8',
+        '/theme.js': 'application/javascript; charset=utf-8',
         '/render.js': 'application/javascript; charset=utf-8',
         '/offline-snapshot.js': 'application/javascript; charset=utf-8',
       };

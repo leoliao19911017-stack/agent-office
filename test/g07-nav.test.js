@@ -25,31 +25,31 @@ after(async () => {
 });
 
 const PAGES = [
-  { hash: '#/', page: 'page-home', dataPage: 'home', rail: '#rail-home', biz: '#cabin-tasks .cabin-task' },
-  { hash: '#/log', page: 'page-log', dataPage: 'log', rail: '#rail-log', biz: '#log-body .log-headline' },
-  { hash: '#/settings', page: 'page-settings', dataPage: 'settings', rail: '#rail-settings', biz: '#set-general .set-card', sub: 'general' },
-  { hash: '#/pro', page: 'page-workbench', dataPage: 'workbench', rail: '#rail-pro', biz: '#reqs-list .req-item' },
+  { hash: '#/', page: 'page-home', dataPage: 'home', tab: '#tab-home', biz: '#projects-list .proj-item' },
+  { hash: '#/log', page: 'page-log', dataPage: 'log', tab: '#tab-log', biz: '#log-body .log-headline' },
+  { hash: '#/settings', page: 'page-settings', dataPage: 'settings', tab: '#tab-settings', biz: '#set-general .set-card', sub: 'general' },
+  { hash: '#/pro', page: 'page-workbench', dataPage: 'workbench', tab: '#tab-pro', biz: '#reqs-list .req-item' },
 ];
 
-// 设置页内部的四个分区页签（旧 Agents/技能/文件 三页的新住处）→ DOM id
-const MODULES = { general: 'set-general', agents: 'page-agents', skills: 'page-skills', files: 'page-files' };
+// 设置页内部页签（R90：Agents/文件 已升一级页，设置里只剩 常用/技能管理）
+const MODULES = { general: 'set-general', skills: 'page-skills' };
 
 // 页面可见性矩阵：data-page + display 实测；设置页连带页签矩阵 + 当前页签
 const visMatrix = (page) => page.evaluate(() => {
-  const ids = ['page-home', 'page-log', 'page-settings', 'page-workbench'];
+  const ids = ['page-home', 'page-agents', 'page-files', 'page-log', 'page-settings', 'page-workbench'];
   const vis = {};
   for (const id of ids) {
     const el = document.getElementById(id);
     vis[id] = { hidden: el.hidden, display: getComputedStyle(el).display };
   }
-  const tabIds = ['set-general', 'page-agents', 'page-skills', 'page-files'];
+  const tabIds = ['set-general', 'page-skills'];
   const tabs = {};
   for (const id of tabIds) {
     const el = document.getElementById(id);
     tabs[id] = { hidden: el.hidden, display: getComputedStyle(el).display };
   }
   const onTab = document.querySelector('#page-settings .set-tabs [data-settab].on');
-  const cur = document.querySelector('#rail .rail-item[aria-current="page"]');
+  const cur = document.querySelector('#tabs [aria-current="page"]');
   return {
     vis, tabs,
     setTab: onTab ? onTab.dataset.settab : null,
@@ -58,15 +58,16 @@ const visMatrix = (page) => page.evaluate(() => {
   };
 });
 
-test('B1 侧栏点击切换四页：目标页 display 可见、其余 display:none', async () => {
+test('B1 顶部页签点击切换四页：目标页 display 可见、其余 display:none', async () => {
   const { page, state } = await newPage(browser);
   try {
     await page.goto(stack.base + '/', { waitUntil: 'commit' });
-    await page.waitForSelector('#cabin-tasks .cabin-task', { timeout: 15000 });
+    // R90：任务条 #cabin-tasks 已删，首页业务内容 = 左侧 PROJECTS 项目行
+    await page.waitForSelector('#projects-list .proj-item', { timeout: 15000 });
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
 
     for (const p of PAGES) {
-      await page.click(p.rail);
+      await page.click(p.tab);
       await page.waitForSelector(p.biz, { timeout: 8000 });
       await sleep(120); // 等 route() 后一帧渲染稳定
       const m = await visMatrix(page);
@@ -94,30 +95,32 @@ test('B1 侧栏点击切换四页：目标页 display 可见、其余 display:no
   } finally { await page.close(); }
 });
 
-test('B2 aria-current 高亮唯一且跟随当前页（旧链接折算设置页签）', async () => {
+test('B2 aria-current 高亮唯一且跟随当前页（旧链接 #/agents 落到一级 Agents 页）', async () => {
   const { page } = await newPage(browser);
   try {
     await page.goto(stack.base + '/', { waitUntil: 'commit' });
-    await page.waitForSelector('#cabin-tasks .cabin-task', { timeout: 15000 });
+    await page.waitForSelector('#projects-list .proj-item', { timeout: 15000 });
     for (const p of PAGES) {
       // 哈希直接导航（与点击等价的另一入口：location.hash 赋值触发 hashchange）
       await page.evaluate((h) => { location.hash = h; }, p.hash);
       await sleep(150);
       const m = await visMatrix(page);
-      assert.equal(m.ariaCurrentId, p.rail.slice(1),
-        `${p.hash} 下 aria-current 应在 ${p.rail}，实际在 #${m.ariaCurrentId}`);
-      const curCount = await page.locator('#rail .rail-item[aria-current="page"]').count();
+      assert.equal(m.ariaCurrentId, p.tab.slice(1),
+        `${p.hash} 下 aria-current 应在 ${p.tab}，实际在 #${m.ariaCurrentId}`);
+      const curCount = await page.locator('#tabs [aria-current="page"]').count();
       assert.equal(curCount, 1, `aria-current 应唯一，实际 ${curCount} 个`);
     }
-    // 旧链接不作废契约：#/agents 折算成设置页 agents 页签再跳，
-    // aria-current 归属设置主导航，agents 内容真实可见
+    // 旧链接不作废契约：R90 把 Agents/文件 升为一级页，所以 #/agents 直接落到
+    // page-agents（不再是「设置页·agents 页签」），aria-current 归 #tab-agents。
     await page.evaluate(() => { location.hash = '/agents'; });
     await page.waitForSelector('#agent-grid .agent-card', { timeout: 8000 });
     const m = await visMatrix(page);
-    assert.equal(m.dataPage, 'settings', `#/agents 应折算到设置页，实际 ${m.dataPage}`);
-    assert.equal(m.setTab, 'agents', `#/agents 应落在 agents 页签，实际 ${m.setTab}`);
-    assert.equal(m.ariaCurrentId, 'rail-settings', `#/agents 下 aria-current 应在 #rail-settings，实际在 #${m.ariaCurrentId}`);
-    console.log('[B2] aria-current 新四页全部跟随且唯一；旧链接 #/agents→设置页·agents 页签契约成立');
+    assert.equal(m.dataPage, 'agents', `#/agents 应落到一级 Agents 页，实际 ${m.dataPage}`);
+    assert.equal(m.ariaCurrentId, 'tab-agents', `#/agents 下 aria-current 应在 #tab-agents，实际在 #${m.ariaCurrentId}`);
+    const agentsVis = m.vis['page-agents'];
+    assert.ok(!agentsVis.hidden && agentsVis.display !== 'none',
+      `#/agents 下 Agents 页应可见，实测 hidden=${agentsVis.hidden} display=${agentsVis.display}`);
+    console.log('[B2] aria-current 新四页全部跟随且唯一；旧链接 #/agents→一级 Agents 页契约成立');
   } finally { await page.close(); }
 });
 
@@ -169,17 +172,17 @@ test('B4 多页往返后各页业务数据仍在，全程零页面异常', async
   const { page, state } = await newPage(browser);
   try {
     await page.goto(stack.base + '/', { waitUntil: 'commit' });
-    await page.waitForSelector('#cabin-tasks .cabin-task', { timeout: 15000 });
+    await page.waitForSelector('#projects-list .proj-item', { timeout: 15000 });
     await page.waitForSelector('#sb-conn.ok', { timeout: 10000 });
 
     // 走一圈：我的任务 → 干活记录 → 设置 → 专业视图，再回首页、进专业视图
     for (const p of PAGES) {
-      await page.click(p.rail);
+      await page.click(p.tab);
       await page.waitForSelector(p.biz, { timeout: 8000 });
     }
-    await page.click('#rail-home');
-    await page.waitForSelector('#cabin-tasks .cabin-task', { timeout: 8000 });
-    await page.click('#rail-pro');
+    await page.click('#tab-home');
+    await page.waitForSelector('#projects-list .proj-item', { timeout: 8000 });
+    await page.click('#tab-pro');
     await page.waitForSelector('#reqs-list .req-item', { timeout: 8000 });
 
     const counts = {

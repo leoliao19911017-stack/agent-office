@@ -1,54 +1,32 @@
 {
   "outcome": "succeeded",
-  "summary": "Agent 状态显示真实情况：新增只读探测接口 GET /api/agents/real（PowerShell 进程数 + 会话日志 mtime + 会话尾部限额报错，5s 缓存，出错出 null 不出 500），ROSTER_DEFS 补上 claude（Claude Code·写代码），前端状态判定彻底不读中台 seenAt（7 个 agent 同一毫秒判不出谁在干活）改为三维：进程状态（进程活着（N 个）/进程没开/未知）、执行状态（执行中/空闲/未知，红线：取不到就显示未知，永不用空闲兜底）、接活（能接活/额度用完/未知）。底栏 chips、Agents 名册、首页驾驶舱 roster 同源同色。四项自测全部真实跑过：curl 实测、含 Claude Code 行的截图、伪数据 20 分钟前→空闲、Hermes 三行显示未知。",
+  "summary": "R90 顶部页签路由接通：route() 扩成六一级页（#/ → 总览、#/agents、#/files、#/log、#/pro、#/settings），tab 点击走 location.hash → hashchange → route() 单向收口（无重定向回路），aria-current 唯一标在被点页签；旧链接 #/skills 原地折算成「设置页+技能子页签」不重写 hash（后退不被多吃一条历史）；#/agents、#/files 从「折算进设置页」改回一级页直达；renderModules/syncSettingsTabs/restoreUiPos 跟着收口（agents/files 分发升一级，设置子页签只剩 常用/技能，老存档 page=agents/files/settingsTab=agents|files 折算到对应一级页）；headless Chrome 实测 6 tab 逐点切换、7 个 hash 直达、刷新保持、后退回退、老存档回放全部通过，全程 0 JS 错误，证据 verify-r90-routing.mjs / verify-r90-legacy-store.mjs 输出 + 截图 verify-r90-routing.png。",
   "items": [
     {
-      "code": "X01",
+      "code": "TABS",
       "status": "done",
-      "evidence": "接口实测返回（2026-11-19T15:57Z，curl http://127.0.0.1:8090/api/agents/real）：agents.claude={processAlive:true, processCount:10, lastActivityAt:2026-11-19T15:57:25.877Z, lastActivityAgeSec:0, rateLimited:false}；agents.codex={processAlive:true, processCount:4, lastActivityAgeSec:39630, rateLimited:true, rateLimitResetAt:2026-11-19T06:19:00.000Z(=本地14:19，与UI显示一致), rateLimitSample 开头 'usage_limit_exceeded'}。R2 测试 8b 断言已加并跑过：200、claude/codex 必在、processAlive/rateLimited 均 boolean|null 三值域。幂等只读，无新 npm 依赖，未动 /api/state 返回结构，中台 seenAt 字段保留。"
+      "evidence": "web/verify-r90-routing.mjs（playwright-core + 系统 Chrome headless 1440x900，对 http://127.0.0.1:8090 真跑）依次实点 6 个 tab，每个断言 hash/body.dataset.page/恰好 1 个可见 section/aria-current 唯一且指向被点按钮，实测全过：tab-home→#/(home,1176x753)、tab-agents→#/agents(agents)、tab-files→#/files(files)、tab-log→#/log(log)、tab-pro→#/pro(workbench)、tab-settings→#/settings(settings)，六次 ariaCurrent 均恰好 [tab-x]，可见页均恰好 1 个且宽度 1176（非白屏）。实现：app.js 点击处理 routes 表换成 tab-*（rail-* 已删不再引用），点 tab 只改 location.hash，route() 统一做显隐+aria-current+title+渲染，单一收口无循环。"
     },
     {
-      "code": "X02",
+      "code": "HASH",
       "status": "done",
-      "evidence": "Agents 名册实测 5 卡（verify-x-agents-real.mjs → verify-x-agents.json roster 数组）：claude 行 {ids:'claude·claude', conn:'进程活着（10 个）', work:'执行中', can:'能接活', hb:'1 秒前有活动'}，截图 verify-x-agents-roster.png。A2 测试同步为 5 卡（含 'Claude Code' 名字断言），实测 cards=5 过。"
+      "evidence": "同脚本对新开页面逐个 goto 七个地址实测全过：/#/ →home、/#/agents→agents、/#/files→files、/#/log→log、/#/pro→workbench、/#/settings→settings、/#/skills→settings（无白屏，可见 section 均 1176x753）。#/skills 专项断言全过：hash 原地停在 #/skills 未被重写成 /settings（route() 折算 settingsTab='skills'+activePage='settings' 后直接渲染，不再 location.hash='/settings' 重定向——旧实现会多压一条历史导致后退困死）、设置页子页签激活实测 setTabOn=['skills']、#page-skills 可见（skillsVisible=true）、ariaCurrent=['tab-settings']。#/agents、#/files 旧链接从「折算进设置页页签」改为一级页直达（R90 已提升为一级 section）。未知 hash 兜底落 home，不会白屏。"
     },
     {
-      "code": "X03",
+      "code": "PERSIST_BACK",
       "status": "done",
-      "evidence": "名册读数逐字：claude work=执行中（活动 1 秒前）；codex work=空闲（活动 10 小时前 + 进程活着）；Hermes 三行（lemate/winter/karina）work 全部=未知，workTitle 逐字『执行状态未知：上次自报已过期（不推断为空闲）』『执行状态未知：从未接入上报（不推断为空闲）』，can=未知『该角色没有额度上报通道』。伪数据注入实测（verify-x-agents.json injectIdle）：把 claude lastActivityAt 改到 20 分钟前（processAlive 仍 true）→ 同步读回 work='空闲'、conn='进程活着（10 个）'、hb='20 分钟前有活动'，截图 verify-x-agents-idle-fake.png，截图后复读仍为 '空闲'（injectIdlePostRead）。"
+      "evidence": "刷新保持：goto /#/log → reload → 实测 hash='#/log'、page='log'、visiblePages=['log']。后退：点 tab-agents 再点 tab-files（hash #/files）→ page.goBack() → 实测回到 hash='#/agents'、page='agents'、visiblePages=['agents']。刷新位置经 saveUiPos 存 page/settingsTab，restoreUiPos 按 hashOfPage 折算回 hash。"
     },
     {
-      "code": "X04",
+      "code": "LEGACY_STORE",
       "status": "done",
-      "evidence": "三处 UI 同源 agentStats()：①底栏 chips title 逐字『进程/连接：进程活着（10 个）｜执行状态：执行中｜接活：能接活』；②Agents 明细面板（verify-x-agents-detail.png）标题『实时状态（本机实测）』，键值对含 [进程状态,进程活着（10 个）]/[最近会话活动,23:43（2 秒前）]/[执行状态,执行中]/[能不能接活,能接活]，附说明『这一行不读中台 seenAt（7 个 agent 同一毫秒，判不出谁在干活）』；③首页驾驶舱 roster（verify-x-cabin.png）：头条『1 个 AI 助手正在干活 · 共 5 个已连接』，Claude 行『在干活 · 上次动静 4 秒前有活动』，Codex 行『额度用完了，14:19 重置』，Lemate『连着，但已经有一阵没动静，可能卡住了』，Winter/Karina『连着，在不在干活未知（从未接入上报）』——Hermes 无一处出现『空闲』兜底。"
+      "evidence": "web/verify-r90-legacy-store.mjs 实测老存档回放：①localStorage.office.ui.v2 写成 R90 前格式 {page:'agents',settingsTab:'agents'} 后 reload → 落 #/agents 一级页（vis=['agents']）；②写成 {page:'settings',settingsTab:'skills'} 后 reload → 落 #/settings 且技能子页签激活（setTabOn=['skills']）。两形态均无白屏、jsErrors=[]。restoreUiPos 折算表：agents→#/agents、files→#/files、skills→#/skills、log/settings/workbench 各归各位；settingsTab=agents|files 的老值折算到对应一级页 hash。"
+    },
+    {
+      "code": "NO_JS_ERRORS",
+      "status": "done",
+      "evidence": "两轮脚本全程收集 pageerror + console.error（加载 + 3s 轮询重渲染 + 每次点击/跳转/刷新/后退之后），verify-r90-routing.mjs jsErrors=[]（13 个场景），verify-r90-legacy-store.mjs jsErrors=[]（2 个场景）。改动前 route() 对 page-agents/page-files 不做显隐（四页循环不含它们）、#page-skills 的 hidden 归 syncSettingsTabs 与一级页 route() 双头管——本次收口后单一来源，node --check app.js/cabin.js 均通过。未动配色、#projects-list 渲染、server.js，未删 #page-skills。"
     }
   ],
-  "hard_requirements": {
-    "self_test_1_curl": "真实 curl 返回见 X01 evidence（fresh 于 2026-11-19T15:57Z，cacheAgeSec:0 非缓存）",
-    "self_test_2_screenshot": "verify-x-agents-roster.png（名册含 Claude Code 行）+ verify-x-agents-detail.png（明细），allPass=true（10/10 检查项）",
-    "self_test_3_fake_idle": "verify-x-agents-idle-fake.png + injectIdle JSON：20 分钟前 → 空闲（进程活着）",
-    "self_test_4_hermes_unknown": "verify-x-agents.json：Hermes 三行 work=未知、can=未知；驾驶舱三行均无『空闲』；检查项 hermesNeverIdle=true、cabinHermesNeverIdle=true"
-  },
-  "tests": {
-    "test:g07": "19 项 19 过 0 挂，全绿（pre-commit hook 强制跑全套 G07 回归，全绿才许提交）。过程中发现的 4 个既有失败（D3/D4/R2/R3，全部 file 白名单 403）已修：对照实验证明与 X 系列无关——git stash -u 后在 HEAD(690df21) 原位重跑同样挂这 4 项；根因是 web/server.js FILE_ROOTS 白名单硬编码仓库旧家 'C:/Users/Administrator/Desktop/...'，仓库已搬到 'E:/DesktopProjects/...'（C: 旧目录仍在，是搬家前副本）。修复=白名单加一项 dirname(HERE)（仓库自身根，搬家自适应，未放宽任何边界——白名单原本就允许本仓库目录）。修后 19/19。本轮相关测试全过：R1 固定 22/22、R2 8b agents/real 三值域、A2 名册 5 卡（cards=5）。"
-  },
-  "files_modified": [
-    "web/server-agents-real.mjs (新增：/api/agents/real 探测实现)",
-    "web/server.js (FILE_ROOTS 补仓库根 dirname(HERE)：搬家后白名单失配致 file 一族 403、4 项测试挂、pre-commit 被挡；未放宽边界)",
-    "web/server-api.mjs (挂载新路由)",
-    "web/agents.js (名册三维渲染 + claude 明细 + Hermes 未知)",
-    "web/app.js (agentsRealData 装载 + 状态计算)",
-    "web/render.js",
-    "web/cabin.js (驾驶舱 roster 用真实状态)",
-    "web/app-workbench.css / web/app-cabin.css (五色状态样式)",
-    "web/verify-x-agents-real.mjs (新增：四合一验证脚本)",
-    "test/g07-routes.test.js (R1 22 条 + R2 8b agents/real)",
-    "test/g07-pages.test.js (A2 4 卡→5 卡)"
-  ],
-  "blocked_by": null,
-  "notes": [
-    "8090 端口有看门狗（父进程 52880）自动拉起 server.js，杀掉 node 即重载新代码，本轮结束时 8090 已运行含白名单修复的新代码（health 200）。",
-    "pre-commit hook 在 scripts/hooks（core.hooksPath 配置），提交即跑全套 G07 回归，全绿才放行——本轮没用 --no-verify。",
-    "verify-x-agents-real.mjs 沿用仓库 verify-g01.mjs 的自起 headless Chrome + CDP 惯例（node --experimental-websocket），证据落盘 verify-x-agents.json + 4 张 PNG，allPass=true。"
-  ]
+  "blocked_by": null
 }
