@@ -1,0 +1,4 @@
+{
+  "evidence": "docs/evidence/chat-p4/acceptance.md",
+  "note": "D1-D7 全过（scripts/chat-v1/p4-acceptance/run.mjs 退出码 0，页面错误 0）。截图 8 张在 docs/evidence/chat-p4/。"
+}

@@ -1,0 +1,79 @@
+{
+  "empty_after_new": 0,
+  "empty_state": "未知还没有对话记录：没有证据，不显示空闲",
+  "send_enabled_after_typing": true,
+  "own_bubble_ms": 1013,
+  "state_right_after_send": "执行中正在启动 Agent",
+  "state_seen_meanwhile": "执行中正在启动 Agent",
+  "final_state": "完成回答完成",
+  "snapshot": {
+    "agent": "dsh",
+    "state": "完成回答完成",
+    "stateTone": "completed",
+    "msgs": [
+      {
+        "side": "out",
+        "text": "用两句话介绍一下你能帮我做什么。不要用工具。",
+        "note": "",
+        "live": false
+      },
+      {
+        "side": "in",
+        "text": "我既能帮你阅读和处理文章与视频、把它们抓取成 Markdown、翻译或改写成总结，也能帮你做成长图、小红书卡片、公众号排版、口播视频、白板论证、漫画等内容成品。此外，我能操作飞书里",
+        "note": "",
+        "live": false
+      }
+    ],
+    "rects": {
+      "side": {
+        "x": 1054,
+        "y": 80,
+        "w": 368,
+        "h": 806
+      },
+      "chat": {
+        "x": 1055,
+        "y": 81,
+        "w": 366,
+        "h": 804
+      },
+      "body": {
+        "x": 1055,
+        "y": 146,
+        "w": 366,
+        "h": 610
+      },
+      "composer": {
+        "x": 1067,
+        "y": 767,
+        "w": 342,
+        "h": 62
+      },
+      "input": {
+        "x": 1080,
+        "y": 774,
+        "w": 242,
+        "h": 48
+      },
+      "send": {
+        "x": 1330,
+        "y": 787,
+        "w": 72,
+        "h": 32
+      }
+    }
+  },
+  "thread_id": "th-a9e6037b3b",
+  "api_messages": [
+    {
+      "role": "user",
+      "status": "sent",
+      "content": "用两句话介绍一下你能帮我做什么。不要用工具。"
+    },
+    {
+      "role": "assistant",
+      "status": "complete",
+      "content": "我既能帮你阅读和处理文章与视频、把它们抓取成 Markdown、翻译或改写成总结，也能帮你做成长图、小红书卡片、公众号排版、口播视频、白板论证、漫画等内容成品。此外，我能操作飞书里的文档、表格、多维表格、云盘、日历、任务和审批，也能帮你写代"
+    }
+  ]
+}

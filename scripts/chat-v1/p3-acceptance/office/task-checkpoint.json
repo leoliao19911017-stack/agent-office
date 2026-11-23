@@ -1,3 +1,5 @@
 {
-  "label": "P3 完成：C1-C4 全过（真 claude 流式 7 条 delta，首段增量 10.7s / completed 13.3s；断线重连按 seq 补发不重不漏；error 事件 code 具体）"
+  "label": "P3 完成：C1-C4 全过（真 claude 流式 7 条 delta，首段增量 10.7s / completed 13.3s；断线重连按 seq 补发不重不漏；error 事件 code 具体）",
+  "worktree_path": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+  "attempt_id": "a-110b9f69-mwtrfwvq"
 }

@@ -204,7 +204,10 @@ b, strong { font-weight: 600; }
   background-size: 13px 13px;
 }
 .view { height: 100%; min-height: 0; display: flex; flex-direction: column; padding: 18px 20px 16px; gap: 14px; }
-.view--board { overflow: hidden; }
+/* 看板视图 = 左边一整块（标题 / Agent 卡 / 任务推进 / 数据卡）+ 右边一整列（选中 Agent 的对话 / 选中任务的详情） */
+.view--board { overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) clamp(340px, 30%, 420px); gap: 16px; align-items: stretch; }
+.board-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; }
+.side { min-width: 0; min-height: 0; height: 100%; display: flex; flex-direction: column; }
 
 .stage-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .stage-head__main { min-width: 0; }
@@ -226,7 +229,7 @@ b, strong { font-weight: 600; }
 
 .board-grid {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 370px);
+  display: grid; grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 .agents {
@@ -287,9 +290,9 @@ b, strong { font-weight: 600; }
 .chip__mono { font-family: var(--font-mono); font-size: 12px; }
 .agent-card__load { margin-left: auto; font-size: 12px; color: var(--ink-4); white-space: nowrap; }
 
-/* 右侧详情 */
+/* 右侧详情（占满右列；对话模式下换成 Coss 的纯白卡片，见 board-chat.css） */
 .detail {
-  min-height: 0; overflow-y: auto;
+  flex: 1; min-height: 0; overflow-y: auto;
   padding: 16px 16px 10px;
   border: 1px solid #E4DCCF; border-radius: var(--radius);
   background: var(--bg-panel);
@@ -411,13 +414,17 @@ b, strong { font-weight: 600; }
 /* ---------- 响应式 ---------- */
 @media (max-width: 1600px) {
   .workspace { grid-template-columns: 258px minmax(0, 1fr); }
-  .board-grid { grid-template-columns: minmax(0, 1fr) minmax(290px, 338px); }
+  .view--board { grid-template-columns: minmax(0, 1fr) 368px; }
   .view { padding: 16px 18px 14px; }
   .data-cards { height: 190px; }
 }
+/* 左列让出宽度给对话面板后，数据卡标题旁的来源说明放不下：这个宽度以下先收起（卡片内容本身还在） */
+@media (max-width: 1520px) {
+  .data-card__head span { display: none; }
+}
 @media (max-width: 1360px) {
   .workspace { grid-template-columns: 244px minmax(0, 1fr); }
-  .board-grid { grid-template-columns: minmax(0, 1fr) 306px; gap: 13px; }
+  .view--board { grid-template-columns: minmax(0, 1fr) 348px; gap: 13px; }
   .agents { gap: 12px; }
   .agent-card { padding: 14px 14px 12px; }
   .agent-card__name { font-size: 17px; }
@@ -430,12 +437,11 @@ b, strong { font-weight: 600; }
   .topbar__right { gap: 8px; }
   .datasrc b { display: none; }
   .workspace { grid-template-columns: 226px minmax(0, 1fr); }
-  .board-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto; overflow-y: auto; }
-  .agents { grid-template-rows: repeat(2, minmax(150px, auto)); }
-  .detail { max-height: 320px; }
+  .view--board { grid-template-columns: minmax(0, 1fr) 320px; gap: 12px; }
+  .agents { gap: 12px; }
   .data-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); height: auto; }
   .data-card { min-height: 170px; }
-  .view--board { overflow-y: auto; }
+  .board-main { overflow-y: auto; }
 }
 @media (max-height: 880px) {
   .view { padding-top: 14px; gap: 11px; }

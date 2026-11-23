@@ -71,6 +71,8 @@ export function markdownToHtml(md) {
     if (table.length) flushTable();
     const h = line.match(/^(#{1,4})\s+(.*)$/);
     if (h) { needClose(); out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); continue; }
+    const img = line.match(/^!\[([^\]]*)\]\(([^)\s]+)\)\s*$/);   // 单独一行的图片：![说明](文件)
+    if (img) { needClose(); out.push(`<figure><img src="${esc(img[2])}" alt="${esc(img[1])}" loading="lazy"><figcaption>${esc(img[1])}</figcaption></figure>`); continue; }
     if (/^>\s?/.test(line)) { needClose(); out.push(`<blockquote>${inline(line.replace(/^>\s?/, ''))}</blockquote>`); continue; }
     if (/^(-{3,}|\*{3,})\s*$/.test(line)) { needClose(); out.push('<hr>'); continue; }
     const ul = line.match(/^\s*[-*]\s+(.*)$/);
@@ -121,6 +123,9 @@ th { background:var(--soft); font-weight:600; white-space:nowrap; }
 tr:last-child td { border-bottom:0; }
 hr { border:0; border-top:1px solid var(--border); margin:26px 0; }
 .meta { color:var(--muted); font-size:13px; margin-bottom:14px; }
+figure { margin:14px 0; }
+figure img { display:block; width:100%; height:auto; border:1px solid var(--border); border-radius:12px; }
+figcaption { margin-top:6px; font-size:13px; color:var(--muted); }
 `;
 
 export function evidencePage(md, { title = '验收证据', meta = '' } = {}) {

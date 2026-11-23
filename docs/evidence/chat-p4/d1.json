@@ -1,0 +1,79 @@
+{
+  "chat_before_click": true,
+  "in_side_panel": true,
+  "rect": {
+    "x": 1055,
+    "y": 81,
+    "w": 366,
+    "h": 804
+  },
+  "snapshot": {
+    "agent": "claude",
+    "state": "完成回答完成",
+    "stateTone": "completed",
+    "msgs": [
+      {
+        "side": "out",
+        "text": "用三句话介绍一下 SSE（Server-Sent Events）是什么、和 WebSocket 比有什么不同。不要用工具。",
+        "note": "",
+        "live": false
+      },
+      {
+        "side": "in",
+        "text": "SSE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览器用 EventSource 接收流式文本消息，断线自动重连、自带事件类型，",
+        "note": "",
+        "live": false
+      },
+      {
+        "side": "out",
+        "text": "写一首八行的小诗，写秋天的傍晚，每行单独一行。不要用工具，不要解释。",
+        "note": "",
+        "live": false
+      },
+      {
+        "side": "in",
+        "text": "斜阳把天边染成蜜色 风携落叶掠过屋檐 雁声远远掠过山脊 炊烟缓缓融进暮霭 薄雾漫过收割后的田 凉意悄悄爬上窗棂 一盏灯火次第亮起 秋夜在虫鸣里渐渐深了",
+        "note": "",
+        "live": false
+      }
+    ],
+    "rects": {
+      "side": {
+        "x": 1054,
+        "y": 80,
+        "w": 368,
+        "h": 806
+      },
+      "chat": {
+        "x": 1055,
+        "y": 81,
+        "w": 366,
+        "h": 804
+      },
+      "body": {
+        "x": 1055,
+        "y": 146,
+        "w": 366,
+        "h": 610
+      },
+      "composer": {
+        "x": 1067,
+        "y": 767,
+        "w": 342,
+        "h": 62
+      },
+      "input": {
+        "x": 1080,
+        "y": 774,
+        "w": 242,
+        "h": 48
+      },
+      "send": {
+        "x": 1330,
+        "y": 787,
+        "w": 72,
+        "h": 32
+      }
+    }
+  }
+}

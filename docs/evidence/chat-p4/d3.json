@@ -1,0 +1,23 @@
+{
+  "dsh": {
+    "agent": "dsh",
+    "state": "完成回答完成",
+    "first": {
+      "side": "out",
+      "text": "用两句话介绍一下你能帮我做什么。不要用工具。",
+      "note": "",
+      "live": false
+    }
+  },
+  "claude": {
+    "agent": "claude",
+    "state": "完成回答完成",
+    "first": {
+      "side": "out",
+      "text": "用三句话介绍一下 SSE（Server-Sent Events）是什么、和 WebSocket 比有什么不同。不要用工具。",
+      "note": "",
+      "live": false
+    },
+    "count": 4
+  }
+}

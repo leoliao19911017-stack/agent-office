@@ -203,7 +203,8 @@ export async function handleChatApi(req, res, path, method, deps = {}) {
         .sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
       const turns = listTurns(db, threadId).map((t) => turnView(t, { queue: t.status === TURN.QUEUED ? queued.findIndex((q) => q.turn_id === t.turn_id) : 0 }));
       const threadStatus = threadStatusOf(db, thread);
-      threadStatus.active_turn_id = turns.find((t) => isTurnActive(t))?.turn_id || null;
+      // 正在进行的几轮里最早的那一轮（turns 是新的在前）：界面接它的实时流；后面的还在排队
+      threadStatus.active_turn_id = [...turns].reverse().find((t) => isTurnActive(t))?.turn_id || null;
       deps.sendJson(res, 200, {
         ok: true,
         generated_at: new Date().toISOString(),

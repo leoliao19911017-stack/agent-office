@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-11-23T21:46:18.540Z",
+  "url": "http://127.0.0.1:8090/board-cromma.html",
+  "states": {
+    "claude": {
+      "textNodes": 175,
+      "overlapCount": 0,
+      "overlaps": [],
+      "fit": {
+        "panel": {
+          "x": 1055,
+          "w": 366,
+          "h": 804
+        },
+        "bodyOverflowX": 0,
+        "overflowing": [],
+        "docOverflowX": 0
+      }
+    },
+    "dsh": {
+      "textNodes": 190,
+      "overlapCount": 0,
+      "overlaps": [],
+      "fit": {
+        "panel": {
+          "x": 1055,
+          "w": 366,
+          "h": 804
+        },
+        "bodyOverflowX": 0,
+        "overflowing": [],
+        "docOverflowX": 0
+      }
+    },
+    "claude-1280x800": {
+      "textNodes": 175,
+      "overlapCount": 0,
+      "overlaps": [],
+      "fit": {
+        "panel": {
+          "x": 915,
+          "w": 346,
+          "h": 706
+        },
+        "bodyOverflowX": 0,
+        "overflowing": [],
+        "docOverflowX": 0
+      }
+    },
+    "claude-1936x1056": {
+      "textNodes": 179,
+      "overlapCount": 0,
+      "overlaps": [],
+      "fit": {
+        "panel": {
+          "x": 1497,
+          "w": 418,
+          "h": 956
+        },
+        "bodyOverflowX": 0,
+        "overflowing": [],
+        "docOverflowX": 0
+      }
+    },
+    "detailTab": {
+      "textNodes": 174,
+      "overlapCount": 0,
+      "overlaps": [],
+      "fit": {
+        "panel": {
+          "x": 1055,
+          "w": 366,
+          "h": 804
+        },
+        "bodyOverflowX": 0,
+        "overflowing": [],
+        "docOverflowX": 0
+      }
+    },
+    "taskDetail": {
+      "textNodes": 161,
+      "overlapCount": 0,
+      "overlaps": []
+    }
+  },
+  "overlapTotal": 0,
+  "fitProblems": []
+}

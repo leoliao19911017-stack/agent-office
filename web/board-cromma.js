@@ -1,8 +1,10 @@
 /* Soda Office · Agent 看板 V2
-   真实数据源：GET /api/agents/status-v2、GET /api/tasks、GET /api/state
+   真实数据源：GET /api/agents/status-v2、GET /api/tasks、GET /api/state；右列对话走 /api/chat/*（board-chat.js）
    状态口径：availability=false → 不可用；执行没有可信证据 → unknown，不兜底 idle。
    所有按钮都必须有真实行为；中央没有无数据支撑的装饰线。 */
 
+/** 已接入对话的 Agent（与服务端 chat-state.mjs 的 CHAT_PROVIDERS 一致；只用于提示语，能不能聊以服务端为准） */
+const CHAT_PROVIDERS = ['claude', 'dsh'];
 const AGENT_META = {
   claude: { name: 'Claude Code', short: 'CLAUDE', icon: 'claude' },
   codex: { name: 'Codex', short: 'CODEX', icon: 'codex' },
@@ -115,8 +117,20 @@ function agentsNow() {
   });
 }
 function tasksNow() { return state.tasksData?.tasks || []; }
+/** 上次点开的 Agent 记在本机：刷新页面回到同一个 Agent 的对话（历史从 API 拉，不靠本机） */
+function rememberAgent(id) {
+  try {
+    if (id) localStorage.setItem('soda-board.agent', id);
+    else localStorage.removeItem('soda-board.agent');
+  } catch { /* 本机存储不可用就不记 */ }
+}
+function rememberedAgent() {
+  try { return localStorage.getItem('soda-board.agent') || null; } catch { return null; }
+}
 function pickDefaultAgent(agents) {
+  const saved = rememberedAgent();
   return agents.find((a) => a.execution?.instance_status === 'running')
+    || agents.find((a) => a.agent_id === saved)
     || agents.find((a) => a.agent_id === 'claude')
     || agents[0];
 }
@@ -225,7 +239,7 @@ function renderMeta() {
   const n = agentsNow().length;
   $('#board-sub').textContent = state.loadError
     ? `读取失败：${state.loadError}`
-    : `${n} 个 Agent · 卡片显示分配任务数与证据源 · 右侧同步选中详情`;
+    : `${n} 个 Agent · 卡片显示分配任务数与证据源 · 点卡片在右侧与它对话`;
 }
 
 /* ---------- 渲染：Agent 卡 ---------- */
@@ -269,8 +283,11 @@ function renderAgentCards() {
     btn.addEventListener('click', () => {
       state.selectedAgentId = btn.dataset.agent;
       state.selectedTaskId = null;
+      rememberAgent(state.selectedAgentId);
       renderAll();
-      showToast(`已选中 ${meta(btn.dataset.agent).name} · 右侧同步详情`);
+      if (window.SodaChat) SodaChat.focus(state.selectedAgentId);
+      const un = window.SodaChat && !CHAT_PROVIDERS.includes(btn.dataset.agent);
+      showToast(un ? `${meta(btn.dataset.agent).name} 暂不支持对话 · 右侧写了原因` : `已打开与 ${meta(btn.dataset.agent).name} 的对话`);
     });
   });
 }
@@ -316,18 +333,25 @@ function renderTasks() {
   });
 }
 
-/* ---------- 渲染：右侧详情 ---------- */
+/* ---------- 渲染：右侧一整列 ---------- */
+/* 选中任务 → 任务详情（本文件画）；选中 Agent → 与它的对话（board-chat.js 画，流式更新时不整块重绘） */
 function renderDetail() {
   const root = $('#detail-panel');
   const task = selectedTask();
   const agent = selectedAgent();
-  let html;
-  if (task) html = taskDetailHtml(task);
-  else if (agent) html = agentDetailHtml(agent);
-  else html = `<div class="detail__top">${iconHtml('claude')}<div><div class="detail__name">NO AGENT</div><div class="detail__sub">没有可信的 Agent 数据</div></div></div>
-    <div class="detail__note">${state.loadError ? `读取失败：${esc(state.loadError)}` : '正在读取 /api/agents/status-v2 …'}</div>`;
-  root.innerHTML = html;
-  root.classList.toggle('is-scrollable', root.scrollHeight > root.clientHeight + 1);
+  if (task || !agent || !window.SodaChat) {
+    if (window.SodaChat) SodaChat.hide();
+    root.setAttribute('aria-live', 'polite');
+    root.classList.remove('is-chat');
+    let html;
+    if (task) html = taskDetailHtml(task);
+    else html = `<div class="detail__top">${iconHtml('claude')}<div><div class="detail__name">NO AGENT</div><div class="detail__sub">没有可信的 Agent 数据</div></div></div>
+      <div class="detail__note">${state.loadError ? `读取失败：${esc(state.loadError)}` : '正在读取 /api/agents/status-v2 …'}</div>`;
+    root.innerHTML = html;
+    root.classList.toggle('is-scrollable', root.scrollHeight > root.clientHeight + 1);
+    return;
+  }
+  SodaChat.show(agent.agent_id);
 }
 
 function agentDetailHtml(a) {
@@ -514,6 +538,7 @@ function go(route) {
 let toastTimer = null;
 function showToast(text) {
   const el = $('#toast');
+  el.dataset.count = String(Number(el.dataset.count || 0) + 1);   // 每次提示都计数（自检脚本据此判断按钮真的触发了）
   el.textContent = text;
   el.classList.add('is-show');
   clearTimeout(toastTimer);
@@ -534,6 +559,8 @@ function bindEvents() {
     btn.setAttribute('aria-busy', 'true');
     $('#refresh-label').textContent = '刷新中';
     const started = performance.now();
+    // 右列的对话记录也一并重拉（正在流式输出的那一轮不受影响）
+    if (window.SodaChat && state.selectedAgentId && !state.selectedTaskId) SodaChat.reload(state.selectedAgentId);
     await Promise.all([loadData(), new Promise((r) => setTimeout(r, 420))]);
     const ms = Math.round(performance.now() - started);
     btn.removeAttribute('aria-busy');
@@ -568,6 +595,18 @@ async function init() {
   bindEvents();
   if (!location.hash) history.replaceState(null, '', '#board');
   applyRoute(routeFromHash());
+  // 右列对话面板（Coss 风格）：给它看板里的 Agent 名册、Agent 实时数据和 toast
+  if (window.SodaChat) {
+    window.SodaChat.mount($('#detail-panel'), {
+      toast: showToast,
+      meta: (agentId) => meta(agentId),
+      agent: (agentId) => agentsNow().find((a) => a.agent_id === agentId) || null,
+      detailHtml: (agentId) => {
+        const a = agentsNow().find((x) => x.agent_id === agentId);
+        return a ? agentDetailHtml(a) : '<div class="chat__empty">读不到这个 Agent 的数据</div>';
+      },
+    });
+  }
   await loadIcons();
   await loadData();
   if (state.loadError) showToast(`数据读取失败：${state.loadError}`);

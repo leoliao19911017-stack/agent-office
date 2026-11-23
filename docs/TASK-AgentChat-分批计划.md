@@ -13,7 +13,7 @@
 | **P1** | 数据表 + claude adapter + 最简聊天（HTTP 轮询） | 和 claude 连聊 3 轮，第 3 轮记得第 1 轮 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p1/acceptance.md` / `.html`） |
 | **P2** | dsh adapter | 和 dsh 连聊 3 轮，能接上下文 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p2/acceptance.md` / `.html`） |
 | **P3** | SSE 流式输出 | 回复是逐字出现的，不是等全部结束 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p3/acceptance.md` / `.html`） |
-| **P4** | 前端聊天面板（Coss 风格） | 点 agent 卡开面板，气泡左右对齐，刷新历史还在 | 待做 |
+| **P4** | 前端聊天面板（Coss 风格） | 点 agent 卡开面板，气泡左右对齐，刷新历史还在 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p4/acceptance.md` / `.html`） |
 | **P5** | 失败处理与状态机 | 429 / 启动失败 / 断流 都有明确状态和文案 | 待做 |
 | **P6** | hermes adapter | hermes 能对话（能力按实测，不强行伪装） | 待做 |
 | **P7** | 全量回归 + 交付 | T1-T10 全过，交 GPT 评审 | 待做 |
@@ -272,6 +272,34 @@ GET /api/chat/turns/:turn_id/stream        text/event-stream；每帧 id: <seq>�
 - 证据文档：`docs/evidence/chat-p3/acceptance.md` + `acceptance.html`。
 - Agent Office 登记：task `t-20261123211055-0cc0c6` → attempt `a-110b9f69-mwtrfwvq` → checkpoint / finish。
 - 说明：P3 的服务端代码随 P2 那次提交上线（引擎单 seq 事件日志 + SSE 路由），P3 这一批是用真 CLI 验收并留证据。
+
+---
+
+## P4 详细：前端聊天面板（Coss 风格）
+
+### P4.1 位置与行为
+
+```
+位置     web/board-cromma.html / .js / .css：看板改成「左一整块 + 右一整列」
+         新增 web/board-chat.js / board-chat.css：右列的对话面板（#detail-panel.is-chat）
+行为     点中间 agent 卡 → 右列是与它的对话；点任务行 → 右列是任务详情（原来的）
+         每个 Agent 一份对话状态：切 Agent 就是切它自己的 thread（打开它最近的一个对话；「新对话」另起一个）
+         打开面板自动拉历史；发消息后自己的气泡立刻出现，回复按 SSE 增量追加；刷新页面历史从 API 拉
+         状态：排队 / 执行中 / 完成 / 失败 / 未知（+ 请求受限、中断）；取不到就是未知，没有任何一处显示「空闲」
+```
+
+### P4 完成记录（2026-11-24）
+
+- D1-D7 全过（7/7，`scripts/chat-v1/p4-acceptance/run.mjs` 退出码 0，页面错误 0）：真实浏览器 + 真实 8090 + 真 dsh。
+  - D2：点发送后约 0.4–1.1 秒自己的气泡出现（此刻「执行中 · 正在启动 Agent」，出现「停止」键）；回复到了追加，与 API 里的助手消息一致。
+  - D5：全页最小字号 12px（<11px 的 0 个），正文最小 13px，输入框 14px，按钮 14px；四种视口（1440x900 / 1280x800 / 1936x1056）都达标。
+  - D6：32 个按钮逐个点，31 个有反应、1 个是「执行中才出现的停止」（专项：点了真的停，再点「重试」真的重发）；唯一会禁用的是空输入时的发送键（打字后可用）。
+  - D7：截图 8 张在 `docs/evidence/chat-p4/`；文字无重叠、气泡不出面板。
+- Coss 参数现场量过（`getComputedStyle`）：面板 `#FFFFFF` / 边框 `rgba(0,0,0,.08)` / 圆角 16px；气泡圆角 18px、收发同色 `#F4F4F5`、靠左右对齐区分；
+  接收 36px 圆形头像 + 姓名，发送不显示头像；时间戳 12px `#686868`；输入框 14px / 圆角 14px / 最小高 48px；按钮 32px / 10px / 14px。
+- 证据文档：`docs/evidence/chat-p4/acceptance.md` + `acceptance.html`（含截图）。
+- Agent Office 登记：task `t-20261123212619-506053` → attempt `a-8f49bbe8-mwtrzpa6` → checkpoint / finish。
+- 没做的（如实）：没有「历史对话列表」切换器；工具调用明细只在流式过程中显示。
 
 ---
 

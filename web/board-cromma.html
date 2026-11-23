@@ -6,6 +6,7 @@
 <title>Soda Office · Agent 看板 V2</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/board-cromma.css">
+<link rel="stylesheet" href="/board-chat.css">
 </head>
 <body>
 <svg class="svg-defs" aria-hidden="true" width="0" height="0">
@@ -76,23 +77,23 @@
 
       <footer class="rail-foot">
         <p><b>判定口径</b> 没有最新可信证据就保持 unknown，不兜底成 idle。</p>
-        <p class="rail-foot__src">状态：/api/agents/status-v2 · 任务：/api/tasks · 用量：/api/state</p>
+        <p class="rail-foot__src">状态：/api/agents/status-v2 · 任务：/api/tasks · 对话：/api/chat</p>
       </footer>
     </aside>
 
     <main class="stage" id="stage">
       <section class="view view--board" id="view-board">
+        <div class="board-main">
         <header class="stage-head">
           <div class="stage-head__main">
             <h1 id="board-title">Agent 状态</h1>
-            <p id="board-sub">4 个 Agent · 卡片大小按分配任务数伸缩 · 右侧同步选中详情</p>
+            <p id="board-sub">4 个 Agent · 点卡片在右侧与它对话</p>
           </div>
-          <span class="source-badge"><i class="live-dot" aria-hidden="true"></i>只读 · 真实 API</span>
+          <span class="source-badge"><i class="live-dot" aria-hidden="true"></i>真实 API · 对话为讨论模式</span>
         </header>
 
         <div class="board-grid">
           <div class="agents" id="agent-cards" aria-label="Agent 卡片"></div>
-          <aside class="detail" id="detail-panel" aria-live="polite"></aside>
         </div>
 
         <div class="progress-strip">
@@ -129,6 +130,12 @@
             <div class="data-card__body" id="proc-list"></div>
           </section>
         </div>
+        </div>
+
+        <!-- 右侧一整列：选中 Agent → 与它的对话（Coss 风格，board-chat.js）；选中任务 → 任务详情 -->
+        <aside class="side" id="side-panel" aria-label="右侧面板">
+          <div class="detail" id="detail-panel" aria-live="polite"></div>
+        </aside>
       </section>
 
       <section class="view view--ease" id="view-ease" hidden>
@@ -150,6 +157,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </div>
+<script src="/board-chat.js"></script>
 <script src="/board-cromma.js"></script>
 </body>
 </html>

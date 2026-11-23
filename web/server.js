@@ -341,6 +341,9 @@ const server = createServer(async (req, res) => {
         '/board-cromma.html': 'text/html; charset=utf-8',
         '/board-cromma.css': 'text/css; charset=utf-8',
         '/board-cromma.js': 'application/javascript; charset=utf-8',
+        // Agent Chat P4：看板右列的对话面板（Coss 风格，独立文件）
+        '/board-chat.css': 'text/css; charset=utf-8',
+        '/board-chat.js': 'application/javascript; charset=utf-8',
       };
       if (STATIC_APP[path]) {
         let buf;
