@@ -1,22 +1,23 @@
 // dsh-chat.mjs — DSH 的聊天适配器（一轮对话 = 一次 dsh headless 调用，ADR-01 按需启动）。
 //
-// 续聊口径（TASK-AgentChat-V1 §3.1，本机 0.2.2-rc.5 实测）：
-//   新建会话   dsh --profile headless --json … -          （不传 --session-id）
+// 续聊口径（P2 实测，本机 dsh 0.2.2-rc.5；证据 scripts/chat-v1/p2-acceptance/out/resume-flag-*.json）：
+//   新建会话   dsh --profile headless --json … -          （不带续聊参数）
 //              stdout 第一条 {"type":"session","sessionId":"session-<uuid>"} 就是真实 ID，必须存下来
 //   续聊       dsh --profile headless --json … --session-id <那个真实 ID> -
-//   未知 ID    {"type":"error","message":"session \"…\" does not exist; omit --session-id to start a new Session"}，exit 1
+//              —— dsh headless 的续聊参数就是 --session-id（它自己的 help 也只列了这一个）。
+//                 --resume 是 Claude Code 的参数，dsh 不认：实测「unknown option '--resume'」exit 1。
+//   未知 ID    {"type":"error","message":"session \"…\" does not exist; …"}，exit 1
 //   所以这里的 ID 只能来自首轮输出（由 chat-db 回填），绝不自己编。
+//
+// 路径：dsh.cmd 不在 PATH，必须用完整路径（defaultDshBin 认 LOCALAPPDATA 下的安装位置，或 DSH_BIN）。
+// 沙箱：Windows 上只要带 shell 的沙箱（workspace-write）必崩 0xC0000142，所以讨论模式只用
+//   read-only + approval never ——能读、能分析、能回答；不开 danger-full-access（任务书 §7）。
 //
 // 上下文交给 DSH 自己的会话文件；每轮只发用户这一句话（ADR-04）。
 //
-// 讨论模式（ADR-06）：--permission-mode read-only + --approval-policy never。
-//   read-only 预设 = 沙箱只读 + 需要提权的操作要审批；approval never = 没人审批就一律拒绝。
-//   实测让它写文件 → tool_result 报 FS_SANDBOX_DENIED「file access denied under read-only mode」。
-//   不用 danger-full-access：那会绕过文件系统限制（任务书 §7）。
-//
 // 凭据：headless profile 的凭据服务是关的，只认环境变量 DEEPSEEK_API_KEY。本机既有做法
 // （C:/Tools/agent-autoloop/dsh-agent.js）是环境变量没有就读 ~/.dsh/.credentials.yaml 的
-// refs.DEEPSEEK_API_KEY，只放内存、不打印。这里沿用同一口径，密钥不进日志、不进库、不回传。
+// refs.DEEPSEEK_API_KEY，只放内存、不打印。密钥不进日志、不进库、不回传。
 //
 // 输出是 NDJSON 运行事件（session / status / thinking / text / tool_call / tool_result / final / error）。
 // 实测 text 事件是「每一步一条整段」，不是逐字——所以 DSH 这边的增量粒度是：
@@ -26,12 +27,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import {
-  cleanChildEnv, decodeConsoleOutput, killTree, makeByteTail, makeLineSplitter, redactSecrets, spawnPlan, waitSpawned,
+  cleanChildEnv, decodeConsoleOutput, explainStartFailure, killTree, makeByteTail, makeLineSplitter, preflightBin,
+  redactSecrets, spawnPlan, waitSpawned,
 } from '../proc.mjs';
-import { classifyErrorText, ERR, isAuthStatus } from '../chat-state.mjs';
+import { classifyErrorText, ERR, extractResetAt, isAuthStatus } from '../chat-state.mjs';
 
 export const DSH_PERMISSION_MODE = 'read-only';
 export const DSH_APPROVAL_POLICY = 'never';
+/** 续聊参数名：实测 dsh headless 只认 --session-id（--resume → unknown option），见文件头。
+ *  留成参数是为了能复现那组对照（probe-resume-flag.mjs resume|session-id）。 */
+export const DSH_RESUME_FLAG = 'session-id';
 
 export function defaultDshBin() {
   if (process.env.DSH_BIN) return process.env.DSH_BIN;
@@ -53,10 +58,10 @@ export function sourceDeepSeekKey(env = process.env) {
   return m[1].replace(/^["']|["']$/g, '');
 }
 
-/** 组参数：resumeId 只能是首轮拿到的真实 ID */
-export function dshArgs({ resumeId = null } = {}) {
+/** 组参数：resumeId 只能是首轮拿到的真实 ID；续聊走 --session-id */
+export function dshArgs({ resumeId = null, resumeFlag = DSH_RESUME_FLAG } = {}) {
   const args = ['--profile', 'headless', '--json', '--permission-mode', DSH_PERMISSION_MODE, '--approval-policy', DSH_APPROVAL_POLICY];
-  if (resumeId) args.push('--session-id', resumeId);
+  if (resumeId) args.push(`--${resumeFlag}`, resumeId);
   args.push('-');   // 任务文本走 stdin
   return args;
 }
@@ -69,40 +74,50 @@ function abortMessage(kind) {
 
 /**
  * 跑一轮：发一句、收完、退出。返回形状与 runClaudeTurn 一致。
- * onEvent 收到：proc{pid} / session{sessionId,resumed} / delta{text} / tool{phase,id,name,input} /
+ * onEvent 收到：proc{pid,command} / session{sessionId,resumed} / delta{text} / tool{phase,id,name,input} /
  * tool_result{id,isError,text} / approval{action} / liveness{source,phase?}。
+ * 失败时返回里带 reason（机器可读的细原因：cli_not_found / cli_path_missing / permission_denied / …）。
  */
 export async function runDshTurn(opts) {
   const {
     prompt, resumeId = null, cwd, bin = defaultDshBin(), env = process.env,
-    onEvent = () => {}, signal = null, spawnMs = 10000,
+    onEvent = () => {}, signal = null, spawnMs = 10000, resumeFlag = DSH_RESUME_FLAG,
   } = opts;
   const emit = (ev) => { try { onEvent(ev); } catch { /* 监听方出错不影响继续解析输出 */ } };
   const fail = (kind, message, extra = {}) => ({ kind, message, sessionId: resumeId, text: '', exitCode: null, ...extra });
 
+  // 起进程之前先把能确定的失败说清楚：路径写错 / 不是可执行文件 / 工作目录没了 / 没有凭据
+  const pre = preflightBin(bin);
+  if (pre) return fail(ERR.CLI_START_FAILED, pre.message, { reason: pre.reason });
+  if (cwd && !existsSync(cwd)) return fail(ERR.CLI_START_FAILED, `工作目录不存在：${cwd}`, { reason: 'workspace_not_found' });
+
   const apiKey = sourceDeepSeekKey(env);
   if (!apiKey) {
-    return fail(ERR.CREDENTIALS_MISSING, 'DSH 没有 DEEPSEEK_API_KEY：环境变量里没有，~/.dsh/.credentials.yaml 里也没读到');
+    return fail(ERR.CREDENTIALS_MISSING, 'DSH 没有 DEEPSEEK_API_KEY：环境变量里没有，~/.dsh/.credentials.yaml 里也没读到', { reason: 'credentials_missing' });
   }
 
-  const plan = spawnPlan(bin, dshArgs({ resumeId }));
+  const plan = spawnPlan(bin, dshArgs({ resumeId, resumeFlag }));
   let child;
   try {
     child = spawn(plan.command, plan.args, {
       cwd, env: { ...cleanChildEnv(env), DEEPSEEK_API_KEY: apiKey }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, shell: plan.shell,
     });
   } catch (err) {
-    return fail(ERR.CLI_START_FAILED, `无法启动 ${bin}：${err.message}`);
+    const why = explainStartFailure({ bin, cwd, err });
+    return fail(ERR.CLI_START_FAILED, why.message, { reason: why.reason });
   }
-  emit({ type: 'proc', pid: child.pid });
+  let spawnErr = null;   // 进程级错误（起不来 / 被系统杀），统一在这里记一次
+  child.on('error', (err) => { spawnErr = err; });
+  emit({ type: 'proc', pid: child.pid, command: plan.command });
   const spawned = await waitSpawned(child, spawnMs);
   if (!spawned.ok) {
-    return fail(ERR.CLI_START_FAILED, `无法启动 ${bin}：${spawned.error && spawned.error.message ? spawned.error.message : spawned.error}`);
+    const why = explainStartFailure({ bin, cwd, err: spawned.error });
+    return fail(ERR.CLI_START_FAILED, why.message, { reason: why.reason });
   }
 
   const state = {
     sessionId: resumeId, text: '', final: null, errorEvent: null, rawTail: '',
-    sawEvent: false, abortedKind: null,
+    sawEvent: false, abortedKind: null, usage: null,
   };
   const stderrTail = makeByteTail(16384);
 
@@ -117,9 +132,12 @@ export async function runDshTurn(opts) {
         emit({ type: 'session', sessionId: state.sessionId, resumed: Boolean(resumeId), cwd: obj.cwd });
         return;
       }
-      case 'status':
+      case 'status': {
+        const u = obj.usage;
+        if (u && typeof u === 'object') state.usage = { ...state.usage, ...u };
         emit({ type: 'liveness', source: `status/${obj.phase}`, phase: obj.phase, turn: obj.turn });
         return;
+      }
       case 'thinking':
         emit({ type: 'liveness', source: 'thinking' });
         return;
@@ -132,12 +150,15 @@ export async function runDshTurn(opts) {
       case 'tool_call':
         emit({ type: 'tool', phase: 'call', id: obj.callId, name: obj.tool, input: obj.input });
         return;
-      case 'tool_result':
+      case 'tool_result': {
+        const text = (typeof obj.result === 'string' ? obj.result : (obj.error && obj.error.message) || '');
+        // 命令行里若混进密钥（不该发生）先打码再往外发
         emit({
           type: 'tool_result', id: obj.callId, isError: obj.status === 'error',
-          text: (typeof obj.result === 'string' ? obj.result : (obj.error && obj.error.message) || '').slice(0, 2000),
+          text: redactSecrets(text, { ...env, DEEPSEEK_API_KEY: apiKey }).slice(0, 2000),
         });
         return;
+      }
       case 'final':
         state.final = obj;
         return;
@@ -178,7 +199,6 @@ export async function runDshTurn(opts) {
 
   const closed = await new Promise((resolve) => {
     child.once('close', (code, sig) => resolve({ code, sig }));
-    child.once('error', (err) => { state.rawTail += `\n[进程错误] ${err.message}`; });
   });
   if (signal) signal.removeEventListener('abort', onAbort);
   stdoutLines.flush();
@@ -189,13 +209,17 @@ export async function runDshTurn(opts) {
   if (state.abortedKind) {
     return { ...base, kind: state.abortedKind, message: abortMessage(state.abortedKind) };
   }
+  if (spawnErr) {
+    const why = explainStartFailure({ bin, cwd, err: spawnErr });
+    return { ...base, kind: ERR.CLI_START_FAILED, message: why.message, reason: why.reason };
+  }
 
   if (state.errorEvent) {
     const msg = String(state.errorEvent.message || '');
     if (/does not exist|not found/i.test(msg)) {
-      return { ...base, kind: ERR.SESSION_NOT_FOUND, message: `DSH 找不到会话 ${resumeId}：${msg}` };
+      return { ...base, kind: ERR.SESSION_NOT_FOUND, reason: 'session_not_found', message: `DSH 找不到会话 ${resumeId}：${msg}` };
     }
-    return { ...base, kind: ERR.CLI_ERROR, message: msg.slice(0, 800) || 'DSH 报错但没有给出原因' };
+    return { ...base, kind: ERR.CLI_ERROR, reason: 'cli_error', message: msg.slice(0, 800) || 'DSH 报错但没有给出原因' };
   }
 
   const fin = state.final;
@@ -209,7 +233,12 @@ export async function runDshTurn(opts) {
       if (/MISSING_CREDENTIAL|no API key/i.test(`${code} ${detail}`)) kind = ERR.CREDENTIALS_MISSING;
       else if (isAuthStatus(err.status) || /auth|unauthor|login/i.test(code) || /\b(401|403)\b/.test(`${code} ${detail}`)) kind = ERR.AUTH_FAILED;
       else kind = classifyErrorText(detail) || ERR.CLI_ERROR;
-      return { ...base, kind, message: detail.slice(0, 800) };
+      return {
+        ...base, kind, reason: kind === ERR.CLI_ERROR ? 'cli_error' : kind,
+        apiErrorStatus: Number.isInteger(err.status) ? err.status : null,
+        resetAt: extractResetAt(detail),
+        message: detail.slice(0, 800),
+      };
     }
     if (reason.kind === 'completed') {
       // 没收到过 text 事件时用 final.text 兜住（不编内容，只搬 CLI 给的）
@@ -227,8 +256,9 @@ export async function runDshTurn(opts) {
     };
   }
   if (!state.sawEvent) {
-    // 一条事件都没吐出来就退了 = CLI 根本没起来（命令不存在、启动即崩），把 stderr 原因带给用户
-    return { ...base, kind: ERR.CLI_START_FAILED, message: `无法启动 ${bin}：${(stderr || state.rawTail).slice(-400) || `exit ${closed.code}`}` };
+    // 一条事件都没吐出来就退了 = CLI 根本没起来（命令不存在、启动即崩），把具体原因带给用户
+    const why = explainStartFailure({ bin, cwd, exitCode: closed.code, stderr: stderr || state.rawTail });
+    return { ...base, kind: ERR.CLI_START_FAILED, reason: why.reason, message: why.message };
   }
-  return { ...base, kind: ERR.CRASHED, message: `DSH 异常退出（exit ${closed.code}）：${stderr.slice(-400) || '没有错误输出'}` };
+  return { ...base, kind: ERR.CRASHED, reason: 'crashed', message: `DSH 异常退出（exit ${closed.code}）：${stderr.slice(-400) || '没有错误输出'}` };
 }

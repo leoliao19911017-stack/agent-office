@@ -8,6 +8,7 @@
 //      （与 adapters/dsh.mjs 同一做法）。
 
 import { spawnSync } from 'node:child_process';
+import { statSync } from 'node:fs';
 
 export function isCmdFile(command) {
   return process.platform === 'win32' && /\.(cmd|bat)$/i.test(String(command));
@@ -70,6 +71,95 @@ export function waitSpawned(child, ms = 8000) {
     child.once('error', (err) => { clearTimeout(timer); resolve({ ok: false, error: err }); });
   });
 }
+
+/* ---------------- 启动失败归因 ----------------
+ * 「Agent 启动失败」四个字对用户没用：到底是命令找不到、路径写错、没权限、工作目录没了，
+ * 还是进程一起来就崩（Windows 沙箱的 0xC0000142），要各说各的。
+ * 这里只认操作系统 / shell 的机器文案（Node 的 err.code、cmd.exe 的 GBK/英文报错、NTSTATUS 退出码），
+ * 不猜；认不出就如实写「启动后立即退出」并带上原始输出。
+ */
+
+/** Windows NTSTATUS：进程创建了，但在装载 / 初始化阶段就死（DLL 初始化失败、缺 DLL、映像格式不对） */
+const BAD_START_STATUSES = new Set([0xC0000142, 0xC0000140, 0xC0000135, 0xC000007B]);
+const REASONS = Object.freeze({
+  CLI_PATH_MISSING: 'cli_path_missing',       // 给了路径，但那个位置没有这个文件
+  CLI_NOT_FOUND: 'cli_not_found',             // 裸命令，PATH 里找不到
+  CLI_NOT_EXECUTABLE: 'cli_not_executable',   // 路径在，但不是可执行文件（比如是个目录）
+  PERMISSION_DENIED: 'permission_denied',
+  WORKSPACE_NOT_FOUND: 'workspace_not_found',
+  DLL_INIT_FAILED: 'dll_init_failed',
+  SPAWN_ERROR: 'spawn_error',
+  START_ERROR: 'start_error',
+});
+const hex = (n) => `0x${(n >>> 0).toString(16).toUpperCase().padStart(8, '0')}`;
+
+/**
+ * 起进程之前先看一眼：bin 写成了路径就必须真的存在且是文件。返回 null 表示没问题。
+ * 裸命令（dsh / claude）交给系统去找，找不到由 explainStartFailure 按启动结果说。
+ */
+export function preflightBin(bin) {
+  const name = String(bin || '');
+  if (!/[\\/]/.test(name) && !/^[A-Za-z]:/.test(name)) return null;
+  let st;
+  try { st = statSync(name); } catch {
+    return { reason: REASONS.CLI_PATH_MISSING, message: `找不到 CLI：${name} 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）` };
+  }
+  if (st.isDirectory()) return { reason: REASONS.CLI_NOT_EXECUTABLE, message: `${name} 是一个目录，不是可执行文件` };
+  return null;
+}
+
+export function isDirectory(p) {
+  try { return statSync(String(p)).isDirectory(); } catch { return false; }
+}
+
+/**
+ * 把一次启动失败翻译成 { reason, message }。
+ * @param {object} input
+ * @param {string} input.bin          要启动的命令
+ * @param {string} [input.cwd]        工作目录（Node 在 cwd 不存在时也报 ENOENT，要和「命令不存在」分开）
+ * @param {Error}  [input.err]        spawn 的 'error' 事件（没有则不传）
+ * @param {number|null} [input.exitCode]
+ * @param {string} [input.stderr]     已解码的 stderr
+ */
+export function explainStartFailure({ bin, cwd = null, err = null, exitCode = null, stderr = '' }) {
+  const name = String(bin || '');
+  const out = String(stderr || '').trim();
+  const tail = out ? out.replace(/\s+/g, ' ').slice(-300) : '';
+
+  if (err) {
+    const code = err.code || '';
+    if (code === 'ENOENT') {
+      if (cwd && !isDirectory(cwd)) return { reason: REASONS.WORKSPACE_NOT_FOUND, message: `工作目录不存在：${cwd}` };
+      return { reason: REASONS.CLI_NOT_FOUND, message: `找不到命令 ${name}：系统里没有这个可执行文件（不在 PATH 里，或名字写错了）` };
+    }
+    if (code === 'EACCES' || code === 'EPERM') return { reason: REASONS.PERMISSION_DENIED, message: `没有权限执行 ${name}（${code}）` };
+    return { reason: REASONS.SPAWN_ERROR, message: `启动 ${name} 失败：${err.message || err}` };
+  }
+
+  // Windows 上进程崩掉的退出码可能是无符号（3221225794）也可能是有符号（-1073741502），统一成无符号再比
+  const n = Number(exitCode) >>> 0;
+  if (Number.isInteger(Number(exitCode)) && BAD_START_STATUSES.has(n)) {
+    return {
+      reason: REASONS.DLL_INIT_FAILED,
+      message: `${name} 一启动就崩了（exit ${hex(n)}）：进程初始化失败（DLL 初始化失败 / 缺少运行库 / 映像格式不对）${tail ? `；输出：${tail}` : ''}`,
+    };
+  }
+  if (/不是内部或外部命令|不是可运行的程序|not recognized as an internal or external command|command not found|找不到命令/i.test(out)) {
+    return { reason: REASONS.CLI_NOT_FOUND, message: `找不到命令 ${name}：系统找不到这个命令（不在 PATH 里，或名字写错了）` };
+  }
+  if (/拒绝访问|Access is denied|Permission denied|权限不足|\bEACCES\b|\bEPERM\b/i.test(out)) {
+    return { reason: REASONS.PERMISSION_DENIED, message: `没有权限执行 ${name}（系统拒绝访问）` };
+  }
+  if (/系统找不到指定的文件|系统找不到指定的路径|cannot find the (?:file|path)|no such file or directory/i.test(out)) {
+    return { reason: REASONS.CLI_PATH_MISSING, message: `找不到 CLI：${name} 不存在（路径写错，或文件已被移走 / 卸载）` };
+  }
+  return {
+    reason: REASONS.START_ERROR,
+    message: `${name} 启动后立即退出（exit ${exitCode ?? '?'}）${tail ? `：${tail}` : '，没有留下任何输出'}`,
+  };
+}
+
+export { REASONS as START_FAIL_REASON };
 
 /** 按 \n 切行（setEncoding('utf8') 已保证多字节字符不会被截断） */
 export function makeLineSplitter(onLine) {

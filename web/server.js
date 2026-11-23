@@ -21,6 +21,8 @@ import { fileURLToPath } from 'node:url';
 import { createApiRouter } from './server-api.mjs';
 // TASK-R87整改 X01：需求讨论自动推进器——重启后恢复中断的讨论（只碰新建流程任务）
 import { resumeInterruptedAuto } from './server-auto.mjs';
+// Agent Chat：停机时把在跑的聊天轮次落库（SIGINT 处理里用）
+import { chatEngine } from './chat/chat-engine.mjs';
 
 /**
  * 产物库允许读取的根目录白名单。
@@ -467,6 +469,8 @@ server.listen(PORT, '127.0.0.1', () => {
 
 process.on('SIGINT', () => {
   console.log('\n收到 SIGINT，关闭工作台服务');
+  // Agent Chat：把还在跑的聊天轮次先落库成 interrupted 再走，不留一行没人盯的 running
+  try { chatEngine().shutdown(); } catch { /* 引擎这次没被用到，或已经收过 */ }
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 1500).unref();
 });

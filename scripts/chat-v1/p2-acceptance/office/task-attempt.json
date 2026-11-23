@@ -1,0 +1,4 @@
+{
+  "agent_id": "claude",
+  "note": "P2 执行：dsh-chat.mjs 续聊参数按实测定为 --session-id；启动失败细原因（路径错/命令找不到/没权限/工作目录没了/初始化崩）；引擎加 failed 终态与界面五态；真 dsh 跑 B1-B5"
+}

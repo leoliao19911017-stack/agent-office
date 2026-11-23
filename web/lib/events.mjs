@@ -206,11 +206,11 @@ export function recordBlockEvent(db, input = {}) {
   return { event, reason: classified };
 }
 
-/** 记录验收结果：completed 的唯一合法入口是 acceptance_passed。 */
+/** 记录验收结果：completed 的唯一合法入口是 acceptance_passed。note 是给人看的说明（可选，不参与状态判定）。 */
 export function recordAcceptance(db, input = {}) {
   const {
     taskId, attemptId = null, result, codeSha = null, command = null,
-    report = null, evidenceSource = EVIDENCE.VERIFIER, observedAt = null,
+    report = null, evidenceSource = EVIDENCE.VERIFIER, observedAt = null, note = null,
   } = input;
   if (result !== 'passed' && result !== 'failed') {
     throw Object.assign(new Error('验收结果必须是 passed 或 failed'), { code: 'BAD_ACCEPTANCE', statusCode: 400 });
@@ -218,7 +218,7 @@ export function recordAcceptance(db, input = {}) {
   const event = appendEvent(db, {
     taskId, attemptId,
     eventType: result === 'passed' ? 'acceptance_passed' : 'acceptance_failed',
-    payload: { result, code_sha: codeSha, command, report },
+    payload: { result, code_sha: codeSha, command, report, note: note ? String(note).slice(0, 1000) : null },
     evidenceSource,
     observedAt,
   });

@@ -1327,8 +1327,9 @@ export function createApiRouter(deps) {
       if (handled) return;
     }
 
-    // Agent Chat P1 层：聊天三路由，同任务 API 的挂载约定（自己管 405，未匹配返回 false）。
-    if (path === '/api/chat/threads' || path.startsWith('/api/chat/threads/')) {
+    // Agent Chat 层：/api/chat/threads*（P1 轮询）+ /api/chat/turns*（P3 SSE / 取消），
+    // 同任务 API 的挂载约定（自己管 405，未匹配返回 false）。
+    if (path === '/api/chat' || path.startsWith('/api/chat/')) {
       const handled = await handleChatApi(req, res, path, method, ctx);
       if (handled) return;
     }

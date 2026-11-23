@@ -21,10 +21,24 @@
 //   - 失败原因可能在 result.result / result.errors[] / stderr 三处，要都看。
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import {
-  cleanChildEnv, decodeConsoleOutput, killTree, makeByteTail, makeLineSplitter, redactSecrets, spawnPlan, waitSpawned,
+  cleanChildEnv, decodeConsoleOutput, explainStartFailure, killTree, makeByteTail, makeLineSplitter, preflightBin,
+  redactSecrets, spawnPlan, waitSpawned,
 } from '../proc.mjs';
-import { classifyErrorText, ERR, isAuthStatus } from '../chat-state.mjs';
+import { classifyErrorText, ERR, extractResetAt, isAuthStatus } from '../chat-state.mjs';
+
+/**
+ * 追加给 CLI 的 --settings（JSON 字符串）。来源是环境变量 CHAT_CLAUDE_SETTINGS：
+ * 用于把聊天用的 Claude CLI 指到另一个网关，或在本机做对照实验（比如让真 CLI 吃本地假上游的真 429）。
+ * 只在服务进程启动时读一次；不提供按请求改网关的接口（那不是聊天该有的能力）。
+ */
+export function extraClaudeSettings(env = process.env) {
+  const raw = env.CHAT_CLAUDE_SETTINGS ? String(env.CHAT_CLAUDE_SETTINGS).trim() : '';
+  if (!raw) return null;
+  try { JSON.parse(raw); } catch { return null; }   // 不是合法 JSON 就当没配，不把坏参数传给 CLI
+  return raw;
+}
 
 /** 讨论模式允许的内置工具：只读三个 */
 export const CLAUDE_READ_TOOLS = Object.freeze(['Read', 'Grep', 'Glob']);
@@ -80,6 +94,7 @@ const SESSION_NOT_FOUND_RE = /No conversation found with session ID/i;
  *     proc{pid} / session{sessionId} / meta{tools,model,permissionMode} / delta{text,replace?} /
  *     tool{phase,id,name,input?} / tool_result{id,isError,text} / retry{attempt,max,delayMs,status} / liveness{source}
  * @param {AbortSignal} [opts.signal]     取消时 abort，reason.kind 写明是谁停的
+ * @param {string} [opts.extraSettings]    追加给 CLI 的 --settings JSON（换网关 / 对照实验用，见 extraClaudeSettings）
  * @returns {Promise<{kind:string, message?:string, sessionId?:string, text:string, usage?:object, numTurns?:number, durationMs?:number, exitCode?:number}>}
  *   kind === 'completed' 表示这一轮正常完成；其余取值见 chat-state.mjs 的 ERR。
  */
@@ -87,7 +102,7 @@ export async function runClaudeTurn(opts) {
   const {
     prompt, resumeId = null, cwd, bin = defaultClaudeBin(), env = process.env,
     onEvent = () => {}, signal = null, maxTurns = CLAUDE_MAX_TURNS,
-    newSessionId = randomUUID(), spawnMs = 10000,
+    newSessionId = randomUUID(), spawnMs = 10000, extraSettings = null,
   } = opts;
   const emit = (ev) => { try { onEvent(ev); } catch { /* 监听方出错不影响继续解析输出 */ } };
   const fail = (kind, message, extra = {}) => ({ kind, message, sessionId: resumeId, text: '', exitCode: null, ...extra });
@@ -95,24 +110,34 @@ export async function runClaudeTurn(opts) {
   let args;
   try { args = claudeArgs({ resumeId, newSessionId, maxTurns }); } catch (err) { return fail(ERR.UNKNOWN, err.message); }
 
-  const plan = spawnPlan(bin, args);
+  // 起进程之前先把能确定的失败说清楚：路径写错 / 不是可执行文件 / 工作目录没了
+  const pre = preflightBin(bin);
+  if (pre) return fail(ERR.CLI_START_FAILED, pre.message, { reason: pre.reason });
+  if (cwd && !existsSync(cwd)) return fail(ERR.CLI_START_FAILED, `工作目录不存在：${cwd}`, { reason: 'workspace_not_found' });
+
+  const plan = spawnPlan(bin, extraSettings ? [...args, '--settings', extraSettings] : args);
   let child;
   try {
     child = spawn(plan.command, plan.args, {
       cwd, env: cleanChildEnv(env), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, shell: plan.shell,
     });
   } catch (err) {
-    return fail(ERR.CLI_START_FAILED, `无法启动 ${bin}：${err.message}`);
+    const why = explainStartFailure({ bin, cwd, err });
+    return fail(ERR.CLI_START_FAILED, why.message, { reason: why.reason });
   }
-  emit({ type: 'proc', pid: child.pid });
+  let spawnErr = null;   // 进程级错误（起不来 / 被系统杀），统一在这里记一次
+  child.on('error', (err) => { spawnErr = err; });
+  emit({ type: 'proc', pid: child.pid, command: plan.command });
   const spawned = await waitSpawned(child, spawnMs);
   if (!spawned.ok) {
-    return fail(ERR.CLI_START_FAILED, `无法启动 ${bin}：${spawned.error && spawned.error.message ? spawned.error.message : spawned.error}`);
+    const why = explainStartFailure({ bin, cwd, err: spawned.error });
+    return fail(ERR.CLI_START_FAILED, why.message, { reason: why.reason });
   }
 
   const state = {
     sessionId: resumeId, sessionAnnounced: false, text: '', finalText: '', result: null, synthetic: null,
     usage: null, sawEvent: false, nonJson: '', abortedKind: null,
+    lastRetryAttempt: null, lastRetryMax: null, lastRetryDelayMs: null,
   };
   const stderrTail = makeByteTail(16384);
 
@@ -127,6 +152,9 @@ export async function runClaudeTurn(opts) {
     }
     if (obj.type === 'system') {
       if (obj.subtype === 'api_retry') {
+        state.lastRetryAttempt = obj.attempt;
+        state.lastRetryMax = obj.max_retries;
+        state.lastRetryDelayMs = obj.retry_delay_ms;
         emit({
           type: 'retry', attempt: obj.attempt, max: obj.max_retries, delayMs: obj.retry_delay_ms,
           status: obj.error_status, error: obj.error,
@@ -218,7 +246,6 @@ export async function runClaudeTurn(opts) {
 
   const closed = await new Promise((resolve) => {
     child.once('close', (code, sig) => resolve({ code, sig }));
-    child.once('error', (err) => { state.nonJson += `\n[进程错误] ${err.message}`; });
   });
   if (signal) signal.removeEventListener('abort', onAbort);
   stdoutLines.flush();
@@ -235,6 +262,10 @@ export async function runClaudeTurn(opts) {
   if (state.abortedKind) {
     return { ...base, kind: state.abortedKind, message: abortMessage(state.abortedKind) };
   }
+  if (spawnErr) {
+    const why = explainStartFailure({ bin, cwd, err: spawnErr });
+    return { ...base, kind: ERR.CLI_START_FAILED, reason: why.reason, message: why.message };
+  }
 
   const r = state.result;
   if (r) {
@@ -247,7 +278,7 @@ export async function runClaudeTurn(opts) {
         typeof r.error === 'string' ? r.error : '',
       ].filter(Boolean).join(' ');
       if (SESSION_NOT_FOUND_RE.test(`${detail} ${stderr}`)) {
-        return { ...base, kind: ERR.SESSION_NOT_FOUND, message: `Claude 找不到会话 ${resumeId}（No conversation found with session ID）` };
+        return { ...base, kind: ERR.SESSION_NOT_FOUND, reason: 'session_not_found', message: `Claude 找不到会话 ${resumeId}（No conversation found with session ID）` };
       }
       const why = detail || stderr.slice(-400);
       let kind;
@@ -259,7 +290,10 @@ export async function runClaudeTurn(opts) {
         kind = classifyErrorText(why) || ERR.CLI_ERROR;
       }
       return {
-        ...base, kind, apiErrorStatus: r.api_error_status ?? null,
+        ...base, kind, reason: kind, apiErrorStatus: r.api_error_status ?? null,
+        // 什么时候能重试：上游文案里有绝对时间就带出来；没有就带 CLI 自己最后一次退避的间隔
+        resetAt: extractResetAt(why),
+        retryDelayMs: state.lastRetryDelayMs, retryAttempt: state.lastRetryAttempt, retryMax: state.lastRetryMax,
         message: why ? why.slice(0, 800) : `CLI 报错但没有给出原因（exit ${closed.code}，subtype=${r.subtype}）`,
       };
     }
@@ -286,11 +320,12 @@ export async function runClaudeTurn(opts) {
     };
   }
   if (SESSION_NOT_FOUND_RE.test(stderr)) {
-    return { ...base, kind: ERR.SESSION_NOT_FOUND, message: `Claude 找不到会话 ${resumeId}（No conversation found with session ID）` };
+    return { ...base, kind: ERR.SESSION_NOT_FOUND, reason: 'session_not_found', message: `Claude 找不到会话 ${resumeId}（No conversation found with session ID）` };
   }
   if (!state.sawEvent) {
-    // 一条事件都没吐出来就退了 = CLI 根本没起来（命令不存在、启动即崩），把 stderr 原因带给用户
-    return { ...base, kind: ERR.CLI_START_FAILED, message: `无法启动 ${bin}：${(stderr || state.nonJson).slice(-400) || `exit ${closed.code}`}` };
+    // 一条事件都没吐出来就退了 = CLI 根本没起来（命令不存在、启动即崩），把具体原因带给用户
+    const why = explainStartFailure({ bin, cwd, exitCode: closed.code, stderr: stderr || state.nonJson });
+    return { ...base, kind: ERR.CLI_START_FAILED, reason: why.reason, message: why.message };
   }
-  return { ...base, kind: ERR.CRASHED, message: `CLI 异常退出（exit ${closed.code}）：${stderr.slice(-400) || '没有错误输出'}` };
+  return { ...base, kind: ERR.CRASHED, reason: 'crashed', message: `CLI 异常退出（exit ${closed.code}）：${stderr.slice(-400) || '没有错误输出'}` };
 }

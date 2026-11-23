@@ -1,0 +1,56 @@
+{
+  "thread_id": "th-3b42d2da15",
+  "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\scripts\\chat-v1\\p2-acceptance\\out\\ws-1795467799191",
+  "turn": {
+    "turn_id": "ct-e7404c5a33",
+    "thread_id": "th-3b42d2da15",
+    "attempt_id": "ca-fb4e22ee7f",
+    "status": "failed",
+    "status_label": "Agent 启动失败",
+    "display_status": "failed",
+    "display_label": "Agent 启动失败",
+    "provider": "dsh",
+    "resume": false,
+    "user_message_id": "cm-268ed141da",
+    "assistant_message_id": "cm-a868eef7df",
+    "error": {
+      "kind": "cli_start_failed",
+      "code": "cli_start_failed",
+      "reason": "workspace_not_found",
+      "label": "Agent 启动失败",
+      "message": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191",
+      "text": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191",
+      "retryable": true,
+      "api_error_status": null,
+      "retry_at": null,
+      "retry_hint": null
+    },
+    "started_at": "2026-11-23T21:03:19.339Z",
+    "ended_at": "2026-11-23T21:03:19.422Z",
+    "created_at": "2026-11-23T21:03:19.226Z"
+  },
+  "error_event": {
+    "turn_id": "ct-e7404c5a33",
+    "status": "failed",
+    "text_len": 0,
+    "kind": "cli_start_failed",
+    "code": "cli_start_failed",
+    "reason": "workspace_not_found",
+    "label": "Agent 启动失败",
+    "message": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191",
+    "text": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191",
+    "retryable": true,
+    "api_error_status": null,
+    "retry_at": null,
+    "retry_hint": null,
+    "provider_session_id": null,
+    "seq": 2,
+    "type": "error",
+    "at": "2026-11-23T21:03:19.497Z"
+  },
+  "event_types": [
+    "started",
+    "error"
+  ],
+  "user_message_status": "failed"
+}

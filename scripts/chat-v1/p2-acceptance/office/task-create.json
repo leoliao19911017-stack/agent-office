@@ -1,0 +1,8 @@
+{
+  "title": "Agent Chat P2：dsh adapter（真 dsh 多轮续聊 + 起不来时原因具体）",
+  "acceptance": "B1 建 dsh thread，发一条有真实回复；B2 连发 3 条，第 3 条反映第 1 条；B3 问「我第一句说了什么」答对；B4 session-id 正确保存，第 2 条起走续聊；B5 dsh 起不来时状态是 failed 且原因具体。证据：docs/evidence/chat-p2/acceptance.md，复现：scripts/chat-v1/p2-acceptance/run.mjs",
+  "steps": [
+    { "key": "adapter", "name": "dsh adapter 收口：续聊参数实测、启动失败归因、failed 终态" },
+    { "key": "acceptance", "name": "真 dsh 跑 B1-B5 并落证据" }
+  ]
+}

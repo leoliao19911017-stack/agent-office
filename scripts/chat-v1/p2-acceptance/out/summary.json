@@ -1,0 +1,92 @@
+{
+  "started_at": "2026-11-23T21:03:00.289Z",
+  "finished_at": "2026-11-23T21:03:33.042Z",
+  "base": "http://127.0.0.1:8090",
+  "health": {
+    "ok": true,
+    "autoloop": true,
+    "build": "r73"
+  },
+  "bin": "C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd",
+  "acceptance": [
+    {
+      "id": "B1",
+      "title": "建 dsh thread，发一条消息有真实回复",
+      "pass": true,
+      "detail": "thread=th-5c99928c3e turn=ct-a7a6c8e865 status=completed（3087ms） 回复=「收到。」",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B2",
+      "title": "连发 3 条，第 3 条能反映第 1 条内容",
+      "pass": true,
+      "detail": "第 2 条回复=「我是 DeepSeek Harness 驱动的编程智能体，负责在你的项目里读代码、改代码、排查问题并完成交付任务。」\n第 3 条回复=「青禾-9241」（期望含口令 青禾-9241）",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B3",
+      "title": "问「我第一句说了什么」能答对",
+      "pass": true,
+      "detail": "回复=「原文： 口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。」",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B4",
+      "title": "session-id 正确保存，第 2 条起走续聊",
+      "pass": true,
+      "detail": "provider_session_id=session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4\n首轮命令=（无续聊参数）\n第 2/3/4 条命令=--session-id session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4\nchat_turns.resume=1,1,1,0（首轮 0，其余 1）",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B5a",
+      "title": "dsh 报会话不存在 → failed，带 dsh 的原话",
+      "pass": true,
+      "detail": "status=failed code=session_not_found\nmessage=「DSH 找不到会话 session-00000000-0000-4000-8000-000000000000：session \"session-00000000-0000-4000-8000-000000000000\" does not exist; omit --session-id to start a new Session」\n用户消息=failed 助手消息=failed",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B5b",
+      "title": "工作目录没了 → failed，说清是哪个目录，没去起进程",
+      "pass": true,
+      "detail": "status=failed reason=workspace_not_found\nmessage=「工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191」 用户消息=failed",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B5c-cli_path_missing",
+      "title": "DSH_BIN=C:/nope/never/installed/dsh.cmd",
+      "pass": true,
+      "detail": "status=failed（界面 failed/Agent 启动失败） code=cli_start_failed reason=cli_path_missing\nmessage=「找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）」\n用户消息=failed 助手消息=failed 对话状态=failed",
+      "kind": "acceptance"
+    },
+    {
+      "id": "B5c-cli_not_found",
+      "title": "DSH_BIN=definitely-not-a-dsh-binary-xyz.cmd",
+      "pass": true,
+      "detail": "status=failed（界面 failed/Agent 启动失败） code=cli_start_failed reason=cli_not_found\nmessage=「找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）」\n用户消息=failed 助手消息=failed 对话状态=failed",
+      "kind": "acceptance"
+    }
+  ],
+  "probes": [
+    {
+      "id": "flag-resume",
+      "title": "续聊参数 --resume：能不能接上上一句",
+      "works": false,
+      "detail": "命令=--resume session-b54d3eab-bdc6-4df6-aa44-a4330bf45501\nkind=cli_error exit=1 回复=「」 报错=「unknown option '--resume'」",
+      "kind": "probe"
+    },
+    {
+      "id": "flag-session-id",
+      "title": "续聊参数 --session-id：能不能接上上一句",
+      "works": true,
+      "detail": "命令=--session-id session-6140b91e-bada-4418-98ed-05f78b6b7927\nkind=completed exit=0 回复=「青禾-9241」",
+      "kind": "probe"
+    }
+  ],
+  "resume_flag_works": {
+    "resume": false,
+    "session-id": true
+  },
+  "resume_flag_conclusion": "dsh headless 的续聊参数是 --session-id <真实 session-id>；--resume 是 Claude Code 的参数，dsh 不认（unknown option，exit 1）",
+  "pass": 8,
+  "total": 8
+}

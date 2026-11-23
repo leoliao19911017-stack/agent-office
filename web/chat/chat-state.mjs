@@ -27,6 +27,7 @@ export const TURN = Object.freeze({
   COMPLETED: 'completed',
   RATE_LIMITED: 'rate_limited',
   INTERRUPTED: 'interrupted',
+  FAILED: 'failed',
   UNKNOWN: 'unknown',
 });
 
@@ -48,8 +49,34 @@ export const TURN_LABEL = Object.freeze({
   completed: '回答完成',
   rate_limited: '请求受限',
   interrupted: '执行中断',
+  failed: '执行失败',
   unknown: '执行结果未确认',
 });
+
+/**
+ * 界面五态（分批计划 P4）：queued 排队 / running 执行中 / completed 完成 / failed 失败 / unknown 未知。
+ * 十态是引擎的精确状态，五态是给人看的大类；具体原因另由 status_label / error 带出。
+ */
+export const DISPLAY = Object.freeze({
+  QUEUED: 'queued',
+  RUNNING: 'running',
+  COMPLETED: 'completed',
+  FAILED: 'failed',
+  UNKNOWN: 'unknown',
+});
+export const DISPLAY_LABEL = Object.freeze({
+  queued: '排队', running: '执行中', completed: '完成', failed: '失败', unknown: '未知',
+});
+
+/** 十态 → 五态。starting/restoring 算执行中（已经开始为这句话干活了），rate_limited 算失败（带「请求受限」标签） */
+export function displayStatusOf(status) {
+  if (status === TURN.QUEUED) return DISPLAY.QUEUED;
+  if (status === TURN.COMPLETED) return DISPLAY.COMPLETED;
+  if (status === TURN.UNKNOWN) return DISPLAY.UNKNOWN;
+  if (ACTIVE_TURN_STATUS.has(status)) return DISPLAY.RUNNING;
+  if (status === TURN.FAILED || status === TURN.INTERRUPTED || status === TURN.RATE_LIMITED) return DISPLAY.FAILED;
+  return DISPLAY.UNKNOWN;   // 不认识的状态不猜
+}
 
 /** 消息状态：用户消息 stored→sent；助手消息 streaming→complete / 其它终态与轮次同名 */
 export const MSG = Object.freeze({
@@ -94,6 +121,19 @@ export const ERR = Object.freeze({
   UNKNOWN: 'unknown',                     // 没有可靠证据说结果如何
 });
 
+/**
+ * 哪些错误落 failed（没跑成：起不来 / 没凭据 / 认证不过 / 会话丢了 / CLI 明确报错），
+ * 哪些落 interrupted（跑着被切断：崩溃 / 超时 / 取消 / 服务重启 / 轮数上限）。
+ * 分开是因为对用户是两回事：failed 该查环境，interrupted 该看已保存的输出再决定重试。
+ */
+export const FAILED_KINDS = new Set([
+  ERR.CLI_START_FAILED, ERR.CREDENTIALS_MISSING, ERR.AUTH_FAILED, ERR.SESSION_NOT_FOUND, ERR.CLI_ERROR,
+]);
+/** 这些错误发生时，用户这句话根本没交给模型 → 用户消息也标 failed（不是 sent） */
+export const NOT_DELIVERED_KINDS = new Set([
+  ERR.CLI_START_FAILED, ERR.CREDENTIALS_MISSING, ERR.AUTH_FAILED, ERR.SESSION_NOT_FOUND,
+]);
+
 /** 错误 → 用户看的那句话（任务书 §6.1） */
 const ERR_LABEL = Object.freeze({
   rate_limit: '请求受限',
@@ -120,11 +160,12 @@ export function errorLabel(kind) {
   return ERR_LABEL[kind] || ERR_LABEL.unknown;
 }
 
-/** 错误种类 → 轮次终态。只有 429 一族落到 rate_limited；有明确证据没跑完的落 interrupted；
+/** 错误种类 → 轮次终态。429 一族落 rate_limited；没跑成的落 failed；跑着被切断的落 interrupted；
  *  其余（结果不明）落 unknown——不兜底。 */
 export function statusForError(kind) {
   if (kind === ERR.RATE_LIMIT || kind === ERR.QUOTA_EXHAUSTED) return TURN.RATE_LIMITED;
   if (kind === ERR.UNKNOWN) return TURN.UNKNOWN;
+  if (FAILED_KINDS.has(kind)) return TURN.FAILED;
   if (isErrorKind(kind)) return TURN.INTERRUPTED;
   return TURN.UNKNOWN;
 }
@@ -137,9 +178,57 @@ export function isRetryable(kind) {
 /** 轮次状态 → 标签。rate_limited 的两种（限流 / 额度）文案不同，由错误种类决定。 */
 export function turnStatusLabel(status, errorKind = null) {
   if (status === TURN.RATE_LIMITED && errorKind) return errorLabel(errorKind);
+  if (status === TURN.FAILED && errorKind) return errorLabel(errorKind);
   if (status === TURN.INTERRUPTED && errorKind && errorKind !== ERR.CANCELLED) return errorLabel(errorKind);
   if (status === TURN.UNKNOWN) return TURN_LABEL.unknown;
   return TURN_LABEL[status] || TURN_LABEL.unknown;
+}
+
+const RESET_AT_PATTERNS = [
+  // GLM 网关的真实文案：「限额将在 2026-11-24 09:30 重置」（与 adapters/claude.mjs 认的同一形状）
+  /限[额度].{0,12}(?:将|会)?在\s*((?:\d{4}[-/])?\d{1,2}[-/]\d{1,2}\s+\d{1,2}:\d{2})\s*(?:左右)?(?:重置|恢复)/i,
+  // Anthropic 官方：「usage limit will reset at 3pm (UTC)」/「resets at 2026-11-24 09:30」
+  /reset(?:s)?\s+(?:at|on)\s+(\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2})/i,
+];
+
+/**
+ * 从 CLI 的报错原文里认出「什么时候可以重试」的绝对时间。只认带日期时间的机器文案；
+ * 认不出返回 null（界面就写「稍后重试」，不编一个时间）。输入按本机时区理解。
+ */
+export function extractResetAt(text, now = new Date()) {
+  const s = String(text || '');
+  for (const re of RESET_AT_PATTERNS) {
+    const m = s.match(re);
+    if (!m) continue;
+    const raw = m[1].replace(/\//g, '-').replace(' ', 'T');
+    const full = /^\d{4}-/.test(raw) ? raw : `${now.getFullYear()}-${raw}`;
+    const t = new Date(full);
+    if (!Number.isNaN(t.getTime())) return t.toISOString();
+  }
+  return null;
+}
+
+/**
+ * 「什么时候可以重试」的人话。有绝对时间就报时间；只有 CLI 的退避间隔就报「N 秒后自动重试」；
+ * 都没有就说稍后重试——不显示假的倒计时。
+ */
+export function retryHint({ resetAt = null, retryDelayMs = null, retryAttempt = null, retryMax = null } = {}) {
+  if (resetAt) {
+    const t = new Date(resetAt);
+    if (!Number.isNaN(t.getTime())) {
+      const p = (n) => String(n).padStart(2, '0');
+      const stamp = `${p(t.getHours())}:${p(t.getMinutes())}`;
+      const day = `${p(t.getMonth() + 1)}/${p(t.getDate())}`;
+      return `额度 ${day} ${stamp} 重置，之后可以重试`;
+    }
+  }
+  if (retryDelayMs != null && retryDelayMs !== '' && Number.isFinite(Number(retryDelayMs)) && Number(retryDelayMs) >= 0) {
+    const sec = Math.max(1, Math.round(Number(retryDelayMs) / 1000));
+    const n = retryAttempt != null && retryMax != null ? `（第 ${retryAttempt}/${retryMax} 次）` : '';
+    const next = retryAttempt != null ? `第 ${Number(retryAttempt) + 1} 次` : '下一次';
+    return `CLI 正在自动重试${n}，约 ${sec} 秒后${next}`;
+  }
+  return '稍后可以重试';
 }
 
 /**
@@ -175,4 +264,15 @@ export function isSupportedMode(mode) {
 
 export function isActiveTurn(status) {
   return ACTIVE_TURN_STATUS.has(status);
+}
+
+/**
+ * 这一轮还在不在进行（给只拿得到库行的地方用）：
+ * 状态在「进行中」集合里，或者处于限流重试中（rate_limited 且还没有 ended_at——
+ * 引擎只在真正结束时写 ended_at；终态的 rate_limited 一定带 ended_at）。
+ */
+export function isTurnActive(turn) {
+  if (!turn) return false;
+  if (ACTIVE_TURN_STATUS.has(turn.status)) return true;
+  return turn.status === TURN.RATE_LIMITED && !turn.ended_at;
 }

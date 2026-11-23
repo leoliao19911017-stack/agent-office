@@ -1,0 +1,107 @@
+{
+  "m2": {
+    "request": "第二句：用一句话介绍你自己，不要用工具。",
+    "turn": {
+      "turn_id": "ct-020671b94c",
+      "thread_id": "th-5c99928c3e",
+      "attempt_id": "ca-5ca80d31be",
+      "status": "completed",
+      "status_label": "回答完成",
+      "display_status": "completed",
+      "display_label": "完成",
+      "provider": "dsh",
+      "resume": true,
+      "user_message_id": "cm-94662ac79b",
+      "assistant_message_id": "cm-ce400917f7",
+      "error": null,
+      "started_at": "2026-11-23T21:03:03.752Z",
+      "ended_at": "2026-11-23T21:03:07.474Z",
+      "created_at": "2026-11-23T21:03:03.651Z"
+    },
+    "reply": "我是 DeepSeek Harness 驱动的编程智能体，负责在你的项目里读代码、改代码、排查问题并完成交付任务。"
+  },
+  "m3": {
+    "request": "第三句：我在这次对话最开始告诉过你一个口令。请原样复述那个口令，只回复口令本身。",
+    "turn": {
+      "turn_id": "ct-f6627c2a21",
+      "thread_id": "th-5c99928c3e",
+      "attempt_id": "ca-44b6ddc7b9",
+      "status": "completed",
+      "status_label": "回答完成",
+      "display_status": "completed",
+      "display_label": "完成",
+      "provider": "dsh",
+      "resume": true,
+      "user_message_id": "cm-60f536632a",
+      "assistant_message_id": "cm-77c219cad7",
+      "error": null,
+      "started_at": "2026-11-23T21:03:08.092Z",
+      "ended_at": "2026-11-23T21:03:12.156Z",
+      "created_at": "2026-11-23T21:03:07.973Z"
+    },
+    "reply": "青禾-9241",
+    "events": [
+      {
+        "provider": "dsh",
+        "resume": true,
+        "status": "restoring",
+        "provider_session_id": "session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4",
+        "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+        "mode": "discuss",
+        "attempt_id": "ca-44b6ddc7b9",
+        "queued_ms": 119,
+        "queued_ahead": 0,
+        "seq": 1,
+        "type": "restoring",
+        "turn_id": "ct-f6627c2a21",
+        "at": "2026-11-23T21:03:08.117Z"
+      },
+      {
+        "status": "restoring",
+        "pid": 45444,
+        "cli_command": "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4 -",
+        "seq": 2,
+        "type": "status",
+        "turn_id": "ct-f6627c2a21",
+        "at": "2026-11-23T21:03:08.175Z"
+      },
+      {
+        "status": "restoring",
+        "provider_session_id": "session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4",
+        "resumed": true,
+        "seq": 3,
+        "type": "status",
+        "turn_id": "ct-f6627c2a21",
+        "at": "2026-11-23T21:03:10.271Z"
+      },
+      {
+        "text": "青禾-9241",
+        "seq": 4,
+        "type": "delta",
+        "turn_id": "ct-f6627c2a21",
+        "at": "2026-11-23T21:03:12.091Z"
+      },
+      {
+        "status": "running",
+        "label": null,
+        "seq": 5,
+        "type": "status",
+        "turn_id": "ct-f6627c2a21",
+        "at": "2026-11-23T21:03:12.116Z"
+      },
+      {
+        "turn_id": "ct-f6627c2a21",
+        "status": "completed",
+        "text_len": 7,
+        "message_id": "cm-77c219cad7",
+        "usage": null,
+        "num_turns": null,
+        "duration_ms": null,
+        "provider_session_id": "session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4",
+        "seq": 6,
+        "type": "completed",
+        "at": "2026-11-23T21:03:12.241Z"
+      }
+    ]
+  }
+}

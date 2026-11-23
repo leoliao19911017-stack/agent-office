@@ -11,7 +11,7 @@
 | 批次 | 内容 | 完成判据 | 状态 |
 |---|---|---|---|
 | **P1** | 数据表 + claude adapter + 最简聊天（HTTP 轮询） | 和 claude 连聊 3 轮，第 3 轮记得第 1 轮 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p1/acceptance.md` / `.html`） |
-| **P2** | dsh adapter | 和 dsh 连聊 3 轮，能接上下文 | 待做 |
+| **P2** | dsh adapter | 和 dsh 连聊 3 轮，能接上下文 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p2/acceptance.md` / `.html`） |
 | **P3** | SSE 流式输出 | 回复是逐字出现的，不是等全部结束 | 待做 |
 | **P4** | 前端聊天面板（Coss 风格） | 点 agent 卡开面板，气泡左右对齐，刷新历史还在 | 待做 |
 | **P5** | 失败处理与状态机 | 429 / 启动失败 / 断流 都有明确状态和文案 | 待做 |
@@ -196,6 +196,40 @@ A7  失败时（比如故意传错 session id）状态是 failed 不是 complete
 2. 往 Agent Office 登记：POST /api/tasks 建 "Agent Chat P1" 任务，走完 attempt/checkpoint
 3. 在本文档 P1 那行状态改成 ✅ 完成，附证据路径
 ```
+
+---
+
+## P2 详细：dsh adapter
+
+### P2.1 验收（B1-B5）
+
+```
+B1  建 dsh thread，发一条消息有真实回复
+B2  连发 3 条，第 3 条能反映第 1 条内容
+B3  问「我第一句说了什么」能答对
+B4  session-id 正确保存，第 2 条走续聊
+B5  dsh 起不来时状态是 failed 且原因具体（不是笼统「失败」）
+```
+
+### P2 完成记录（2026-11-24）
+
+- B1-B5 全过（8/8，`scripts/chat-v1/p2-acceptance/run.mjs` 退出码 0）。验收对话 thread `th-5c99928c3e`：
+  四轮真 dsh，B3「我第一句说了什么」一字不差引用原文；B4 `provider_session_id=session-f9f16578-…`，
+  第 2/3/4 条命令行都是 `--session-id session-f9f16578-…`，`chat_turns.resume = 0,1,1,1`。
+- B5 四种情况都真制造了：会话不存在（dsh 原话 does not exist）/ 工作目录被删 / CLI 路径错 / 命令找不到 →
+  轮次一律 `failed`，`error.reason` 分别是 `session_not_found / workspace_not_found / cli_path_missing / cli_not_found`，
+  用户消息也是 `failed`（没交出去）。
+- **⚠️ 续聊参数与任务书口径不同**：任务书写「续聊用 --resume，不是 --session-id」。实测 dsh headless 0.2.2-rc.5
+  **只认 `--session-id`**；`--resume` 报 `unknown option '--resume'`（exit 1）。dsh 自带 help 也只列 `--session-id`
+  （`--resume` 是 `dsh tui` / Claude Code 的参数）。所以 dsh adapter 用 `--session-id`、claude adapter 用 `--resume`。
+  对照输出：`scripts/chat-v1/p2-acceptance/out/resume-flag-{resume,session-id}.json`。
+- 状态词汇加 `failed`：没跑成（起不来 / 没凭据 / 认证不过 / 会话丢了 / CLI 明确报错）落 failed，
+  跑着被切断（崩溃 / 超时 / 取消 / 服务重启）落 interrupted。P1 的 A7 当时落的是 interrupted，P7 回归会按新口径重跑。
+- 证据文档：`docs/evidence/chat-p2/acceptance.md`（AI 用）+ `acceptance.html`（人看）；
+  自动化：`test/chat-state.test.js` 11/11、`test/chat-engine.test.js` 17/17、`test/chat-http.test.js` 14/14（真实 server.js + 假 CLI）。
+- Agent Office 登记：task `t-20261123210150-6256ee` → attempt `a-440ca07a-mwtr484c` → checkpoint / finish 见 `scripts/chat-v1/p2-acceptance/office/`。
+- 顺带补上 **`POST /api/tasks/:id/finish`**（仓库里原本没有这个端点，P1 那条所以停在 unknown）：
+  结束执行实例 + 记一条**必须带证据**的 `acceptance_passed` + 状态机算出 completed；没证据 400。
 
 ---
 

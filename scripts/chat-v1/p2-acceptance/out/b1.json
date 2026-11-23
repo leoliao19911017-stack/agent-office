@@ -1,0 +1,87 @@
+{
+  "http": 201,
+  "thread_id": "th-5c99928c3e",
+  "request": "口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。",
+  "turn": {
+    "turn_id": "ct-a7a6c8e865",
+    "thread_id": "th-5c99928c3e",
+    "attempt_id": "ca-ed886618ad",
+    "status": "completed",
+    "status_label": "回答完成",
+    "display_status": "completed",
+    "display_label": "完成",
+    "provider": "dsh",
+    "resume": false,
+    "user_message_id": "cm-69e954f5cc",
+    "assistant_message_id": "cm-ae67196862",
+    "error": null,
+    "started_at": "2026-11-23T21:03:00.453Z",
+    "ended_at": "2026-11-23T21:03:03.442Z",
+    "created_at": "2026-11-23T21:03:00.338Z"
+  },
+  "reply": "收到。",
+  "events": [
+    {
+      "provider": "dsh",
+      "resume": false,
+      "status": "starting",
+      "provider_session_id": null,
+      "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+      "mode": "discuss",
+      "attempt_id": "ca-ed886618ad",
+      "queued_ms": 115,
+      "queued_ahead": 0,
+      "seq": 1,
+      "type": "started",
+      "turn_id": "ct-a7a6c8e865",
+      "at": "2026-11-23T21:03:00.486Z"
+    },
+    {
+      "status": "starting",
+      "pid": 49388,
+      "cli_command": "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never -",
+      "seq": 2,
+      "type": "status",
+      "turn_id": "ct-a7a6c8e865",
+      "at": "2026-11-23T21:03:00.537Z"
+    },
+    {
+      "status": "starting",
+      "provider_session_id": "session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4",
+      "resumed": false,
+      "seq": 3,
+      "type": "status",
+      "turn_id": "ct-a7a6c8e865",
+      "at": "2026-11-23T21:03:02.603Z"
+    },
+    {
+      "text": "收到。",
+      "seq": 4,
+      "type": "delta",
+      "turn_id": "ct-a7a6c8e865",
+      "at": "2026-11-23T21:03:03.377Z"
+    },
+    {
+      "status": "running",
+      "label": null,
+      "seq": 5,
+      "type": "status",
+      "turn_id": "ct-a7a6c8e865",
+      "at": "2026-11-23T21:03:03.402Z"
+    },
+    {
+      "turn_id": "ct-a7a6c8e865",
+      "status": "completed",
+      "text_len": 3,
+      "message_id": "cm-ae67196862",
+      "usage": null,
+      "num_turns": null,
+      "duration_ms": null,
+      "provider_session_id": "session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4",
+      "seq": 6,
+      "type": "completed",
+      "at": "2026-11-23T21:03:03.535Z"
+    }
+  ],
+  "waited_ms": 3087
+}

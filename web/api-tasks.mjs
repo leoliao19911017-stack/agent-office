@@ -8,6 +8,7 @@
 //   POST /api/tasks/:id/attempt    声明一次执行开始
 //   POST /api/tasks/:id/checkpoint 生成检查点
 //   POST /api/tasks/:id/handoff    交接（from → to，转移 write_owner）
+//   POST /api/tasks/:id/finish     收尾：结束执行实例 + 记验收结论 → 任务 completed（必须带证据）
 //
 // 所有返回状态的地方都带 evidence_source + observed_at。状态一律来自
 // state-machine.mjs，本文件不写第二套判定。
@@ -15,7 +16,7 @@
 import { getDb } from './lib/db.mjs';
 import {
   createTask, listTasks, getTask, getSteps, summarizeSteps, requireTask,
-  newAttemptId,
+  newAttemptId, updateStep,
 } from './lib/tasks.mjs';
 import {
   createAttempt, listAttempts, getAttempt, endAttempt, latestAttempt,
@@ -30,14 +31,14 @@ import {
   evaluateTaskState, refreshTaskState, evaluateAgentStatuses,
   STATES,
 } from './lib/state-machine.mjs';
-import { queryEvents, countArtifacts, EVIDENCE } from './lib/events.mjs';
+import { queryEvents, countArtifacts, EVIDENCE, recordAcceptance } from './lib/events.mjs';
 import { detectDsh } from './adapters/dsh.mjs';
 import { detectClaude, listClaudeSessions } from './adapters/claude.mjs';
 import { probeCliBinary } from './adapters/external.mjs';
 
 const AGENTS = new Set(['dsh', 'claude', 'codex', 'hermes']);
 const TASK_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})$/;
-const TASK_ACTION_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})\/(attempt|checkpoint|handoff)$/;
+const TASK_ACTION_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})\/(attempt|checkpoint|handoff|finish)$/;
 
 function stamp(now) {
   return (now instanceof Date ? now : new Date(now ?? Date.now())).toISOString();
@@ -511,6 +512,71 @@ export async function handleTasksApi(req, res, path, method, deps = {}) {
       write_owner: ownerView(transfer.owner),
       checkpoint_id: checkpointId,
       state,
+    });
+    return true;
+  }
+
+  // ---- POST /api/tasks/:id/finish ----------------------------------------
+  // 「做完了」不是一个可以直接写的状态：状态机只认 acceptance_passed（硬规矩 3：Agent 自称完成不算）。
+  // 所以 finish 做三件事：把执行实例正常结束（completed/done）、记一条带证据的验收结论、
+  // 让状态机自己算出 completed。没有证据（evidence）一律 400——声称完成必须附证据。
+  if (mAction && mAction[2] === 'finish' && normalizedMethod === 'POST') {
+    const taskId = mAction[1];
+    requireTask(db, taskId);
+    const body = (await bodyOf(req, deps)) || {};
+    const result = body.result === 'failed' ? 'failed' : 'passed';
+    const evidence = pickString(body, 'evidence', 'report', 'evidence_path');
+    if (!evidence) {
+      throw httpError(400, 'EVIDENCE_REQUIRED', 'finish 必须带 evidence（验收证据的路径或链接）；没有证据不能记成完成');
+    }
+    const note = pickString(body, 'note', 'summary');
+    const command = pickString(body, 'command');
+    const codeSha = pickString(body, 'code_sha', 'codeSha');
+
+    const attemptId = pickString(body, 'attempt_id', 'attemptId')
+      || (latestAttempt(db, { taskId, status: 'running' }) || latestAttempt(db, { taskId }) || {}).attempt_id
+      || null;
+    let attempt = null;
+    if (attemptId) {
+      const found = getAttempt(db, attemptId);
+      if (!found || found.task_id !== taskId) {
+        throw httpError(409, 'ATTEMPT_MISMATCH', `执行实例 ${attemptId} 不属于任务 ${taskId}`);
+      }
+      attempt = found;
+      if (attempt.status === 'running') {
+        // 实例是正常跑到头的：落 completed/done。任务最终是不是 completed 由下面的验收结论决定
+        attempt = endAttempt(db, {
+          attemptId, status: 'completed', endReason: 'done', endedAt: nowIso, evidenceSource: EVIDENCE.USER,
+        });
+      }
+    }
+
+    const acceptance = recordAcceptance(db, {
+      taskId, attemptId: attempt ? attempt.attempt_id : null, result, codeSha, command,
+      report: evidence, note,
+      // 带了验收命令 = 脚本验的（verifier）；否则是人工验收（user）
+      evidenceSource: command ? EVIDENCE.VERIFIER : EVIDENCE.USER,
+      observedAt: nowIso,
+    });
+
+    if (result === 'passed') {
+      // 任务完成 ⇒ 步骤一并落 done（没跳过的），看板的「N / N 步」才和状态对得上
+      for (const step of getSteps(db, taskId)) {
+        if (step.status === 'done' || step.status === 'skipped') continue;
+        updateStep(db, taskId, step.key, { status: 'done', at: nowIso, note: step.note || '' });
+      }
+    }
+
+    const state = refreshTaskState(db, taskId, { now: nowIso });
+    const task = requireTask(db, taskId);
+    send(deps, res, 200, {
+      ok: true,
+      observed_at: state.observed_at,
+      evidence_source: state.evidence_source,
+      acceptance,
+      attempt: attempt ? attemptView(getAttempt(db, attempt.attempt_id)) : null,
+      state,
+      task: taskView(db, task, state),
     });
     return true;
   }

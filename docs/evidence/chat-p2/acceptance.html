@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Chat P2 验收证据（dsh adapter B1-B5）</title>
+<style>
+:root { --fg:#262626; --muted:#686868; --border:rgba(0,0,0,.08); --bg:#fff; --soft:rgba(0,0,0,.04);
+  --ok:#047857; --bad:#b91c1c; --warn:#b45309; --info:#1d4ed8; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.7 "PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 32px 28px 80px; }
+h1 { font-size:26px; line-height:1.3; margin:0 0 6px; }
+h2 { font-size:19px; margin:34px 0 10px; padding-top:18px; border-top:1px solid var(--border); }
+h3 { font-size:16px; margin:22px 0 8px; }
+h4 { font-size:14px; margin:16px 0 6px; color:#404040; }
+p { margin:8px 0; }
+a { color:var(--info); }
+code { font:13px/1.5 "Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace; background:var(--soft); border:1px solid var(--border); border-radius:5px; padding:1px 5px; }
+pre { background:#fafafa; border:1px solid var(--border); border-radius:12px; padding:14px 16px; overflow:auto; margin:12px 0; }
+pre code { background:none; border:0; padding:0; font-size:13px; white-space:pre; }
+blockquote { margin:12px 0; padding:10px 16px; border-left:3px solid #d4d4d4; background:var(--soft); border-radius:0 10px 10px 0; color:#404040; }
+ul,ol { padding-left:26px; margin:8px 0; }
+li { margin:3px 0; }
+li.good::marker, tr.good td:first-child { color:var(--ok); }
+li.bad::marker, tr.bad td:first-child { color:var(--bad); }
+.table-wrap { overflow:auto; margin:12px 0; border:1px solid var(--border); border-radius:12px; }
+table { border-collapse:collapse; width:100%; font-size:14px; }
+th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+th { background:var(--soft); font-weight:600; white-space:nowrap; }
+tr:last-child td { border-bottom:0; }
+hr { border:0; border-top:1px solid var(--border); margin:26px 0; }
+.meta { color:var(--muted); font-size:13px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<main>
+<div class="meta">生成于 2026-11-23T21:07:23.383Z · 由 scripts/chat-v1/p2-acceptance/evidence.mjs 从真实输出生成</div>
+<h1>Agent Chat P2 验收证据：dsh adapter（B1-B5）</h1>
+<ul>
+<li>日期：2026-11-23T21:03:33.042Z（验收开始 2026-11-23T21:03:00.289Z）</li>
+<li>执行人：Claude（soda-office-ba 会话，飞书触发）</li>
+<li>服务：<code>http://127.0.0.1:8090</code>（重启后载入本批代码；health={&quot;ok&quot;:true,&quot;autoloop&quot;:true,&quot;build&quot;:&quot;r73&quot;}）</li>
+<li>dsh：<code>C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd</code>（0.2.2-rc.5，完整路径；不在 PATH）</li>
+<li>验收脚本：<code>scripts/chat-v1/p2-acceptance/run.mjs</code>，完整输出 <code>scripts/chat-v1/p2-acceptance/out/run.log</code>，逐项 JSON 在同目录</li>
+<li>验收对话：thread <code>th-5c99928c3e</code>（B1-B4，四轮真 dsh）</li>
+<li>Agent Office 登记：task <code>t-20261123210150-6256ee</code> / attempt <code>a-440ca07a-mwtr484c</code>（checkpoint、finish 见本批提交后的记录）</li>
+</ul>
+<h2>结论</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>项</th><th>内容</th><th>结果</th></tr></thead>
+<tbody>
+<tr class="good"><td>B1</td><td>建 dsh thread，发一条消息有真实回复</td><td>✅ 通过</td></tr>
+<tr class="good"><td>B2</td><td>连发 3 条，第 3 条能反映第 1 条内容</td><td>✅ 通过</td></tr>
+<tr class="good"><td>B3</td><td>问「我第一句说了什么」能答对</td><td>✅ 通过</td></tr>
+<tr class="good"><td>B4</td><td>session-id 正确保存，第 2 条起走续聊</td><td>✅ 通过</td></tr>
+<tr class="good"><td>B5</td><td>dsh 起不来时状态是 failed 且原因具体</td><td>✅ 四种情况全过</td></tr>
+</tbody>
+</table></div>
+<p>验收 8/8 通过（脚本退出码 0）。</p>
+<h2>⚠️ 与任务书口径不一致的一处：续聊参数</h2>
+<p>任务书写「续聊用 --resume &lt;session-id&gt;，不是 --session-id」。<strong>对 dsh 不成立</strong>，两种都真跑了：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>参数</th><th>真实命令（节选）</th><th>dsh 的真实结果</th></tr></thead>
+<tbody>
+<tr class="bad"><td><code>--resume</code></td><td>--resume session-b54d3eab-bdc6-4df6-aa44-a4330bf45501</td><td>❌ exit 1，stderr/stdout 报「unknown option '--resume'」，引擎归为 <code>cli_error</code></td></tr>
+<tr class="good"><td><code>--session-id</code></td><td>--session-id session-6140b91e-bada-4418-98ed-05f78b6b7927</td><td>✅ exit 0，答出口令「青禾-9241」</td></tr>
+</tbody>
+</table></div>
+<p>依据：dsh 自带 help（<code>dsh --profile headless --help</code>）只列了 <code>--session-id &lt;id&gt;</code>「adopt the persisted Session with this id」， 示例就是 <code>--session-id session-… &quot;continue&quot;   resume an existing Session</code>；<code>--resume</code> 是 <code>dsh tui</code> 的参数，也是 Claude Code 的参数。 所以 <strong>dsh adapter 用 <code>--session-id</code>、claude adapter 用 <code>--resume</code></strong>，各自按实测。B4 的「第 2 条走续聊」按这个口径验收。 复现：<code>node scripts/chat-v1/p2-acceptance/probe-resume-flag.mjs resume</code> 与 <code>… session-id</code>。</p>
+<pre><code>$ dsh.cmd --profile headless --help
+Options:
+  --json                      write newline-delimited run events to stdout instead of the final message
+  --session-id &lt;id&gt;           adopt the persisted Session with this id; an unknown id is an error
+  --permission-mode &lt;preset&gt;  select a configured permission preset for this task, including on resume
+  --approval-policy &lt;policy&gt;  set approval behavior after selecting the permission preset (choices: &quot;ask&quot;, &quot;never&quot;)
+  --add-dir &lt;path&gt;            allow an additional physical absolute directory under workspace-write (repeatable)
+
+Examples:
+  dsh --profile headless --session-id session-… &quot;continue&quot;   resume an existing Session</code></pre>
+<h2>B1 建 dsh thread，发一条有真实回复 ✅</h2>
+<ul>
+<li><code>POST /api/chat/threads {&quot;agent_id&quot;:&quot;dsh&quot;}</code> → HTTP 201，thread <code>th-5c99928c3e</code></li>
+<li>发送：「口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。」</li>
+<li>轮次 <code>ct-a7a6c8e865</code>：status=<strong>completed</strong>（界面 completed），3087ms</li>
+<li>dsh 回复原文：「收到。」</li>
+</ul>
+<p>这一轮的事件（<code>GET /api/chat/turns/ct-a7a6c8e865</code>；序号就是 SSE 的 <code>id</code>）：</p>
+<pre><code>&gt; GET /api/chat/turns/ct-a7a6c8e865
+ 1  started status=starting
+ 2  status status=starting  &quot;C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd&quot; --profile headless --json --permission-mode read-on…
+ 3  status status=starting
+ 4  delta
+ 5  status status=running
+ 6  completed status=completed</code></pre>
+<h2>B2 连发 3 条，第 3 条反映第 1 条 ✅</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>轮</th><th>发送</th><th>dsh 回复（原文节选）</th><th>状态</th></tr></thead>
+<tbody>
+<tr><td>第 2 条</td><td>第二句：用一句话介绍你自己，不要用工具。</td><td>我是 DeepSeek Harness 驱动的编程智能体，负责在你的项目里读代码、改代码、排查问题并完成交付任务。</td><td>completed</td></tr>
+<tr><td>第 3 条</td><td>第三句：我在这次对话最开始告诉过你一个口令。请原样复述那个口令，只回复口令本身。</td><td><strong>青禾-9241</strong></td><td>completed</td></tr>
+</tbody>
+</table></div>
+<p>第 3 条只回了口令本身 <code>青禾-9241</code>——第 1 条告诉它的内容，隔了一条消息仍然记得。</p>
+<h2>B3 问「我第一句说了什么」 ✅</h2>
+<p>发送：「我第一句说了什么？请一字不差地引用原文。」</p>
+<p>dsh 回复原文：</p>
+<pre><code>原文：
+
+口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。</code></pre>
+<p>第一句原文（逐字核对，去掉标点后完全一致）：</p>
+<pre><code>口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。</code></pre>
+<h2>B4 session-id 保存，第 2 条起走续聊 ✅</h2>
+<ul>
+<li><code>chat_threads.provider_session_id</code> = <code>session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4</code>（首轮 dsh 自己给的 <code>session-…</code>，引擎回填）</li>
+</ul>
+<p>首轮的命令行（没有续聊参数）：</p>
+<pre><code>&quot;C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd&quot; --profile headless --json --permission-mode read-only --approval-policy never -</code></pre>
+<p>第 2/3/4 条的命令行（都带 <code>--session-id &lt;同一个真实 ID&gt;</code>）：</p>
+<pre><code>&quot;C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd&quot; --profile headless --json --permission-mode read-only --approval-policy never --session-id session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4 -</code></pre>
+<p>数据库 <code>chat_turns</code>（thread <code>th-5c99928c3e</code>，按建轮先后）：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>turn_id</th><th>status</th><th>resume</th><th>started_at</th><th>ended_at</th><th>事件</th></tr></thead>
+<tbody>
+<tr><td>ct-a7a6c8e865</td><td>completed</td><td>0</td><td>2026-11-23T21:03:00.453Z</td><td>2026-11-23T21:03:03.442Z</td><td>started×1 status×3 delta×1 completed×1</td></tr>
+<tr><td>ct-020671b94c</td><td>completed</td><td>1</td><td>2026-11-23T21:03:03.752Z</td><td>2026-11-23T21:03:07.474Z</td><td>restoring×1 status×3 delta×1 completed×1</td></tr>
+<tr><td>ct-f6627c2a21</td><td>completed</td><td>1</td><td>2026-11-23T21:03:08.092Z</td><td>2026-11-23T21:03:12.156Z</td><td>restoring×1 status×3 delta×1 completed×1</td></tr>
+<tr><td>ct-c70b17ff45</td><td>completed</td><td>1</td><td>2026-11-23T21:03:12.391Z</td><td>2026-11-23T21:03:16.304Z</td><td>restoring×1 status×3 delta×1 completed×1</td></tr>
+</tbody>
+</table></div>
+<p><code>chat_messages</code>（同 thread）：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>seq</th><th>role</th><th>status</th><th>turn_id</th><th>content</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>user</td><td>sent</td><td>ct-a7a6c8e865</td><td>口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。</td></tr>
+<tr><td>2</td><td>assistant</td><td>complete</td><td>ct-a7a6c8e865</td><td>收到。</td></tr>
+<tr><td>3</td><td>user</td><td>sent</td><td>ct-020671b94c</td><td>第二句：用一句话介绍你自己，不要用工具。</td></tr>
+<tr><td>4</td><td>assistant</td><td>complete</td><td>ct-020671b94c</td><td>我是 DeepSeek Harness 驱动的编程智能体，负责在你的项目里读代码、改代码、排查问题并完成交付任务。</td></tr>
+<tr><td>5</td><td>user</td><td>sent</td><td>ct-f6627c2a21</td><td>第三句：我在这次对话最开始告诉过你一个口令。请原样复述那个口令，只回复口令本身。</td></tr>
+<tr><td>6</td><td>assistant</td><td>complete</td><td>ct-f6627c2a21</td><td>青禾-9241</td></tr>
+<tr><td>7</td><td>user</td><td>sent</td><td>ct-c70b17ff45</td><td>我第一句说了什么？请一字不差地引用原文。</td></tr>
+<tr><td>8</td><td>assistant</td><td>complete</td><td>ct-c70b17ff45</td><td>原文： 口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。</td></tr>
+</tbody>
+</table></div>
+<p>全库计数：chat_threads=10，chat_messages=40，chat_turns=19，chat_events=116。</p>
+<h2>B5 dsh 起不来 → failed，原因具体 ✅</h2>
+<p>四种情况都是真制造的（不是 mock）。轮次终态一律 <code>failed</code>，<code>error.code</code> 是错误大类、<code>error.reason</code> 是细原因，<code>error.message</code> 是给用户看的那句话。</p>
+<div class="table-wrap"><table>
+<thead><tr><th>情况</th><th>怎么制造的</th><th>turn.status</th><th>error.code</th><th>error.reason</th><th>用户消息</th><th>助手消息</th></tr></thead>
+<tbody>
+<tr><td>会话不存在</td><td>8090：把 thread 的 provider_session_id 改成不存在的 ID 再发消息，dsh 真的报 does not exist</td><td>failed</td><td>session_not_found</td><td>session_not_found</td><td>failed</td><td>failed</td></tr>
+<tr><td>工作目录没了</td><td>8090：建对话时目录在，发消息前把目录删了</td><td>failed</td><td>cli_start_failed</td><td>workspace_not_found</td><td>failed</td><td>failed</td></tr>
+<tr><td>CLI 路径错</td><td>私有实例（真实 server.js + 临时库），DSH_BIN=<code>C:/nope/never/installed/dsh.cmd</code></td><td>failed</td><td>cli_start_failed</td><td>cli_path_missing</td><td>failed</td><td>failed</td></tr>
+<tr><td>命令找不到</td><td>私有实例，DSH_BIN=<code>definitely-not-a-dsh-binary-xyz.cmd</code></td><td>failed</td><td>cli_start_failed</td><td>cli_not_found</td><td>failed</td><td>failed</td></tr>
+</tbody>
+</table></div>
+<p>给用户看的原因（<code>error.message</code> 原文）：</p>
+<pre><code>[会话不存在]  DSH 找不到会话 session-00000000-0000-4000-8000-000000000000：session &quot;session-00000000-0000-4000-8000-000000000000&quot; does not exist; omit --session-id to start a new Session
+[工作目录没了] 工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191
+[CLI 路径错]   找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）
+[命令找不到]   找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）</code></pre>
+<p>「CLI 路径错」那一轮通过 HTTP 看到的样子（界面五态 display_status=failed / display_label=Agent 启动失败）：</p>
+<pre><code>&gt; GET /api/chat/turns/ct-22a0ddcdd4
+{&quot;status&quot;:&quot;failed&quot;,&quot;status_label&quot;:&quot;Agent 启动失败&quot;,&quot;display_status&quot;:&quot;failed&quot;,&quot;display_label&quot;:&quot;Agent 启动失败&quot;,&quot;error&quot;:{&quot;kind&quot;:&quot;cli_start_failed&quot;,&quot;code&quot;:&quot;cli_start_failed&quot;,&quot;reason&quot;:&quot;cli_path_missing&quot;,&quot;label&quot;:&quot;Agent 启动失败&quot;,&quot;message&quot;:&quot;找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）&quot;,&quot;text&quot;:&quot;找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）&quot;,&quot;retryable&quot;:true,&quot;api_error_status&quot;:null,&quot;retry_at&quot;:null,&quot;retry_hint&quot;:null}}
+
+&gt; 对话状态 thread_status
+{&quot;status&quot;:&quot;failed&quot;,&quot;error_kind&quot;:&quot;cli_start_failed&quot;,&quot;reason&quot;:&quot;找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）&quot;,&quot;retry_hint&quot;:null,&quot;retry_at&quot;:null,&quot;evidence_source&quot;:&quot;chat_turns&quot;,&quot;observed_at&quot;:&quot;2026-11-23T21:03:19.720Z&quot;,&quot;turn_id&quot;:&quot;ct-22a0ddcdd4&quot;,&quot;queued&quot;:0,&quot;active_turn_id&quot;:null}</code></pre>
+<p>说明：</p>
+<ul>
+<li>「路径错 / 命令找不到」不能在 8090 上制造（要改 DSH_BIN），所以另起了一个真实的 <code>web/server.js</code> 子进程 + 临时数据库（<code>test/chat-harness.mjs</code>），走的是同一段代码。</li>
+<li>P1 的 A7 当时落的是 <code>interrupted</code>；本批把「没跑成」和「跑着被切断」分开：前者（起不来 / 没凭据 / 认证不过 / 会话丢了 / CLI 明确报错）落 <strong>failed</strong>，后者（崩溃 / 超时 / 取消 / 服务重启 / 轮数上限）落 interrupted。</li>
+</ul>
+<h2>完整运行输出</h2>
+<pre><code>服务 http://127.0.0.1:8090 health={&quot;ok&quot;:true,&quot;autoloop&quot;:true,&quot;build&quot;:&quot;r73&quot;}
+dsh=C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd
+PASS  B1  建 dsh thread，发一条消息有真实回复
+      thread=th-5c99928c3e turn=ct-a7a6c8e865 status=completed（3087ms） 回复=「收到。」
+PASS  B2  连发 3 条，第 3 条能反映第 1 条内容
+      第 2 条回复=「我是 DeepSeek Harness 驱动的编程智能体，负责在你的项目里读代码、改代码、排查问题并完成交付任务。」
+      第 3 条回复=「青禾-9241」（期望含口令 青禾-9241）
+PASS  B3  问「我第一句说了什么」能答对
+      回复=「原文： 口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。」
+PASS  B4  session-id 正确保存，第 2 条起走续聊
+      provider_session_id=session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4
+      首轮命令=（无续聊参数）
+      第 2/3/4 条命令=--session-id session-f9f16578-e0e8-49c1-876c-89aa6a58bfc4
+      chat_turns.resume=1,1,1,0（首轮 0，其余 1）
+PASS  B5a  dsh 报会话不存在 → failed，带 dsh 的原话
+      status=failed code=session_not_found
+      message=「DSH 找不到会话 session-00000000-0000-4000-8000-000000000000：session &quot;session-00000000-0000-4000-8000-000000000000&quot; does not exist; omit --session-id to start a new Session」
+      用户消息=failed 助手消息=failed
+PASS  B5b  工作目录没了 → failed，说清是哪个目录，没去起进程
+      status=failed reason=workspace_not_found
+      message=「工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p2-acceptance/out/ws-1795467799191」 用户消息=failed
+PASS  B5c-cli_path_missing  DSH_BIN=C:/nope/never/installed/dsh.cmd
+      status=failed（界面 failed/Agent 启动失败） code=cli_start_failed reason=cli_path_missing
+      message=「找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）」
+      用户消息=failed 助手消息=failed 对话状态=failed
+PASS  B5c-cli_not_found  DSH_BIN=definitely-not-a-dsh-binary-xyz.cmd
+      status=failed（界面 failed/Agent 启动失败） code=cli_start_failed reason=cli_not_found
+      message=「找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）」
+      用户消息=failed 助手消息=failed 对话状态=failed
+不能用  flag-resume  续聊参数 --resume：能不能接上上一句
+      命令=--resume session-b54d3eab-bdc6-4df6-aa44-a4330bf45501
+      kind=cli_error exit=1 回复=「」 报错=「unknown option '--resume'」
+能用  flag-session-id  续聊参数 --session-id：能不能接上上一句
+      命令=--session-id session-6140b91e-bada-4418-98ed-05f78b6b7927
+      kind=completed exit=0 回复=「青禾-9241」
+
+验收 B1-B5：8/8 通过
+续聊参数实测：--resume 不能续；--session-id 能续
+结论：dsh headless 的续聊参数是 --session-id &lt;真实 session-id&gt;；--resume 是 Claude Code 的参数，dsh 不认（unknown option，exit 1）</code></pre>
+<h2>本批改动</h2>
+<ul>
+<li><code>web/chat/adapters/dsh-chat.mjs</code>：续聊参数定为 <code>--session-id</code>（实测）；起进程前先查 bin 路径 / 工作目录；启动失败带 <code>reason</code>（cli_path_missing / cli_not_found / cli_not_executable / permission_denied / workspace_not_found / dll_init_failed / start_error）；留证真正执行的命令行；额度错误解析重置时间</li>
+<li><code>web/chat/adapters/claude-chat.mjs</code>：同一套启动失败归因；记录 CLI 自动重试的次数与间隔；支持 <code>CHAT_CLAUDE_SETTINGS</code> 追加 <code>--settings</code>（换网关 / 对照实验）</li>
+<li><code>web/chat/proc.mjs</code>：<code>preflightBin</code> / <code>explainStartFailure</code>（认 Node 的 err.code、cmd.exe 的中英文报错、Windows NTSTATUS 退出码）</li>
+<li><code>web/chat/chat-state.mjs</code>：加 <code>failed</code> 终态与 FAILED_KINDS / NOT_DELIVERED_KINDS；界面五态 <code>displayStatusOf</code>；<code>extractResetAt</code> / <code>retryHint</code>；<code>isTurnActive</code></li>
+<li><code>web/chat/chat-engine.mjs</code>：事件序号改为「一个 seq，落库与推送同一条」；增量攒批同 seq；订阅支持排队中的轮次与 Last-Event-ID 续订；结局里带的 session 也保存；工作目录不存在不去起进程（这部分是 P3 的地基，P2 一并带了）</li>
+<li><code>web/chat/chat-db.mjs</code>：<code>queuedAhead</code> / <code>lastChatEvent</code>；限流重试中的轮次算在进行中；<code>threadStatusOf</code> 带重试提示</li>
+<li><code>web/api-chat.mjs</code> / <code>web/server-api.mjs</code>：<code>/api/chat/...</code> 整体挂载；加对话列表 / 详情 / 轮次详情 / SSE / 取消路由（P3 的路由随本批代码一起上线，P3 再验收）</li>
+<li><code>web/api-tasks.mjs</code> + <code>web/lib/events.mjs</code>：<strong>新增 <code>POST /api/tasks/:id/finish</code></strong>（之前并不存在，见下）</li>
+<li><code>web/server.js</code>：SIGINT 时收掉在跑的聊天轮次</li>
+<li>测试：<code>test/chat-state.test.js</code>（11/11）、<code>test/chat-engine.test.js</code>（17/17）、<code>test/chat-http.test.js</code>（14/14，真实 server.js + 假 CLI，不联网不花额度）；夹具 <code>test/chat-harness.mjs</code>、<code>test/fixtures/chat-fake-{claude,dsh}.mjs</code></li>
+</ul>
+<h2>关于 <code>POST /api/tasks/:id/finish</code></h2>
+<p>任务要求用它把每批登记成 completed，但<strong>仓库里原本没有这个端点</strong>（只有 attempt / checkpoint / handoff），P1 那条所以停在 unknown。 本批补上了：它不直接写 completed（状态机硬规矩「completed 必须绑定验收通过」），而是做三件事——把执行实例正常结束（completed/done）、 记一条<strong>必须带证据</strong>的 <code>acceptance_passed</code>（没有 evidence 直接 400 EVIDENCE_REQUIRED）、让状态机自己算出 completed。 带 <code>command</code> 时证据来源记 verifier（脚本验的），否则记 user（人工验收）。</p>
+<h2>过程中出的事（如实记）</h2>
+<ul>
+<li>第一次重启 8090 时，重启脚本的 PowerShell 引号写错，旧实例杀掉后新实例没起来，<strong>8090 中断了约 2 分钟</strong>；随后手工拉起，</li>
+</ul>
+<p>脚本改成「启动命令落 .ps1 文件再执行」并在 8093 上验证过（255ms 就绪）。重启前脚本会查：在跑的聊天轮次、活着的目标执行实例、同机其它带本仓库路径的 headless Claude 会话，任何一项不干净就拒绝重启。</p>
+<ul>
+<li>给三个并行会话（engvm-b1 / agent-office-84 / agent-office-a0）发了协调消息，全部被对方会话 hold 住未送达（权限模式不同），所以没等到回复；重启是按上面的三项检查确认无在途工作后才做的。</li>
+</ul>
+<h2>Agent Office 登记</h2>
+<ul>
+<li><code>POST /api/tasks</code> → HTTP 201，task <code>t-20261123210150-6256ee</code>「Agent Chat P2：dsh adapter（真 dsh 多轮续聊 + 起不来时原因具体）」</li>
+<li><code>POST /api/tasks/:id/attempt</code> → HTTP 201，attempt <code>a-440ca07a-mwtr484c</code>（agent_id=claude）</li>
+<li>运行中状态是 unknown（外部终端 Claude 拿不到结构化事件，状态机如实判）；本批提交后走 checkpoint → finish（带证据路径与 code_sha）落 completed，响应见 <code>scripts/chat-v1/p2-acceptance/office/</code></li>
+</ul>
+</main>
+</body>
+</html>

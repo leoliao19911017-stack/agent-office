@@ -5,7 +5,7 @@
 
 import { randomUUID } from 'node:crypto';
 import { allRows, getRow, transaction } from '../lib/db.mjs';
-import { ACTIVE_TURN_STATUS, CHAT_MODES, CHAT_PROVIDERS, TURN, TURN_LABEL } from './chat-state.mjs';
+import { ACTIVE_TURN_STATUS, CHAT_MODES, CHAT_PROVIDERS, TURN, TURN_LABEL, errorLabel } from './chat-state.mjs';
 
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/;
 
@@ -75,6 +75,7 @@ const mapTurn = (r) => r && {
   started_at: r.started_at || null,
   ended_at: r.ended_at || null,
   created_at: r.created_at,
+  rowid: r.rowid,
 };
 
 const mapEvent = (r) => r && {
@@ -269,9 +270,18 @@ export function countQueuedTurns(db, threadId) {
   return Number(getRow(db, "SELECT COUNT(*) AS n FROM chat_turns WHERE thread_id = ? AND status = 'queued'", [threadId]).n);
 }
 
+/** 这一轮前面还排着几轮（同一对话串行，按建轮先后）。给界面显示「排队中，前面还有 N 条」 */
+export function queuedAhead(db, turn) {
+  return Number(getRow(db,
+    "SELECT COUNT(*) AS n FROM chat_turns WHERE thread_id = ? AND status = 'queued' AND (created_at < ? OR (created_at = ? AND rowid < ?))",
+    [turn.thread_id, turn.created_at, turn.created_at, turn.rowid ?? Number.MAX_SAFE_INTEGER]).n);
+}
+
 export function listActiveTurns(db) {
   const marks = ACTIVE_TURN_STATUS.size ? [...ACTIVE_TURN_STATUS].map(() => '?').join(',') : "''";
-  return allRows(db, `SELECT * FROM chat_turns WHERE status IN (${marks}) ORDER BY created_at ASC`, [...ACTIVE_TURN_STATUS]).map(mapTurn);
+  // 限流重试中的轮次（rate_limited 且没写 ended_at）也还在进行：服务重启时同样要落成 interrupted
+  return allRows(db, `SELECT * FROM chat_turns WHERE status IN (${marks}) OR (status = 'rate_limited' AND ended_at IS NULL) ORDER BY created_at ASC`,
+    [...ACTIVE_TURN_STATUS]).map(mapTurn);
 }
 
 export function setTurnStatus(db, turnId, status, { startedAt = undefined, now = null } = {}) {
@@ -309,6 +319,11 @@ export function appendApproval(db, { turnId, action, decision = 'denied', now = 
 export function lastEventSeq(db, turnId) {
   const row = getRow(db, 'SELECT COALESCE(MAX(seq), 0) AS n FROM chat_events WHERE turn_id = ?', [turnId]);
   return row ? Number(row.n) : 0;
+}
+
+/** 这一轮序号最大的那条事件（判断事件日志是不是已经以 terminal 收尾） */
+export function lastChatEvent(db, turnId) {
+  return mapEvent(getRow(db, 'SELECT * FROM chat_events WHERE turn_id = ? ORDER BY seq DESC LIMIT 1', [turnId]));
 }
 
 /** 在事务里追加一条事件并回写消息的 event_seq（两步同生成败，续订才不会重发或漏发） */
@@ -355,12 +370,10 @@ export function reconcileActiveTurns(db, { kind, message, now = null } = {}) {
       if (u && u.status === 'sent') setMessageStatus(db, u.message_id, 'unknown', { now: at });
     }
     const turnMsg = message || '服务重启，本轮执行中断';
+    const text = saved > 0 ? `${turnMsg}；已保存 ${saved} 字输出，请核对后再决定是否重试` : turnMsg;
     finishTurn(db, turn.turn_id, {
       status: TURN.INTERRUPTED,
-      error: {
-        kind, retryable: true,
-        message: saved > 0 ? `${turnMsg}；已保存 ${saved} 字输出，请核对后再决定是否重试` : turnMsg,
-      },
+      error: { kind, code: kind, reason: kind, label: errorLabel(kind), message: text, text, retryable: true, retry_hint: null, retry_at: null },
       now: at,
     });
   }
@@ -395,8 +408,12 @@ export function threadStatusOf(db, thread) {
     status: last.status,
     error_kind: errorKind,
     reason: last.error && last.error.message ? last.error.message : null,
+    retry_hint: last.error && last.error.retry_hint ? last.error.retry_hint : null,
+    retry_at: last.error && last.error.retry_at ? last.error.retry_at : null,
     evidence_source: 'chat_turns',
     observed_at: last.ended_at || last.started_at || last.created_at,
     turn_id: last.turn_id,
+    // 排队中的轮次（同一对话串行）：界面据此显示「还有 N 条在排队」
+    queued: countQueuedTurns(db, thread.thread_id),
   };
 }
