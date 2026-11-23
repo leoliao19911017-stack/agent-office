@@ -1,0 +1,4 @@
+{
+  "agent_id": "claude",
+  "note": "P3 执行：SSE 端点（text/event-stream，id=seq，心跳，Last-Event-ID 续订）+ 引擎单 seq 事件日志；真 claude / dsh 跑 C1-C4"
+}

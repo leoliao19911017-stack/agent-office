@@ -1,0 +1,4 @@
+{
+  "evidence": "docs/evidence/chat-p3/acceptance.md",
+  "note": "C1-C4 全过（scripts/chat-v1/p3-acceptance/run.mjs 退出码 0）。心跳 15s 实测到。自动化：chat-engine 17/17、chat-http 14/14、G07 19/19。"
+}

@@ -1,0 +1,57 @@
+{
+  "thread_id": "th-361faaf516",
+  "turn_id": "ct-6bc837c976",
+  "first": [
+    {
+      "id": null,
+      "event": "snapshot",
+      "at_ms": 226,
+      "data": ""
+    },
+    {
+      "id": "1",
+      "event": "started",
+      "at_ms": 227,
+      "data": "{"
+    },
+    {
+      "id": "2",
+      "event": "status",
+      "at_ms": 227,
+      "data": "{\""
+    }
+  ],
+  "second": [
+    {
+      "id": null,
+      "event": "snapshot",
+      "at_ms": 228,
+      "data": ""
+    },
+    {
+      "id": "3",
+      "event": "status",
+      "at_ms": 2257,
+      "data": "{"
+    },
+    {
+      "id": "4",
+      "event": "delta",
+      "at_ms": 3341,
+      "data": "{\""
+    },
+    {
+      "id": "5",
+      "event": "status",
+      "at_ms": 3341,
+      "data": "{\"s"
+    },
+    {
+      "id": "6",
+      "event": "completed",
+      "at_ms": 3474,
+      "data": "{\"se"
+    }
+  ],
+  "final_text": "我是 DeepSeek Harness 驱动的编码 AI 智能体，可以帮你写代码、查资料、读文件和处理工程任务。"
+}

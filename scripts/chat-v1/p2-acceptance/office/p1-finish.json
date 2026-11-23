@@ -1,0 +1,5 @@
+{
+  "evidence": "docs/evidence/chat-p1/acceptance.md",
+  "note": "补记 P1 收尾：A1-A7 当时已全过（thread th-16e11b96a0，A4 一字不差），代码在 commit f5413ee；此前仓库没有 finish 端点所以停在 unknown，P2 补上端点后补办。证据绑验收文档，不绑代码版本（当时的检查点先于 P1 提交）。",
+  "attempt_id": "a-5ed9efbe-mwtphwpf"
+}

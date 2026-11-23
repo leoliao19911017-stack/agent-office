@@ -1,0 +1,101 @@
+{
+  "turn_id": "ct-52906f6157",
+  "disconnected_after_events": 10,
+  "last_seen_seq": 9,
+  "snapshot_on_reconnect": {
+    "type": "snapshot",
+    "turn_id": "ct-52906f6157",
+    "at": "2026-11-23T21:11:25.969Z",
+    "status": "completed",
+    "text": "斜阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮霭\n薄雾漫过收割后的田\n凉意悄悄爬上窗棂\n一盏灯火次第亮起\n秋夜在虫鸣里渐渐深了",
+    "event_seq": 11,
+    "replay_from": 9,
+    "resume": true,
+    "error": null,
+    "queued_ahead": 0
+  },
+  "replayed_ids": [
+    10,
+    11
+  ],
+  "union_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+  ],
+  "final_text": "斜阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮霭\n薄雾漫过收割后的田\n凉意悄悄爬上窗棂\n一盏灯火次第亮起\n秋夜在虫鸣里渐渐深了",
+  "assistant_message": {
+    "message_id": "cm-3d838e529d",
+    "thread_id": "th-a0e2746961",
+    "turn_id": "ct-52906f6157",
+    "role": "assistant",
+    "content": "斜阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮霭\n薄雾漫过收割后的田\n凉意悄悄爬上窗棂\n一盏灯火次第亮起\n秋夜在虫鸣里渐渐深了",
+    "status": "complete",
+    "error": null,
+    "seq": 4,
+    "event_seq": 11,
+    "created_at": "2026-11-23T21:11:16.907Z",
+    "updated_at": "2026-11-23T21:11:24.780Z"
+  },
+  "first_stream": [
+    {
+      "id": 1,
+      "event": "restoring"
+    },
+    {
+      "id": 2,
+      "event": "status"
+    },
+    {
+      "id": 3,
+      "event": "status"
+    },
+    {
+      "id": 4,
+      "event": "status"
+    },
+    {
+      "id": 5,
+      "event": "delta",
+      "text": "斜"
+    },
+    {
+      "id": 6,
+      "event": "status"
+    },
+    {
+      "id": 7,
+      "event": "delta",
+      "text": "阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮"
+    },
+    {
+      "id": 8,
+      "event": "delta",
+      "text": "霭\n薄雾漫过收割"
+    },
+    {
+      "id": 9,
+      "event": "delta",
+      "text": "后的田\n凉意悄悄爬上窗棂\n一盏灯火次"
+    }
+  ],
+  "second_stream": [
+    {
+      "id": 10,
+      "event": "delta",
+      "text": "第亮起\n秋夜在虫鸣里渐渐深了"
+    },
+    {
+      "id": 11,
+      "event": "completed"
+    }
+  ]
+}

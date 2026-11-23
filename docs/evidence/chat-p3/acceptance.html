@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent Chat P3 验收证据（SSE C1-C4）</title>
+<style>
+:root { --fg:#262626; --muted:#686868; --border:rgba(0,0,0,.08); --bg:#fff; --soft:rgba(0,0,0,.04);
+  --ok:#047857; --bad:#b91c1c; --warn:#b45309; --info:#1d4ed8; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.7 "PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 32px 28px 80px; }
+h1 { font-size:26px; line-height:1.3; margin:0 0 6px; }
+h2 { font-size:19px; margin:34px 0 10px; padding-top:18px; border-top:1px solid var(--border); }
+h3 { font-size:16px; margin:22px 0 8px; }
+h4 { font-size:14px; margin:16px 0 6px; color:#404040; }
+p { margin:8px 0; }
+a { color:var(--info); }
+code { font:13px/1.5 "Cascadia Mono",Consolas,"SFMono-Regular",Menlo,monospace; background:var(--soft); border:1px solid var(--border); border-radius:5px; padding:1px 5px; }
+pre { background:#fafafa; border:1px solid var(--border); border-radius:12px; padding:14px 16px; overflow:auto; margin:12px 0; }
+pre code { background:none; border:0; padding:0; font-size:13px; white-space:pre; }
+blockquote { margin:12px 0; padding:10px 16px; border-left:3px solid #d4d4d4; background:var(--soft); border-radius:0 10px 10px 0; color:#404040; }
+ul,ol { padding-left:26px; margin:8px 0; }
+li { margin:3px 0; }
+li.good::marker, tr.good td:first-child { color:var(--ok); }
+li.bad::marker, tr.bad td:first-child { color:var(--bad); }
+.table-wrap { overflow:auto; margin:12px 0; border:1px solid var(--border); border-radius:12px; }
+table { border-collapse:collapse; width:100%; font-size:14px; }
+th,td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--border); vertical-align:top; }
+th { background:var(--soft); font-weight:600; white-space:nowrap; }
+tr:last-child td { border-bottom:0; }
+hr { border:0; border-top:1px solid var(--border); margin:26px 0; }
+.meta { color:var(--muted); font-size:13px; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<main>
+<div class="meta">生成于 2026-11-23T21:14:11.433Z · 由 scripts/chat-v1/p3-acceptance/evidence.mjs 从真实输出生成</div>
+<h1>Agent Chat P3 验收证据：SSE 流式输出（C1-C4）</h1>
+<ul>
+<li>日期：2026-11-23T21:11:32.366Z（验收开始 2026-11-23T21:11:03.471Z）</li>
+<li>执行人：Claude（soda-office-ba 会话，飞书触发）</li>
+<li>服务：<code>http://127.0.0.1:8090</code>（health={&quot;ok&quot;:true,&quot;autoloop&quot;:true,&quot;build&quot;:&quot;r73&quot;}；运行实例启动于本批代码之后）</li>
+<li>新端点：<code>GET /api/chat/turns/:turn_id/stream</code>（<code>text/event-stream</code>；每帧 <code>id: &lt;seq&gt;</code>；<code>retry: 1500</code>；每 15 秒一行心跳注释）</li>
+<li>轮询接口保留：<code>GET /api/chat/threads/:id/messages</code>（未删，返回 thread / messages / turns / thread_status）</li>
+<li>验收脚本：<code>scripts/chat-v1/p3-acceptance/run.mjs</code>，完整输出 <code>scripts/chat-v1/p3-acceptance/out/run.log</code></li>
+<li>验收对话：claude thread <code>th-a0e2746961</code>（C1-C3，真 Claude Code）；dsh 另有两个对话（C3-dsh / C4）</li>
+<li>Agent Office 登记：task <code>t-20261123211055-0cc0c6</code> / attempt <code>a-110b9f69-mwtrfwvq</code></li>
+</ul>
+<h2>结论</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>项</th><th>内容</th><th>结果</th></tr></thead>
+<tbody>
+<tr class="good"><td>C1</td><td>订阅 stream 能收到 started → delta(多个) → completed</td><td>✅ 7 条 delta，顺序正确，序号 1…13 连续</td></tr>
+<tr class="good"><td>C2</td><td>delta 拼起来等于最终完整回复</td><td>✅ 307 字逐字相等；库内 chat_events 与 SSE id 是同一串</td></tr>
+<tr class="good"><td>C3</td><td>中途断开重连，按 seq 补发，内容不丢不重</td><td>✅ 断在 seq=9，重连只补 2 条，并集 1…11 无重复</td></tr>
+<tr class="good"><td>C3-dsh</td><td>真 dsh：started 之后断开重连，后续全部补到</td><td>✅ 并集 1,2,3,4,5,6 = 库里全部事件</td></tr>
+<tr class="good"><td>C4</td><td>出错时收到 error 事件且 code 具体</td><td>✅ 两种真实出错都是 error 收尾，code / reason 具体</td></tr>
+<tr class="good"><td>轮询</td><td>旧轮询接口保留</td><td>✅</td></tr>
+</tbody>
+</table></div>
+<p>验收 6/6 通过（脚本退出码 0）。心跳：✅ 挂起 16500ms 内收到 1 次心跳（第 1 次在 15003ms）（私有实例 + 假 CLI 的 <code>[hang]</code>，模型一直不吐字）。</p>
+<h2>事件协议</h2>
+<pre><code>GET /api/chat/turns/:id/stream            → 200 text/event-stream
+                                         请求头 Last-Event-ID: &lt;seq&gt;（浏览器的 EventSource 断线自动带）或 ?after_seq=&lt;seq&gt;
+retry: 1500                               断线后 1.5 秒自动重连
+: heartbeat &lt;ms&gt;                          每 15 秒一行注释，防中间层掐空闲连接
+
+event: snapshot  data: {&quot;type&quot;:&quot;snapshot&quot;,&quot;status&quot;:…,&quot;text&quot;:&lt;此刻全文&gt;,&quot;event_seq&quot;:&lt;已落库最大序号&gt;,&quot;replay_from&quot;:&lt;从哪之后补&gt;,&quot;error&quot;:…,&quot;queued_ahead&quot;:…}
+event: started | restoring   开始 / 恢复会话（这一轮的第一条事件，带 status、workspace、续聊用的 provider_session_id）
+event: status                 状态变化（starting / running / rate_limited …）、真正执行的命令行、进程 pid、长时间无事件的核实提示
+event: delta      {&quot;text&quot;:&lt;增量&gt;}   {&quot;text&quot;:&lt;全文&gt;,&quot;replace&quot;:true}   正文增量（200ms 或 1KB 攒一批；与落库是同一批、同一个 seq）
+event: tool / retry           工具调用结果；CLI 自动重试（attempt / max / delay_ms / retry_at / retry_hint）
+event: completed  {&quot;message_id&quot;:…,&quot;usage&quot;:…}        成功收尾
+event: error      {&quot;code&quot;:…,&quot;reason&quot;:…,&quot;label&quot;:…,&quot;text&quot;:…,&quot;retryable&quot;:…,&quot;retry_at&quot;:…,&quot;retry_hint&quot;:…}   失败收尾</code></pre>
+<p>续订规则（引擎 <code>chat-engine.mjs</code> <code>subscribe()</code>）：<strong>一个 seq，落库与推送是同一条</strong>。订阅时同步做三步—— 先发 snapshot（此刻状态 + 全文 + 已落库最大序号），再补发 seq 大于「对方已收到哪」的落库事件（没说收到哪就从头补发这一轮）， 然后挂到实时流。排队中的轮次也能订阅（起跑后第一条就是 started/restoring）。</p>
+<h2>C1 订阅 → started → delta(多个) → completed ✅</h2>
+<p>真 Claude Code。发送：「用三句话介绍一下 SSE（Server-Sent Events）是什么、和 WebSocket 比有什么不同。不要用工具。」</p>
+<ul>
+<li>Content-Type：<code>text/event-stream; charset=utf-8</code>，<code>retry: 1500</code></li>
+<li>7 条 delta；<strong>首段增量在发送后 10713ms 到达，completed 在 13337ms</strong>——增量先到、完成最后到，不是等全部结束才出现</li>
+</ul>
+<p>事件序列：</p>
+<pre><code>snapshot → started → status → status → status → delta → status → delta → delta → delta → delta → delta → delta → completed</code></pre>
+<p>收到的原始帧（前 8 帧，data 截断到 260 字）：</p>
+<pre><code>event: snapshot
+data: {&quot;type&quot;:&quot;snapshot&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:03.789Z&quot;,&quot;status&quot;:&quot;starting&quot;,&quot;text&quot;:&quot;&quot;,&quot;event_seq&quot;:2,&quot;replay_from&quot;:0,&quot;resume&quot;:false,&quot;error&quot;:null,&quot;queued_ahead&quot;:0}
+
+id: 1
+event: started
+data: {&quot;provider&quot;:&quot;claude&quot;,&quot;resume&quot;:false,&quot;status&quot;:&quot;starting&quot;,&quot;provider_session_id&quot;:null,&quot;workspace&quot;:&quot;E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office&quot;,&quot;mode&quot;:&quot;discuss&quot;,&quot;attempt_id&quot;:&quot;ca-ea45d00e66&quot;,&quot;queued_ms&quot;:114,&quot;queued_ahead&quot;:0,&quot;seq&quot;:1,&quot;ty
+
+id: 2
+event: status
+data: {&quot;status&quot;:&quot;starting&quot;,&quot;pid&quot;:32992,&quot;cli_command&quot;:&quot;claude&quot;,&quot;seq&quot;:2,&quot;type&quot;:&quot;status&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:03.754Z&quot;}
+
+id: 3
+event: status
+data: {&quot;seq&quot;:3,&quot;type&quot;:&quot;status&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:04.467Z&quot;,&quot;status&quot;:&quot;starting&quot;,&quot;provider_session_id&quot;:&quot;5dee391d-521b-49d7-ae20-856db41f6e29&quot;,&quot;resumed&quot;:false}
+
+id: 4
+event: status
+data: {&quot;seq&quot;:4,&quot;type&quot;:&quot;status&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:04.737Z&quot;,&quot;status&quot;:&quot;starting&quot;,&quot;tools&quot;:[&quot;Glob&quot;,&quot;Grep&quot;,&quot;Read&quot;],&quot;model&quot;:&quot;glm-5.4[1m]&quot;,&quot;permission_mode&quot;:&quot;plan&quot;}
+
+id: 5
+event: delta
+data: {&quot;seq&quot;:5,&quot;type&quot;:&quot;delta&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:14.227Z&quot;,&quot;text&quot;:&quot;S&quot;}
+
+id: 6
+event: status
+data: {&quot;seq&quot;:6,&quot;type&quot;:&quot;status&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:14.227Z&quot;,&quot;status&quot;:&quot;running&quot;,&quot;label&quot;:null}
+
+id: 7
+event: delta
+data: {&quot;seq&quot;:7,&quot;type&quot;:&quot;delta&quot;,&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:14.474Z&quot;,&quot;text&quot;:&quot;SE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览器用 `EventSource` 接收流式文本消息，断线自动重连、自带事件类型，实现简单。与 WebSocket 的核心区别是方向性：SSE 只能服务器推、客户端发数据仍需普通 HTTP 请求，且是纯文本协议；WebSocket 则是经</code></pre>
+<h2>C2 delta 拼起来 = 最终完整回复 ✅</h2>
+<ul>
+<li>SSE 的 delta 依次拼接：307 字</li>
+<li><code>GET /api/chat/turns/ct-0f11417384</code> 的 <code>assistant_message.content</code>：307 字</li>
+<li>逐字相等：<strong>是</strong></li>
+<li>库里 <code>chat_events</code>（turn <code>ct-0f11417384</code>）：13 行，序号 1…13；SSE 收到的 <code>id</code> 也是 1…13（13 条）——<strong>同一串序号</strong></li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>seq</th><th>type</th><th>payload（截断）</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>started</td><td>{&quot;provider&quot;:&quot;claude&quot;,&quot;resume&quot;:false,&quot;status&quot;:&quot;starting&quot;,&quot;pro</td></tr>
+<tr><td>2</td><td>status</td><td>{&quot;status&quot;:&quot;starting&quot;,&quot;pid&quot;:32992,&quot;cli_command&quot;:&quot;claude&quot;}</td></tr>
+<tr><td>3</td><td>status</td><td>{&quot;status&quot;:&quot;starting&quot;,&quot;provider_session_id&quot;:&quot;5dee391d-521b-49</td></tr>
+<tr><td>4</td><td>status</td><td>{&quot;status&quot;:&quot;starting&quot;,&quot;tools&quot;:[&quot;Glob&quot;,&quot;Grep&quot;,&quot;Read&quot;],&quot;model&quot;:</td></tr>
+<tr><td>5</td><td>delta</td><td>{&quot;text&quot;:&quot;S&quot;}</td></tr>
+<tr><td>6</td><td>status</td><td>{&quot;status&quot;:&quot;running&quot;,&quot;label&quot;:null}</td></tr>
+<tr><td>7</td><td>delta</td><td>{&quot;text&quot;:&quot;SE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览</td></tr>
+<tr><td>8</td><td>delta</td><td>{&quot;text&quot;:&quot;后的双向全双工协议，两端随时互发、支持二进制。因此 SSE 更&quot;}</td></tr>
+<tr><td>9</td><td>delta</td><td>{&quot;text&quot;:&quot;轻量、对代理/CDN/HTTP2 更友好&quot;}</td></tr>
+<tr><td>10</td><td>delta</td><td>{&quot;text&quot;:&quot;，适合资讯推送、进度通知、&quot;}</td></tr>
+<tr><td>11</td><td>delta</td><td>{&quot;text&quot;:&quot;大模型流式输出等\&quot;只下不上\&quot;的场景；WebSocket 适合即时通讯、协作编辑、游戏等需要客户端高</td></tr>
+<tr><td>12</td><td>delta</td><td>{&quot;text&quot;:&quot;上行的双向实时场景。&quot;}</td></tr>
+<tr><td>13</td><td>completed</td><td>{&quot;turn_id&quot;:&quot;ct-0f11417384&quot;,&quot;status&quot;:&quot;completed&quot;,&quot;text_len&quot;:3</td></tr>
+</tbody>
+</table></div>
+<p>完整回复：</p>
+<pre><code>SSE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览器用 `EventSource` 接收流式文本消息，断线自动重连、自带事件类型，实现简单。与 WebSocket 的核心区别是方向性：SSE 只能服务器推、客户端发数据仍需普通 HTTP 请求，且是纯文本协议；WebSocket 则是经 `ws://` 升级握手后的双向全双工协议，两端随时互发、支持二进制。因此 SSE 更轻量、对代理/CDN/HTTP2 更友好，适合资讯推送、进度通知、大模型流式输出等&quot;只下不上&quot;的场景；WebSocket 适合即时通讯、协作编辑、游戏等需要客户端高频上行的双向实时场景。</code></pre>
+<h2>C3 中途断开，带 Last-Event-ID 重连 ✅</h2>
+<p>真 Claude Code 写八行小诗。收到 10 条（已含 4 条 delta）后客户端主动断开（AbortController，模拟网络中断）， 断线 1.5 秒后带着 <code>Last-Event-ID: 9</code> 重连：</p>
+<ul>
+<li>重连收到的 snapshot：<code>replay_from=9</code>，<code>event_seq=11</code>，<code>status=completed</code></li>
+<li>重连后补发的事件 id：10, 11（全部 &gt; 9，没有一条是断开前已经收过的）</li>
+<li>两次连接的序号并集：1…11，连续、无重复（共 11 条）</li>
+<li>两段增量拼起来 75 字 = 库里完整回复 75 字，逐字相等：<strong>是</strong></li>
+</ul>
+<p>第一次连接收到的事件：</p>
+<pre><code>1  restoring
+ 2  status
+ 3  status
+ 4  status
+ 5  delta  &quot;斜&quot;
+ 6  status
+ 7  delta  &quot;阳把天边染成蜜色 风携落叶掠过屋檐 雁声远远掠过山脊 炊烟缓缓融进暮&quot;
+ 8  delta  &quot;霭 薄雾漫过收割&quot;
+ 9  delta  &quot;后的田 凉意悄悄爬上窗棂 一盏灯火次&quot;</code></pre>
+<p>重连后收到的事件：</p>
+<pre><code>10  delta  &quot;第亮起 秋夜在虫鸣里渐渐深了&quot;
+11  completed</code></pre>
+<p>拼出来的完整回复：</p>
+<pre><code>斜阳把天边染成蜜色
+风携落叶掠过屋檐
+雁声远远掠过山脊
+炊烟缓缓融进暮霭
+薄雾漫过收割后的田
+凉意悄悄爬上窗棂
+一盏灯火次第亮起
+秋夜在虫鸣里渐渐深了</code></pre>
+<h3>C3-dsh：真 dsh，started 之后断开重连 ✅</h3>
+<p>dsh 的正文是整段到达的（一步一条 text），所以断点选在 started 之后、正文之前：</p>
+<ul>
+<li>第一次收到：snapshot → started → status（断在 seq=2）</li>
+<li>重连补发：snapshot → status → delta → status → completed</li>
+<li>并集 = 库里全部事件；最终回复：「我是 DeepSeek Harness 驱动的编码 AI 智能体，可以帮你写代码、查资料、读文件和处理工程任务。」</li>
+</ul>
+<h2>C4 出错时 error 事件且 code 具体 ✅</h2>
+<p>都是在 8090 上真制造的：</p>
+<div class="table-wrap"><table>
+<thead><tr><th>情况</th><th>事件序列</th><th>error.code</th><th>error.reason</th><th>error.status</th><th>error.text（截断）</th></tr></thead>
+<tbody>
+<tr><td>把 thread 的 provider_session_id 改成不存在的 ID，dsh 真的报 does not exist</td><td>snapshot → restoring → status → error</td><td>undefined</td><td>undefined</td><td>undefined</td><td></td></tr>
+<tr><td>建对话后把工作目录改成不存在的路径</td><td>snapshot → started → error</td><td>undefined</td><td>undefined</td><td>undefined</td><td></td></tr>
+</tbody>
+</table></div>
+<p>原始帧（data 截断）：</p>
+<pre><code>event: snapshot
+data: {&quot;type&quot;:&quot;snapshot&quot;,&quot;turn_id&quot;:&quot;ct-bdf0f97681&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:29.813Z&quot;,&quot;status&quot;:&quot;restoring&quot;,&quot;text&quot;:&quot;&quot;,&quot;event_seq&quot;:2,&quot;replay_from&quot;:0,&quot;resume&quot;:true,&quot;error&quot;:null,&quot;queued_ahead&quot;:0}
+
+id: 1
+event: restoring
+data: {&quot;provider&quot;:&quot;dsh&quot;,&quot;resume&quot;:true,&quot;status&quot;:&quot;restoring&quot;,&quot;provider_session_id&quot;:&quot;session-00000000-0000-4000-8000-000000000000&quot;,&quot;workspace&quot;:&quot;E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office&quot;,&quot;mode&quot;:&quot;discuss&quot;,&quot;attempt_id&quot;:&quot;ca-3faa52363c&quot;,&quot;queued_ms&quot;:116,&quot;queued_ahead&quot;:0,&quot;seq&quot;:1,&quot;type&quot;:&quot;restoring&quot;,&quot;turn_id&quot;:&quot;ct-b…
+
+id: 2
+event: status
+data: {&quot;status&quot;:&quot;restoring&quot;,&quot;pid&quot;:33468,&quot;cli_command&quot;:&quot;\&quot;C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\&quot; --profile headless --json --permission-mode read-only --approval-policy never --session-id session-00000000-0000-4000-8000-000000000000 -&quot;,&quot;seq&quot;:2,&quot;type&quot;:&quot;status&quot;,&quot;turn_id&quot;:&quot;ct-bdf…
+
+id: 3
+event: error
+data: {&quot;seq&quot;:3,&quot;type&quot;:&quot;error&quot;,&quot;turn_id&quot;:&quot;ct-bdf0f97681&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:32.044Z&quot;,&quot;status&quot;:&quot;failed&quot;,&quot;text_len&quot;:0,&quot;kind&quot;:&quot;session_not_found&quot;,&quot;code&quot;:&quot;session_not_found&quot;,&quot;reason&quot;:&quot;session_not_found&quot;,&quot;label&quot;:&quot;会话已丢失&quot;,&quot;message&quot;:&quot;DSH 找不到会话 session-00000000-0000-4000-8000-000000000000：session \&quot;session-00000000-0000-4000-8000-0000000000…
+
+event: snapshot
+data: {&quot;type&quot;:&quot;snapshot&quot;,&quot;turn_id&quot;:&quot;ct-8e49c13056&quot;,&quot;at&quot;:&quot;2026-11-23T21:11:32.362Z&quot;,&quot;status&quot;:&quot;failed&quot;,&quot;text&quot;:&quot;&quot;,&quot;event_seq&quot;:2,&quot;replay_from&quot;:0,&quot;resume&quot;:false,&quot;error&quot;:{&quot;kind&quot;:&quot;cli_start_failed&quot;,&quot;code&quot;:&quot;cli_start_failed&quot;,&quot;reason&quot;:&quot;workspace_not_found&quot;,&quot;label&quot;:&quot;Agent 启动失败&quot;,&quot;message&quot;:&quot;工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native…
+
+id: 1
+event: started
+data: {&quot;provider&quot;:&quot;dsh&quot;,&quot;resume&quot;:false,&quot;status&quot;:&quot;starting&quot;,&quot;provider_session_id&quot;:null,&quot;workspace&quot;:&quot;E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p3-acceptance/out/ws-1795468289511&quot;,&quot;mode&quot;:&quot;discuss&quot;,&quot;attempt_id&quot;:&quot;ca-f3789948cc&quot;,&quot;queued_ms&quot;:106,&quot;queued_ahead&quot;:0,&quot;seq&quot;:1,&quot;type&quot;:&quot;started&quot;,&quot;turn_id&quot;:&quot;…
+
+id: 2
+event: error
+data: {&quot;turn_id&quot;:&quot;ct-8e49c13056&quot;,&quot;status&quot;:&quot;failed&quot;,&quot;text_len&quot;:0,&quot;kind&quot;:&quot;cli_start_failed&quot;,&quot;code&quot;:&quot;cli_start_failed&quot;,&quot;reason&quot;:&quot;workspace_not_found&quot;,&quot;label&quot;:&quot;Agent 启动失败&quot;,&quot;message&quot;:&quot;工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p3-acceptance/out/ws-1795468289511&quot;,&quot;text&quot;:&quot;工作目录不存在：E:/DesktopP…</code></pre>
+<h2>库里的行（claude thread <code>th-a0e2746961</code>）</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>turn_id</th><th>status</th><th>resume</th><th>started_at</th><th>ended_at</th></tr></thead>
+<tbody>
+<tr><td>ct-0f11417384</td><td>completed</td><td>0</td><td>2026-11-23T21:11:03.653Z</td><td>2026-11-23T21:11:16.765Z</td></tr>
+<tr><td>ct-52906f6157</td><td>completed</td><td>1</td><td>2026-11-23T21:11:16.982Z</td><td>2026-11-23T21:11:24.679Z</td></tr>
+</tbody>
+</table></div>
+<p>全库计数：chat_threads=14，chat_messages=51，chat_turns=24，chat_events=151。</p>
+<h2>完整运行输出</h2>
+<pre><code>服务 http://127.0.0.1:8090 health={&quot;ok&quot;:true,&quot;autoloop&quot;:true,&quot;build&quot;:&quot;r73&quot;}
+PASS  C1  订阅 stream 收到 started → delta(多个) → completed
+      Content-Type=text/event-stream; charset=utf-8；retry=1500
+      事件序列=snapshot → started → status → status → status → delta → status → delta → delta → …（共 14 条）
+      共 7 条 delta；首段增量在发送后 10713ms 到达，completed 在 13337ms ——增量先到、完成最后到
+PASS  C2  delta 拼起来等于最终完整回复；库里的 chat_events 与实时流是同一串序号
+      拼接长度=307 字，库里助手消息长度=307 字，逐字相等=true
+      开头：「SSE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览器用 `Even」
+      库内事件序号 1…13（13 条）= SSE id 1…13（13 条）
+PASS  C3  中途断开重连，按 seq 补发，内容不丢不重
+      断开时已收到 9 条（最后 seq=9）；重连带 Last-Event-ID: 9
+      重连后 snapshot.replay_from=9，补发 2 条，seq 10…11（全部 &gt; 9）
+      两边序号并集 1…11 连续无重复（共 11 条）
+      两段增量拼起来 75 字 = 库里完整回复 75 字，逐字相等=true
+PASS  C3-dsh  真 dsh：started 之后断开、带 Last-Event-ID 重连，后续事件全部补到、不重复
+      第一次收到 snapshot → started → status（断在 seq=2）
+      重连补发 snapshot → status → delta → status → completed
+      并集 1,2,3,4,5,6 = 库里全部 6 条事件；最终回复=「我是 DeepSeek Harness 驱动的编码 AI 智能体，可以帮你写代码、查资料、读文件和处理工程任务。」
+PASS  C4  出错时收到 error 事件且 code 具体
+      [会话不存在] snapshot → restoring → status → error
+        error: code=session_not_found reason=session_not_found status=failed text=「DSH 找不到会话 session-00000000-0000-4000-8000-000000000000：session &quot;session-00000000-0000-4000-8000-000000000000&quot; does not e」
+      [工作目录没了] snapshot → started → error
+        error: code=cli_start_failed reason=workspace_not_found status=failed text=「工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/scripts/chat-v1/p3-acceptance/out/ws-17954」
+PASS  轮询保留  GET /api/chat/threads/:id/messages 仍在，返回 thread / messages / turns / thread_status
+      thread=th-25271578a4 messages=2 turns=1 thread_status=failed
+
+C1-C4：6/6 通过</code></pre>
+<h2>本批改动</h2>
+<p>P3 的服务端代码在 P2 那次提交里已经带上（引擎单 seq 事件日志、SSE 路由、取消路由），本批是<strong>用真 CLI 验收</strong>并留证据：</p>
+<ul>
+<li>引擎：每条事件只有一个 seq，先落库再推送，实时流与 <code>chat_events</code> 是同一串；增量 200ms / 1KB 攒批（同一批同一 seq）</li>
+<li>路由：<code>GET /api/chat/turns/:id/stream</code>、<code>GET /api/chat/turns/:id</code>、<code>POST /api/chat/turns/:id/cancel</code>；<code>GET /api/chat/threads?agent_id=</code>、<code>GET /api/chat/threads/:id</code></li>
+<li>订阅：snapshot → 补发 → 实时 三步同步完成；排队中的轮次可订阅；Last-Event-ID / ?after_seq 续订；已收全的人重连只有快照</li>
+<li>自动化：<code>test/chat-engine.test.js</code>（17/17）、<code>test/chat-http.test.js</code>（14/14，含真实 server.js 上的断线重连 / 404 / 405 / 心跳之外的协议细节）</li>
+</ul>
+<h2>Agent Office 登记</h2>
+<ul>
+<li><code>POST /api/tasks</code> → 201，task <code>t-20261123211055-0cc0c6</code>「Agent Chat P3：SSE 流式输出（真 CLI 验收 C1-C4）」</li>
+<li><code>POST /api/tasks/:id/attempt</code> → 201，attempt <code>a-110b9f69-mwtrfwvq</code></li>
+<li>checkpoint / finish 的响应在 <code>scripts/chat-v1/p3-acceptance/office/</code>（提交后执行，finish 带 evidence 与 code_sha）</li>
+</ul>
+</main>
+</body>
+</html>

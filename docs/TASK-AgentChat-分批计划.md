@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **P1** | 数据表 + claude adapter + 最简聊天（HTTP 轮询） | 和 claude 连聊 3 轮，第 3 轮记得第 1 轮 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p1/acceptance.md` / `.html`） |
 | **P2** | dsh adapter | 和 dsh 连聊 3 轮，能接上下文 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p2/acceptance.md` / `.html`） |
-| **P3** | SSE 流式输出 | 回复是逐字出现的，不是等全部结束 | 待做 |
+| **P3** | SSE 流式输出 | 回复是逐字出现的，不是等全部结束 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p3/acceptance.md` / `.html`） |
 | **P4** | 前端聊天面板（Coss 风格） | 点 agent 卡开面板，气泡左右对齐，刷新历史还在 | 待做 |
 | **P5** | 失败处理与状态机 | 429 / 启动失败 / 断流 都有明确状态和文案 | 待做 |
 | **P6** | hermes adapter | hermes 能对话（能力按实测，不强行伪装） | 待做 |
@@ -230,6 +230,48 @@ B5  dsh 起不来时状态是 failed 且原因具体（不是笼统「失败」�
 - Agent Office 登记：task `t-20261123210150-6256ee` → attempt `a-440ca07a-mwtr484c` → checkpoint / finish 见 `scripts/chat-v1/p2-acceptance/office/`。
 - 顺带补上 **`POST /api/tasks/:id/finish`**（仓库里原本没有这个端点，P1 那条所以停在 unknown）：
   结束执行实例 + 记一条**必须带证据**的 `acceptance_passed` + 状态机算出 completed；没证据 400。
+
+---
+
+## P3 详细：SSE 流式输出
+
+### P3.1 契约
+
+```
+GET /api/chat/turns/:turn_id/stream        text/event-stream；每帧 id: <seq>；retry: 1500；15 秒一行心跳注释
+  请求头 Last-Event-ID: <seq> 或 ?after_seq=<seq>   对方已经收到哪（EventSource 断线自动带）
+
+事件  started / restoring   开始、恢复会话（这一轮的第一条事件）
+      status                状态变化、真正执行的命令行、进程 pid、长时间无事件的核实提示
+      delta                 {"text": 增量}   {"text": 全文, "replace": true}
+      tool / retry          工具调用结果；CLI 自动重试（含下一次重试倒计时）
+      completed             {"message_id", "usage", …}
+      error                 {"code", "reason", "label", "text", "retryable", "retry_at", "retry_hint", "status"}
+      snapshot              订阅时的快照：状态 + 此刻全文 + event_seq + replay_from（不是任务书六事件之一，是续订用的）
+
+轮询接口 GET/POST /api/chat/threads/:id/messages 保留不删，SSE 是增量能力。
+```
+
+### P3.2 续订怎么做到不重复不丢
+
+每条事件只有一个 seq，**先落 `chat_events` 再推给在线订阅者**——实时流和库里的事件日志是同一串序号。
+订阅时在同一个同步段里做三步：发 snapshot → 补发 seq 大于「对方已收到哪」的落库事件 → 挂实时流。
+没说收到哪（新订阅）就从头补发这一轮，所以订阅的人总能拿到 started → … → completed 的完整过程。
+排队中的轮次也能订阅（起跑后第一条就是 started / restoring）。
+
+### P3 完成记录（2026-11-24）
+
+- C1-C4 全过（6/6，`scripts/chat-v1/p3-acceptance/run.mjs` 退出码 0），真 Claude Code + 真 dsh：
+  - C1：事件 `snapshot → started → status×3 → delta → status → delta×6 → completed`，7 条 delta；
+    **首段增量在发送后 10.7 秒到达，completed 在 13.3 秒**——增量先到，不是等全部结束。
+  - C2：delta 拼起来 307 字 = 库里助手消息 307 字，逐字相等；`chat_events` 的 seq 与 SSE 的 `id` 是同一串。
+  - C3：收到 9 条后断开，带 `Last-Event-ID: 9` 重连只补 seq 10、11，并集 1…11 连续无重复，两段拼起来 = 完整回复。
+    真 dsh：started 之后断开，重连补齐后续 4 条，并集 = 库里全部 6 条事件。
+  - C4：会话不存在 → `error code=session_not_found`；工作目录没了 → `error code=cli_start_failed reason=workspace_not_found`。
+- 心跳：模型一直不吐字时，15 秒收到一行心跳（私有实例实测 15003ms）。
+- 证据文档：`docs/evidence/chat-p3/acceptance.md` + `acceptance.html`。
+- Agent Office 登记：task `t-20261123211055-0cc0c6` → attempt `a-110b9f69-mwtrfwvq` → checkpoint / finish。
+- 说明：P3 的服务端代码随 P2 那次提交上线（引擎单 seq 事件日志 + SSE 路由），P3 这一批是用真 CLI 验收并留证据。
 
 ---
 

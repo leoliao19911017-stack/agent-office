@@ -1,0 +1,6 @@
+{
+  "evidence": "docs/evidence/chat-p2/acceptance.md",
+  "note": "B1-B5 全过（scripts/chat-v1/p2-acceptance/run.mjs 退出码 0，out/run.log 为完整输出）。续聊参数与任务书口径不同：dsh 实测只认 --session-id，--resume 报 unknown option。自动化：chat-state 11/11、chat-engine 17/17、chat-http 14/14、G07 19/19。",
+  "code_sha": "22db5d59a818fd6f18223bfce660c4824e2b21e9",
+  "attempt_id": "a-440ca07a-mwtr484c"
+}
