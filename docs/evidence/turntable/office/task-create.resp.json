@@ -1,0 +1,54 @@
+{
+  "status": 201,
+  "json": {
+    "ok": true,
+    "observed_at": "2026-11-24T06:06:50.979Z",
+    "evidence_source": "user",
+    "task": {
+      "task_id": "t-20261124060650-8a75cd",
+      "title": "看板 P0 第二批：中央同心圆弧转盘 + tool_events 真实采集",
+      "acceptance": "24/24 真跑断言全过：tool_events 采集 2793 条（Claude 1391 / DSH 1402）；转盘扇区/刻度/左弧工具计数/液位 57%（60/105）/15 分钟 73 次都来自真实 API；未采集时显示「工具数据采集中」不画数字；1440/1280/1936 不重叠不溢出；Claude/Hermes 图标正确。证据 docs/evidence/turntable/acceptance.md",
+      "status": "waiting",
+      "status_reason": "任务已创建，尚未开始执行（等待派活）",
+      "evidence_source": "system",
+      "observed_at": "2026-11-24T06:06:50.979Z",
+      "last_activity_at": null,
+      "last_progress_at": null,
+      "last_event_type": null,
+      "attempt_id": null,
+      "active_attempt_id": null,
+      "attempt_status": null,
+      "blocked_reason": null,
+      "relay_pending": false,
+      "verification": {
+        "result": "none",
+        "code_sha": null,
+        "command": null,
+        "report": null,
+        "observed_at": null,
+        "evidence_source": null
+      },
+      "current_step": {
+        "key": "collector",
+        "name": "tool-events.mjs：解析 Claude JSONL + DSH zstd，写 tool_events，增量幂等",
+        "status": "pending"
+      },
+      "done": [],
+      "remaining": [
+        "collector",
+        "api",
+        "turntable",
+        "acceptance"
+      ],
+      "progress": {
+        "done": 0,
+        "total": 4
+      },
+      "artifact_count": 0,
+      "latest_artifacts": [],
+      "created_at": "2026-11-24T06:06:50.979Z",
+      "updated_at": "2026-11-24T06:06:51.062Z",
+      "closed_at": null
+    }
+  }
+}

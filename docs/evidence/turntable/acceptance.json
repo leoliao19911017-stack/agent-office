@@ -1,0 +1,293 @@
+{
+  "ok": true,
+  "generated_at": "2026-11-24T06:06:00.352Z",
+  "base": "http://127.0.0.1:8090",
+  "summary": {
+    "passed": 24,
+    "total": 24
+  },
+  "api": {
+    "total_all": 2793,
+    "by_agent": [
+      {
+        "agent_id": "dsh",
+        "count": 1402,
+        "last_ts": "2026-11-24T05:56:12.058Z"
+      },
+      {
+        "agent_id": "claude",
+        "count": 1391,
+        "last_ts": "2026-11-24T01:52:32.333Z"
+      }
+    ],
+    "max_agent_count": 1402,
+    "last_run_at": "2026-11-24T05:56:13.889Z"
+  },
+  "tasks": {
+    "done": 60,
+    "total": 105,
+    "progress_pct": 57
+  },
+  "viewports": [
+    {
+      "viewport": "1440x900",
+      "overlap": false,
+      "overflow": false
+    },
+    {
+      "viewport": "1280x800",
+      "overlap": false,
+      "overflow": false
+    },
+    {
+      "viewport": "1936x1056",
+      "overlap": false,
+      "overflow": false
+    }
+  ],
+  "checks": [
+    {
+      "name": "API /api/tool-events 200 且已采集",
+      "ok": true,
+      "detail": {
+        "total_all": 2793,
+        "last_run_at": "2026-11-24T05:56:13.889Z"
+      }
+    },
+    {
+      "name": "API 有 Claude/DSH 真实工具事件",
+      "ok": true,
+      "detail": [
+        {
+          "agent_id": "dsh",
+          "count": 1402,
+          "last_ts": "2026-11-24T05:56:12.058Z"
+        },
+        {
+          "agent_id": "claude",
+          "count": 1391,
+          "last_ts": "2026-11-24T01:52:32.333Z"
+        }
+      ]
+    },
+    {
+      "name": "API 15 分钟桶是 15 个",
+      "ok": true
+    },
+    {
+      "name": "API 聚合不带 raw_json",
+      "ok": true
+    },
+    {
+      "name": "转盘扇区数 = 启用 Agent 数",
+      "ok": true,
+      "detail": {
+        "sectors": 4,
+        "enabled": 4
+      }
+    },
+    {
+      "name": "转盘 Agent 节点数 = 启用 Agent 数",
+      "ok": true,
+      "detail": {
+        "nodes": 4,
+        "enabled": 4
+      }
+    },
+    {
+      "name": "中心默认选中 Claude 且工具数 = API by_agent",
+      "ok": true,
+      "detail": {
+        "center": "当前选中 · 4 个启用 | Claude Code | 已完成 | 工具 ×1,391 | 最近 8 小时前 | 点弧上的 Agent 切换 · 右侧显示它的详情/对话",
+        "api": 1391
+      }
+    },
+    {
+      "name": "真实刻度标题 = max(by_agent)",
+      "ok": true,
+      "detail": {
+        "title": "TOOL CALLS · 0–1,402",
+        "maxAgent": 1402
+      }
+    },
+    {
+      "name": "左弧 BASH 次数 = API 里 Claude 的 Bash 次数",
+      "ok": true,
+      "detail": {
+        "claudeBash": 580
+      }
+    },
+    {
+      "name": "左弧有工具分组与最近内容",
+      "ok": true,
+      "detail": {
+        "groups": 3,
+        "codeLines": 5
+      }
+    },
+    {
+      "name": "液位 = 任务真实 done/total",
+      "ok": true,
+      "detail": {
+        "pct": 57,
+        "done": 60,
+        "total": 105,
+        "flow": "数据流 | 真实值 | 57% | 任务推进 | 60 / 105 步 | 工具事件 | 2,793 | 15 分钟 | 73 |  | 液位 = 任务 done/total（真实）；管道流动 = CSS dashoffset，不是随机数据。"
+      }
+    },
+    {
+      "name": "15 分钟调用率来自真实 buckets",
+      "ok": true,
+      "detail": {
+        "rate": "73 | 次 / 最近 15 分钟 | 15 分钟前 | 现在"
+      }
+    },
+    {
+      "name": "CSS 动效：刻度旋转 / 管道 dashoffset / 代码淡入 / 光标闪烁 / 选中脉冲",
+      "ok": true,
+      "detail": {
+        "tick": "tt-tick-spin",
+        "pipe": "tt-dash",
+        "codeLine": "tt-line-in",
+        "cursor": "tt-blink",
+        "selected": "tt-node-pulse"
+      }
+    },
+    {
+      "name": "Claude 中心图标是官方橙色星芒（#D97757）",
+      "ok": true,
+      "detail": {
+        "vb": "0 0 248 248",
+        "fill": "#D97757",
+        "color": "rgb(58, 52, 43)",
+        "rect": {
+          "x": 580.8671875,
+          "y": 532.90625,
+          "width": 26,
+          "height": 26,
+          "top": 532.90625,
+          "right": 606.8671875,
+          "bottom": 558.90625,
+          "left": 580.8671875
+        }
+      }
+    },
+    {
+      "name": "两侧面板与中心文字不重叠",
+      "ok": true,
+      "detail": {
+        "panelL": {
+          "x": 289,
+          "y": 257.5,
+          "w": 190,
+          "h": 321.90625,
+          "right": 479,
+          "bottom": 579.40625
+        },
+        "center": {
+          "x": 527.8046875,
+          "y": 512.859375,
+          "w": 258.390625,
+          "h": 87.140625,
+          "right": 786.1953125,
+          "bottom": 600
+        },
+        "panelR": {
+          "x": 849,
+          "y": 257.5,
+          "w": 176,
+          "h": 321.90625,
+          "right": 1025,
+          "bottom": 579.40625
+        }
+      }
+    },
+    {
+      "name": "页面无横向溢出",
+      "ok": true
+    },
+    {
+      "name": "浏览器控制台无错误",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "Hermes 中心图标是单色翅膀剪影（currentColor + catalog-wing viewBox）",
+      "ok": true,
+      "detail": {
+        "center": "当前选中 · 4 个启用\nHermes\n? 未知\n工具 ×0\n最近 —\n点弧上的 Agent 切换 · 右侧显示它的详情/对话",
+        "vb": "0 0 39.1 78.5",
+        "fill": "currentColor",
+        "color": "rgb(58, 52, 43)",
+        "rect": {
+          "x": 602.5859375,
+          "y": 532.90625,
+          "width": 26,
+          "height": 26,
+          "top": 532.90625,
+          "right": 628.5859375,
+          "bottom": 558.90625,
+          "left": 602.5859375
+        }
+      }
+    },
+    {
+      "name": "Codex 无工具事件时，左弧明说并显示全部真实采集",
+      "ok": true,
+      "detail": {
+        "tools": "工具调用流\n全部 Agent\n\n这个 Agent 没有工具事件，左弧显示全部已采集数据\n\nBASH\n×1,602\n9 分钟前\ntime node --no-warnings scripts/tool-events.mjs --json > "
+      }
+    },
+    {
+      "name": "1440x900：面板不压中心、无横向溢出",
+      "ok": true,
+      "detail": {
+        "overlap": false,
+        "overflow": false
+      }
+    },
+    {
+      "name": "1280x800：面板不压中心、无横向溢出",
+      "ok": true,
+      "detail": {
+        "overlap": false,
+        "overflow": false
+      }
+    },
+    {
+      "name": "1936x1056：面板不压中心、无横向溢出",
+      "ok": true,
+      "detail": {
+        "overlap": false,
+        "overflow": false
+      }
+    },
+    {
+      "name": "采集未跑：左弧显示「工具数据采集中」且不画工具数字",
+      "ok": true,
+      "detail": {
+        "tools": "工具调用流\ntool_events\n工具数据采集中\n采集器还没跑。运行 npm run tools:collect 后刷新；在采集完成前不画任何数字。\n采集器未运行",
+        "toolGroups": 0,
+        "scaleTitle": "TOOL CALLS · 未采集",
+        "nodeCounts": [
+          "待采集",
+          "待采集",
+          "待采集",
+          "待采集"
+        ],
+        "center": "当前选中 · 4 个启用\nClaude Code\n已完成\n工具 待采集\n最近 8 小时前\n点弧上的 Agent 切换 · 右侧显示它的详情/对话",
+        "rate": "工具数据采集中。采集器跑过之前，这里没有数字。",
+        "flow": "数据流\n真实值\n57%\n任务推进\n60 / 105 步\n工具事件\n—\n15 分钟\n—\n\n液位 = 任务 done/total（真实）；管道流动 = CSS dashoffset，不是随机数据。"
+      }
+    },
+    {
+      "name": "采集未跑：中心与 15 分钟卡不把未知写成 0",
+      "ok": true,
+      "detail": {
+        "center": "当前选中 · 4 个启用 | Claude Code | 已完成 | 工具 待采集 | 最近 8 小时前 | 点弧上的 Agent 切换 · 右侧显示它的详情/对话",
+        "rate": "工具数据采集中。采集器跑过之前，这里没有数字。",
+        "flow": "数据流 | 真实值 | 57% | 任务推进 | 60 / 105 步 | 工具事件 | — | 15 分钟 | — |  | 液位 = 任务 done/total（真实）；管道流动 = CSS dashoffset，不是随机数据。"
+      }
+    }
+  ]
+}

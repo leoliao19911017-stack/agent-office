@@ -87,7 +87,7 @@
         <header class="stage-head">
           <div class="stage-head__main">
             <h1 id="board-title">Agent 状态</h1>
-            <p id="board-sub">4 个 Agent · 点卡片在右侧与它对话</p>
+            <p id="board-sub">4 个 Agent · 点弧上的 Agent 在右侧与它对话</p>
           </div>
           <span class="source-badge"><i class="live-dot" aria-hidden="true"></i>真实 API · 对话为讨论模式</span>
         </header>
@@ -95,7 +95,7 @@
         <div class="agents-bar">
           <div class="agents-bar__main">
             <h2 class="eyebrow">Agents <b id="agent-count-note">—</b></h2>
-            <span class="agents-bar__hint">名册来自 agents 表 · 点卡片在右侧对话</span>
+            <span class="agents-bar__hint">名册来自 agents 表 · 点弧上的 Agent 在右侧对话</span>
           </div>
           <div class="agents-bar__actions">
             <button type="button" class="btn-ghost" id="agent-manage-btn">管理</button>
@@ -104,7 +104,14 @@
         </div>
 
         <div class="board-grid">
-          <div class="agents" id="agent-cards" aria-label="Agent 卡片"></div>
+          <section class="turntable" id="turntable" aria-label="Agent 工具调用转盘">
+            <div class="tt-gauge-wrap">
+              <svg class="tt-gauge" id="tt-gauge" viewBox="0 0 900 520" role="img" aria-label="同心圆弧转盘：真实工具调用刻度"></svg>
+              <div class="tt-center" id="tt-center" aria-live="polite"></div>
+            </div>
+            <aside class="tt-panel tt-panel--left" id="tt-tools" aria-label="工具调用流"></aside>
+            <aside class="tt-panel tt-panel--right" id="tt-flow" aria-label="数据流与液位"></aside>
+          </section>
         </div>
 
         <div class="progress-strip">
@@ -121,12 +128,8 @@
             <div class="data-card__body" id="activity-list"></div>
           </section>
           <section class="data-card">
-            <header class="data-card__head"><h3>调用率 / 15 秒</h3><span>工具级</span></header>
-            <div class="data-card__body data-card__body--center">
-              <div class="empty-big">—</div>
-              <p class="empty-note">P0 没有工具级采集，不画假柱状图。</p>
-              <p class="empty-sub">要显示调用率，需要新增工具调用事件采集。</p>
-            </div>
+            <header class="data-card__head"><h3>工具调用率</h3><span>15 分钟 · tool_events</span></header>
+            <div class="data-card__body" id="tool-rate"></div>
           </section>
           <section class="data-card">
             <header class="data-card__head"><h3>Token 累计</h3><span>/api/state</span></header>

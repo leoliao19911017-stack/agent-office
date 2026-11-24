@@ -29,6 +29,8 @@ const state = {
   hubState: null,
   quotas: null,
   agents: null,
+  toolEvents: null,
+  toolEventsError: null,
   loadError: null,
   quotasError: null,
   selectedAgentId: null,
@@ -213,6 +215,7 @@ async function loadData() {
     getJson('/api/state'),
     getJson('/api/quotas'),
     getJson('/api/agents?all=1'),
+    getJson('/api/tool-events?recent=200&tools=30'),
   ]);
   const failures = [];
   state.statusV2 = results[0].status === 'fulfilled' ? results[0].value : null;
@@ -222,6 +225,9 @@ async function loadData() {
   state.hubState = results[2].status === 'fulfilled' ? results[2].value : null;
   state.quotas = results[3].status === 'fulfilled' ? results[3].value : null;
   state.agents = results[4] && results[4].status === 'fulfilled' ? results[4].value : null;
+  state.toolEvents = results[5] && results[5].status === 'fulfilled' ? results[5].value : null;
+  state.toolEventsError = results[5] && results[5].status === 'rejected' ? results[5].reason.message : null;
+  // 工具采集失败不冒充 0：转盘左弧显示读取失败，不让状态/任务一起背锅。
   state.quotasError = results[3].status === 'rejected'
     ? results[3].reason.message
     : (state.quotas && state.quotas.ok === false ? '额度接口返回 ok=false' : null);
@@ -394,7 +400,9 @@ function renderMeta() {
   const all = rosterAll();
   $('#board-sub').textContent = state.loadError
     ? `读取失败：${state.loadError}`
-    : `${n} 个 Agent · 卡片显示分配任务数与证据源 · 点卡片在右侧与它对话`;
+    : state.toolEventsError
+      ? `${n} 个 Agent · 工具采集读取失败：${state.toolEventsError}`
+      : `${n} 个 Agent · 转盘刻度来自真实 tool_events · 点弧上的 Agent 在右侧与它对话`;
   const countNote = $('#agent-count-note');
   if (countNote) {
     countNote.textContent = state.statusV2
@@ -403,60 +411,265 @@ function renderMeta() {
   }
 }
 
-/* ---------- 渲染：Agent 卡 ---------- */
-function renderAgentCards() {
-  const root = $('#agent-cards');
+/* ---------- 渲染：中央转盘（TASK-转盘与Agent可添加 第二批） ----------
+   取消 Agent 卡片网格：中央是一条 224° 的同心圆弧 + 刻度轨道。
+   · 每个 Agent 一个扇区，扇区里的弧长 = 该 Agent 真实工具调用数 / 最大值
+   · 刻度值取真实 max(tool_events by_agent)，没有采集就写「未采集」，不画假数字
+   · 左弧读 tool_events（工具名 × 次数 + 最近内容），右弧是数据流管道 + 液位
+   · 液位 = 任务推进 done/total，真实值；管道 dashoffset 是纯 CSS 动画 */
+const TT = { cx: 450, cy: 392, start: -112, end: 112, trackR: 244, nodeR: 232, labelR: 208, scaleR: 318 };
+
+function ttPoint(r, deg) {
+  const rad = ((deg - 90) * Math.PI) / 180;
+  return [TT.cx + r * Math.cos(rad), TT.cy + r * Math.sin(rad)];
+}
+function ttArc(r, a0, a1) {
+  const [x0, y0] = ttPoint(r, a0);
+  const [x1, y1] = ttPoint(r, a1);
+  const large = Math.abs(a1 - a0) > 180 ? 1 : 0;
+  return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+}
+function ttCounts() {
+  const map = new Map();
+  for (const a of state.toolEvents?.by_agent || []) map.set(a.agent_id, Number(a.count) || 0);
+  return map;
+}
+function ttScope(agentId) {
+  const te = state.toolEvents;
+  if (!te) return { kind: state.toolEventsError ? 'error' : 'loading', error: state.toolEventsError };
+  if (te.collecting) return { kind: 'collecting' };
+  const agentCount = Number((te.by_agent || []).find((a) => a.agent_id === agentId)?.count) || 0;
+  const useAgent = agentCount > 0;
+  const tools = (te.tools || []).map((t) => ({
+    ...t,
+    scopeCount: useAgent ? Number(t.agents && t.agents[agentId]) || 0 : Number(t.count) || 0,
+    scopeRecent: (t.recent || []).filter((r) => !useAgent || r.agent_id === agentId),
+  })).filter((t) => t.scopeCount > 0);
+  const recent = useAgent
+    ? ((te.recent_by_agent && te.recent_by_agent[agentId]) || (te.recent || []).filter((r) => r.agent_id === agentId))
+    : (te.recent || []);
+  const total = useAgent ? agentCount : Number(te.total_all) || 0;
+  return {
+    kind: total > 0 ? (useAgent ? 'agent' : 'all') : 'empty',
+    agentId: useAgent ? agentId : null,
+    tools,
+    recent,
+    total,
+    note: useAgent ? null : (te.total_all > 0 ? '这个 Agent 没有工具事件，左弧显示全部已采集数据' : null),
+  };
+}
+
+function renderTurntable() {
+  const root = $('#tt-gauge');
+  const center = $('#tt-center');
   const agents = agentsNow();
+  if (!root || !center) return;
   if (!agents.length) {
-    root.innerHTML = `<div class="task-empty" style="grid-column:1/-1">${state.loadError ? '读不到 /api/agents/status-v2，不编造 Agent。' : '正在读取 /api/agents/status-v2 …'}</div>`;
+    root.innerHTML = '';
+    center.innerHTML = `<div class="tt-center__name">NO AGENT</div><div class="tt-center__meta">${state.loadError ? '读不到 /api/agents/status-v2，不编造' : '正在读取真实 Agent 名册…'}</div>`;
+    renderToolPanels();
     return;
   }
-  root.dataset.count = String(agents.length);
-  const boardMain = $('.board-main');
-  if (boardMain) boardMain.classList.toggle('board-main--scroll', agents.length > 4);
-  root.innerHTML = agents.map((a) => {
+
+  const counts = ttCounts();
+  const maxCount = Math.max(0, ...agents.map((a) => counts.get(a.agent_id) || 0));
+  const selected = agents.find((a) => a.agent_id === state.selectedAgentId) || agents[0];
+  const selectedId = selected ? selected.agent_id : null;
+  const n = agents.length;
+  const sweep = TT.end - TT.start;
+  const gap = n > 1 ? 7 : 0;
+  const sector = (sweep - gap * (n - 1)) / n;
+
+  /* 刻度轨道：1.5° 一根细线，每 6 根加长；整组缓慢旋转（CSS，60fps） */
+  const tickParts = [];
+  let tickCount = 0;
+  for (let i = 0; i * 1.5 <= sweep + 0.01; i += 1) {
+    const deg = TT.start + i * 1.5;
+    const major = i % 6 === 0;
+    const [x0, y0] = ttPoint(286, deg);
+    const [x1, y1] = ttPoint(major ? 300 : 294, deg);
+    tickParts.push(`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${major ? '#CFC4B2' : '#DDD5C7'}" stroke-width="${major ? 1 : .7}"/>`);
+    tickCount += 1;
+  }
+
+  /* 真实刻度标签：0 到 maxCount，取 6 个位置；采集没跑时只写 0 和「未采集」 */
+  const scaleParts = [];
+  const scaleSteps = maxCount > 0 ? 6 : 1;
+  for (let i = 0; i <= scaleSteps; i += 1) {
+    const deg = TT.start + (sweep * i) / scaleSteps;
+    const [x, y] = ttPoint(TT.scaleR, deg);
+    const value = maxCount > 0 ? Math.round((maxCount * i) / scaleSteps) : 0;
+    const cos = Math.cos(((deg - 90) * Math.PI) / 180);
+    const anchor = cos > 0.3 ? 'start' : cos < -0.3 ? 'end' : 'middle';
+    scaleParts.push(`<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" class="tt-scale-label">${value}</text>`);
+  }
+
+  /* 每个 Agent 的扇区：满区轨道 + 按真实计数缩放的弧带 + 边界辐条 */
+  const sectors = agents.map((a, i) => {
+    const a0 = TT.start + i * (sector + gap);
+    const a1 = a0 + sector;
+    const mid = a0 + sector / 2;
+    const count = counts.get(a.agent_id) || 0;
+    const ratio = maxCount > 0 ? count / maxCount : 0;
+    const usable = Math.max(0, sector - 5);
+    const valueA1 = count > 0 ? a0 + 2.5 + usable * (0.12 + 0.88 * ratio) : a0;
+    const isSel = a.agent_id === selectedId;
+    const [nx, ny] = ttPoint(TT.nodeR, mid);
+    const [lx, ly] = ttPoint(TT.labelR, mid);
+    // 标签放在弧内侧，并朝圆心方向展开：两侧面板不遮住 Agent 名。
+    const anchor = mid > 35 ? 'end' : mid < -35 ? 'start' : 'middle';
+    const nameY = ly + 3;
+    const countY = nameY + 12;
+    const [b0x, b0y] = ttPoint(232, a0);
+    const [b0x2, b0y2] = ttPoint(302, a0);
+    const band = count > 0
+      ? `<path d="${ttArc(TT.trackR, a0 + 2.5, valueA1)}" fill="none" stroke="#FEF1DC" stroke-width="${isSel ? 23 : 18}" stroke-linecap="round" opacity="${isSel ? .9 : .35}"/>
+         <path d="${ttArc(TT.trackR, a0 + 2.5, valueA1)}" fill="none" stroke="${isSel ? '#F8BA3F' : '#D8C39B'}" stroke-width="${isSel ? 13 : 8}" stroke-linecap="round" opacity="${isSel ? .95 : .62}"/>`
+      : '';
     const m = meta(a.agent_id);
-    const tone = agentTone(a);
-    const stateLabel = agentStateLabel(a);
-    const selected = a.agent_id === state.selectedAgentId && !state.selectedTaskId;
-    const taskKnown = Boolean(a.task?.task_id);
-    const taskIdle = a.task?.status === 'idle';
-    const loadLabel = taskKnown ? '任务 1' : taskIdle ? '任务 0' : '任务 未知';
-    const av = a.availability?.available;
-    const avLabel = av === true ? '可用' : av === false ? '不可用' : '可用性未知';
-    const hasQuota = a.agent_id === 'claude' || a.agent_id === 'codex';
-    return `<div class="agent-card-wrap"><button type="button" class="agent-card ${selected ? 'is-selected' : ''} ${hasQuota ? 'agent-card--quota' : ''}" data-agent="${esc(a.agent_id)}" aria-pressed="${selected}" data-tone="${tone}" data-task-count="${taskKnown ? 1 : 0}">
-      <span class="agent-card__top">
-        ${iconHtml(a.agent_id)}
-        <span class="agent-card__name">${esc(m.name)}</span>
-        <span class="agent-card__dot" data-tone="${tone}" aria-hidden="true"></span>
-      </span>
-      <span class="agent-card__state" data-tone="${tone}">${esc(stateLabel)}</span>
-      <span class="agent-card__doing">${esc(doingText(a))}</span>
-      ${quotaBlock(a)}
-      <span class="agent-card__facts">
-        <span class="agent-card__fact"><i>最近活动</i><b>${esc(relTime(a.execution?.last_activity_at))}</b></span>
-        <span class="agent-card__fact"><i>观测</i><b data-rel="${esc(a.execution?.observed_at || '')}">${esc(relTime(a.execution?.observed_at))}</b></span>
-      </span>
-      <span class="agent-card__meta">
-        <span class="chip ${av === false ? 'chip--bad' : av === true ? 'chip--ok' : ''}">${esc(avLabel)}</span>
-        <span class="chip chip__mono">${a.kind === 'api' ? `API · ${esc(a.protocol || '?')}` : esc(evidenceShort(a.availability?.evidence_source))}</span>
-        <span class="agent-card__load">${esc(loadLabel)}</span>
-      </span>
-    </button></div>`;
-  }).join('');
-  $$('.agent-card', root).forEach((btn) => {
-    btn.addEventListener('click', () => {
-      state.selectedAgentId = btn.dataset.agent;
-      state.selectedTaskId = null;
-      rememberAgent(state.selectedAgentId);
-      renderAll();
-      if (window.SodaChat) SodaChat.focus(state.selectedAgentId);
-      const agent = agents.find((x) => x.agent_id === btn.dataset.agent);
-      const un = agent && agent.chat_supported === false;
-      showToast(un ? `${meta(btn.dataset.agent).name} 暂不支持对话 · 右侧写了原因` : `已打开与 ${meta(btn.dataset.agent).name} 的对话`);
-    });
+    return {
+      agentId: a.agent_id,
+      html: `<g class="tt-sector ${isSel ? 'is-selected' : ''}">
+        <path d="${ttArc(TT.trackR, a0 + 2, a1 - 2)}" fill="none" stroke="${isSel ? '#F3DFB8' : '#ECE5D9'}" stroke-width="14" stroke-linecap="round"/>
+        ${band}
+        <line x1="${b0x.toFixed(1)}" y1="${b0y.toFixed(1)}" x2="${b0x2.toFixed(1)}" y2="${b0y2.toFixed(1)}" stroke="#E6DED1" stroke-width=".8" opacity=".85"/>
+        <g class="tt-node ${isSel ? 'is-selected' : ''}" data-agent="${esc(a.agent_id)}" role="button" tabindex="0" aria-label="${esc(m.name)}，工具 ${count} 次，点击查看对话">
+          <circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${isSel ? 10 : 7}" fill="${isSel ? 'rgba(248,186,63,.18)' : 'transparent'}" stroke="${isSel ? '#E0A83D' : '#C9BEAE'}" stroke-width="1.2"/>
+          <circle cx="${nx.toFixed(1)}" cy="${ny.toFixed(1)}" r="${isSel ? 4.6 : 3.2}" fill="${isSel ? '#F0B34A' : '#C4B8A5'}"/>
+          <text x="${lx.toFixed(1)}" y="${nameY.toFixed(1)}" text-anchor="${anchor}" class="tt-node__name ${isSel ? 'is-selected' : ''}">${esc(m.short)}</text>
+          <text x="${lx.toFixed(1)}" y="${countY.toFixed(1)}" text-anchor="${anchor}" class="tt-node__count ${isSel ? 'is-selected' : ''}">${maxCount > 0 ? `×${fmtInt(count)}` : '待采集'}</text>
+          <title>${esc(m.name)} · 工具调用 ${fmtInt(count)} 次${isSel ? ' · 当前选中' : ''}</title>
+        </g>
+      </g>`,
+      mid,
+      count,
+    };
   });
+
+  root.innerHTML = `
+    <g class="tt-rings">
+      <path d="${ttArc(306, TT.start, TT.end)}" fill="none" stroke="#D9CFBF" stroke-width=".9"/>
+      <path d="${ttArc(282, TT.start, TT.end)}" fill="none" stroke="#E9E2D6" stroke-width=".7"/>
+      <path d="${ttArc(262, TT.start, TT.end)}" fill="none" stroke="#EFE9DE" stroke-width=".7"/>
+    </g>
+    <text x="${TT.cx}" y="34" text-anchor="middle" class="tt-scale-title">TOOL CALLS · ${maxCount > 0 ? `0–${fmtInt(maxCount)}` : '未采集'}</text>
+    <g class="tt-tickrail">${tickParts.join('')}</g>
+    ${scaleParts.join('')}
+    ${sectors.map((s) => s.html).join('')}`;
+
+  $$('.tt-node', root).forEach((node) => {
+    const pick = () => selectAgentById(node.getAttribute('data-agent'));
+    node.addEventListener('click', pick);
+    node.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+  });
+
+  if (selected) {
+    const m = meta(selected.agent_id);
+    const count = counts.get(selected.agent_id) || 0;
+    const toolCountLabel = !state.toolEvents || state.toolEvents.collecting ? '工具 待采集' : `工具 ×${fmtInt(count)}`;
+    const tone = agentTone(selected);
+    center.innerHTML = `
+      <div class="tt-center__eyebrow">当前选中 · ${agents.length} 个启用</div>
+      <div class="tt-center__id">${iconHtml(selected.agent_id)}<b>${esc(m.name)}</b></div>
+      <div class="tt-center__meta">
+        <span class="tt-center__state" data-tone="${tone}">${esc(agentStateLabel(selected))}</span>
+        <span>${esc(toolCountLabel)}</span>
+        <span>最近 ${esc(relTime(selected.execution?.last_activity_at))}</span>
+      </div>
+      <div class="tt-center__hint">点弧上的 Agent 切换 · 右侧显示它的详情/对话</div>`;
+  }
+  renderToolPanels();
+}
+
+function selectAgentById(id) {
+  if (!id) return;
+  const agent = agentsNow().find((a) => a.agent_id === id);
+  if (!agent) return;
+  state.selectedAgentId = id;
+  state.selectedTaskId = null;
+  rememberAgent(id);
+  renderAll();
+  if (window.SodaChat) SodaChat.focus(id);
+  const un = agent.chat_supported === false;
+  showToast(un ? `${meta(id).name} 暂不支持对话 · 右侧写了原因` : `已打开与 ${meta(id).name} 的对话`);
+}
+
+function renderToolPanels() {
+  const toolsRoot = $('#tt-tools');
+  const flowRoot = $('#tt-flow');
+  if (!toolsRoot || !flowRoot) return;
+  const selected = selectedAgent();
+  const scope = ttScope(selected ? selected.agent_id : null);
+  const te = state.toolEvents;
+
+  let toolsHtml;
+  if (scope.kind === 'loading') {
+    toolsHtml = `<div class="tt-empty"><b>工具数据读取中</b><span>正在读 /api/tool-events…</span></div>`;
+  } else if (scope.kind === 'error') {
+    toolsHtml = `<div class="tt-empty tt-empty--bad"><b>工具数据读取失败</b><span>${esc(scope.error || '接口没有返回')}；不拿 0 冒充。</span></div>`;
+  } else if (scope.kind === 'collecting') {
+    toolsHtml = `<div class="tt-empty tt-empty--collecting"><b><i class="tt-dot"></i><i class="tt-dot"></i><i class="tt-dot"></i>工具数据采集中</b><span>采集器还没跑。运行 <code>npm run tools:collect</code> 后刷新；在采集完成前不画任何数字。</span></div>`;
+  } else if (scope.kind === 'empty') {
+    toolsHtml = `<div class="tt-empty"><b>采集完成，暂无工具调用</b><span>tool_events 里没有这个项目的记录。不补假数据。</span></div>`;
+  } else {
+    const groups = scope.tools.slice(0, scope.note ? 2 : 3);
+    const recent = scope.recent.slice(0, scope.note ? 2 : 5);
+    toolsHtml = `
+      <div class="tt-tools-list">
+        ${groups.map((t) => {
+          const sample = t.scopeRecent[0] || t.recent[0] || null;
+          return `<div class="tt-tool">
+            <div class="tt-tool__head"><b>${esc(String(t.tool_name).toUpperCase().slice(0, 18))}</b><span>×${fmtInt(t.scopeCount)}</span><em>${esc(relTime(t.last_ts))}</em></div>
+            <div class="tt-tool__sample" title="${esc(sample?.target || '')}">${esc(sample?.target || '—')}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div class="tt-code">
+        <div class="tt-code__head"><span>最近调用</span><em>${recent.length ? esc(relTime(recent[0].ts)) : '—'}</em></div>
+        <div class="tt-code__body">
+          ${recent.length ? recent.map((e, i) => `<div class="tt-code__line" style="--i:${i}"><i>${String(i + 1).padStart(2, '0')}</i><b>${esc(String(e.tool_name).toUpperCase().slice(0, 12))}</b><code title="${esc(e.target || '')}">${esc(e.target || '—')}</code></div>`).join('') : '<div class="tt-code__line"><i>--</i><code>没有最近调用</code></div>'}
+          <span class="tt-cursor" aria-hidden="true"></span>
+        </div>
+      </div>`;
+  }
+
+  toolsRoot.innerHTML = `
+    <header class="tt-panel__head">
+      <h3>工具调用流</h3>
+      <span>${scope.kind === 'agent' ? esc(meta(scope.agentId).name) : scope.kind === 'all' ? '全部 Agent' : 'tool_events'}</span>
+    </header>
+    ${scope.note ? `<p class="tt-panel__note">${esc(scope.note)}</p>` : ''}
+    ${toolsHtml}
+    <footer class="tt-panel__foot">${te?.last_run_at ? `采集于 ${esc(relTime(te.last_run_at))} · ${fmtInt(te.total_all)} 条` : '采集器未运行'}</footer>`;
+
+  const c = counts();
+  const p = pct(c.done, c.total);
+  const flowCount = te?.rate_15m?.total ?? 0;
+  const fillTop = 92 + (96 - (96 * p) / 100);
+  flowRoot.innerHTML = `
+    <header class="tt-panel__head">
+      <h3>数据流</h3>
+      <span>真实值</span>
+    </header>
+    <svg class="tt-pipe" viewBox="0 0 196 232" role="img" aria-label="数据流管道与任务推进液位">
+      <path class="tt-pipe__line" d="M18 18 H150 Q166 18 166 34 V86" fill="none" stroke="#DED3C1" stroke-width="3"/>
+      <path class="tt-pipe__flow" d="M18 18 H150 Q166 18 166 34 V86" fill="none" stroke="#E2B75D" stroke-width="1.4" stroke-dasharray="4 7"/>
+      <path class="tt-pipe__line" d="M18 50 H136 Q152 50 152 66 V86" fill="none" stroke="#DED3C1" stroke-width="3"/>
+      <path class="tt-pipe__flow tt-pipe__flow--slow" d="M18 50 H136 Q152 50 152 66 V86" fill="none" stroke="#C9A45E" stroke-width="1.2" stroke-dasharray="3 8"/>
+      <path class="tt-pipe__line" d="M18 82 H120 Q136 82 136 98 V86" fill="none" stroke="#E4DACB" stroke-width="2.4"/>
+      <path class="tt-pipe__flow tt-pipe__flow--fast" d="M18 82 H120 Q136 82 136 98 V86" fill="none" stroke="#D7B16B" stroke-width="1.1" stroke-dasharray="2 7"/>
+      <rect x="72" y="86" width="80" height="102" rx="11" fill="#FBF7EF" stroke="#D8CBB8" stroke-width="1.4"/>
+      <rect x="78" y="${fillTop.toFixed(1)}" width="68" height="${((96 * p) / 100).toFixed(1)}" rx="7" fill="#E4C58E" opacity=".9"/>
+      <line x1="78" y1="${fillTop.toFixed(1)}" x2="146" y2="${fillTop.toFixed(1)}" stroke="#B9975B" stroke-width="1.2"/>
+      <text x="112" y="141" text-anchor="middle" class="tt-tank__value">${c.total ? `${p}%` : '—'}</text>
+      <text x="112" y="156" text-anchor="middle" class="tt-tank__label">任务推进</text>
+      <text x="112" y="205" text-anchor="middle" class="tt-tank__label">${c.done} / ${c.total} 步</text>
+    </svg>
+    <div class="tt-flow__facts">
+      <span><i>工具事件</i><b>${te?.collecting ? '—' : fmtInt(te?.total_all || 0)}</b></span>
+      <span><i>15 分钟</i><b>${te?.collecting ? '—' : fmtInt(flowCount)}</b></span>
+    </div>
+    <p class="tt-flow__note">液位 = 任务 done/total（真实）；管道流动 = CSS dashoffset，不是随机数据。</p>`;
 }
 
 /* ---------- 渲染：左栏任务 ---------- */
@@ -709,12 +922,37 @@ function renderDataCards() {
     return `<div class="proc-row"><span>${esc(meta(a.agent_id).name)}</span><b data-state="${state}">${label}</b></div>`;
   }).join('') : '<div class="empty-note">没有进程证据。</div>';
   $('#proc-list').innerHTML = procs;
+
+  const rate = $('#tool-rate');
+  if (rate) {
+    const te = state.toolEvents;
+    if (state.toolEventsError) {
+      rate.innerHTML = `<div class="empty-note">工具采集读取失败：${esc(state.toolEventsError)}。不画 0 柱。</div>`;
+    } else if (!te || te.collecting) {
+      rate.innerHTML = `<div class="empty-note">工具数据采集中。采集器跑过之前，这里没有数字。</div>`;
+    } else {
+      const buckets = te.rate_15m?.buckets || [];
+      const max = Math.max(1, ...buckets.map((b) => Number(b.count) || 0));
+      const total = Number(te.rate_15m?.total) || 0;
+      rate.innerHTML = `
+        <div class="tool-rate__sum"><b>${fmtInt(total)}</b><span>次 / 最近 15 分钟</span></div>
+        <div class="tool-rate__bars" role="img" aria-label="最近 15 分钟每分钟工具调用次数">
+          ${buckets.map((b) => {
+            const c = Number(b.count) || 0;
+            const h = c ? Math.max(6, Math.round((c / max) * 100)) : 2;
+            const t = new Date(b.start_ts).toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            return `<span class="tool-rate__bar" data-zero="${c ? '0' : '1'}" style="height:${h}%" title="${t} · ${c} 次"></span>`;
+          }).join('')}
+        </div>
+        <div class="tool-rate__axis"><span>15 分钟前</span><span>现在</span></div>`;
+    }
+  }
 }
 
 /* ---------- 总渲染 ---------- */
 function renderAll() {
   renderMeta();
-  renderAgentCards();
+  renderTurntable();
   renderTasks();
   renderDetail();
   renderProgress();

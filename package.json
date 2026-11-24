@@ -9,6 +9,8 @@
     "selftest:p0": "node --no-warnings scripts/selftest-p0.mjs",
     "migrate:legacy": "node --no-warnings scripts/migrate-legacy.mjs",
     "handoff": "node --no-warnings scripts/handoff/build.mjs",
+    "tools:collect": "node --no-warnings scripts/tool-events.mjs",
+    "tools:stats": "node --no-warnings scripts/tool-events.mjs --stats",
     "verify:quota": "node --no-warnings scripts/verify-quota.mjs",
     "verify:handoff": "node --no-warnings scripts/verify-handoff.mjs"
   },

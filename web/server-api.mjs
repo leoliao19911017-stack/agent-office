@@ -31,6 +31,8 @@ import { handleAgentsApi } from './api-agents.mjs';
 // Agent Chat V1 P1：聊天三路由（POST /api/chat/threads、GET|POST …/:id/messages）。
 // 路由体在 api-chat.mjs，同样只做挂载。
 import { handleChatApi } from './api-chat.mjs';
+// TASK-转盘与Agent可添加 第二批：工具级事件只读聚合（tool_events 由 scripts/tool-events.mjs 采集）。
+import { handleToolEventsApi } from './api-tool-events.mjs';
 // TASK-交接包：POST/GET /api/handoffs，生成逻辑在 scripts/handoff/build.mjs。
 import { handleHandoffsApi } from './api-handoffs.mjs';
 // TASK-额度面板：GET /api/quotas，GLM 3 key + Codex 已用量；key 只在后端内存。
@@ -1348,6 +1350,12 @@ export function createApiRouter(deps) {
       if (handled) return;
     }
 
+    // 转盘数据：工具级事件只读聚合。采集是独立 CLI，API 不扫目录、不写表。
+    if (path === '/api/tool-events') {
+      const handled = await handleToolEventsApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
     // 交接包：/api/handoffs（生成/列表）与 /api/handoffs/:id（读取）。
     if (path === '/api/handoffs' || path.startsWith('/api/handoffs/')) {
       const handled = await handleHandoffsApi(req, res, path, method, ctx);
@@ -1403,6 +1411,7 @@ export function createApiRouter(deps) {
       [/^\/api\/office\/review$/, ['GET', 'POST']],
       [/^\/api\/office\/new-task$/, ['POST']],
       [/^\/api\/office\/discuss$/, ['GET']],
+      [/^\/api\/tool-events$/, ['GET']],
     ];
     if (known.some(([re, methods]) => re.test(path) && !methods.includes(method))) {
       throw httpErrorFallback(deps, 405, 'METHOD_NOT_ALLOWED', `${method} ${path} 不支持`);

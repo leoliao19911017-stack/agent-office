@@ -24,7 +24,7 @@ export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 3;
+const SCHEMA_VERSION = 4;
 
 /**
  * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
@@ -305,11 +305,48 @@ CREATE INDEX IF NOT EXISTS idx_checkpoints_task ON checkpoints(task_id, created_
 CREATE INDEX IF NOT EXISTS idx_steps_task       ON task_steps(task_id, seq);
 `;
 
+/**
+ * v4（TASK-转盘与Agent可添加 第二批）：工具级事件表。
+ *
+ * tool_events 是转盘左弧与刻度的唯一数据源，字段严格按任务书：
+ *   id, agent_id, session_id, tool_name, target, ts, raw_json
+ * id 是确定性哈希（来源+会话+调用 id），重复采集 INSERT OR IGNORE，不产生重复行。
+ *
+ * tool_event_sources 是采集器的增量账本（不是业务表）：记录每个源文件的
+ * mtime/size/已读字节；Claude JSONL 只读新增行，DSH zstd 变了才整份重解压。
+ */
+const SCHEMA_V4_TOOL_EVENTS = `
+CREATE TABLE IF NOT EXISTS tool_events (
+  id         TEXT PRIMARY KEY,
+  agent_id   TEXT NOT NULL,
+  session_id TEXT,
+  tool_name  TEXT NOT NULL,
+  target     TEXT,
+  ts         TEXT NOT NULL,
+  raw_json   TEXT
+);
+
+CREATE TABLE IF NOT EXISTS tool_event_sources (
+  source_path TEXT PRIMARY KEY,
+  agent_id    TEXT NOT NULL,
+  session_id  TEXT,
+  size        INTEGER NOT NULL DEFAULT 0,
+  mtime_ms    INTEGER NOT NULL DEFAULT 0,
+  byte_offset INTEGER NOT NULL DEFAULT 0,
+  collected_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_tool_events_agent ON tool_events(agent_id, ts);
+CREATE INDEX IF NOT EXISTS idx_tool_events_tool  ON tool_events(tool_name, ts);
+CREATE INDEX IF NOT EXISTS idx_tool_events_ts    ON tool_events(ts);
+`;
+
 /** 迁移清单：以后加表/加列时追加一项，版本号递增，已有库只跑增量。 */
 const MIGRATIONS = [
   { version: 1, up(db) { db.exec(SCHEMA_V1); } },
   { version: 2, up(db) { db.exec(SCHEMA_V2_CHAT); } },
   { version: 3, up(db) { db.exec(SCHEMA_V3_AGENTS); seedAgents(db); } },
+  { version: 4, up(db) { db.exec(SCHEMA_V4_TOOL_EVENTS); } },
 ];
 
 /** 已打开的连接缓存：同一个 db 文件在一个进程里只建一个连接。 */

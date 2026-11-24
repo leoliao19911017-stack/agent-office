@@ -1,0 +1,66 @@
+{
+  "status": 201,
+  "json": {
+    "ok": true,
+    "observed_at": "2026-11-24T06:06:57.335Z",
+    "evidence_source": "executor",
+    "attempt": {
+      "attempt_id": "a-f385981d-mwual8on",
+      "task_id": "t-20261124060650-8a75cd",
+      "agent_id": "dsh",
+      "status": "running",
+      "worktree_path": null,
+      "checkpoint_id": null,
+      "started_at": "2026-11-24T06:06:57.335Z",
+      "ended_at": null,
+      "end_reason": null,
+      "pid": null,
+      "session_id": null,
+      "relay_pending": false,
+      "note": "第二批执行：tools:collect 全量采集 2792 条；转盘替换 4 卡网格；verify-turntable 24/24；相关 35/35 测试过（旧工作台 10 个 UI 用例失败与本批无关）",
+      "evidence_source": "executor",
+      "observed_at": "2026-11-24T06:06:57.335Z"
+    },
+    "write_owner": null,
+    "state": {
+      "task_id": "t-20261124060650-8a75cd",
+      "status": "running",
+      "status_reason": "托管实例在运行，最近 0 秒有活动事件（进程探测不可用）",
+      "evidence_source": "executor",
+      "observed_at": "2026-11-24T06:06:57.335Z",
+      "evaluated_at": "2026-11-24T06:06:57.335Z",
+      "last_activity_at": "2026-11-24T06:06:57.335Z",
+      "last_progress_at": null,
+      "last_event_type": "attempt_started",
+      "attempt_id": "a-f385981d-mwual8on",
+      "attempt_status": "running",
+      "active_attempt_id": "a-f385981d-mwual8on",
+      "process_alive": null,
+      "relay_pending": false,
+      "blocked_reason": null,
+      "verification": {
+        "result": "none",
+        "code_sha": null,
+        "command": null,
+        "report": null,
+        "observed_at": null,
+        "evidence_source": null
+      },
+      "acceptance": null,
+      "current_step": {
+        "key": "collector",
+        "name": "tool-events.mjs：解析 Claude JSONL + DSH zstd，写 tool_events，增量幂等",
+        "status": "pending"
+      },
+      "done": [],
+      "remaining": [
+        "collector",
+        "api",
+        "turntable",
+        "acceptance"
+      ],
+      "done_count": 0,
+      "total": 4
+    }
+  }
+}

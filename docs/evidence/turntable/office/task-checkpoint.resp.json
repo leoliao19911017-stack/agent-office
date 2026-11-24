@@ -1,0 +1,24 @@
+{
+  "status": 201,
+  "json": {
+    "ok": true,
+    "observed_at": "2026-11-24T06:06:58.033Z",
+    "evidence_source": "checkpoint",
+    "checkpoint": {
+      "checkpoint_id": "ck-mwual9e9-b964f8",
+      "task_id": "t-20261124060650-8a75cd",
+      "attempt_id": "a-f385981d-mwual8on",
+      "git_sha": "e89b8699ecdce6af9c974a923aebf6b03204bf72",
+      "file_count": 14,
+      "created_at": "2026-11-24T06:06:58.033Z"
+    },
+    "git_sha": "e89b8699ecdce6af9c974a923aebf6b03204bf72",
+    "git_error": null,
+    "worktree_path": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+    "state": {
+      "status": "running",
+      "status_reason": "托管实例在运行，最近 1 秒有活动事件（进程探测不可用）",
+      "observed_at": "2026-11-24T06:06:57.335Z"
+    }
+  }
+}
