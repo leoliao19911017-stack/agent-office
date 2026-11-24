@@ -1,0 +1,124 @@
+{
+  "limit": {
+    "thread": "th-46e78f0b47",
+    "turn": {
+      "turn_id": "ct-d93c31f5b7",
+      "thread_id": "th-46e78f0b47",
+      "attempt_id": "ca-61a4708221",
+      "status": "rate_limited",
+      "status_label": "请求受限",
+      "display_status": "failed",
+      "display_label": "请求受限",
+      "provider": "claude",
+      "resume": false,
+      "user_message_id": "cm-df0bfec8c5",
+      "assistant_message_id": "cm-5818c97277",
+      "error": {
+        "kind": "rate_limit",
+        "code": "rate_limit",
+        "reason": "rate_limit",
+        "label": "请求受限",
+        "message": "API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input tokens per minute. For details, refer to: https://docs.claude.com/en/api/rate-limits. You can contact sales at https://www.anthropic.com/contact-sales to increase your rate limit. API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input tokens per minute. For details, refer to: https://docs.claude.com/en/api/rate-limits. You can contact sales at https://www.anthropic.com/contact-sales to increase your rate limit.",
+        "text": "API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input tokens per minute. For details, refer to: https://docs.claude.com/en/api/rate-limits. You can contact sales at https://www.anthropic.com/contact-sales to increase your rate limit. API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input tokens per minute. For details, refer to: https://docs.claude.com/en/api/rate-limits. You can contact sales at https://www.anthropic.com/contact-sales to increase your rate limit.",
+        "retryable": true,
+        "api_error_status": 429,
+        "retry_at": null,
+        "retry_hint": "稍后可以重试；CLI 已自动重试 10/10 次仍未通过",
+        "retried": {
+          "attempt": 10,
+          "max": 10
+        }
+      },
+      "started_at": "2026-11-24T01:16:45.708Z",
+      "ended_at": "2026-11-24T01:19:44.477Z",
+      "created_at": "2026-11-24T01:16:45.706Z"
+    },
+    "retrying_ui": {
+      "state": "请求受限CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次",
+      "tone": "limited",
+      "banner": "",
+      "notes": [
+        "请求受限 · CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次"
+      ],
+      "errors": [],
+      "empty": "",
+      "lastBubble": ""
+    },
+    "final_ui": {
+      "state": "请求受限请求被限流 · 稍后可以重试；CLI 已自动重试 10/10 次仍未通过",
+      "tone": "limited",
+      "banner": "",
+      "notes": [
+        "请求受限"
+      ],
+      "errors": [
+        "请求受限 稍后可以重试；CLI 已自动重试 10/10 次仍未通过 · API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input tokens per minute. For details, refer to: https://docs.claude.com/en/api/rate-limits. You can contact sales at https://www.anthropic.com/contact-sales to increase your rate limit. API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input tokens per minute. For details, refer to: https://docs.claude.com/en/api/rate-limits. You can contact sales at https://www.anthropic.com/contact-sales to increase your rate limit. 重试"
+      ],
+      "empty": "",
+      "lastBubble": ""
+    },
+    "upstream_requests": 11,
+    "upstream_first": "{\"n\":1,\"method\":\"POST\",\"url\":\"/v1/messages?beta=true\",\"model\":\"glm-5.4\",\"mode\":\"429\",\"at\":\"2026-11-24T01:16:46.809Z\"}"
+  },
+  "quota": {
+    "thread": "th-684418b7a0",
+    "turn": {
+      "turn_id": "ct-9a9a13de1e",
+      "thread_id": "th-684418b7a0",
+      "attempt_id": "ca-27243d8b43",
+      "status": "rate_limited",
+      "status_label": "请求受限",
+      "display_status": "failed",
+      "display_label": "请求受限",
+      "provider": "claude",
+      "resume": false,
+      "user_message_id": "cm-59c47f52bf",
+      "assistant_message_id": "cm-58250a7314",
+      "error": {
+        "kind": "quota_exhausted",
+        "code": "quota_exhausted",
+        "reason": "quota_exhausted",
+        "label": "请求受限",
+        "message": "API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置 API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置",
+        "text": "API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置 API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置",
+        "retryable": false,
+        "api_error_status": 429,
+        "retry_at": "2026-11-25T01:30:00.000Z",
+        "retry_hint": "额度 11/25 09:30 重置，之后可以重试",
+        "retried": {
+          "attempt": 10,
+          "max": 10
+        }
+      },
+      "started_at": "2026-11-24T01:16:45.744Z",
+      "ended_at": "2026-11-24T01:19:53.610Z",
+      "created_at": "2026-11-24T01:16:45.741Z"
+    },
+    "retrying_ui": {
+      "state": "请求受限CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次",
+      "tone": "limited",
+      "banner": "",
+      "notes": [
+        "请求受限 · CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次"
+      ],
+      "errors": [],
+      "empty": "",
+      "lastBubble": ""
+    },
+    "final_ui": {
+      "state": "请求受限额度已用尽 · 额度 11/25 09:30 重置，之后可以重试",
+      "tone": "limited",
+      "banner": "",
+      "notes": [
+        "请求受限"
+      ],
+      "errors": [
+        "请求受限 额度 11/25 09:30 重置，之后可以重试 · API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置 API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置"
+      ],
+      "empty": "",
+      "lastBubble": ""
+    },
+    "upstream_requests": 11,
+    "upstream_first": "{\"n\":1,\"method\":\"POST\",\"url\":\"/v1/messages?beta=true\",\"model\":\"glm-5.4\",\"mode\":\"glm-quota\",\"at\":\"2026-11-24T01:16:46.861Z\"}"
+  }
+}

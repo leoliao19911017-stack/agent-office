@@ -1,0 +1,46 @@
+{
+  "thread_id": "th-6cd5412d3b",
+  "turn_id": "ct-532598da87",
+  "connections_cut": 5,
+  "text_before_cut": 37,
+  "before_cut": {
+    "state": "执行中正在回答",
+    "tone": "running",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "",
+    "lastBubble": "雾还未散尽，海先醒了\n桅杆挑起第一缕薄光\n海鸥掠过湿漉漉的码头\n汽笛声揉开"
+  },
+  "banner": "连接中断，正在重连…（重连后按序号补发，内容不丢）",
+  "recovered": {
+    "state": "完成回答完成",
+    "tone": "completed",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "",
+    "lastBubble": "雾还未散尽，海先醒了\n桅杆挑起第一缕薄光\n海鸥掠过湿漉漉的码头\n汽笛声揉开沉睡的浪\n渔船载着昨夜的星子归航\n缆绳上滴落咸涩的晨光\n灯塔收起最后一班岗\n起重机舒展腰身，吊臂轻扬\n潮水把黎明推上浅滩\n港口睁开眼，一日启航"
+  },
+  "final_state": "完成回答完成",
+  "api_turn": {
+    "turn_id": "ct-532598da87",
+    "thread_id": "th-6cd5412d3b",
+    "attempt_id": "ca-a0fdcf59ce",
+    "status": "completed",
+    "status_label": "回答完成",
+    "display_status": "completed",
+    "display_label": "完成",
+    "provider": "claude",
+    "resume": false,
+    "user_message_id": "cm-589a2fd896",
+    "assistant_message_id": "cm-ae1dee6b13",
+    "error": null,
+    "started_at": "2026-11-24T01:14:14.543Z",
+    "ended_at": "2026-11-24T01:14:27.197Z",
+    "created_at": "2026-11-24T01:14:14.437Z"
+  },
+  "bubble_len": 108,
+  "api_len": 108,
+  "same": true
+}

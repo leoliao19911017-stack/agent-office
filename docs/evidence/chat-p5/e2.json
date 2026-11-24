@@ -1,0 +1,299 @@
+{
+  "cases": [
+    {
+      "name": "cli_path_missing",
+      "how": "DSH_BIN 指到不存在的路径",
+      "dsh_bin": "C:/nope/never/installed/dsh.cmd",
+      "turn": {
+        "turn_id": "ct-7f77a15f44",
+        "thread_id": "th-f44651c8f1",
+        "attempt_id": "ca-06e778bac2",
+        "status": "failed",
+        "status_label": "Agent 启动失败",
+        "display_status": "failed",
+        "display_label": "Agent 启动失败",
+        "provider": "dsh",
+        "resume": false,
+        "user_message_id": "cm-f0f73f4a3c",
+        "assistant_message_id": "cm-3044f0648b",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "cli_path_missing",
+          "label": "Agent 启动失败",
+          "message": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+          "text": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "started_at": "2026-11-24T01:20:36.425Z",
+        "ended_at": "2026-11-24T01:20:36.428Z",
+        "created_at": "2026-11-24T01:20:36.423Z"
+      },
+      "user_message": {
+        "message_id": "cm-f0f73f4a3c",
+        "thread_id": "th-f44651c8f1",
+        "turn_id": "ct-7f77a15f44",
+        "role": "user",
+        "content": "只回复两个字：在",
+        "status": "failed",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "cli_path_missing",
+          "label": "Agent 启动失败",
+          "message": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+          "text": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "seq": 1,
+        "event_seq": 0,
+        "created_at": "2026-11-24T01:20:36.423Z",
+        "updated_at": "2026-11-24T01:20:36.429Z"
+      },
+      "assistant_message": {
+        "message_id": "cm-3044f0648b",
+        "thread_id": "th-f44651c8f1",
+        "turn_id": "ct-7f77a15f44",
+        "role": "assistant",
+        "content": "",
+        "status": "failed",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "cli_path_missing",
+          "label": "Agent 启动失败",
+          "message": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+          "text": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "seq": 2,
+        "event_seq": 2,
+        "created_at": "2026-11-24T01:20:36.424Z",
+        "updated_at": "2026-11-24T01:20:36.429Z"
+      },
+      "thread_status": {
+        "status": "failed",
+        "error_kind": "cli_start_failed",
+        "reason": "找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）",
+        "retry_hint": null,
+        "retry_at": null,
+        "evidence_source": "chat_turns",
+        "observed_at": "2026-11-24T01:20:36.428Z",
+        "turn_id": "ct-7f77a15f44",
+        "queued": 0,
+        "active_turn_id": null
+      },
+      "ui": null
+    },
+    {
+      "name": "cli_not_found",
+      "how": "DSH_BIN 是 PATH 里没有的命令",
+      "dsh_bin": "definitely-not-a-dsh-binary-xyz.cmd",
+      "turn": {
+        "turn_id": "ct-0aa5d3619e",
+        "thread_id": "th-7a1daa7188",
+        "attempt_id": "ca-1810fffcc6",
+        "status": "failed",
+        "status_label": "Agent 启动失败",
+        "display_status": "failed",
+        "display_label": "Agent 启动失败",
+        "provider": "dsh",
+        "resume": false,
+        "user_message_id": "cm-ec4a2eb11b",
+        "assistant_message_id": "cm-b846778144",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "cli_not_found",
+          "label": "Agent 启动失败",
+          "message": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+          "text": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "started_at": "2026-11-24T01:20:36.612Z",
+        "ended_at": "2026-11-24T01:20:36.640Z",
+        "created_at": "2026-11-24T01:20:36.610Z"
+      },
+      "user_message": {
+        "message_id": "cm-ec4a2eb11b",
+        "thread_id": "th-7a1daa7188",
+        "turn_id": "ct-0aa5d3619e",
+        "role": "user",
+        "content": "只回复两个字：在",
+        "status": "failed",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "cli_not_found",
+          "label": "Agent 启动失败",
+          "message": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+          "text": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "seq": 1,
+        "event_seq": 0,
+        "created_at": "2026-11-24T01:20:36.610Z",
+        "updated_at": "2026-11-24T01:20:36.641Z"
+      },
+      "assistant_message": {
+        "message_id": "cm-b846778144",
+        "thread_id": "th-7a1daa7188",
+        "turn_id": "ct-0aa5d3619e",
+        "role": "assistant",
+        "content": "",
+        "status": "failed",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "cli_not_found",
+          "label": "Agent 启动失败",
+          "message": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+          "text": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "seq": 2,
+        "event_seq": 3,
+        "created_at": "2026-11-24T01:20:36.611Z",
+        "updated_at": "2026-11-24T01:20:36.641Z"
+      },
+      "thread_status": {
+        "status": "failed",
+        "error_kind": "cli_start_failed",
+        "reason": "找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）",
+        "retry_hint": null,
+        "retry_at": null,
+        "evidence_source": "chat_turns",
+        "observed_at": "2026-11-24T01:20:36.640Z",
+        "turn_id": "ct-0aa5d3619e",
+        "queued": 0,
+        "active_turn_id": null
+      },
+      "ui": null
+    },
+    {
+      "name": "permission_denied",
+      "how": "DSH_BIN 指到的文件被 icacls 拒绝执行（Administrator:(RX) Deny）",
+      "dsh_bin": "C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd",
+      "turn": {
+        "turn_id": "ct-9fa36b3812",
+        "thread_id": "th-69321dde43",
+        "attempt_id": "ca-737a6ace95",
+        "status": "failed",
+        "status_label": "Agent 启动失败",
+        "display_status": "failed",
+        "display_label": "Agent 启动失败",
+        "provider": "dsh",
+        "resume": false,
+        "user_message_id": "cm-16c5d89fec",
+        "assistant_message_id": "cm-292e0cda8e",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "permission_denied",
+          "label": "Agent 启动失败",
+          "message": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+          "text": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "started_at": "2026-11-24T01:20:37.213Z",
+        "ended_at": "2026-11-24T01:20:37.240Z",
+        "created_at": "2026-11-24T01:20:37.211Z"
+      },
+      "user_message": {
+        "message_id": "cm-16c5d89fec",
+        "thread_id": "th-69321dde43",
+        "turn_id": "ct-9fa36b3812",
+        "role": "user",
+        "content": "只回复两个字：在",
+        "status": "failed",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "permission_denied",
+          "label": "Agent 启动失败",
+          "message": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+          "text": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "seq": 1,
+        "event_seq": 0,
+        "created_at": "2026-11-24T01:20:37.211Z",
+        "updated_at": "2026-11-24T01:20:37.241Z"
+      },
+      "assistant_message": {
+        "message_id": "cm-292e0cda8e",
+        "thread_id": "th-69321dde43",
+        "turn_id": "ct-9fa36b3812",
+        "role": "assistant",
+        "content": "",
+        "status": "failed",
+        "error": {
+          "kind": "cli_start_failed",
+          "code": "cli_start_failed",
+          "reason": "permission_denied",
+          "label": "Agent 启动失败",
+          "message": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+          "text": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+          "retryable": true,
+          "api_error_status": null,
+          "retry_at": null,
+          "retry_hint": null
+        },
+        "seq": 2,
+        "event_seq": 3,
+        "created_at": "2026-11-24T01:20:37.212Z",
+        "updated_at": "2026-11-24T01:20:37.241Z"
+      },
+      "thread_status": {
+        "status": "failed",
+        "error_kind": "cli_start_failed",
+        "reason": "没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）",
+        "retry_hint": null,
+        "retry_at": null,
+        "evidence_source": "chat_turns",
+        "observed_at": "2026-11-24T01:20:37.240Z",
+        "turn_id": "ct-9fa36b3812",
+        "queued": 0,
+        "active_turn_id": null
+      },
+      "ui": {
+        "state": "失败Agent 启动失败",
+        "tone": "failed",
+        "banner": "",
+        "notes": [
+          "未发出",
+          "没有回复"
+        ],
+        "errors": [
+          "Agent 启动失败 没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问） 重试"
+        ],
+        "empty": "",
+        "lastBubble": ""
+      }
+    }
+  ]
+}

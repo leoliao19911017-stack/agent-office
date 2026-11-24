@@ -48,6 +48,7 @@ async function main(prompt) {
   out({ type: 'status', phase: 'step_start', turn: history.messages.length + 1, step: 1 });
 
   if (/\[crash\]/.test(prompt)) process.exit(0xC0000142);
+  if (/\[noresult\]/.test(prompt)) process.exit(0);   // 正常退出码但没有任何 final / text：引擎只能判「结果未知」
 
   if (/\[429\]|\[quota\]/.test(prompt)) {
     const quota = /\[quota\]/.test(prompt);

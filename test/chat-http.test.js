@@ -249,13 +249,13 @@ test('Agent Chat HTTP + SSE（真实 server.js + 假 CLI）', async (t) => {
     const err = events[events.length - 1];
     assert.equal(err.event, 'error');
     assert.equal(err.data.code, 'quota_exhausted');
-    assert.equal(err.data.label, '额度暂不可用');
+    assert.equal(err.data.label, '请求受限');
     assert.equal(err.data.retry_at, '2099-01-01T01:30:00.000Z', '上游文案里的重置时间被解析出来');
     assert.equal(err.data.retry_hint, '额度 01/01 09:30 重置，之后可以重试');
     const turn = await waitTurn(base, q.turn_id);
     assert.equal(turn.turn.status, 'rate_limited');
     assert.equal(turn.turn.display_status, 'failed');
-    assert.equal(turn.turn.status_label, '额度暂不可用');
+    assert.equal(turn.turn.status_label, '请求受限');
     const threadNow = (await getJson(base, `/api/chat/threads/${th.thread_id}`)).body;
     assert.equal(threadNow.thread_status.status, 'rate_limited');
     assert.equal(threadNow.thread_status.retry_hint, '额度 01/01 09:30 重置，之后可以重试');

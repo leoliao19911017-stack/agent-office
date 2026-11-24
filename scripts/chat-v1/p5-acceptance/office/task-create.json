@@ -1,0 +1,8 @@
+{
+  "title": "Agent Chat P5：失败处理与状态机（E1-E5）",
+  "acceptance": "E1 429/限额 → 请求受限 + 具体何时可重试；E2 启动失败 → 具体原因（找不到 CLI / 路径错 / 权限）；E3 断流 → 连接中断正在重连；E4 取不到状态 → unknown 绝不显示空闲；E5 同一 thread 不能并发，第二个排队。每种都真实制造一次并贴输出。证据：docs/evidence/chat-p5/acceptance.md，复现：scripts/chat-v1/p5-acceptance/run.mjs",
+  "steps": [
+    { "key": "states", "name": "失败分类、何时可重试、断流重连、unknown 口径、同对话串行" },
+    { "key": "acceptance", "name": "E1-E5 真实制造并落证据" }
+  ]
+}

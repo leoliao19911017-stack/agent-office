@@ -1,0 +1,81 @@
+{
+  "fresh": {
+    "state": "未知还没有对话记录：没有证据，不显示空闲",
+    "tone": "unknown",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "还没有和 DSH 的对话 在下面写第一句就会开始。 讨论模式：它能读代码、能分析、能回答，不会改你的文件。",
+    "lastBubble": ""
+  },
+  "unknown": {
+    "thread": "th-fae8fcb30b",
+    "turn": {
+      "turn_id": "ct-4c1529e882",
+      "thread_id": "th-fae8fcb30b",
+      "attempt_id": "ca-ebfdd7871e",
+      "status": "unknown",
+      "status_label": "执行结果未确认",
+      "display_status": "unknown",
+      "display_label": "未知",
+      "provider": "dsh",
+      "resume": false,
+      "user_message_id": "cm-e296684311",
+      "assistant_message_id": "cm-a194878e4d",
+      "error": {
+        "kind": "unknown",
+        "code": "unknown",
+        "reason": "unknown",
+        "label": "执行结果未确认",
+        "message": "DSH 退出但没有 final 事件，执行结果未确认",
+        "text": "DSH 退出但没有 final 事件，执行结果未确认",
+        "retryable": false,
+        "api_error_status": null,
+        "retry_at": null,
+        "retry_hint": null
+      },
+      "started_at": "2026-11-24T01:20:07.422Z",
+      "ended_at": "2026-11-24T01:20:07.513Z",
+      "created_at": "2026-11-24T01:20:07.420Z"
+    },
+    "ui": {
+      "state": "未知DSH 退出但没有 final 事件，执行结果未确认",
+      "tone": "unknown",
+      "banner": "",
+      "notes": [
+        "结果未知"
+      ],
+      "errors": [
+        "执行结果未确认 DSH 退出但没有 final 事件，执行结果未确认"
+      ],
+      "empty": "",
+      "lastBubble": ""
+    }
+  },
+  "server_down": {
+    "state": "未知取不到状态：Failed to fetch",
+    "tone": "unknown",
+    "banner": "",
+    "notes": [
+      "结果未知"
+    ],
+    "errors": [
+      "执行结果未确认 DSH 退出但没有 final 事件，执行结果未确认"
+    ],
+    "empty": "",
+    "lastBubble": ""
+  },
+  "server_back": {
+    "state": "未知DSH 退出但没有 final 事件，执行结果未确认",
+    "tone": "unknown",
+    "banner": "",
+    "notes": [
+      "结果未知"
+    ],
+    "errors": [
+      "执行结果未确认 DSH 退出但没有 final 事件，执行结果未确认"
+    ],
+    "empty": "",
+    "lastBubble": ""
+  }
+}

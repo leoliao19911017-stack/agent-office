@@ -370,7 +370,10 @@
     const ts = chat.threadStatus;
     if (!ts) return { tone: 'unknown', label: '未知', detail: '取不到状态' };
     if (ts.status === 'completed') return { tone: 'completed', label: '完成', detail: '回答完成' };
-    if (ts.status === 'rate_limited') return { tone: 'limited', label: ts.error_kind === 'quota_exhausted' ? '额度暂不可用' : '请求受限', detail: ts.retry_hint || ts.reason || '' };
+    if (ts.status === 'rate_limited') {
+      const why = ts.error_kind === 'quota_exhausted' ? '额度已用尽' : '请求被限流';
+      return { tone: 'limited', label: '请求受限', detail: `${why}${ts.retry_hint ? ` · ${ts.retry_hint}` : (ts.reason ? ` · ${ts.reason}` : '')}` };
+    }
     if (ts.status === 'failed' || ts.status === 'interrupted') {
       const last = chat.turns.find((t) => t.turn_id === ts.turn_id);
       const lab = (last && last.error && last.error.label) || TURN_TEXT[ts.status];
@@ -444,8 +447,8 @@
     if (m.role === 'user') {
       // 这一轮为什么失败，只在助手消息那一侧完整写一次（下面 assistant 分支）；用户这边只标「没发出去」
       const failed = m.status === 'failed';
-      let note = USER_TEXT[m.status] || '';
-      if (turn && turn.status === 'queued' && !note) note = turnNote(turn, st);
+      // 排队中就说排队（哪怕消息还是 stored）：这比「待发送」准确
+      let note = turn && turn.status === 'queued' ? turnNote(turn, st) : (USER_TEXT[m.status] || '');
       return `<div class="msg msg--out" data-mid="${esc(m.message_id)}" data-status="${esc(m.status)}">
         <div class="msg__bubble">${esc(m.content)}</div>
         <div class="msg__meta">${note ? `<span class="msg__status" data-tone="${turn && turn.status === 'queued' ? 'queued' : 'failed'}">${esc(note)}</span>` : ''}${timeHtml(m.created_at)}</div>

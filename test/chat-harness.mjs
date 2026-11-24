@@ -62,6 +62,7 @@ export function writeCliWrapper(dir, name, script) {
  * @param {string} [opts.dshBin]   覆盖 DSH_BIN（比如指向坏路径，测启动失败的具体原因）
  * @param {string} [opts.claudeBin] 'inherit' = 不覆盖，用机器上真的 Claude CLI（验收脚本用）
  * @param {object} [opts.env]      额外环境变量（比如把 DSH_BIN 指到坏路径）
+ * @param {number} [opts.port]     固定端口（测「同一个 URL 上服务重启」；默认随机空闲端口）
  * @param {number} [opts.fakeDelayMs] 假 CLI 的流式片间隔
  */
 export async function startChatServer(opts = {}) {
@@ -76,7 +77,7 @@ export async function startChatServer(opts = {}) {
   const claudeBin = writeCliWrapper(fakeHome, 'fake-claude', join(FIXTURES, 'chat-fake-claude.mjs'));
   const dshBin = opts.dshBin || writeCliWrapper(fakeHome, 'fake-dsh', join(FIXTURES, 'chat-fake-dsh.mjs'));
   const claudeBinFinal = opts.claudeBin === 'inherit' ? null : (opts.claudeBin || claudeBin);   // 'inherit' = 用机器上真的 Claude CLI
-  const port = await freePort();
+  const port = opts.port || await freePort();
 
   const child = spawn(process.execPath, [join(ROOT, 'web', 'server.js')], {
     cwd: ROOT,

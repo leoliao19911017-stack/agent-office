@@ -1,0 +1,72 @@
+{
+  "thread_id": "th-7853f70d98",
+  "turn_id": "ct-8438985484",
+  "restart_report_before": {
+    "at": "2026-11-24T01:16:39.656Z",
+    "port": 8090,
+    "listener_pid": 41160,
+    "active_chat_turns": [
+      {
+        "turn_id": "ct-8438985484",
+        "thread_id": "th-7853f70d98",
+        "status": "restoring",
+        "provider": "dsh"
+      }
+    ],
+    "running_attempts": [
+      {
+        "attempt_id": "a-0a2f3b7b-mwtsyz7u",
+        "task_id": "t-20261123215344-206353",
+        "agent_id": "claude",
+        "pid": null,
+        "started_at": "2026-11-23T21:53:45.162Z"
+      }
+    ],
+    "live_attempts": [],
+    "claude_headless_sessions_touching_repo": []
+  },
+  "restart_output": "{ \"at\": \"2026-11-24T01:16:41.740Z\", \"port\": 8090, \"listener_pid\": 41160, \"active_chat_turns\": [ { \"turn_id\": \"ct-8438985484\", \"thread_id\": \"th-7853f70d98\", \"status\": \"restoring\", \"provider\": \"dsh\" } ], \"running_attempts\": [ { \"attempt_id\": \"a-0a2f3b7b-mwtsyz7u\", \"task_id\": \"t-20261123215344-206353\", \"agent_id\": \"claude\", \"pid\": null, \"started_at\": \"2026-11-23T21:53:45.162Z\" } ], \"live_attempts\": [], \"claude_headless_sessions_touching_repo\": [] } 已结束旧实例 pid=41160：�ɹ�: ����ֹ PID 50612 (���� PID 42264 �ӽ���)�Ľ��̡� �ɹ�: ����ֹ PID 29360 (���� PID 42264 �ӽ���)�Ľ��̡� �ɹ�: ����ֹ PID 44840 (���� PID 41",
+  "banner_during_downtime": "连接中断，正在重连…（重连后按序号补发，内容不丢）",
+  "state_after": "中断本轮中断",
+  "ui_after": {
+    "state": "中断本轮中断",
+    "tone": "failed",
+    "banner": "",
+    "notes": [
+      "送达情况未知",
+      "已中断"
+    ],
+    "errors": [
+      "本轮中断 服务重启，本轮执行中断 重试"
+    ],
+    "empty": "",
+    "lastBubble": ""
+  },
+  "turn_after": {
+    "turn_id": "ct-8438985484",
+    "thread_id": "th-7853f70d98",
+    "attempt_id": "ca-b919e380b2",
+    "status": "interrupted",
+    "status_label": "本轮中断",
+    "display_status": "failed",
+    "display_label": "本轮中断",
+    "provider": "dsh",
+    "resume": true,
+    "user_message_id": "cm-ea23e486b1",
+    "assistant_message_id": "cm-8a06265477",
+    "error": {
+      "kind": "server_restarted",
+      "code": "server_restarted",
+      "reason": "server_restarted",
+      "label": "本轮中断",
+      "message": "服务重启，本轮执行中断",
+      "text": "服务重启，本轮执行中断",
+      "retryable": true,
+      "retry_hint": null,
+      "retry_at": null
+    },
+    "started_at": "2026-11-24T01:16:35.589Z",
+    "ended_at": "2026-11-24T01:16:43.445Z",
+    "created_at": "2026-11-24T01:16:35.214Z"
+  }
+}

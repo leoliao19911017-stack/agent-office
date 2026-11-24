@@ -1,0 +1,422 @@
+{
+  "thread_id": "th-7853f70d98",
+  "post_response_second": {
+    "turn_id": "ct-d2e4b3959b",
+    "thread_id": "th-7853f70d98",
+    "attempt_id": "ca-b193cace64",
+    "status": "queued",
+    "status_label": "等待发送",
+    "display_status": "queued",
+    "display_label": "排队",
+    "provider": "dsh",
+    "resume": false,
+    "user_message_id": "cm-220825a791",
+    "assistant_message_id": null,
+    "error": null,
+    "started_at": null,
+    "ended_at": null,
+    "created_at": "2026-11-24T01:13:49.353Z",
+    "queued_ahead": 1
+  },
+  "timeline": [
+    {
+      "t": 485,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 744,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1007,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1271,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1530,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1791,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2053,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2344,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2610,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2875,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3140,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3404,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3666,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3929,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4192,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4455,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4717,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4979,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 5241,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 5502,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 5763,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6021,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6285,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6549,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6812,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7072,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7332,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7591,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7854,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8115,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8377,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8640,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8902,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9163,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9428,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9691,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 10583,
+      "first": "running",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 10933,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 11189,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 11450,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 11714,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 11977,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 12243,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 12507,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 12769,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 13032,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 13294,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 13559,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 13821,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 14076,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 14329,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 14615,
+      "first": "completed",
+      "second": "running",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 14869,
+      "first": "completed",
+      "second": "completed",
+      "second_queued_ahead": 0
+    }
+  ],
+  "process_samples": 35,
+  "process_max_cli": 2,
+  "process_counts": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "both_running_samples": 0,
+  "queued_samples": 37,
+  "turn1": {
+    "id": "ct-a0ce2efb36",
+    "status": "completed",
+    "started_at": "2026-11-24T01:13:49.126Z",
+    "ended_at": "2026-11-24T01:13:59.556Z"
+  },
+  "turn2": {
+    "id": "ct-d2e4b3959b",
+    "status": "completed",
+    "started_at": "2026-11-24T01:13:59.765Z",
+    "ended_at": "2026-11-24T01:14:03.587Z",
+    "restoring_event": {
+      "provider": "dsh",
+      "resume": true,
+      "status": "restoring",
+      "provider_session_id": "session-879d7ff6-54a9-44d2-9eb6-0800ff6cb6f2",
+      "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+      "mode": "discuss",
+      "attempt_id": "ca-b193cace64",
+      "queued_ms": 10412,
+      "queued_ahead": 0,
+      "seq": 1,
+      "type": "restoring",
+      "turn_id": "ct-d2e4b3959b",
+      "at": "2026-11-24T01:13:59.797Z"
+    }
+  },
+  "mid_shot": {
+    "state": "执行中正在启动 Agent",
+    "tone": "running",
+    "banner": "",
+    "notes": [
+      "正在启动 Agent",
+      "排队中（前面还有 1 条）"
+    ],
+    "errors": [],
+    "empty": "",
+    "lastBubble": ""
+  },
+  "final_ui_state": "完成回答完成"
+}

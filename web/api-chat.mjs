@@ -198,10 +198,13 @@ export async function handleChatApi(req, res, path, method, deps = {}) {
     if (m === 'GET') {
       const thread = requireThread(db, threadId);   // 不存在 → 404 THREAD_NOT_FOUND
       const messages = listMessages(db, threadId);
-      // 排队中的轮次按建轮先后编号：界面显示「排队中，前面还有 N 条」
-      const queued = listTurns(db, threadId).filter((t) => t.status === TURN.QUEUED)
-        .sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0));
-      const turns = listTurns(db, threadId).map((t) => turnView(t, { queue: t.status === TURN.QUEUED ? queued.findIndex((q) => q.turn_id === t.turn_id) : 0 }));
+      // 排队中的轮次：前面还有几轮在它之前没跑完（正在跑的 + 更早排队的），界面显示「排队中，前面还有 N 条」。
+      // 与 POST 的 202 响应里的 queued_ahead 同一个口径。
+      const allTurns = listTurns(db, threadId);
+      const running = allTurns.filter((t) => isTurnActive(t));
+      const turns = allTurns.map((t) => turnView(t, {
+        queue: t.status === TURN.QUEUED ? running.filter((o) => o.turn_id !== t.turn_id && o.created_at < t.created_at).length : 0,
+      }));
       const threadStatus = threadStatusOf(db, thread);
       // 正在进行的几轮里最早的那一轮（turns 是新的在前）：界面接它的实时流；后面的还在排队
       threadStatus.active_turn_id = [...turns].reverse().find((t) => isTurnActive(t))?.turn_id || null;

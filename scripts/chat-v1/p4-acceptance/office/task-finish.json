@@ -1,4 +1,6 @@
 {
   "evidence": "docs/evidence/chat-p4/acceptance.md",
-  "note": "D1-D7 全过（scripts/chat-v1/p4-acceptance/run.mjs 退出码 0，页面错误 0）。截图 8 张在 docs/evidence/chat-p4/。"
+  "note": "D1-D7 全过（scripts/chat-v1/p4-acceptance/run.mjs 退出码 0，页面错误 0）。截图 8 张在 docs/evidence/chat-p4/。",
+  "attempt_id": "a-8f49bbe8-mwtrzpa6",
+  "code_sha": "33d4a7c78c282e2299beb05070ddc5f10e8d1978"
 }

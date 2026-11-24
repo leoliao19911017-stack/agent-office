@@ -52,6 +52,7 @@ const psScript = [
 const psLines = String(sh('powershell', ['-NoProfile', '-Command', psScript]).stdout || '').split(/\r?\n/).filter(Boolean);
 const ancestors = new Set(psLines.filter((l) => l.startsWith('anc|')).map((l) => l.slice(4)));
 if (args.includes('--ignore-pid')) ancestors.add(String(args[args.indexOf('--ignore-pid') + 1]));
+for (const a of args) if (a.startsWith('--ignore-pid=')) ancestors.add(a.slice('--ignore-pid='.length));   // 两种写法都认
 const peerSessions = psLines.filter((l) => l.startsWith('claude|')).map((l) => {
   const [, pid, cmd] = l.split('|', 3);
   return { pid, cmd };

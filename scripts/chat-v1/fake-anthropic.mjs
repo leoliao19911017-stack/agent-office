@@ -4,6 +4,8 @@
 // 用法：node scripts/chat-v1/fake-anthropic.mjs [port] [mode]
 //   mode = 429   （默认）每条 /v1/messages 都回 429 rate_limit_error
 //   mode = quota  每条 /v1/messages 都回 429 usage_limit_reached（额度耗尽形状）
+//   mode = glm-quota  同上，但文案是本机 GLM 网关的真实形状「已达到 5 小时的使用上限。限额将在 <时间> 重置」
+//                     （重置时间默认明天 09:30，可用环境变量 FAKE_RESET_AT="YYYY-MM-DD HH:mm" 指定）——P5 验收用
 //   mode = ok     回一个最小的合法流式回复（给对照用）
 // 进程每收到一条请求就往 stdout 打一行 JSON（计数留证据）。
 import { createServer } from 'node:http';
@@ -11,6 +13,13 @@ import { createServer } from 'node:http';
 const port = Number(process.argv[2]) || 18790;
 const mode = process.argv[3] || '429';
 let n = 0;
+
+function defaultResetAt() {
+  if (process.env.FAKE_RESET_AT) return process.env.FAKE_RESET_AT;
+  const d = new Date(Date.now() + 24 * 3600 * 1000);
+  const p = (x) => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} 09:30`;
+}
 
 const ERRORS = {
   '429': {
@@ -20,6 +29,10 @@ const ERRORS = {
   quota: {
     type: 'usage_limit_reached',
     message: 'This request exceeds your organization\'s usage limit. Your limit will reset at 9am.',
+  },
+  'glm-quota': {
+    type: 'usage_limit_reached',
+    message: `已达到 5 小时的使用上限。限额将在 ${defaultResetAt()} 重置`,
   },
 };
 

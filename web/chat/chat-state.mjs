@@ -137,7 +137,9 @@ export const NOT_DELIVERED_KINDS = new Set([
 /** 错误 → 用户看的那句话（任务书 §6.1） */
 const ERR_LABEL = Object.freeze({
   rate_limit: '请求受限',
-  quota_exhausted: '额度暂不可用',
+  // 任务书 P5：429 / 限额都归「请求受限」这一句；「额度已用尽」的细分由 detail / message 说，
+  // 不给人两套词（界面头部原来会把额度显示成另一句，和任务书不一致）。
+  quota_exhausted: '请求受限',
   auth_failed: '认证失败',
   credentials_missing: '凭据缺失',
   cli_start_failed: 'Agent 启动失败',

@@ -40,7 +40,7 @@ test('状态标签说具体原因：failed + 错误种类 → 「Agent 启动失
   assert.equal(turnStatusLabel(TURN.FAILED, ERR.CLI_START_FAILED), 'Agent 启动失败');
   assert.equal(turnStatusLabel(TURN.FAILED, ERR.SESSION_NOT_FOUND), '会话已丢失');
   assert.equal(turnStatusLabel(TURN.FAILED, null), '执行失败');
-  assert.equal(turnStatusLabel(TURN.RATE_LIMITED, ERR.QUOTA_EXHAUSTED), '额度暂不可用');
+  assert.equal(turnStatusLabel(TURN.RATE_LIMITED, ERR.QUOTA_EXHAUSTED), '请求受限');
   assert.equal(turnStatusLabel(TURN.RATE_LIMITED, ERR.RATE_LIMIT), '请求受限');
   assert.equal(turnStatusLabel(TURN.QUEUED), '等待发送');
   assert.equal(turnStatusLabel(TURN.UNKNOWN), '执行结果未确认');

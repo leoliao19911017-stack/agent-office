@@ -1,0 +1,5 @@
+{
+  "label": "P5 完成：E1-E5 11/11 全过（真 Claude CLI 吃真 429 ×2；启动失败 3 种含真 ACL 拒绝；断流/服务重启；unknown ×3；同 thread 排队 queued_ahead=1、并发 turn 0 次）。证据 docs/evidence/chat-p5/acceptance.md + run.log；脚本 scripts/chat-v1/p5-acceptance/run.mjs 退出码 0。",
+  "worktree_path": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+  "attempt_id": "a-0a2f3b7b-mwtsyz7u"
+}
