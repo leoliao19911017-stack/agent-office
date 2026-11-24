@@ -4,14 +4,14 @@
 //   状态只有任务书列的十种；没有可靠证据一律 unknown，绝不兜底成「空闲」。
 //   错误文案按真实原因写：CLI 起不来 / 429 / 额度耗尽 / 会话丢失 / 进程异常退出 各说各的。
 
-/** V1 接入的 provider。codex（本机执行器起不来）与 hermes（会话能力待验证）本轮不接，不伪装。 */
-export const CHAT_PROVIDERS = Object.freeze(['claude', 'dsh']);
+/** V1 接入的 provider：claude / dsh / hermes（P6 实测 hermes chat 可非交互调用 + --resume 续聊）。
+ *  codex 本机执行器起不来（CreateProcess 超时），不接，不伪装。 */
+export const CHAT_PROVIDERS = Object.freeze(['claude', 'dsh', 'hermes']);
 const PROVIDER = new Set(CHAT_PROVIDERS);
 
 /** 未接入的 Agent 在面板里怎么说（如实写原因，不给一个能打字但发不出去的假输入框） */
 export const UNSUPPORTED_REASON = Object.freeze({
   codex: '本机 codex 执行器起不来（CreateProcess 超时），V1 不接入',
-  hermes: 'hermes 本地网关的会话能力还没实测，V1 不接入',
 });
 
 /** 讨论模式是 V1 唯一开放的模式（ADR-06）：能读、能分析、能回答；不开放写代码和 Shell 执行。 */

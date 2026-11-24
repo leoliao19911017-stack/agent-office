@@ -26,6 +26,7 @@ import {
 import { isDirectory, killTree, redactSecrets } from './proc.mjs';
 import { runClaudeTurn, extraClaudeSettings } from './adapters/claude-chat.mjs';
 import { runDshTurn } from './adapters/dsh-chat.mjs';
+import { runHermesTurn } from './adapters/hermes-chat.mjs';
 
 const DEFAULT_TIMING = {
   stallWarnMs: 60 * 1000,          // 这么久没有新事件就提示「长时间无新事件，正在核实」（不按耗时判死）
@@ -103,13 +104,13 @@ function errorOf(outcome) {
 /**
  * @param {object} opts
  * @param {object} [opts.db]         不传则用进程级单例库
- * @param {object} [opts.adapters]   { claude, dsh }：({prompt, resumeId, cwd, signal, onEvent}) => outcome；测试可注入假的
+ * @param {object} [opts.adapters]   { claude, dsh, hermes }：({prompt, resumeId, cwd, signal, onEvent}) => outcome；测试可注入假的
  * @param {object} [opts.timing]     覆盖 DEFAULT_TIMING
  * @param {string|null} [opts.claudeSettings]  追加给 Claude CLI 的 --settings；不传则读环境变量 CHAT_CLAUDE_SETTINGS
  */
 export function createChatEngine(opts = {}) {
   const db = opts.db || getDb();
-  const adapters = opts.adapters || { claude: runClaudeTurn, dsh: runDshTurn };
+  const adapters = opts.adapters || { claude: runClaudeTurn, dsh: runDshTurn, hermes: runHermesTurn };
   const claudeSettings = Object.prototype.hasOwnProperty.call(opts, 'claudeSettings') ? opts.claudeSettings : extraClaudeSettings();
   const T = { ...DEFAULT_TIMING, ...(opts.timing || {}) };
 

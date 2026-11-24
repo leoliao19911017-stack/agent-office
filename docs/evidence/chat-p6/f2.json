@@ -1,0 +1,77 @@
+{
+  "thread_id": "th-75a159e5b0",
+  "assistant_1": "记住了：\n\n- 你最喜欢的数字是 42\n- 你的猫叫汽水\n\n考吧。",
+  "assistant_2": "42",
+  "turn_2": {
+    "turn_id": "ct-82cdaaea43",
+    "thread_id": "th-75a159e5b0",
+    "attempt_id": "ca-5ef6260bd9",
+    "status": "completed",
+    "status_label": "回答完成",
+    "display_status": "completed",
+    "display_label": "完成",
+    "provider": "hermes",
+    "resume": true,
+    "user_message_id": "cm-c0c266b2f4",
+    "assistant_message_id": "cm-1d94f14875",
+    "error": null,
+    "started_at": "2026-11-24T01:07:07.672Z",
+    "ended_at": "2026-11-24T01:07:11.947Z",
+    "created_at": "2026-11-24T01:07:07.670Z",
+    "queued_ahead": 0
+  },
+  "restoring_event": {
+    "provider": "hermes",
+    "resume": true,
+    "status": "restoring",
+    "provider_session_id": "20261124_090702_ab2df9",
+    "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+    "mode": "discuss",
+    "attempt_id": "ca-5ef6260bd9",
+    "queued_ms": 2,
+    "queued_ahead": 0,
+    "seq": 1,
+    "type": "restoring",
+    "turn_id": "ct-82cdaaea43",
+    "at": "2026-11-24T01:07:07.673Z"
+  },
+  "provider_session_id_before": "20261124_090702_ab2df9",
+  "provider_session_id_after": "20261124_090702_ab2df9",
+  "ui_before": {
+    "state": "完成回答完成",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "",
+    "composerVisible": true,
+    "lastBubble": "记住了：\n\n你最喜欢的数字是 42\n你的猫叫汽水\n\n考吧。",
+    "outgoing": "你好，我是 Leo。我最喜欢的数字是 42，养了一只叫汽水的猫。请记住这两件事，等下我会考你。",
+    "msgCount": 2
+  },
+  "ui_after_send": {
+    "state": "执行中正在恢复会话",
+    "banner": "",
+    "notes": [
+      "正在恢复会话"
+    ],
+    "errors": [],
+    "empty": "",
+    "composerVisible": true,
+    "lastBubble": "记住了：\n\n你最喜欢的数字是 42\n你的猫叫汽水\n\n考吧。",
+    "outgoing": "我最喜欢的数字是多少？只回答数字。",
+    "msgCount": 4
+  },
+  "ui_after": {
+    "state": "完成回答完成",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "",
+    "composerVisible": true,
+    "lastBubble": "42",
+    "outgoing": "我最喜欢的数字是多少？只回答数字。",
+    "msgCount": 4
+  },
+  "final_state": "完成回答完成",
+  "page_errors": []
+}

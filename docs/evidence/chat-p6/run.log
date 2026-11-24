@@ -1,0 +1,15 @@
+服务：http://127.0.0.1:59266（真实 web/server.js + 临时库；hermes 是机器上真的 hermes）
+PASS  F1  hermes 非交互对话：真实回复 + session_id 入库 + started→delta→completed
+      thread=th-75a159e5b0 turn=ct-63ba76075a status=completed resume=false
+      provider_session_id=20261124_090702_ab2df9（格式符合 hermes 的 YYYYMMDD_HHMMSS_xxxxxx）
+      事件 9 条：started → status → status → status → delta → status → delta → delta → completed
+      回复（33 字）：记住了： - 你最喜欢的数字是 42 - 你的猫叫汽水 考吧。
+      delta 拼接与助手消息一致=true
+PASS  F2  hermes 续聊：界面第 2 句接上第 1 句（答对 42），--resume 同一 session
+      第 2 轮 turn=ct-82cdaaea43 status=completed resume=true；事件首条=restoring
+      session 不变=true（20261124_090702_ab2df9）
+      面板里第 2 条回复=「42」（API=42）
+      点发送后立刻的状态=「执行中正在恢复会话」；最终=「完成回答完成」
+      页面前：空提示=「」输入框在=true
+
+F1-F2：2/2 通过；页面错误 0 条

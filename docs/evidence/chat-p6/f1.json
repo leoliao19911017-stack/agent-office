@@ -1,0 +1,36 @@
+{
+  "thread_id": "th-75a159e5b0",
+  "user_message": "你好，我是 Leo。我最喜欢的数字是 42，养了一只叫汽水的猫。请记住这两件事，等下我会考你。",
+  "turn": {
+    "turn_id": "ct-63ba76075a",
+    "thread_id": "th-75a159e5b0",
+    "attempt_id": "ca-765fc0e8aa",
+    "status": "completed",
+    "status_label": "回答完成",
+    "display_status": "completed",
+    "display_label": "完成",
+    "provider": "hermes",
+    "resume": false,
+    "user_message_id": "cm-67d3ca3d10",
+    "assistant_message_id": "cm-2e629c5af1",
+    "error": null,
+    "started_at": "2026-11-24T01:07:01.934Z",
+    "ended_at": "2026-11-24T01:07:06.144Z",
+    "created_at": "2026-11-24T01:07:01.931Z"
+  },
+  "assistant_message": "记住了：\n\n- 你最喜欢的数字是 42\n- 你的猫叫汽水\n\n考吧。",
+  "provider_session_id": "20261124_090702_ab2df9",
+  "event_types": [
+    "started",
+    "status",
+    "status",
+    "status",
+    "delta",
+    "status",
+    "delta",
+    "delta",
+    "completed"
+  ],
+  "delta_events": 3,
+  "delta_equals_assistant": true
+}

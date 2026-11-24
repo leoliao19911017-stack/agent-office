@@ -31,6 +31,10 @@
   };
   /** 用户消息：stored 还没交出去 / sent 已交给模型 / failed 没发出去 / unknown 送达情况无法确认 */
   const USER_TEXT = { stored: '待发送', sent: '', failed: '未发出', unknown: '送达情况未知' };
+  /** 讨论模式能做到什么，按 provider 如实写（hermes 没开 file/terminal，不能替它吹「能读代码」） */
+  const DISCUSS_NOTE = {
+    hermes: '讨论模式：能对话、能续聊，能查网与历史会话；不开放本机文件与终端，不会改你的文件。',
+  };
   const MSG_TEXT = {
     streaming: '正在接收', complete: '', partial: '未完成（已保留收到的部分）', failed: '没有回复',
     rate_limited: '请求受限', interrupted: '已中断', unknown: '结果未知',
@@ -484,7 +488,7 @@
       return `<div class="chat__empty"><b>读不到对话记录</b>${esc(chat.loadError)}<br>不是没有历史，是证据没到。<br><button type="button" class="cbtn" data-act="reload" style="margin-top:8px">${SVG.refresh}重新读取</button></div>`;
     }
     if (!chat.messages.length && !chat.stream) {
-      return `<div class="chat__empty"><b>还没有和 ${esc(meta(chat.agentId).name)} 的对话</b>在下面写第一句就会开始。<br>讨论模式：它能读代码、能分析、能回答，不会改你的文件。</div>`;
+      return `<div class="chat__empty"><b>还没有和 ${esc(meta(chat.agentId).name)} 的对话</b>在下面写第一句就会开始。<br>${DISCUSS_NOTE[chat.agentId] || '讨论模式：它能读代码、能分析、能回答，不会改你的文件。'}</div>`;
     }
     return chat.messages.map((m) => messageHtml(chat, m)).join('');
   }

@@ -4,7 +4,7 @@
    所有按钮都必须有真实行为；中央没有无数据支撑的装饰线。 */
 
 /** 已接入对话的 Agent（与服务端 chat-state.mjs 的 CHAT_PROVIDERS 一致；只用于提示语，能不能聊以服务端为准） */
-const CHAT_PROVIDERS = ['claude', 'dsh'];
+const CHAT_PROVIDERS = ['claude', 'dsh', 'hermes'];
 const AGENT_META = {
   claude: { name: 'Claude Code', short: 'CLAUDE', icon: 'claude' },
   codex: { name: 'Codex', short: 'CODEX', icon: 'codex' },
