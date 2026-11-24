@@ -9,7 +9,7 @@
 
 ### 第一部分：额度面板 — ✅ 已完成并验收（2026-11-24）
 
-**提交：** `__QUOTA_COMMIT__`（单独 commit）
+**提交：** `6c89bbd`（单独 commit）
 **验收脚本：** `node scripts/verify-quota.mjs` → **24 项检查全过**；`node --test test/quota.test.js` → **7/7 通过**
 **证据目录：** `docs/evidence/quota/`（`verify-quota.json`、`api-quotas.json`、`vendor-compare.json`、`board-quota-1440x900.png`）
 
