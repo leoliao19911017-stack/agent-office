@@ -18,6 +18,7 @@
     send: '<svg class="ui-icon" aria-hidden="true" width="16" height="16" viewBox="0 0 20 20"><path d="M3.4 10h12.2M11 5.4 15.8 10 11 14.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
     stop: '<svg class="ui-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><rect x="5" y="5" width="10" height="10" rx="2" fill="currentColor"/></svg>',
     refresh: '<svg class="ui-icon" aria-hidden="true" width="14" height="14" viewBox="0 0 20 20"><path d="M16.2 8.1A6.4 6.4 0 1 0 16 12.7M16.2 3.9v4.4h-4.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    handoff: '<svg class="ui-icon" aria-hidden="true" width="15" height="15" viewBox="0 0 20 20"><path d="M3 5.2h6.2l1.6 1.8H17v8.4H3z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><path d="M7.2 11.4h5.6M10.6 9.2l2.2 2.2-2.2 2.2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   };
   const INITIALS = { claude: 'CL', dsh: 'DS', codex: 'CX', hermes: 'HE' };
   const ACTIVE = new Set(['queued', 'starting', 'restoring', 'running', 'tool_running', 'approval_required']);
@@ -51,9 +52,9 @@
 
   /* ---------------------------------------------------------------- 数据层 */
 
-  async function api(path, { method = 'GET', body } = {}) {
+  async function api(path, { method = 'GET', body, timeout = 15000 } = {}) {
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 15000);
+    const timer = setTimeout(() => ctrl.abort(), timeout);
     try {
       const res = await fetch(path, {
         method, cache: 'no-store', signal: ctrl.signal,
@@ -80,6 +81,7 @@
         agentId, threadId: null, thread: null, fresh: false, messages: [], turns: [], threadStatus: null,
         loading: false, loadError: null, loadSeq: 0, stream: null, draft: '', tab: 'chat',
         el: null, sending: false, sendError: null,
+        handoff: { open: false, loading: false, error: null, data: null },
       });
     }
     return chats.get(agentId);
@@ -501,9 +503,12 @@
           <div class="chat__name">${esc(m.name)}</div>
           <div class="chat__state" data-tone="unknown" role="status" aria-live="polite"><i aria-hidden="true"></i><b>未知</b><span class="chat__state-detail">取不到状态</span></div>
         </div>
-        ${unsupported[chat.agentId] && !chat.threadId ? '' : `<div class="seg" role="tablist" aria-label="面板内容">
-          <button type="button" class="seg__item" role="tab" data-tab="chat" aria-selected="true">对话</button>
-          <button type="button" class="seg__item" role="tab" data-tab="detail" aria-selected="false">详情</button>
+        ${unsupported[chat.agentId] && !chat.threadId ? '' : `<div class="chat__ops">
+          <button type="button" class="cbtn cbtn--handoff" data-act="handoff" title="把当前对话 + 任务 + git 现场生成结构化交接包">${SVG.handoff}交接包</button>
+          <div class="seg" role="tablist" aria-label="面板内容">
+            <button type="button" class="seg__item" role="tab" data-tab="chat" aria-selected="true">对话</button>
+            <button type="button" class="seg__item" role="tab" data-tab="detail" aria-selected="false">详情</button>
+          </div>
         </div>`}
       </header>`;
   }
@@ -513,6 +518,7 @@
     return `<section class="chat" data-agent="${esc(chat.agentId)}" aria-label="与 ${esc(m.name)} 的对话">
       ${headHtml(chat)}
       <div class="chat__banner" data-kind="warn" hidden></div>
+      <div class="handoff" aria-live="polite" hidden></div>
       <div class="chat__body"></div>
       <div class="chat__detail" hidden></div>
       <footer class="chat__composer">
@@ -560,6 +566,110 @@
     input.style.height = `${Math.min(168, Math.max(48, input.scrollHeight))}px`;
   }
 
+  /* ---------------------------------------------------------------- 交接包 */
+
+  function downloadText(name, text, type) {
+    const blob = new Blob([text], { type: type || 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch { /* 退回复制到隐藏 textarea */ }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove();
+      return ok;
+    } catch { return false; }
+  }
+
+  function renderHandoff(chat) {
+    const panel = $('.handoff', chat.el);
+    if (!panel) return;
+    const hs = chat.handoff || {};
+    if (!hs.open) { panel.hidden = true; return; }
+    panel.hidden = false;
+    const d = hs.data || null;
+    const sig = `${hs.loading ? 1 : 0}|${hs.error || ''}|${d && d.handoff ? d.handoff.handoff_id : ''}`;
+    if (panel.dataset.sig === sig) return;
+    panel.dataset.sig = sig;
+    if (hs.loading) {
+      panel.innerHTML = `<div class="handoff__head"><b>交接包</b><span>生成中…</span><button type="button" class="cbtn cbtn--icon" data-act="close-handoff" aria-label="关闭">×</button></div>
+        <div class="handoff__body"><div class="handoff__note">正在读 catchup 会话、git 现场和 agent-office.db 里的任务/执行记录…</div></div>`;
+      return;
+    }
+    if (hs.error) {
+      panel.innerHTML = `<div class="handoff__head"><b>交接包</b><span>失败</span><button type="button" class="cbtn cbtn--icon" data-act="close-handoff" aria-label="关闭">×</button></div>
+        <div class="handoff__body"><div class="handoff__error">${esc(hs.error)}</div></div>
+        <div class="handoff__actions"><button type="button" class="cbtn" data-act="handoff">重试</button></div>`;
+      return;
+    }
+    if (!d || !d.handoff) {
+      panel.innerHTML = `<div class="handoff__head"><b>交接包</b><span>—</span><button type="button" class="cbtn cbtn--icon" data-act="close-handoff" aria-label="关闭">×</button></div>
+        <div class="handoff__body"><div class="handoff__note">还没有生成。</div></div>`;
+      return;
+    }
+    const h = d.handoff;
+    panel.innerHTML = `<div class="handoff__head">
+        <b>交接包</b><span class="mono">${esc(h.handoff_id)}</span>
+        <button type="button" class="cbtn cbtn--icon" data-act="close-handoff" aria-label="关闭">×</button>
+      </div>
+      <div class="handoff__meta">${esc(h.from.agent_id)} → ${esc(h.to.agent_id)} · ${esc(h.from.reason)} · ${esc(h.created_at)}</div>
+      <div class="handoff__body"><pre class="handoff__preview">${esc(d.markdown || '（接口没有返回 Markdown）')}</pre></div>
+      <div class="handoff__actions">
+        <button type="button" class="cbtn" data-act="copy-handoff">复制 Markdown</button>
+        <button type="button" class="cbtn" data-act="download-handoff">下载 .md</button>
+        <button type="button" class="cbtn" data-act="download-handoff-json">下载 .json</button>
+      </div>
+      <div class="handoff__foot">${esc(d.markdown_path || '')}</div>`;
+  }
+
+  async function generateHandoff(chat) {
+    if (!chat.threadId) {
+      opts.toast && opts.toast('还没有对话：先说一句话，再生成交接包');
+      return;
+    }
+    chat.handoff = chat.handoff || {};
+    chat.handoff.open = true;
+    chat.handoff.loading = true;
+    chat.handoff.error = null;
+    chat.handoff.data = null;
+    render(chat);
+    const toAgent = chat.agentId === 'claude' ? 'dsh' : 'claude';
+    try {
+      const data = await api('/api/handoffs', {
+        method: 'POST',
+        body: { thread_id: chat.threadId, to_agent_id: toAgent },
+        timeout: 45000,
+      });
+      if (!data || !data.handoff) throw new Error('接口没有返回 handoff');
+      chat.handoff.data = data;
+      opts.toast && opts.toast(`交接包已生成：${data.handoff.handoff_id}`);
+    } catch (err) {
+      chat.handoff.error = `生成失败：${err.message}`;
+      opts.toast && opts.toast(`交接包生成失败：${err.message}`);
+    } finally {
+      chat.handoff.loading = false;
+      render(chat);
+    }
+  }
+
   /** 只重绘会变的部分（状态行 / 横幅 / 消息 / 按钮可用性），输入框和焦点不动 */
   function render(chat) {
     const el = chat.el;
@@ -581,6 +691,7 @@
       const online = agent && agent.availability ? agent.availability.available : null;
       avatar.dataset.online = online === true ? '1' : online === false ? '0' : '';
     }
+    renderHandoff(chat);
     // 横幅：没发出去 / 断流重连 / 轮询兜底
     const banner = $('.chat__banner', el);
     if (banner) {
@@ -647,6 +758,19 @@
       else if (act === 'new') newChat(chat);
       else if (act === 'reload') reload(chat).then(() => opts.toast && opts.toast(`已重新读取对话记录：${chat.messages.length} 条消息（${chat.loadError ? chat.loadError : '以库里的为准'}）`));
       else if (act === 'retry') retry(chat, btn.dataset.turn);
+      else if (act === 'handoff') generateHandoff(chat);
+      else if (act === 'close-handoff') { chat.handoff.open = false; render(chat); }
+      else if (act === 'copy-handoff') {
+        const md = chat.handoff && chat.handoff.data ? chat.handoff.data.markdown : '';
+        if (!md) { opts.toast && opts.toast('没有可复制的 Markdown'); return; }
+        copyText(md).then((ok) => opts.toast && opts.toast(ok ? '交接包 Markdown 已复制，可直接贴给下一个 Agent' : '复制失败：浏览器不允许写剪贴板'));
+      } else if (act === 'download-handoff' || act === 'download-handoff-json') {
+        const d = chat.handoff && chat.handoff.data;
+        if (!d) { opts.toast && opts.toast('还没有生成交接包'); return; }
+        if (act === 'download-handoff') downloadText(`${d.handoff.handoff_id}.md`, d.markdown || '', 'text/markdown;charset=utf-8');
+        else downloadText(`${d.handoff.handoff_id}.json`, JSON.stringify(d.handoff, null, 2), 'application/json;charset=utf-8');
+        opts.toast && opts.toast(act === 'download-handoff' ? '已下载 .md' : '已下载 .json');
+      }
     });
     const input = $('.composer__input', el);
     if (input) {

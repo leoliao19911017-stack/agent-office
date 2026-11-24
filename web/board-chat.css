@@ -33,6 +33,7 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
   background: #FFFFFF;
   color: var(--coss-fg);
   font-family: var(--coss-font);
@@ -157,6 +158,49 @@
   color: var(--coss-fg);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .08), 0 0 0 1px rgba(0, 0, 0, .04);
 }
+
+/* 头部右侧：交接包 + 对话/详情分段 */
+.chat__ops { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cbtn--handoff { height: 28px; padding: 0 8px; gap: 4px; font-size: 12px; border-color: rgba(0, 0, 0, .08); }
+.cbtn--handoff .ui-icon { width: 14px; height: 14px; }
+
+/* ---------- 交接包面板（覆盖在对话上，可复制/下载） ---------- */
+.handoff {
+  position: absolute;
+  top: 58px; left: 8px; right: 8px; bottom: 88px;
+  z-index: 30;
+  display: flex; flex-direction: column;
+  background: #FFFFFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .14);
+  overflow: hidden;
+}
+.handoff__head {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding: 9px 8px 8px 12px;
+  border-bottom: 1px solid var(--coss-border);
+}
+.handoff__head b { font-size: 14px; font-weight: 600; }
+.handoff__head span { margin-left: auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--coss-muted-fg); }
+.handoff__head .cbtn { flex: none; width: 26px; height: 26px; min-width: 26px; font-size: 16px; line-height: 1; }
+.handoff__meta {
+  flex: none; padding: 7px 12px;
+  font-size: 11px; color: var(--coss-muted-fg);
+  background: #FAFAFA; border-bottom: 1px solid var(--coss-border);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.handoff__body { flex: 1; min-height: 0; overflow: auto; padding: 10px 12px; background: #FAFAFA; }
+.handoff__preview {
+  margin: 0; font-family: "Cascadia Mono", "Consolas", monospace;
+  font-size: 11px; line-height: 1.55; color: #262626;
+  white-space: pre-wrap; word-break: break-word;
+}
+.handoff__note { font-size: 12px; line-height: 1.6; color: #404040; }
+.handoff__error { font-size: 12px; line-height: 1.6; color: var(--coss-destructive); word-break: break-word; }
+.handoff__actions { flex: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--coss-border); background: #FFFFFF; }
+.handoff__actions .cbtn { height: 28px; padding: 0 8px; font-size: 12px; }
+.handoff__foot { flex: none; padding: 0 12px 8px; font-size: 11px; color: #818181; word-break: break-all; }
 
 /* ---------- 横幅：连接中断 / 取不到状态 ---------- */
 .chat__banner {

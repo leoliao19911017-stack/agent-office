@@ -1,0 +1,221 @@
+{
+  "generatedAt": "2026-11-24T02:36:41.495Z",
+  "base": "http://127.0.0.1:8090",
+  "threads": {
+    "task": "th-f17dcdf611",
+    "fail": "th-d066754db6"
+  },
+  "task": "t-20261124022821-85c2cb",
+  "handoffs": {
+    "h1": {
+      "handoff_id": "ho-20261124-1036-4",
+      "json_path": "docs/handoffs/ho-20261124-1036-4.json",
+      "markdown_path": "docs/handoffs/ho-20261124-1036-4.md",
+      "session": "docs/handoffs/ho-20261124-1036-4.session.md"
+    },
+    "h4": {
+      "handoff_id": "ho-20261124-1036-5",
+      "json_path": "docs/handoffs/ho-20261124-1036-5.json",
+      "markdown_path": "docs/handoffs/ho-20261124-1036-5.md"
+    }
+  },
+  "checks": [
+    {
+      "id": "H1",
+      "name": "POST /api/handoffs 对真实 thread 生成成功",
+      "ok": true,
+      "detail": "201 ho-20261124-1036-4"
+    },
+    {
+      "id": "H1",
+      "name": "六个板块都有内容",
+      "ok": true,
+      "detail": "{\"task\":true,\"progress\":true,\"workspace\":true,\"attempts\":true,\"dead_ends\":true,\"next_action\":true}"
+    },
+    {
+      "id": "H1",
+      "name": "真实 thread 有 provider_session_id 且 catchup 原文已落盘",
+      "ok": true,
+      "detail": "session=session-74fc5802-c9e5-4e82-8cab-22343b41aaf4 transcript=docs/handoffs/ho-20261124-1036-4.session.md"
+    },
+    {
+      "id": "H1",
+      "name": "输出 JSON + Markdown 两个文件",
+      "ok": true,
+      "detail": "docs/handoffs/ho-20261124-1036-4.json / docs/handoffs/ho-20261124-1036-4.md"
+    },
+    {
+      "id": "H1",
+      "name": "Markdown 含 8 个小节标题",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "H2",
+      "name": "branch 与实际 git 一致",
+      "ok": true,
+      "detail": "p0-foundation vs p0-foundation"
+    },
+    {
+      "id": "H2",
+      "name": "HEAD 与实际 git 一致",
+      "ok": true,
+      "detail": "fb2ad73a2ffbc483cd6c22bbba78b59c422f8666 vs fb2ad73a2ffbc483cd6c22bbba78b59c422f8666"
+    },
+    {
+      "id": "H2",
+      "name": "uncommitted 列出的每条都还在实际 git status 里，新增的只有 handoff 文件",
+      "ok": true,
+      "detail": "missing=0 currentOnly=537 newHandoffs=3（已截断）"
+    },
+    {
+      "id": "H2",
+      "name": "uncommitted_count 与生成时刻实际数量一致",
+      "ok": true,
+      "detail": "614 vs 617 - 3"
+    },
+    {
+      "id": "H2",
+      "name": "超长未提交列表标了 truncated",
+      "ok": true,
+      "detail": "count=614 listed=80 truncated=true"
+    },
+    {
+      "id": "H3",
+      "name": "task_id / title 与 tasks 表一致",
+      "ok": true,
+      "detail": "t-20261124022821-85c2cb / 额度面板：GLM 3 key + Codex 已用量"
+    },
+    {
+      "id": "H3",
+      "name": "acceptance 与 tasks 表一致",
+      "ok": true,
+      "detail": "DB=4 项，handoff=4 项"
+    },
+    {
+      "id": "H3",
+      "name": "task_doc 指向真实任务书文件",
+      "ok": true,
+      "detail": "docs/TASK-额度面板与交接包.md"
+    },
+    {
+      "id": "H4",
+      "name": "失败 attempts 来自 chat_turns 真记录",
+      "ok": true,
+      "detail": "DB 失败轮次 1 条，交接包匹配 1 条"
+    },
+    {
+      "id": "H4",
+      "name": "失败原因带真实错误文本",
+      "ok": true,
+      "detail": "API Error: 529 [1305][该模型当前访问量过大，请您稍后再试][2026112410142623b15333825645de]. This is a server-side issu"
+    },
+    {
+      "id": "H4",
+      "name": "死路里有 [对话] 来源标记",
+      "ok": true,
+      "detail": "[对话] 10:11 failed：API Error: 529 [1305][该模型当前访问量过大，请您稍后再试][2026112410142623b15333825645de]. This is a server-side issue, usually temporary — try again in a mome"
+    },
+    {
+      "id": "H5",
+      "name": "Markdown 可读（非 JSON dump、无乱码/undefined）",
+      "ok": true,
+      "detail": "2497 字，8 节"
+    },
+    {
+      "id": "API",
+      "name": "GET /api/handoffs 列表",
+      "ok": true,
+      "detail": "count=7"
+    },
+    {
+      "id": "API",
+      "name": "GET /api/handoffs/:id 返回 JSON + Markdown",
+      "ok": true,
+      "detail": "200 md=2497"
+    },
+    {
+      "id": "API",
+      "name": "GET 返回的 Markdown 与落盘文件一致",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "API",
+      "name": "非法 id 被拒",
+      "ok": true,
+      "detail": "400 BAD_ID"
+    },
+    {
+      "id": "API",
+      "name": "缺 thread_id/task_id 返回 400",
+      "ok": true,
+      "detail": "400 MISSING_INPUT"
+    },
+    {
+      "id": "UI",
+      "name": "对话面板顶部有「交接包」按钮",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI",
+      "name": "面板里能看到交接包 Markdown",
+      "ok": true,
+      "detail": "交接包 ho-20261124-1036-6 × dsh → claude · manual · 2026-11-24T10:36:40+08:00 # 交接包 ho-20261124-1036-6 > 从 **dsh** 交给 **claude** · 2026-11-24T1"
+    },
+    {
+      "id": "UI",
+      "name": "面板有复制 + 下载 .md + 下载 .json",
+      "ok": true,
+      "detail": "× / 复制 Markdown / 下载 .md / 下载 .json"
+    },
+    {
+      "id": "UI",
+      "name": "面板字号 >= 11px",
+      "ok": true,
+      "detail": "min=11px"
+    },
+    {
+      "id": "UI",
+      "name": "Markdown 预览无乱码/undefined",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI",
+      "name": "复制按钮有反馈",
+      "ok": true,
+      "detail": "交接包 Markdown 已复制，可直接贴给下一个 Agent"
+    },
+    {
+      "id": "UI",
+      "name": "下载 .md 真的落文件且内容完整",
+      "ok": true,
+      "detail": "2497 字 -> E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\evidence\\handoff\\downloaded-handoff.md"
+    },
+    {
+      "id": "UI",
+      "name": "关闭按钮能收起面板",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "UI",
+      "name": "页面无 JS 报错",
+      "ok": true,
+      "detail": ""
+    },
+    {
+      "id": "H6",
+      "name": "新 Agent 题面已生成（待独立 Agent 回答）",
+      "ok": true,
+      "detail": "docs/evidence/handoff/h6-prompt.md"
+    }
+  ],
+  "failures": [],
+  "screenshots": [
+    "docs/evidence/handoff/handoff-panel-1440x900.png"
+  ],
+  "pass": true
+}

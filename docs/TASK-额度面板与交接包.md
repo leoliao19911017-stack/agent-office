@@ -36,7 +36,36 @@
 - 额度块最小字号 11px；刷新按钮、4 张 Agent 卡、对话/详情 tab 均实测有反应
 - 说明：旧全页脚本 `scripts/verify-v2-buttons.mjs` 按按钮下标点击，右列对话按钮会动态增删导致下标漂移（且隐藏/禁用的停止、发送被当成「无反应」），本次运行有 10 个 FAIL；不是本部分新增按钮，定向点击已单独验证。建议后续把该脚本改成稳定选择器。
 
-### 第二部分：结构化交接包 — ⏳ 未开始
+### 第二部分：结构化交接包 — ✅ 已完成并验收（2026-11-24）
+
+**提交：** `__HANDOFF_COMMIT__`（单独 commit）
+**生成器：** `scripts/handoff/build.mjs`（CLI）；API 壳：`web/api-handoffs.mjs`
+**验收脚本：** `node scripts/verify-handoff.mjs` → **32 项检查全过**；`node scripts/verify-handoff-h6.mjs` → **6/6 通过**
+**证据目录：** `docs/evidence/handoff/`（`verify-handoff.json`、`h1-handoff.json`、`h4-handoff.json`、`h6-prompt.md`、`h6-answer.md`、`h6-check.json`、`no-key-check.json`、`handoff-panel-1440x900.png`）
+
+| 验收项 | 结果 | 证据 |
+|---|---|---|
+| H1 真实 thread 生成，6 个板块都有内容 | PASS | `ho-20261124-1036-4`：task/progress/workspace/attempts/dead_ends/next_action 全非空；JSON+MD 双文件 |
+| H2 workspace 与 git 一致 | PASS | branch `p0-foundation`、HEAD `fb2ad73…` 与实际一致；`uncommitted_count 614` 与实际 617 − 本次新增 3 个 handoff 文件一致 |
+| H3 task 与 agent-office.db 一致 | PASS | `t-20261124022821-85c2cb` / 标题 / 4 条验收逐项对上；task_doc 指向真实文件 |
+| H4 attempts 来自真实失败记录 | PASS | `ho-20261124-1036-5`：失败轮次与 `chat_turns` 的 529 记录逐条匹配，不是编的 |
+| H5 Markdown 人能读懂 | PASS | 2497 字、8 节、无 JSON dump、无 undefined/乱码 |
+| H6 新 Agent 能接手 | PASS | 独立 subagent `handoff-h6` 只读 `h6-prompt.md`，答出「已完成 / 最新检查点 fb2ad73 / 无需继续 / 返工条件 / 已知死路」，6/6 断言通过 |
+
+**实现要点：**
+- `POST /api/handoffs`（生成）、`GET /api/handoffs`（列表）、`GET /api/handoffs/:id`（读取 JSON+MD）
+- 任务 / 步骤 / attempts / checkpoints / chat_turns 全部来自 `agent-office.db`；branch / HEAD / 未提交来自 `git` 命令；两者在生成时硬编码进包，不经过 LLM
+- catchup 已复制到 `scripts/tools/catchup.exe`（也支持 `CATCHUP_BIN` / 临时目录 / PATH 回退）；dsh → `deepseek` 的映射在 `scripts/handoff/build.mjs`
+- 会话原文另存 `<handoff_id>.session.md`；主 `.md` 只放结构化交接内容，不塞 5000 字原文
+- 对话面板顶部新增「交接包」按钮；生成后可在面板里复制 Markdown、下载 `.md` / `.json`，关闭按钮可收起
+- 生成前先取 git 快照再写文件，所以 `workspace` 是「生成那一刻」的现场；`uncommitted` 超过 80 条时标 `uncommitted_truncated`
+- 会话部分采用**确定性摘录**（带 `[会话]` 来源标记），不调用 LLM 编 `attempts`/`next_action`；这是为了守住「不编」和 H4 可逐条核对。若后续要 LLM 润色文案，应只作用于 `next_action/open_questions`，事实字段不得交给 LLM
+- 交接包 6 个文件逐个与 3 个 GLM key 做字节比对：0 命中（`no-key-check.json`）
+
+**H6 新 Agent 回答（原文）：**
+> 任务已完成，验收通过。后端额度 API 和 5 分钟缓存、Codex 已用量、前端额度条（百分比与重置倒计时）、Q1-Q6 真实证据均已完成；最新检查点 fb2ad73，目前没有正在进行的步骤，也没有阻塞。
+
+**说明：** 旧全页按钮脚本 `scripts/verify-v2-buttons.mjs` 仍按按钮下标点击，右列对话按钮会动态增删导致下标漂移（隐藏/禁用的停止、发送也被当成无反应）；本部分新增的「交接包」按钮、复制/下载/关闭按钮已在 `verify-handoff.mjs` 中逐个实测通过。
 
 ---
 

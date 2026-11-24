@@ -1,0 +1,40 @@
+{
+  "generatedAt": "2026-11-24T02:37:03.570Z",
+  "agent": "handoff-h6 (independent subagent)",
+  "input": "docs/evidence/handoff/h6-prompt.md",
+  "answer": "docs/evidence/handoff/h6-answer.md",
+  "handoff_id": "ho-20261124-1036-4",
+  "checks": [
+    {
+      "name": "答出任务已完成",
+      "ok": true,
+      "why": ""
+    },
+    {
+      "name": "答出验收项 Q1-Q6",
+      "ok": true,
+      "why": ""
+    },
+    {
+      "name": "答出代码版本/检查点",
+      "ok": true,
+      "why": ""
+    },
+    {
+      "name": "答出下一步（无需继续/返工条件）",
+      "ok": true,
+      "why": ""
+    },
+    {
+      "name": "答出已知死路或未决问题",
+      "ok": true,
+      "why": ""
+    },
+    {
+      "name": "没有把 JSON 原文当回答",
+      "ok": true,
+      "why": ""
+    }
+  ],
+  "pass": true
+}

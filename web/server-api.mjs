@@ -29,6 +29,8 @@ import { handleTasksApi } from './api-tasks.mjs';
 // Agent Chat V1 P1：聊天三路由（POST /api/chat/threads、GET|POST …/:id/messages）。
 // 路由体在 api-chat.mjs，同样只做挂载。
 import { handleChatApi } from './api-chat.mjs';
+// TASK-交接包：POST/GET /api/handoffs，生成逻辑在 scripts/handoff/build.mjs。
+import { handleHandoffsApi } from './api-handoffs.mjs';
 // TASK-额度面板：GET /api/quotas，GLM 3 key + Codex 已用量；key 只在后端内存。
 import { makeQuotasRoute } from './api-quotas.mjs';
 
@@ -1334,6 +1336,12 @@ export function createApiRouter(deps) {
     // 同任务 API 的挂载约定（自己管 405，未匹配返回 false）。
     if (path === '/api/chat' || path.startsWith('/api/chat/')) {
       const handled = await handleChatApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
+    // 交接包：/api/handoffs（生成/列表）与 /api/handoffs/:id（读取）。
+    if (path === '/api/handoffs' || path.startsWith('/api/handoffs/')) {
+      const handled = await handleHandoffsApi(req, res, path, method, ctx);
       if (handled) return;
     }
 

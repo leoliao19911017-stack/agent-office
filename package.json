@@ -7,7 +7,10 @@
     "test": "node --no-warnings --test test/",
     "test:g07": "node --no-warnings --test test/g07-pages.test.js test/g07-nav.test.js test/g07-recovery.test.js test/g07-routes.test.js test/g07-approval.test.js",
     "selftest:p0": "node --no-warnings scripts/selftest-p0.mjs",
-    "migrate:legacy": "node --no-warnings scripts/migrate-legacy.mjs"
+    "migrate:legacy": "node --no-warnings scripts/migrate-legacy.mjs",
+    "handoff": "node --no-warnings scripts/handoff/build.mjs",
+    "verify:quota": "node --no-warnings scripts/verify-quota.mjs",
+    "verify:handoff": "node --no-warnings scripts/verify-handoff.mjs"
   },
   "engines": {
     "node": ">=22.5.0"
