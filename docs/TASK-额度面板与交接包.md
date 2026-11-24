@@ -38,7 +38,7 @@
 
 ### 第二部分：结构化交接包 — ✅ 已完成并验收（2026-11-24）
 
-**提交：** `__HANDOFF_COMMIT__`（单独 commit）
+**提交：** `e8dedba`（单独 commit）
 **生成器：** `scripts/handoff/build.mjs`（CLI）；API 壳：`web/api-handoffs.mjs`
 **验收脚本：** `node scripts/verify-handoff.mjs` → **32 项检查全过**；`node scripts/verify-handoff-h6.mjs` → **6/6 通过**
 **证据目录：** `docs/evidence/handoff/`（`verify-handoff.json`、`h1-handoff.json`、`h4-handoff.json`、`h6-prompt.md`、`h6-answer.md`、`h6-check.json`、`no-key-check.json`、`handoff-panel-1440x900.png`）
