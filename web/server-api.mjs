@@ -29,6 +29,8 @@ import { handleTasksApi } from './api-tasks.mjs';
 // Agent Chat V1 P1：聊天三路由（POST /api/chat/threads、GET|POST …/:id/messages）。
 // 路由体在 api-chat.mjs，同样只做挂载。
 import { handleChatApi } from './api-chat.mjs';
+// TASK-额度面板：GET /api/quotas，GLM 3 key + Codex 已用量；key 只在后端内存。
+import { makeQuotasRoute } from './api-quotas.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1295,6 +1297,7 @@ export function createApiRouter(deps) {
   const state = makeStateRoute(ctx);
   const hermes = makeHermesRoute(ctx);
   const agentsReal = makeAgentsRealRoute(ctx);
+  const quotas = makeQuotasRoute(ctx);
   const files = makeFilesRoute(ctx);
   const skills = makeSkillsRoute(ctx);
   const flow = makeFlowRoute(ctx);
@@ -1335,6 +1338,7 @@ export function createApiRouter(deps) {
     }
 
     if (path === '/api/health' && method === 'GET') return health(req, res);
+    if (path === '/api/quotas' && method === 'GET') return quotas(req, res);
     if (path === '/api/state' && method === 'GET') return state(req, res);
     if (path === '/api/office/hermes' && method === 'GET') return hermes(req, res);
     if (path === '/api/agents/real' && method === 'GET') return agentsReal(req, res);
@@ -1367,6 +1371,7 @@ export function createApiRouter(deps) {
     const known = [
       [/^\/api\/state$/, ['GET']],
       [/^\/api\/health$/, ['GET']],
+      [/^\/api\/quotas$/, ['GET']],
       [/^\/api\/agents\/real$/, ['GET']],
       [/^\/api\/cards\/\d+\/answer$/, ['POST']],
       [/^\/api\/cards\/\d+\/resolve$/, ['POST']],

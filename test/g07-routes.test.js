@@ -10,6 +10,9 @@
 // TASK-Agent真实状态（X01）再增 1 条：GET /api/agents/real（Claude/Codex 本机
 //   实测三维：进程/最近会话活动/额度，只读探测，出错出 null 不出 500），
 //   冻结清单扩到 22 固定 + 3 参数化。
+// TASK-额度面板再增 1 条：GET /api/quotas（GLM 3 key + Codex 已用量，
+//   只读厂商 quota 接口 + cc-switch rollups；key 只在后端内存），
+//   冻结清单扩到 23 固定 + 3 参数化。
 //
 // R1 源码静态扫描：路由注册字面量逐一对照冻结清单——删掉任何一条，本用例立刻失败；
 // R2 GET 数据路由业务形状：响应体里必须有真实业务字段（HTTP 200 不作为通过条件）；
@@ -54,6 +57,8 @@ const EXPECTED_FIXED = new Map([
   ['GET /api/office/discuss', '需求讨论留档查询'],
   // TASK-Agent真实状态（X01）：Claude/Codex 本机实测三维（进程/活动/额度）
   ['GET /api/agents/real', 'Agent 本机实测三维'],
+  // TASK-额度面板：GLM 3 key 的 5h/周额度 + Codex 已用量
+  ['GET /api/quotas', '额度面板'],
 ]);
 const EXPECTED_PARAM = new Map([
   ['POST /api/cards/:id/answer', '提问卡作答'],
@@ -75,7 +80,7 @@ const post = (p, body) => fetch(stack.base + p, {
   return { status: r.status, body: b };
 });
 
-test('R1 源码路由清单：22 条固定 + 3 条参数化全部在（少一条即失败）', () => {
+test('R1 源码路由清单：23 条固定 + 3 条参数化全部在（少一条即失败）', () => {
   // G02（R73）：/api/* 路由体已从 server.js 搬至 server-api.mjs（createApiRouter
   // 工厂），扫描口径跟随拆分：两文件源码并集，路由丢一条立刻失败，与拆分前等效。
   const src = readFileSync(new URL('../web/server.js', import.meta.url), 'utf8')
@@ -88,7 +93,7 @@ test('R1 源码路由清单：22 条固定 + 3 条参数化全部在（少一条
   }
   const missing = [...EXPECTED_FIXED.keys()].filter((k) => !found.has(k));
   assert.deepEqual(missing, [], `server.js 丢了固定路由：${missing.join('、')}（扫描到 ${found.size} 条固定路由）`);
-  assert.equal(found.size, 22, `固定路由应恰好 22 条（G07 17 + 向导化 3 + R87 1 + X01 1），实际扫描到 ${found.size}：${[...found].join('、')}`);
+  assert.equal(found.size, 23, `固定路由应恰好 23 条（G07 17 + 向导化 3 + R87 1 + X01 1 + 额度 1），实际扫描到 ${found.size}：${[...found].join('、')}`);
 
   // 参数化：`m = path.match(/…/)`，用样本路径逐条试配（对正则写法不敏感）
   const paramLiterals = [...src.matchAll(/m = path\.match\((\/\^[^\n]*?)\)\)/g)].map((m) => m[1]);
@@ -102,7 +107,7 @@ test('R1 源码路由清单：22 条固定 + 3 条参数化全部在（少一条
   }
   const missParam = [...EXPECTED_PARAM.keys()].filter((k) => !paramFound.includes(k));
   assert.deepEqual(missParam, [], `server.js 丢了参数化代理路由：${missParam.join('、')}`);
-  console.log(`[R1] 固定 22/22 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
+  console.log(`[R1] 固定 23/23 + 参数化 3/3 全在（参数化正则 ${paramLiterals.length} 条参与试配）`);
 });
 
 test('R2 GET 数据路由业务形状：响应体必须有真实业务字段（200 空壳不算过）', async () => {

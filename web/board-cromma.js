@@ -28,7 +28,9 @@ const state = {
   statusV2: null,
   tasksData: null,
   hubState: null,
+  quotas: null,
   loadError: null,
+  quotasError: null,
   selectedAgentId: null,
   selectedTaskId: null,
   filter: 'all',
@@ -65,7 +67,117 @@ function shortNum(n) {
   return String(v);
 }
 function fmtInt(n) { return n == null ? '—' : Number(n).toLocaleString('en-US'); }
+function fmtUsd(n) { return n == null || !Number.isFinite(Number(n)) ? '—' : `$${Number(n).toFixed(2)}`; }
 function pct(done, total) { return total > 0 ? Math.max(0, Math.min(100, Math.round((done / total) * 100))) : 0; }
+
+/* ---------- 额度（percentage 是「已用」，不是剩余） ---------- */
+function quotaTone(usedPct) {
+  if (usedPct == null) return 'unknown';
+  if (usedPct > 80) return 'bad';
+  if (usedPct >= 50) return 'warn';
+  return 'ok';
+}
+function fmtCountdown(iso, now = Date.now()) {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return null;
+  const ms = t - now;
+  if (ms <= 0) return '已到点';
+  const minutes = Math.ceil(ms / 60000);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h${String(minutes % 60).padStart(2, '0')}m`;
+  return `${Math.floor(hours / 24)}d${hours % 24}h`;
+}
+function quotaWindowOf(p, unit) {
+  return (p.windows || []).find((w) => Number(w.unit) === unit) || null;
+}
+function quotaWinCell(w, shortLabel) {
+  const used = w && w.percentage != null ? Number(w.percentage) : null;
+  const tone = quotaTone(used);
+  const label = w ? w.label : (shortLabel === '5h' ? '5 小时' : '1 周');
+  const title = w
+    ? `${label}：已用 ${used == null ? '未知' : `${used}%`}${w.remaining != null ? ` · 剩余 ${fmtInt(w.remaining)}` : '（厂商只返回百分比）'}`
+    : `${label}：厂商没有返回这个窗口`;
+  return `<span class="quota-win" title="${esc(title)}">
+    <i>${esc(shortLabel)}</i>
+    <span class="quota-bar"><b data-tone="${tone}" style="width:${used == null ? 0 : used}%"></b></span>
+    <em>${used == null ? '—' : `${used}%`}</em>
+  </span>`;
+}
+function quotaProviderRow(p) {
+  const w5 = quotaWindowOf(p, 3);
+  const wk = quotaWindowOf(p, 6);
+  const resetAt = (w5 && w5.resetAt) || (wk && wk.resetAt) || null;
+  const useds = [w5, wk].filter(Boolean).map((w) => (w.percentage == null ? -1 : Number(w.percentage)));
+  const worst = useds.length ? Math.max(...useds) : -1;
+  const tone = quotaTone(worst < 0 ? null : worst);
+  // 涛哥的 5h 窗口厂商没给 nextResetTime：退回周窗口倒计时，并标明「周」，不假装 5h 会重置。
+  const resetPrefix = (w5 && w5.resetAt) ? '重置' : '周';
+  const resetText = resetAt ? `${resetPrefix} ${fmtCountdown(resetAt)}` : '重置 —';
+  const title = `${p.provider_name || p.name}${p.model ? ` · ${p.model}` : ''}${p.level ? ` · ${p.level}` : ''}${resetAt ? ` · ${resetPrefix === '周' ? '5h 窗口没有重置时间，这里显示周窗口重置' : '重置'} ${new Date(resetAt).toLocaleString('zh-CN', { hour12: false })}` : ' · 厂商没给重置时间'}`;
+  return `<span class="quota-row" data-tone="${tone}" data-provider="${esc(p.id)}" title="${esc(title)}">
+    <span class="quota-row__name">${esc(p.name)}</span>
+    ${quotaWinCell(w5, '5h')}
+    ${quotaWinCell(wk, '周')}
+    <span class="quota-row__reset" data-reset-at="${esc(resetAt || '')}" data-reset-prefix="${esc(resetPrefix)}">${esc(resetText)}</span>
+  </span>`;
+}
+function quotaErrorRow(p) {
+  const msg = String(p.error || '接口没有返回数据');
+  return `<span class="quota-row quota-row--error" data-provider="${esc(p.id)}" title="${esc(`${p.provider_name || p.name}：${msg}`)}">
+    <span class="quota-row__name">${esc(p.name)}</span>
+    <span class="quota-row__err">接口失败 · ${esc(msg.slice(0, 42))}</span>
+  </span>`;
+}
+function quotaBlock(agentId) {
+  if (agentId !== 'claude' && agentId !== 'codex') {
+    return `<span class="quota-block quota-block--empty">
+      <span class="quota-block__head"><i>额度</i><span>未接入</span></span>
+      <span class="quota-note">没有该 Agent 的额度数据源，不编造。</span>
+    </span>`;
+  }
+  if (!state.quotas) {
+    return `<span class="quota-block quota-block--error">
+      <span class="quota-block__head"><i>额度</i><span>读取失败</span></span>
+      <span class="quota-note">${esc(state.quotasError || '还没读到 /api/quotas')}</span>
+    </span>`;
+  }
+  const q = state.quotas;
+  const cacheNote = q.cache ? `缓存 ${Math.max(0, Math.round((q.cache.age_ms || 0) / 1000))}s` : '5 分钟缓存';
+  if (agentId === 'claude') {
+    const providers = Array.isArray(q.providers) ? q.providers : [];
+    if (!providers.length) {
+      return `<span class="quota-block quota-block--error">
+        <span class="quota-block__head"><i>额度 · 已用 %</i><span>GLM</span></span>
+        <span class="quota-note">${esc((q.notes && q.notes[0]) || '没有读到 Zhipu provider')}</span>
+      </span>`;
+    }
+    return `<span class="quota-block" aria-label="GLM 额度，百分比为已用">
+      <span class="quota-block__head"><i>额度 · 已用 %</i><span>GLM ${providers.length} key · ${esc(cacheNote)}</span></span>
+      ${providers.map((p) => (p.ok ? quotaProviderRow(p) : quotaErrorRow(p))).join('')}
+    </span>`;
+  }
+  const c = q.codex;
+  if (!c) {
+    return `<span class="quota-block quota-block--error">
+      <span class="quota-block__head"><i>已用 · 今日</i><span>Codex</span></span>
+      <span class="quota-note">没有读到 Codex 用量。</span>
+    </span>`;
+  }
+  const todayText = `${fmtUsd(c.used_usd)} / 今日 ${fmtInt(c.requests)} 次请求`;
+  const latest = c.latest_date
+    ? `rollup 最新 ${esc(c.latest_date)} · ${fmtUsd(c.latest_used_usd)} / ${fmtInt(c.latest_requests)} 次`
+    : 'rollup 里没有 Codex 记录';
+  return `<span class="quota-block" aria-label="Codex 已用量，无剩余额度接口">
+    <span class="quota-block__head"><i>已用 · 今日</i><span>无剩余额度接口</span></span>
+    <span class="quota-row quota-row--codex">
+      <span class="quota-row__usd">${esc(todayText)}</span>
+      <span class="quota-row__reset">${c.has_today ? '今日有记录' : '今日无记录'}</span>
+    </span>
+    <span class="quota-note">${esc(latest)} · OpenAI 官方不提供剩余额度查询</span>
+  </span>`;
+}
 
 /* ---------- 数据层 ---------- */
 async function getJson(path) {
@@ -89,6 +201,7 @@ async function loadData() {
     getJson('/api/agents/status-v2'),
     getJson('/api/tasks'),
     getJson('/api/state'),
+    getJson('/api/quotas'),
   ]);
   const failures = [];
   state.statusV2 = results[0].status === 'fulfilled' ? results[0].value : null;
@@ -96,7 +209,11 @@ async function loadData() {
   state.tasksData = results[1].status === 'fulfilled' ? results[1].value : null;
   if (results[1].status === 'rejected') failures.push(`tasks：${results[1].reason.message}`);
   state.hubState = results[2].status === 'fulfilled' ? results[2].value : null;
-
+  state.quotas = results[3].status === 'fulfilled' ? results[3].value : null;
+  state.quotasError = results[3].status === 'rejected'
+    ? results[3].reason.message
+    : (state.quotas && state.quotas.ok === false ? '额度接口返回 ok=false' : null);
+  // 额度失败不把整个看板标成「读取失败」：状态/任务仍可信，额度单独在卡片里报错。
   state.loadError = failures.length ? failures.join('；') : null;
   state.loadedAt = new Date().toISOString();
   state.loading = false;
@@ -128,9 +245,11 @@ function rememberedAgent() {
   try { return localStorage.getItem('soda-board.agent') || null; } catch { return null; }
 }
 function pickDefaultAgent(agents) {
+  // 用户本机上次点开的 Agent 优先：刷新是「回到刚才那场对话」，不能因为别的 Agent
+  // 正在跑任务就把他带到另一个对话里（D4 回归就是这样暴露的）。
   const saved = rememberedAgent();
-  return agents.find((a) => a.execution?.instance_status === 'running')
-    || agents.find((a) => a.agent_id === saved)
+  return agents.find((a) => a.agent_id === saved)
+    || agents.find((a) => a.execution?.instance_status === 'running')
     || agents.find((a) => a.agent_id === 'claude')
     || agents[0];
 }
@@ -260,7 +379,8 @@ function renderAgentCards() {
     const loadLabel = taskKnown ? '任务 1' : taskIdle ? '任务 0' : '任务 未知';
     const av = a.availability?.available;
     const avLabel = av === true ? '可用' : av === false ? '不可用' : '可用性未知';
-    return `<button type="button" class="agent-card ${selected ? 'is-selected' : ''}" data-agent="${esc(a.agent_id)}" aria-pressed="${selected}" data-tone="${tone}" data-task-count="${taskKnown ? 1 : 0}">
+    const hasQuota = a.agent_id === 'claude' || a.agent_id === 'codex';
+    return `<button type="button" class="agent-card ${selected ? 'is-selected' : ''} ${hasQuota ? 'agent-card--quota' : ''}" data-agent="${esc(a.agent_id)}" aria-pressed="${selected}" data-tone="${tone}" data-task-count="${taskKnown ? 1 : 0}">
       <span class="agent-card__top">
         ${iconHtml(a.agent_id)}
         <span class="agent-card__name">${esc(m.name)}</span>
@@ -268,6 +388,7 @@ function renderAgentCards() {
       </span>
       <span class="agent-card__state" data-tone="${tone}">${esc(stateLabel)}</span>
       <span class="agent-card__doing">${esc(doingText(a))}</span>
+      ${quotaBlock(a.agent_id)}
       <span class="agent-card__facts">
         <span class="agent-card__fact"><i>最近活动</i><b>${esc(relTime(a.execution?.last_activity_at))}</b></span>
         <span class="agent-card__fact"><i>观测</i><b data-rel="${esc(a.execution?.observed_at || '')}">${esc(relTime(a.execution?.observed_at))}</b></span>
@@ -402,7 +523,59 @@ function agentDetailHtml(a) {
         <div class="kv-row"><span>证据源</span><b class="mono">${esc(evidenceLabel(tk.evidence_source))}</b></div>
       </div>
     </section>
+
+    ${quotaDetailHtml(a.agent_id)}
 `;
+}
+
+function quotaDetailHtml(agentId) {
+  if (agentId !== 'claude' && agentId !== 'codex') {
+    return `<section class="detail__section">
+      <div class="detail__label">额度</div>
+      <div class="detail__reason">这个 Agent 没有接入额度数据源，不编造。</div>
+    </section>`;
+  }
+  if (!state.quotas) {
+    return `<section class="detail__section">
+      <div class="detail__label">额度</div>
+      <div class="detail__reason">额度读取失败：${esc(state.quotasError || '还没读到 /api/quotas')}</div>
+    </section>`;
+  }
+  const q = state.quotas;
+  if (agentId === 'claude') {
+    const rows = (q.providers || []).map((p) => {
+      if (!p.ok) {
+        return `<div class="kv-row"><span>${esc(p.name)}</span><b>接口失败：${esc(String(p.error || '').slice(0, 60))}</b></div>`;
+      }
+      const w5 = quotaWindowOf(p, 3);
+      const wk = quotaWindowOf(p, 6);
+      const one = (w) => {
+        if (!w) return '—';
+        const used = w.percentage == null ? '—' : `${w.percentage}%`;
+        const rest = w.remaining == null ? '剩余未知（仅百分比）' : `剩余 ${fmtInt(w.remaining)}`;
+        return `${used} 已用 · ${rest}${w.resetAt ? ` · 重置 ${fmtCountdown(w.resetAt)}` : ' · 重置时间未知'}`;
+      };
+      return `<div class="kv-row"><span>${esc(p.name)}${p.level ? ` · ${esc(p.level)}` : ''}</span><b>5h ${esc(one(w5))}<br>周 ${esc(one(wk))}</b></div>`;
+    }).join('');
+    return `<section class="detail__section">
+      <div class="detail__label">额度 · GLM<span>${esc(q.cache ? `缓存 ${Math.max(0, Math.round((q.cache.age_ms || 0) / 1000))}s` : '')}</span></div>
+      <div class="detail__reason">百分比是「已用」，不是剩余。${esc((q.notes || [])[0] || '')}</div>
+      <div class="kv-list">${rows || '<div class="kv-row"><span>—</span><b>没有读到 Zhipu provider</b></div>'}</div>
+    </section>`;
+  }
+  const c = q.codex || {};
+  return `<section class="detail__section">
+    <div class="detail__label">额度 · Codex<span>无剩余额度接口</span></div>
+    <div class="detail__reason">${esc(c.note || 'OpenAI 官方没有剩余额度查询接口，只显示已用量。')}</div>
+    <div class="kv-list kv-list--2">
+      <div class="kv-row"><span>今日花费</span><b>${esc(fmtUsd(c.used_usd))}</b></div>
+      <div class="kv-row"><span>今日请求</span><b>${esc(fmtInt(c.requests))}</b></div>
+      <div class="kv-row"><span>最新 rollup</span><b>${esc(c.latest_date || '—')}</b></div>
+      <div class="kv-row"><span>最新花费</span><b>${esc(fmtUsd(c.latest_used_usd))}</b></div>
+      <div class="kv-row"><span>剩余额度</span><b>不提供</b></div>
+      <div class="kv-row"><span>今日有记录</span><b>${c.has_today ? '是' : '否'}</b></div>
+    </div>
+  </section>`;
 }
 
 function taskDetailHtml(t) {
@@ -587,6 +760,11 @@ function bindEvents() {
     const obs = state.statusV2?.observed_at;
     $('#updated-at').textContent = state.loadError ? '读取失败' : relTime(obs || state.loadedAt);
     $$('[data-rel]').forEach((el) => { el.textContent = relTime(el.dataset.rel); });
+    $$('[data-reset-at]').forEach((el) => {
+      if (!el.dataset.resetAt) return;
+      const txt = fmtCountdown(el.dataset.resetAt);
+      if (txt) el.textContent = `${el.dataset.resetPrefix || '重置'} ${txt}`;
+    });
   }, 30000);
 }
 

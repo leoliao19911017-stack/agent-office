@@ -1,0 +1,148 @@
+{
+  "generatedAt": "2026-11-24T02:26:24.571Z",
+  "glmUrl": "https://open.bigmodel.cn/api/monitor/usage/quota/limit",
+  "apiGeneratedAt": "2026-11-24T02:26:09.455Z",
+  "providers": [
+    {
+      "provider": "闲置",
+      "id": "42563281-4a2b-4ace-a492-58e7f0e97d4e",
+      "api_level": "max",
+      "vendor_level": "max",
+      "ok": true,
+      "windows": [
+        {
+          "unit": 3,
+          "label": "5 小时",
+          "api": {
+            "percentage": 1,
+            "remaining": 27999,
+            "resetAt": "2026-11-24T06:55:22.161Z"
+          },
+          "vendor": {
+            "percentage": 1,
+            "remaining": 27999,
+            "resetAt": "2026-11-24T06:55:22.161Z"
+          },
+          "same": {
+            "percentage": true,
+            "remaining": true,
+            "resetAt": true
+          }
+        },
+        {
+          "unit": 6,
+          "label": "1 周",
+          "api": {
+            "percentage": 1,
+            "remaining": 139921,
+            "resetAt": "2026-11-30T11:19:02.983Z"
+          },
+          "vendor": {
+            "percentage": 1,
+            "remaining": 139921,
+            "resetAt": "2026-11-30T11:19:02.983Z"
+          },
+          "same": {
+            "percentage": true,
+            "remaining": true,
+            "resetAt": true
+          }
+        }
+      ]
+    },
+    {
+      "provider": "涛哥",
+      "id": "1de35087-6eb3-4ca3-b465-1776149d9d5c",
+      "api_level": "max",
+      "vendor_level": "max",
+      "ok": true,
+      "windows": [
+        {
+          "unit": 3,
+          "label": "5 小时",
+          "api": {
+            "percentage": 0,
+            "remaining": null,
+            "resetAt": null
+          },
+          "vendor": {
+            "percentage": 0,
+            "remaining": null,
+            "resetAt": null
+          },
+          "same": {
+            "percentage": true,
+            "remaining": true,
+            "resetAt": true
+          }
+        },
+        {
+          "unit": 6,
+          "label": "1 周",
+          "api": {
+            "percentage": 40,
+            "remaining": null,
+            "resetAt": "2026-11-30T07:18:51.983Z"
+          },
+          "vendor": {
+            "percentage": 40,
+            "remaining": null,
+            "resetAt": "2026-11-30T07:18:51.983Z"
+          },
+          "same": {
+            "percentage": true,
+            "remaining": true,
+            "resetAt": true
+          }
+        }
+      ]
+    },
+    {
+      "provider": "磊哥",
+      "id": "d5b22f20-8600-461a-9c46-49ea041861ea",
+      "api_level": "max",
+      "vendor_level": "max",
+      "ok": true,
+      "windows": [
+        {
+          "unit": 3,
+          "label": "5 小时",
+          "api": {
+            "percentage": 1,
+            "remaining": 27715,
+            "resetAt": "2026-11-24T05:58:43.795Z"
+          },
+          "vendor": {
+            "percentage": 1,
+            "remaining": 27715,
+            "resetAt": "2026-11-24T05:58:43.795Z"
+          },
+          "same": {
+            "percentage": true,
+            "remaining": true,
+            "resetAt": true
+          }
+        },
+        {
+          "unit": 6,
+          "label": "1 周",
+          "api": {
+            "percentage": 73,
+            "remaining": 36797,
+            "resetAt": "2026-11-28T03:19:11.983Z"
+          },
+          "vendor": {
+            "percentage": 73,
+            "remaining": 36797,
+            "resetAt": "2026-11-28T03:19:11.983Z"
+          },
+          "same": {
+            "percentage": true,
+            "remaining": true,
+            "resetAt": true
+          }
+        }
+      ]
+    }
+  ]
+}

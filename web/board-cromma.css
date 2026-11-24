@@ -290,6 +290,44 @@ b, strong { font-weight: 600; }
 .chip__mono { font-family: var(--font-mono); font-size: 12px; }
 .agent-card__load { margin-left: auto; font-size: 12px; color: var(--ink-4); white-space: nowrap; }
 
+/* ---------- 额度块（百分比是「已用」；<50 正常 / 50-80 提醒 / >80 警告） ---------- */
+.agent-card--quota { gap: 6px; padding: 13px 14px 11px; }
+.agent-card--quota .agent-card__facts { display: none; } /* 额度替代卡片里的活动小格，详情页仍有完整活动 */
+.agent-card--quota .agent-card__doing { flex: 0 1 auto; max-height: 2.9em; }
+.quota-block {
+  flex: none;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 6px 8px 5px;
+  border: 1px solid #EDE5D8; border-radius: 7px;
+  background: #FAF6EE;
+  min-width: 0;
+}
+.quota-block__head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; min-width: 0; font-size: 11px; color: var(--ink-4); }
+.quota-block__head i { font-style: normal; font-family: var(--font-serif); font-weight: 600; letter-spacing: .5px; color: #7D7262; white-space: nowrap; }
+.quota-block__head span { font-family: var(--font-mono); font-size: 11px; color: #9A8E7E; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quota-row { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr) auto; align-items: center; gap: 7px; min-height: 19px; font-size: 11px; line-height: 1.2; }
+.quota-row__name { font-weight: 600; color: #4A4237; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quota-win { display: grid; grid-template-columns: 18px minmax(22px, 1fr) 27px; align-items: center; gap: 4px; min-width: 0; }
+.quota-win i { font-style: normal; font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); }
+.quota-bar { height: 6px; border-radius: 999px; background: #E9E1D3; overflow: hidden; }
+.quota-bar b { display: block; height: 100%; border-radius: 999px; background: #9DAF8E; }
+.quota-bar b[data-tone="warn"] { background: #D9A64B; }
+.quota-bar b[data-tone="bad"] { background: #B65D44; }
+.quota-win em { font-style: normal; font-family: var(--font-mono); font-size: 11px; text-align: right; color: #5B5245; }
+.quota-row[data-tone="warn"] .quota-win em { color: #8A611D; }
+.quota-row[data-tone="bad"] .quota-win em { color: #8F4634; font-weight: 600; }
+.quota-row__reset { min-width: 54px; text-align: right; font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+.quota-row[data-tone="bad"] .quota-row__reset { color: #8F4634; }
+.quota-row[data-tone="bad"] .quota-row__reset::before { content: "▲ "; font-size: 9px; }
+.quota-row--error { grid-template-columns: 34px minmax(0, 1fr); }
+.quota-row__err { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--rust); }
+.quota-row--codex { grid-template-columns: minmax(0, 1fr) auto; min-height: 18px; }
+.quota-row__usd { font-family: var(--font-mono); font-size: 11px; color: #4A4237; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quota-note { font-size: 11px; line-height: 1.4; color: var(--ink-4); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.quota-block--empty { background: #F8F3EA; }
+.quota-block--error { background: #FBF0EC; border-color: #E3C4BB; }
+.quota-block--error .quota-note { color: #8F4634; white-space: normal; }
+
 /* 右侧详情（占满右列；对话模式下换成 Coss 的纯白卡片，见 board-chat.css） */
 .detail {
   flex: 1; min-height: 0; overflow-y: auto;
@@ -443,13 +481,19 @@ b, strong { font-weight: 600; }
   .data-card { min-height: 170px; }
   .board-main { overflow-y: auto; }
 }
-@media (max-height: 880px) {
-  .view { padding-top: 14px; gap: 11px; }
+@media (max-height: 880px) {  .view { padding-top: 14px; gap: 11px; }
   .stage-head h1 { font-size: 22px; }
   .data-cards { height: 172px; }
   .agent-card { padding: 12px 14px 10px; gap: 6px; }
   .agent-card__name { font-size: 17px; }
   .agent-card__facts { display: none; }
+  /* 高度不够时先把额度块压到只看三行数字，活动说明让位给额度 */
+  .agent-card--quota .agent-card__doing { display: none; }
+  .agent-card--quota .quota-block__head { display: none; }
+  .agent-card--quota .quota-block { padding: 5px 7px; gap: 2px; }
+  .quota-block--empty .quota-note { display: none; }
+  .quota-block--empty { padding: 4px 7px; }
+  .quota-row { min-height: 18px; }
   .data-card { padding: 10px 12px 9px; }
   .empty-big { font-size: 34px; }
   .token-big b { font-size: 30px; }
@@ -465,4 +509,9 @@ b, strong { font-weight: 600; }
   .detail__chips .chip { height: 20px; }
   .kv-list { margin-top: 6px; }
   .kv-list--2 .kv-row { line-height: 1.35; }
+}
+
+/* 高屏：额度卡恢复活动小格，别让下方留一大块空白 */
+@media (min-height: 1000px) {
+  .agent-card--quota .agent-card__facts { display: grid; }
 }
