@@ -1,0 +1,290 @@
+{
+  "ok": true,
+  "generated_at": "2026-11-24T07:14:36.176Z",
+  "base_url": "http://127.0.0.1:8090",
+  "viewport": "1440x900",
+  "screenshot": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots\\deliverables\\agent-chat-p1-six-kinds-1440x900.png",
+  "checks": [
+    {
+      "id": "D4-0",
+      "name": "Agent Chat P1-P7 任务真实存在",
+      "pass": true,
+      "detail": "8 条：P1,P2,P3,P4,P5,P6,P7,P7"
+    },
+    {
+      "id": "D1-API",
+      "name": "P1 交付物 API 返回六类分组",
+      "pass": true,
+      "detail": "requirement:2 task_spec:3 dev_output:1 artifact:3 review:0 retro:0"
+    },
+    {
+      "id": "D3-API",
+      "name": "P1 没有 review/retro 时 empty_kinds 显式列出",
+      "pass": true,
+      "detail": "empty_kinds=review,retro"
+    },
+    {
+      "id": "GOAL-P1",
+      "name": "P1 目标达成从 acceptance + checkpoints 推导",
+      "pass": true,
+      "detail": "achieved · 验收项 7/7 · 检查点 1/1"
+    },
+    {
+      "id": "D1",
+      "name": "中间主区显示六类交付物时间线",
+      "pass": true,
+      "detail": "需求文档 / 开发指令 / 交付成果 / 生成物 / 评审报告 / 复盘建议"
+    },
+    {
+      "id": "D3",
+      "name": "没有的类别显式写「未产生」",
+      "pass": true,
+      "detail": "review=未产生 retro=未产生"
+    },
+    {
+      "id": "D2-markdown",
+      "name": "需求文档 .md 在右侧直接渲染",
+      "pass": true,
+      "detail": "kind=需求文档 · markdown h1=1 chars=11563"
+    },
+    {
+      "id": "D2-diff",
+      "name": "交付成果 commit 在右侧显示 diff",
+      "pass": true,
+      "detail": "kind=交付成果 · diff lines=4758 adds=4358"
+    },
+    {
+      "id": "D4",
+      "name": "Agent Chat P1-P7 每批 core 交付物链完整（未产生的类别显式列出）",
+      "pass": true,
+      "detail": "P1: req2 spec3 dev1 art3 review0 retro0 goal=achieved | P2: req2 spec3 dev1 art2 review0 retro0 goal=achieved | P3: req2 spec2 dev1 art2 review0 retro0 goal=achieved | P4: req2 spec2 dev2 art24 review0 retro0 goal=achieved | P5: req2 spec4 dev1 art24 review0 retro0 goal=achieved | P6: req2 spec2 dev1 art8 review0 retro0 goal=achieved | P7: req2 spec5 dev1 art83 review0 retro0 goal=partial | P7: req2 spec5 dev1 art83 review0 retro0 goal=partial"
+    },
+    {
+      "id": "D5",
+      "name": "工具调用不在主视图，技术细节默认折叠",
+      "pass": true,
+      "detail": "boardHidden=true dataCardsVisible=false techOpen=false techText=技术细节 工具调用 / 进程 / 额度 · 默认折叠 工具事件总数2,917最近 15 分钟0工具调用 Top3bash"
+    },
+    {
+      "id": "SHOT",
+      "name": "实拍图已保存",
+      "pass": true,
+      "detail": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots\\deliverables\\agent-chat-p1-six-kinds-1440x900.png"
+    },
+    {
+      "id": "JS",
+      "name": "页面无 JS 异常 / 资源加载失败",
+      "pass": true,
+      "detail": "0"
+    }
+  ],
+  "agent_chat_chain": [
+    {
+      "task_id": "t-20261123201623-0fc3b4",
+      "title": "Agent Chat P1：数据表 + claude adapter + 最简聊天（HTTP 轮询）",
+      "requirement": 2,
+      "task_spec": 3,
+      "dev_output": 1,
+      "artifact": 3,
+      "review": 0,
+      "retro": 0,
+      "goal": "achieved",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "achieved",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261123210150-6256ee",
+      "title": "Agent Chat P2：dsh adapter（真 dsh 多轮续聊 + 起不来时原因具体）",
+      "requirement": 2,
+      "task_spec": 3,
+      "dev_output": 1,
+      "artifact": 2,
+      "review": 0,
+      "retro": 0,
+      "goal": "achieved",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "achieved",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261123211055-0cc0c6",
+      "title": "Agent Chat P3：SSE 流式输出（真 CLI 验收 C1-C4）",
+      "requirement": 2,
+      "task_spec": 2,
+      "dev_output": 1,
+      "artifact": 2,
+      "review": 0,
+      "retro": 0,
+      "goal": "achieved",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "achieved",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261123212619-506053",
+      "title": "Agent Chat P4：前端聊天面板（Coss 风格）D1-D7",
+      "requirement": 2,
+      "task_spec": 2,
+      "dev_output": 2,
+      "artifact": 24,
+      "review": 0,
+      "retro": 0,
+      "goal": "achieved",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "achieved",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261123215344-206353",
+      "title": "Agent Chat P5：失败处理与状态机（E1-E5）",
+      "requirement": 2,
+      "task_spec": 4,
+      "dev_output": 1,
+      "artifact": 24,
+      "review": 0,
+      "retro": 0,
+      "goal": "achieved",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "achieved",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261124012312-4b272e",
+      "title": "Agent Chat P6：hermes adapter（F1-F2）",
+      "requirement": 2,
+      "task_spec": 2,
+      "dev_output": 1,
+      "artifact": 8,
+      "review": 0,
+      "retro": 0,
+      "goal": "achieved",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "achieved",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261124015931-a5c666",
+      "title": "Agent Chat P7：全量回归 + 证据打包",
+      "requirement": 2,
+      "task_spec": 5,
+      "dev_output": 1,
+      "artifact": 83,
+      "review": 0,
+      "retro": 0,
+      "goal": "partial",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "partial",
+      "absentExplicit": true
+    },
+    {
+      "task_id": "t-20261124020833-de91ec",
+      "title": "Agent Chat P7：全量回归 + 证据打包",
+      "requirement": 2,
+      "task_spec": 5,
+      "dev_output": 1,
+      "artifact": 83,
+      "review": 0,
+      "retro": 0,
+      "goal": "partial",
+      "empty_kinds": [
+        "review",
+        "retro"
+      ],
+      "coreComplete": "partial",
+      "absentExplicit": true
+    }
+  ],
+  "p1": {
+    "task_id": "t-20261123201623-0fc3b4",
+    "title": "Agent Chat P1：数据表 + claude adapter + 最简聊天（HTTP 轮询）",
+    "goal": {
+      "judgement": "achieved",
+      "judgement_label": "已达成",
+      "goal": "A1 建 thread；A2 claude 真实回复；A3 第 3 条体现第 1 条；A4 一字不差引用第一句；A5 第 2 条起 --resume；A6 三表落库；A7 坏 session id 落失败态不冒充 completed。证据：scripts/chat-v1/p1-acceptance/ 与 docs/evidence/chat-p1/。",
+      "percent": 100,
+      "criteria": {
+        "total": 7,
+        "passed": 7,
+        "items": [
+          {
+            "label": "A1",
+            "text": "A1 建 thread",
+            "passed": true
+          },
+          {
+            "label": "A2",
+            "text": "A2 claude 真实回复",
+            "passed": true
+          },
+          {
+            "label": "A3",
+            "text": "A3 第 3 条体现第 1 条",
+            "passed": true
+          },
+          {
+            "label": "A4",
+            "text": "A4 一字不差引用第一句",
+            "passed": true
+          },
+          {
+            "label": "A5",
+            "text": "A5 第 2 条起 --resume",
+            "passed": true
+          },
+          {
+            "label": "A6",
+            "text": "A6 三表落库",
+            "passed": true
+          },
+          {
+            "label": "A7",
+            "text": "A7 坏 session id 落失败态不冒充 completed",
+            "passed": true
+          }
+        ]
+      },
+      "checkpoints": {
+        "total": 1,
+        "passed": 1
+      },
+      "gaps": [],
+      "evidence": "任务状态 completed；1 个检查点"
+    },
+    "counts": {
+      "requirement": 2,
+      "task_spec": 3,
+      "dev_output": 1,
+      "artifact": 3,
+      "review": 0,
+      "retro": 0,
+      "goal_report": 1
+    },
+    "empty_kinds": [
+      "review",
+      "retro"
+    ]
+  },
+  "errors": []
+}

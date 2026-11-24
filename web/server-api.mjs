@@ -37,6 +37,8 @@ import { handleToolEventsApi } from './api-tool-events.mjs';
 import { handleHandoffsApi } from './api-handoffs.mjs';
 // TASK-额度面板：GET /api/quotas，GLM 3 key + Codex 已用量；key 只在后端内存。
 import { makeQuotasRoute } from './api-quotas.mjs';
+// TASK-交付物视图：GET /api/deliverables（按任务分组）+ 内容预览；只读 deliverables 表。
+import { handleDeliverablesApi } from './api-deliverables.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1336,6 +1338,12 @@ export function createApiRouter(deps) {
       if (handled) return;
     }
 
+    // TASK-交付物视图：只读 deliverables 表，采集在独立 CLI，不在请求里扫目录。
+    if (path === '/api/deliverables' || path.startsWith('/api/deliverables/')) {
+      const handled = await handleDeliverablesApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
     // P0 地基层：先交给任务 API 匹配；不是它的路径再走原有路由。
     // 任务 API 自己负责 405，未匹配返回 false，原路由行为不变。
     if (path === '/api/tasks' || path.startsWith('/api/tasks/') || path === '/api/agents/status-v2') {
@@ -1412,6 +1420,8 @@ export function createApiRouter(deps) {
       [/^\/api\/office\/new-task$/, ['POST']],
       [/^\/api\/office\/discuss$/, ['GET']],
       [/^\/api\/tool-events$/, ['GET']],
+      [/^\/api\/deliverables$/, ['GET']],
+      [/^\/api\/deliverables\/preview$/, ['GET']],
     ];
     if (known.some(([re, methods]) => re.test(path) && !methods.includes(method))) {
       throw httpErrorFallback(deps, 405, 'METHOD_NOT_ALLOWED', `${method} ${path} 不支持`);

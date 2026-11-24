@@ -12,7 +12,9 @@
     "tools:collect": "node --no-warnings scripts/tool-events.mjs",
     "tools:stats": "node --no-warnings scripts/tool-events.mjs --stats",
     "verify:quota": "node --no-warnings scripts/verify-quota.mjs",
-    "verify:handoff": "node --no-warnings scripts/verify-handoff.mjs"
+    "verify:handoff": "node --no-warnings scripts/verify-handoff.mjs",
+    "collect:deliverables": "node --no-warnings scripts/collect-deliverables.mjs",
+    "verify:deliverables": "node --no-warnings scripts/verify-deliverables.mjs"
   },
   "engines": {
     "node": ">=22.5.0"

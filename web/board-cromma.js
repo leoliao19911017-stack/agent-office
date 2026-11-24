@@ -23,6 +23,20 @@ const FILTERS = {
   unknown: (t) => !t.status || t.status === 'unknown',
 };
 
+/** 交付物时间线六类：顺序固定；goal_report 单独放在任务头「目标达成」。 */
+const DL_TIMELINE = [
+  { kind: 'requirement', no: '01', label: '需求文档', hint: '讨论后沉淀的需求 / 任务书' },
+  { kind: 'task_spec', no: '02', label: '开发指令', hint: '派给 Agent 的任务书' },
+  { kind: 'dev_output', no: '03', label: '交付成果', hint: 'git commit + 改动文件' },
+  { kind: 'artifact', no: '04', label: '生成物', hint: '截图 / 证据 / 报告' },
+  { kind: 'review', no: '05', label: '评审报告', hint: 'GPT 评审文档' },
+  { kind: 'retro', no: '06', label: '复盘建议', hint: '评审文档里的结论与改进建议' },
+];
+const DL_KIND_LABEL = Object.fromEntries(DL_TIMELINE.map((k) => [k.kind, k.label]));
+const DL_JUDGEMENT = {
+  achieved: '已达成', partial: '部分达成', missed: '未达成', no_goal: '未设定目标',
+};
+
 const state = {
   statusV2: null,
   tasksData: null,
@@ -37,6 +51,17 @@ const state = {
   selectedTaskId: null,
   filter: 'all',
   route: 'board',
+  // TASK-交付物视图：选中任务 → 中央交付物时间线；右侧预览。
+  deliverables: null,
+  deliverablesFor: null,
+  deliverablesLoading: false,
+  deliverablesError: null,
+  unlinked: null,
+  unlinkedLoading: false,
+  unlinkedError: null,
+  showUnlinked: false,
+  preview: null,
+  expandedKinds: new Set(),
   loading: false,
   loadedAt: null,
   fetchLog: [],
@@ -61,6 +86,15 @@ function relTime(iso, now = Date.now()) {
   const h = Math.floor(m / 60);
   if (h < 48) return `${h} 小时前`;
   return `${Math.floor(h / 24)} 天前`;
+}
+/** 交付物时间：日期 + 时分，避免时间线只写「3 天前」看不出先后。 */
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return '—';
+  const d = new Date(t);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 function shortNum(n) {
   if (n == null || Number.isNaN(Number(n))) return '—';
@@ -241,6 +275,79 @@ async function loadData() {
 
   renderAll();
   if (window.AgentAdmin) window.AgentAdmin.refresh();
+}
+
+/* ---------- 交付物数据层（只读 API，采集由 scripts/collect-deliverables.mjs 做） ---------- */
+async function loadDeliverables(taskId) {
+  state.deliverablesLoading = true;
+  state.deliverablesError = null;
+  state.deliverables = null;
+  state.deliverablesFor = taskId;
+  renderDeliverables();
+  try {
+    const data = await getJson(`/api/deliverables?task_id=${encodeURIComponent(taskId)}`);
+    // 用户可能已经切走：旧请求回来不许覆盖新任务
+    if (state.selectedTaskId !== taskId || state.showUnlinked) return;
+    state.deliverables = data;
+    state.deliverablesFor = taskId;
+  } catch (err) {
+    if (state.selectedTaskId !== taskId) return;
+    state.deliverablesError = String(err.message || err);
+  } finally {
+    if (state.selectedTaskId === taskId) {
+      state.deliverablesLoading = false;
+      renderAll();
+    }
+  }
+}
+
+async function refreshUnlinkedSummary() {
+  try {
+    const data = await getJson('/api/deliverables');
+    state.unlinked = data;
+    const btn = $('#unlinked-count');
+    if (btn) btn.textContent = String(Number(data?.total) || 0);
+  } catch { /* 未关联区读不到不拖垮看板；点开时会再报一次真实错误 */ }
+}
+
+async function loadUnlinked() {
+  state.unlinkedLoading = true;
+  state.unlinkedError = null;
+  renderDeliverables();
+  try {
+    const data = await getJson('/api/deliverables');
+    state.unlinked = data;
+    const n = Number(data?.total) || 0;
+    const btn = $('#unlinked-count');
+    if (btn) btn.textContent = String(n);
+  } catch (err) {
+    state.unlinkedError = String(err.message || err);
+  } finally {
+    state.unlinkedLoading = false;
+    renderAll();
+  }
+}
+
+async function openPreview(deliverableId) {
+  if (!deliverableId) return;
+  state.preview = { loading: true, deliverable_id: deliverableId };
+  renderDetail();
+  try {
+    const data = await getJson(`/api/deliverables/preview?deliverable_id=${encodeURIComponent(deliverableId)}`);
+    if (!state.preview || state.preview.deliverable_id !== deliverableId) return;
+    state.preview = { ...data, deliverable_id: deliverableId, loading: false };
+  } catch (err) {
+    if (!state.preview || state.preview.deliverable_id !== deliverableId) return;
+    state.preview = { loading: false, deliverable_id: deliverableId, error: String(err.message || err) };
+  }
+  renderDetail();
+  const panel = $('#detail-panel');
+  if (panel) panel.scrollTop = 0;
+}
+
+function closePreview() {
+  state.preview = null;
+  renderDetail();
 }
 
 /* ---------- 派生数据 ---------- */
@@ -587,6 +694,10 @@ function selectAgentById(id) {
   if (!agent) return;
   state.selectedAgentId = id;
   state.selectedTaskId = null;
+  state.showUnlinked = false;
+  state.preview = null;
+  state.deliverables = null;
+  state.deliverablesFor = null;
   rememberAgent(id);
   renderAll();
   if (window.SodaChat) SodaChat.focus(id);
@@ -704,19 +815,200 @@ function renderTasks() {
   list.classList.toggle('is-scrollable', list.scrollHeight > list.clientHeight + 1);
   $$('.task-row', list).forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.selectedTaskId = state.selectedTaskId === btn.dataset.task ? null : btn.dataset.task;
-      if (state.selectedTaskId) state.selectedAgentId = null;
-      else ensureSelection();
+      const next = state.selectedTaskId === btn.dataset.task ? null : btn.dataset.task;
+      state.selectedTaskId = next;
+      state.showUnlinked = false;
+      state.preview = null;
+      if (next) {
+        state.selectedAgentId = null;
+        state.deliverables = null;
+        state.deliverablesFor = null;
+        loadDeliverables(next);
+      } else {
+        state.deliverables = null;
+        state.deliverablesFor = null;
+        ensureSelection();
+      }
       renderAll();
-      showToast(state.selectedTaskId ? `已选中任务 ${state.selectedTaskId}` : '已返回 Agent 详情');
+      showToast(next ? `中间显示交付物 · ${next}` : '已返回 Agent 详情');
     });
   });
+}
+
+/* ---------- 渲染：中央交付物时间线 ---------- */
+function dlStatusTone(task) {
+  if (!task) return 'unknown';
+  if (task.status === 'completed') return 'ok';
+  if (task.status === 'running') return 'live';
+  if (['failed', 'blocked', 'interrupted'].includes(task.status)) return 'bad';
+  return 'unknown';
+}
+
+function goalCardHtml(goal, task) {
+  const g = goal || {};
+  const judgement = g.judgement || 'no_goal';
+  const label = DL_JUDGEMENT[judgement] || g.judgement_label || '未设定目标';
+  const criteria = g.criteria || { passed: 0, total: 0 };
+  const ck = g.checkpoints || { passed: 0, total: 0 };
+  const progress = (task && task.progress) || { done: 0, total: 0 };
+  const gaps = Array.isArray(g.gaps) ? g.gaps : [];
+  const gapText = judgement === 'no_goal'
+    ? '未设定目标（acceptance 为空，不编百分比）'
+    : gaps.length ? gaps.join('；') : '无未通过项';
+  return `<div class="goal-card">
+    <div class="goal-card__head"><span>目标</span><span class="goal-badge" data-judgement="${esc(judgement)}">${esc(label)}</span></div>
+    <p class="goal-card__goal ${g.goal ? '' : 'is-empty'}">${g.goal ? esc(g.goal) : '未设定目标'}</p>
+    <div class="goal-card__metrics">
+      <div class="goal-card__metric"><i>达成度 · 通过检查点 / 总检查点</i><b>${ck.passed} / ${ck.total}</b></div>
+      <div class="goal-card__metric"><i>验收项 · 通过 / 总数</i><b>${criteria.passed} / ${criteria.total}${g.percent == null ? '' : ` · ${g.percent}%`}</b></div>
+      <div class="goal-card__metric"><i>任务进度</i><b>${progress.done} / ${progress.total} 步</b></div>
+    </div>
+    <div class="goal-card__gaps ${gaps.length || judgement === 'no_goal' ? '' : 'is-clear'}"><b>差距</b> ${esc(gapText)}</div>
+  </div>`;
+}
+
+function dlItemHtml(item) {
+  const sha = item.content_ref && /^git:/i.test(item.content_ref) ? item.content_ref.slice(4) : null;
+  const label = item.display_path || (sha ? `git show ${sha.slice(0, 8)}` : item.title);
+  const missing = item.path && item.exists === false;
+  return `<li class="dl-item">
+    <div class="dl-item__main">
+      <span class="dl-item__title">${esc(item.title)}</span>
+      <button type="button" class="dl-item__path" data-deliverable="${esc(item.deliverable_id)}" title="在右侧打开内容预览">${esc(missing ? `${label}（文件不存在）` : label)}</button>
+    </div>
+    <span class="dl-item__status" data-status="${esc(item.status)}">${esc(item.status_label)}</span>
+    <time datetime="${esc(item.created_at || '')}">${esc(fmtDate(item.created_at))}</time>
+  </li>`;
+}
+
+function timelineHtml(groups) {
+  return DL_TIMELINE.map((k) => {
+    const items = Array.isArray(groups && groups[k.kind]) ? groups[k.kind] : [];
+    const empty = items.length === 0;
+    const expanded = state.expandedKinds.has(k.kind);
+    const shown = expanded ? items : items.slice(0, 4);
+    const more = items.length - shown.length;
+    return `<li class="dl-kind ${empty ? 'is-empty' : ''}" data-kind="${k.kind}">
+      <div class="dl-kind__rail"><span class="dl-kind__no">${k.no}</span><span class="dl-kind__line"></span></div>
+      <div class="dl-kind__body">
+        <header class="dl-kind__head"><h2>${esc(k.label)}</h2><span class="dl-kind__count">${empty ? '未产生' : `${items.length} 件`}</span></header>
+        ${empty
+          ? `<p class="dl-kind__empty">未产生</p><p class="dl-kind__hint">${esc(k.hint)} · 没有真实来源就不填</p>`
+          : `<ul class="dl-items">${shown.map(dlItemHtml).join('')}</ul>${more > 0
+            ? `<button type="button" class="dl-more" data-kind-expand="${k.kind}">还有 ${more} 件 · 展开</button>`
+            : ''}`}
+      </div>
+    </li>`;
+  }).join('');
+}
+
+function techDetailsHtml(d) {
+  const te = state.toolEvents;
+  const tools = (te && Array.isArray(te.tools) ? te.tools : []).slice(0, 3)
+    .map((t) => `${t.tool_name} ${fmtInt(t.count)}`).join(' · ');
+  const last = te && te.tools && te.tools[0] && te.tools[0].recent && te.tools[0].recent[0];
+  const rows = [
+    ['工具事件总数', te && !te.collecting && te.total_all != null ? fmtInt(te.total_all) : '—'],
+    ['最近 15 分钟', te && !te.collecting && te.rate_15m ? fmtInt(te.rate_15m.total) : '—'],
+    ['工具调用 Top3', tools || '—'],
+    ['最近一次调用', last ? `${last.tool_name || '—'} · ${last.target || ''}`.slice(0, 80) : '—'],
+    ['任务检查点', `${d.goal?.checkpoints?.passed ?? 0} / ${d.goal?.checkpoints?.total ?? 0}`],
+    ['交付物记录', String(d.total ?? Object.values(d.counts || {}).reduce((n, x) => n + (Number(x) || 0), 0))],
+    ['采集脚本', 'scripts/collect-deliverables.mjs'],
+    ['口径', '主视图只放交付物；工具调用 / 进程 / 额度折叠在这里'],
+  ];
+  return rows.map(([k, v]) => `<div class="dl-tech__row"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('');
+}
+
+function renderDeliverables() {
+  const main = $('#deliverables-main');
+  const board = $('.board-main');
+  if (!main || !board) return;
+  const task = selectedTask();
+  const show = Boolean(task || state.showUnlinked);
+  main.hidden = !show;
+  board.hidden = show;
+  if (!show) return;
+
+  const hero = $('#dl-hero');
+  const timeline = $('#dl-timeline');
+  const tech = $('#dl-tech');
+  const techBody = $('#dl-tech-body');
+  const unlinked = $('#dl-unlinked');
+
+  if (state.showUnlinked) {
+    const data = state.unlinked;
+    const counts = data?.counts || {};
+    const total = data?.total ?? Object.values(counts).reduce((n, x) => n + (Number(x) || 0), 0);
+    const parts = DL_TIMELINE.map((k) => `${k.label} ${counts[k.kind] || 0}`).join(' · ');
+    hero.innerHTML = `<div class="dl-unlinked__head">
+      <h1>未关联交付物${total ? ` · ${total} 条` : ''}</h1>
+      <p>这些是真实文件/commit/评审，但没有匹配到任务标识，所以 task_id 留空，不硬塞给任何任务。${parts ? `<br>${esc(parts)}` : ''}</p>
+    </div>`;
+    timeline.innerHTML = state.unlinkedLoading
+      ? '<li class="dl-kind"><div class="dl-kind__body"><p class="dl-kind__hint">正在读取 /api/deliverables …</p></div></li>'
+      : state.unlinkedError
+        ? `<li class="dl-kind"><div class="dl-kind__body"><p class="dl-kind__empty">读取失败：${esc(state.unlinkedError)}</p></div></li>`
+        : timelineHtml(data?.groups || {});
+    tech.hidden = true;
+    unlinked.hidden = true;
+    return;
+  }
+
+  tech.hidden = false;
+  unlinked.hidden = true;
+  if (state.deliverablesLoading && (!state.deliverables || state.deliverablesFor !== task.task_id)) {
+    hero.innerHTML = `<div class="dl-hero__eyebrow"><span>交付物 · 任务</span><code>${esc(task.task_id)}</code></div>
+      <h1>${esc(task.title || task.task_id)}</h1>
+      <div class="goal-card"><p class="goal-card__goal">正在读取 /api/deliverables … 没有记录会显示「未产生」，不填假数据。</p></div>`;
+    timeline.innerHTML = '';
+    techBody.innerHTML = '';
+    return;
+  }
+  if (state.deliverablesError) {
+    hero.innerHTML = `<div class="dl-hero__eyebrow"><span>交付物 · 任务</span><code>${esc(task.task_id)}</code></div>
+      <h1>${esc(task.title || task.task_id)}</h1>
+      <div class="goal-card"><p class="goal-card__goal is-empty">交付物读取失败：${esc(state.deliverablesError)}</p></div>`;
+    timeline.innerHTML = '';
+    techBody.innerHTML = '';
+    return;
+  }
+  const d = state.deliverables;
+  if (!d || state.deliverablesFor !== task.task_id) return;
+
+  hero.innerHTML = `<div class="dl-hero__eyebrow"><span>交付物 · 任务</span><code>${esc(d.task?.task_id || task.task_id)}</code>
+      <span class="dl-task-status" data-tone="${dlStatusTone(d.task)}">${esc(taskLabel(d.task || task))}</span></div>
+    <h1>${esc(d.task?.title || task.title || task.task_id)}</h1>
+    ${goalCardHtml(d.goal, d.task)}`;
+  timeline.innerHTML = timelineHtml(d.groups || {});
+  techBody.innerHTML = techDetailsHtml(d);
 }
 
 /* ---------- 渲染：右侧一整列 ---------- */
 /* 选中任务 → 任务详情（本文件画）；选中 Agent → 与它的对话（board-chat.js 画，流式更新时不整块重绘） */
 function renderDetail() {
   const root = $('#detail-panel');
+  if (!root) return;
+
+  // 点交付物路径 → 右侧切内容预览；返回后回到任务详情。
+  if (state.preview) {
+    if (window.SodaChat) SodaChat.hide();
+    root.setAttribute('aria-live', 'polite');
+    root.classList.remove('is-chat');
+    root.innerHTML = previewHtml(state.preview);
+    root.classList.toggle('is-scrollable', root.scrollHeight > root.clientHeight + 1);
+    return;
+  }
+
+  if (state.showUnlinked) {
+    if (window.SodaChat) SodaChat.hide();
+    root.setAttribute('aria-live', 'polite');
+    root.classList.remove('is-chat');
+    root.innerHTML = unlinkedDetailHtml();
+    root.classList.toggle('is-scrollable', root.scrollHeight > root.clientHeight + 1);
+    return;
+  }
+
   const task = selectedTask();
   const agent = selectedAgent();
   if (task || !agent || !window.SodaChat) {
@@ -837,12 +1129,169 @@ function quotaDetailHtml(agentId) {
   </section>`;
 }
 
+/* ---------- 右侧：交付物内容预览 / 未关联说明 ---------- */
+function previewHtml(p) {
+  if (!p || p.loading) {
+    return `<div class="preview"><div class="preview__top"><button type="button" class="preview__back" data-preview-back>← 返回任务</button><span class="preview__kind">读取中</span></div>
+      <div class="preview__empty">正在读取交付物内容 …</div></div>`;
+  }
+  if (p.error) {
+    return `<div class="preview"><div class="preview__top"><button type="button" class="preview__back" data-preview-back>← 返回任务</button><span class="preview__kind">读取失败</span></div>
+      <h2>预览失败</h2><div class="preview__note">${esc(p.error)}</div></div>`;
+  }
+  const d = p.deliverable || {};
+  const kindLabel = DL_KIND_LABEL[d.kind] || d.kind_label || d.kind || '交付物';
+  const meta = [];
+  if (p.bytes != null) meta.push(`${fmtInt(p.bytes)} B`);
+  if (p.modifiedAt || d.created_at) meta.push(`更新 ${fmtDate(p.modifiedAt || d.created_at)}`);
+  if (p.truncated) meta.push('已截断');
+  let body = '';
+  if (p.preview === 'markdown') body = `<div class="preview__body">${renderMarkdown(p.text || '')}</div>`;
+  else if (p.preview === 'image') body = `<img class="preview__img" src="${esc(p.url)}" alt="${esc(p.title || '')}">`;
+  else if (p.preview === 'diff') body = diffHtml(p.text || '');
+  else if (p.preview === 'code') body = `<pre class="preview__code">${esc(p.text || '')}</pre>`;
+  else if (p.preview === 'text') body = `<pre class="preview__text">${esc(p.text || '')}</pre>`;
+  else body = `<div class="preview__note">${esc(p.note || '这个文件没有可显示的文本内容。')}</div>`;
+  return `<div class="preview">
+    <div class="preview__top"><button type="button" class="preview__back" data-preview-back>← 返回任务</button><span class="preview__kind">${esc(kindLabel)} · ${esc(p.preview || '')}</span></div>
+    <h2>${esc(p.title || d.title || '交付物预览')}</h2>
+    <div class="preview__path">${esc(p.display_path || p.path || '')}</div>
+    <div class="preview__meta">${esc(meta.join(' · '))}</div>
+    ${body}
+    ${p.note ? `<div class="preview__note">${esc(p.note)}</div>` : ''}
+  </div>`;
+}
+
+function diffHtml(text) {
+  const lines = String(text || '').split(/\r?\n/);
+  const out = lines.map((line) => {
+    let cls = 'diff-line';
+    if (/^(diff --git|index |--- |\+\+\+ )/.test(line)) cls += ' diff-line--meta';
+    else if (/^@@/.test(line)) cls += ' diff-line--hunk';
+    else if (/^\+/.test(line)) cls += ' diff-line--add';
+    else if (/^-/.test(line)) cls += ' diff-line--del';
+    return `<span class="${cls}">${esc(line) || ' '}</span>`;
+  }).join('');
+  return `<pre class="preview__diff">${out}</pre>`;
+}
+
+function unlinkedDetailHtml() {
+  const n = state.unlinked?.total;
+  return `<div class="detail__top">
+      <span class="agent-icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 20 20" fill="none"><path d="M3 4.4h6l1.4 1.6H17v9.6H3z" stroke="#4A4237" stroke-width="1.4" stroke-linejoin="round"/><path d="M6.6 9.2h6.8M6.6 12h4.4" stroke="#4A4237" stroke-width="1.4" stroke-linecap="round"/></svg></span>
+      <div><div class="detail__name">未关联交付物</div><div class="detail__sub">task_id = NULL</div></div>
+    </div>
+    <div class="detail__note">${state.unlinkedLoading ? '正在读取 …' : state.unlinkedError ? `读取失败：${esc(state.unlinkedError)}` : `共 ${n == null ? '—' : n} 条真实交付物没有匹配到任务标识。它们留在未关联区，不硬塞给任何任务。`}</div>
+    <section class="detail__section"><div class="detail__label">怎么处理</div>
+      <div class="detail__value">在中间主区逐类展开看；点路径在右侧预览。要归属到任务，需要文件路径或 commit message 里出现任务标识，采集器下次运行才会重新挂接。</div>
+    </section>`;
+}
+
+/** 极简 Markdown → HTML：只用于右列预览，输入先 esc，绝不把原文当 HTML 执行。 */
+function inlineMd(s) {
+  const codes = [];
+  let out = String(s || '').replace(/`([^`]+)`/g, (m, code) => {
+    codes.push(code);
+    return `\u0001${codes.length - 1}\u0001`;
+  });
+  out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  out = out.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, '$1<em>$2</em>');
+  out = out.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, label, url) => (
+    /^(https?:|\/|#|\.)/.test(url)
+      ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>`
+      : label
+  ));
+  out = out.replace(/\u0001(\d+)\u0001/g, (m, i) => `<code>${codes[Number(i)] || ''}</code>`);
+  return out;
+}
+
+function renderMarkdown(md) {
+  const lines = String(md || '').replace(/\r\n/g, '\n').split('\n');
+  let html = '';
+  let list = null;
+  const closeList = () => { if (list) { html += `</${list}>`; list = null; } };
+  let i = 0;
+  while (i < lines.length) {
+    const raw = lines[i];
+    const line = raw.trim();
+    if (/^```/.test(line)) {
+      closeList();
+      const buf = [];
+      i += 1;
+      while (i < lines.length && !/^```/.test(lines[i].trim())) { buf.push(lines[i]); i += 1; }
+      i += 1;
+      html += `<pre><code>${esc(buf.join('\n'))}</code></pre>`;
+      continue;
+    }
+    if (!line) { closeList(); i += 1; continue; }
+    if (/^\|.*\|$/.test(line) && i + 1 < lines.length && /^\|[\s:|-]+\|$/.test(lines[i + 1].trim())) {
+      closeList();
+      const cells = (row) => row.trim().slice(1, -1).split('|').map((c) => c.trim());
+      const head = cells(line);
+      const rows = [];
+      i += 2;
+      while (i < lines.length && /^\|.*\|$/.test(lines[i].trim())) { rows.push(cells(lines[i])); i += 1; }
+      html += `<table><thead><tr>${head.map((c) => `<th>${inlineMd(esc(c))}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${inlineMd(esc(c))}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+      continue;
+    }
+    const h = line.match(/^(#{1,6})\s+(.*)$/);
+    if (h) {
+      closeList();
+      const level = h[1].length;
+      html += `<h${level}>${inlineMd(esc(h[2]))}</h${level}>`;
+      i += 1;
+      continue;
+    }
+    if (/^>\s?/.test(line)) {
+      closeList();
+      const buf = [];
+      while (i < lines.length && /^>\s?/.test(lines[i].trim())) { buf.push(lines[i].trim().replace(/^>\s?/, '')); i += 1; }
+      html += `<blockquote>${renderMarkdown(buf.join('\n'))}</blockquote>`;
+      continue;
+    }
+    if (/^[-*+]\s+/.test(line)) {
+      if (list !== 'ul') { closeList(); html += '<ul>'; list = 'ul'; }
+      html += `<li>${inlineMd(esc(line.replace(/^[-*+]\s+/, '')))}</li>`;
+      i += 1;
+      continue;
+    }
+    if (/^\d+\.\s+/.test(line)) {
+      if (list !== 'ol') { closeList(); html += '<ol>'; list = 'ol'; }
+      html += `<li>${inlineMd(esc(line.replace(/^\d+\.\s+/, '')))}</li>`;
+      i += 1;
+      continue;
+    }
+    if (/^(-{3,}|\*{3,})$/.test(line)) { closeList(); html += '<hr>'; i += 1; continue; }
+    closeList();
+    const buf = [line];
+    i += 1;
+    while (i < lines.length) {
+      const next = lines[i].trim();
+      if (!next || /^(#{1,6}\s|```|>|\||[-*+]\s|\d+\.\s)/.test(next) || /^(-{3,}|\*{3,})$/.test(next)) break;
+      buf.push(next);
+      i += 1;
+    }
+    html += `<p>${inlineMd(esc(buf.join(' ')))}</p>`;
+  }
+  closeList();
+  return html;
+}
+
 function taskDetailHtml(t) {
   const done = Number(t.progress?.done) || 0;
   const total = Number(t.progress?.total) || 0;
   const p = pct(done, total);
+  const dl = state.deliverables && state.deliverablesFor === t.task_id ? state.deliverables : null;
+  const goal = dl ? dl.goal : null;
+  const goalLabel = goal ? (DL_JUDGEMENT[goal.judgement] || goal.judgement_label || '—') : '读取中';
   const remaining = Array.isArray(t.remaining) ? t.remaining : [];
   const artifacts = Array.isArray(t.latest_artifacts) ? t.latest_artifacts.slice(0, 2) : [];
+  const recent = dl
+    ? Object.values(dl.groups || {}).flat()
+      .filter((x) => x && x.deliverable_id)
+      .sort((a, b) => Date.parse(b.created_at || 0) - Date.parse(a.created_at || 0))
+      .slice(0, 4)
+    : [];
   const step = t.current_step?.name || t.current_step?.key || '—';
   return `
     <div class="detail__top">
@@ -853,7 +1302,17 @@ function taskDetailHtml(t) {
       </div>
       <span class="detail__state chip">${esc(taskLabel(t))}</span>
     </div>
-    <div class="detail__note"><b>${esc(t.title || t.task_id)}</b><br>${esc(t.status_reason || '没有状态说明。')}</div>
+    <div class="detail__note"><b>${esc(t.title || t.task_id)}</b><br>${esc(t.status_reason || '没有状态说明。')}<br><span class="detail__back">六类交付物已显示在中间主区 · 点路径在右侧预览</span></div>
+
+    ${goal ? `<section class="detail__section">
+      <div class="detail__label">目标达成<span>${esc(goalLabel)}</span></div>
+      <div class="detail__value">${goal.goal ? esc(goal.goal) : '未设定目标'}</div>
+      <div class="kv-list">
+        <div class="kv-row"><span>达成度</span><b>${goal.checkpoints?.passed ?? 0} / ${goal.checkpoints?.total ?? 0} 检查点</b></div>
+        <div class="kv-row"><span>验收项</span><b>${goal.criteria?.passed ?? 0} / ${goal.criteria?.total ?? 0}${goal.percent == null ? '' : ` · ${goal.percent}%`}</b></div>
+        <div class="kv-row"><span>差距</span><b>${(goal.gaps || []).length ? esc(goal.gaps.join('；')) : '无'}</b></div>
+      </div>
+    </section>` : ''}
 
     <section class="detail__section">
       <div class="detail__label">进度<span>${p}%</span></div>
@@ -861,15 +1320,17 @@ function taskDetailHtml(t) {
       <div class="kv-list">
         <div class="kv-row"><span>当前步骤</span><b>${esc(step)}</b></div>
         <div class="kv-row"><span>剩余步骤</span><b>${remaining.length ? remaining.map((r) => esc(r)).join(' / ') : '—'}</b></div>
-        <div class="kv-row"><span>交付物</span><b>${Number(t.artifact_count) || 0} 个</b></div>
+        <div class="kv-row"><span>交付物</span><b>${dl ? (dl.total || 0) : (Number(t.artifact_count) || 0)} 个</b></div>
         <div class="kv-row"><span>证据源</span><b class="mono">${esc(evidenceLabel(t.evidence_source))}</b></div>
         <div class="kv-row"><span>观测于</span><b>${esc(relTime(t.observed_at))}</b></div>
       </div>
     </section>
 
     <section class="detail__section">
-      <div class="detail__label">最近交付物</div>
-      <div class="detail__artifacts">${artifacts.length ? artifacts.map((a) => {
+      <div class="detail__label">最近交付物<span>${dl ? `${dl.total || 0} 件` : ''}</span></div>
+      <div class="detail__artifacts">${recent.length ? recent.map((a) => (
+        `<div class="detail__artifact"><span title="${esc(a.display_path || a.title || '')}">${esc(a.title || a.display_path || '')}</span><span>${esc(a.kind_label || '')}</span></div>`
+      )).join('') : artifacts.length ? artifacts.map((a) => {
         const name = String(a.path || '').split(String.fromCharCode(92)).join('/').split('/').pop();
         return `<div class="detail__artifact"><span title="${esc(a.path || '')}">${esc(name)}</span><span>${shortNum(a.bytes || 0)}B</span></div>`;
       }).join('') : '<div class="detail__reason">— 没有交付物记录</div>'}</div>
@@ -954,6 +1415,7 @@ function renderAll() {
   renderMeta();
   renderTurntable();
   renderTasks();
+  renderDeliverables();
   renderDetail();
   renderProgress();
   renderDataCards();
@@ -1025,6 +1487,40 @@ function bindEvents() {
     showToast(state.loadError ? `刷新失败：${state.loadError}` : `已重新读取真实 API · ${ms}ms · 状态仍以证据为准`);
   });
 
+  // 交付物：点路径 → 右侧预览；返回；展开某类全部
+  document.addEventListener('click', (e) => {
+    const open = e.target.closest('[data-deliverable]');
+    if (open) {
+      e.preventDefault();
+      openPreview(open.dataset.deliverable);
+      return;
+    }
+    const back = e.target.closest('[data-preview-back]');
+    if (back) {
+      e.preventDefault();
+      closePreview();
+      return;
+    }
+    const more = e.target.closest('[data-kind-expand]');
+    if (more) {
+      e.preventDefault();
+      state.expandedKinds.add(more.dataset.kindExpand);
+      renderDeliverables();
+      return;
+    }
+    const un = e.target.closest('#unlinked-entry');
+    if (un) {
+      e.preventDefault();
+      state.showUnlinked = !state.showUnlinked;
+      state.preview = null;
+      state.selectedTaskId = null;
+      state.selectedAgentId = null;
+      if (state.showUnlinked) loadUnlinked();
+      renderAll();
+      showToast(state.showUnlinked ? '中间显示未关联交付物' : '已返回 Agent 状态');
+    }
+  });
+
   $('#task-filters').addEventListener('click', (e) => {
     const btn = e.target.closest('.filter');
     if (!btn) return;
@@ -1079,6 +1575,7 @@ async function init() {
   }
   await loadIcons();
   await loadData();
+  refreshUnlinkedSummary();
   if (state.loadError) showToast(`数据读取失败：${state.loadError}`);
 }
 

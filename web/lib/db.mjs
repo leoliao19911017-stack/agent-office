@@ -24,7 +24,7 @@ export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 4;
+const SCHEMA_VERSION = 5;
 
 /**
  * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
@@ -341,12 +341,45 @@ CREATE INDEX IF NOT EXISTS idx_tool_events_tool  ON tool_events(tool_name, ts);
 CREATE INDEX IF NOT EXISTS idx_tool_events_ts    ON tool_events(ts);
 `;
 
+/**
+ * v5（TASK-交付物视图与工作流编排 第一批）：deliverables 交付物表。
+ *
+ * 任务书 1.1 的结构，一处必要偏离：task_id 允许 NULL。任务书要求
+ * 「匹配不上就挂到未关联交付物区，不许硬塞给某个任务」——如果 task_id
+ * NOT NULL，就只能编一个假任务 id 或塞给随便一个任务，两者都违反铁律。
+ * NULL 在这里有明确语义：未关联。其余列与任务书一致。
+ *
+ * deliverable_id 由采集器按 (kind, task_id, 来源) 生成确定性 ID，
+ * 同一份真实来源重复采集不会产生重复行。
+ */
+const SCHEMA_V5_DELIVERABLES = `
+CREATE TABLE IF NOT EXISTS deliverables (
+  deliverable_id TEXT PRIMARY KEY,
+  task_id        TEXT,
+  attempt_id     TEXT,
+  kind           TEXT NOT NULL CHECK (kind IN ('requirement','task_spec','dev_output',
+                                                'artifact','review','retro','goal_report')),
+  title          TEXT NOT NULL,
+  path           TEXT,
+  content_ref    TEXT,
+  status         TEXT NOT NULL CHECK (status IN ('draft','submitted','accepted','rejected')),
+  created_by     TEXT,
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL,
+  FOREIGN KEY (task_id) REFERENCES tasks(task_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_deliverables_task ON deliverables(task_id, kind, created_at);
+CREATE INDEX IF NOT EXISTS idx_deliverables_kind ON deliverables(kind, created_at);
+`;
+
 /** 迁移清单：以后加表/加列时追加一项，版本号递增，已有库只跑增量。 */
 const MIGRATIONS = [
   { version: 1, up(db) { db.exec(SCHEMA_V1); } },
   { version: 2, up(db) { db.exec(SCHEMA_V2_CHAT); } },
   { version: 3, up(db) { db.exec(SCHEMA_V3_AGENTS); seedAgents(db); } },
   { version: 4, up(db) { db.exec(SCHEMA_V4_TOOL_EVENTS); } },
+  { version: 5, up(db) { db.exec(SCHEMA_V5_DELIVERABLES); } },
 ];
 
 /** 已打开的连接缓存：同一个 db 文件在一个进程里只建一个连接。 */

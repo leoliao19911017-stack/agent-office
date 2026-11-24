@@ -823,3 +823,166 @@ b, strong { font-weight: 600; }
   .tt-tool { padding: 5px 7px 4px; }
   .tt-tool__sample { margin-top: 1px; }
 }
+
+/* ═════════════════════════════════════════════════════════════════════════
+   TASK-交付物视图（第一批）：中央主区 = 任务交付物时间线 + 目标达成
+   口径：六类依次排列；没有的类别写「未产生」；工具调用折进「技术细节」。
+   ═════════════════════════════════════════════════════════════════════════ */
+.stage-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.deliverables-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+
+.unlinked-entry {
+  margin-top: 8px; flex: none; height: 34px; padding: 0 10px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  border: 1px dashed #D8CDBC; border-radius: 8px; background: #FBF7F0;
+  font-size: 12px; color: #6B6152; text-align: left;
+}
+.unlinked-entry:hover { border-color: #C9A45E; color: #4C4438; background: #FFF8EC; }
+.unlinked-entry b { font-family: var(--font-mono); font-size: 12px; color: #8A611D; }
+.unlinked-entry.is-active { border-style: solid; border-color: #C9A45E; background: #FBEBCB; }
+
+/* 任务头 + 目标达成 */
+.dl-hero {
+  flex: none; padding: 10px 13px 10px; border: 1px solid #E4DCCF; border-radius: 11px;
+  background: #FEFCF9; box-shadow: 0 1px 2px rgba(80, 66, 45, .05);
+}
+.dl-hero__eyebrow { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-4); }
+.dl-hero__eyebrow code { font-family: var(--font-mono); font-size: 11px; color: #7A6B55; }
+.dl-hero__eyebrow .dl-task-status { margin-left: auto; }
+.dl-hero h1 { margin-top: 2px; font-family: var(--font-serif); font-size: 19px; line-height: 1.3; color: #2B261F; }
+.dl-task-status { font-size: 11px; padding: 2px 8px; border-radius: 999px; border: 1px solid #E2D8C8; background: #FFFCF6; color: #756A59; }
+.dl-task-status[data-tone="ok"] { color: #4F6B45; background: #EEF3E8; border-color: #CBD8C0; }
+.dl-task-status[data-tone="live"] { color: #8A611D; background: #FBEBCB; border-color: #E8D3A7; }
+.dl-task-status[data-tone="bad"] { color: #8F4634; background: #FBF0EC; border-color: #E3C4BB; }
+
+.goal-card {
+  margin-top: 7px; padding: 8px 10px 7px; border: 1px solid #E8DDCB; border-radius: 9px;
+  background: #F8F3EA;
+}
+.goal-card__head { display: flex; align-items: center; gap: 8px; }
+.goal-card__head > span:first-child { font-family: var(--font-serif); font-size: 12px; font-weight: 600; letter-spacing: 1px; color: #8A7F6E; }
+.goal-badge { margin-left: auto; padding: 2px 9px; border-radius: 999px; border: 1px solid #D8CDBC; font-size: 11px; color: #6B6152; background: #FFFCF6; }
+.goal-badge[data-judgement="achieved"] { color: #4F6B45; background: #E8EFE1; border-color: #C8D8BC; }
+.goal-badge[data-judgement="partial"] { color: #8A611D; background: #FBEBCB; border-color: #E6CF9F; }
+.goal-badge[data-judgement="missed"] { color: #8F4634; background: #FBF0EC; border-color: #E3C4BB; }
+.goal-badge[data-judgement="no_goal"] { color: #7A7070; background: #F1EEE9; border-color: #DDD6CC; }
+.goal-card__goal { margin-top: 4px; font-size: 12px; line-height: 1.45; color: #453D31; white-space: pre-wrap; word-break: break-word; }
+.goal-card__goal.is-empty { color: #8F4634; }
+.goal-card__metrics { display: grid; grid-template-columns: 1.2fr .8fr .8fr; gap: 6px; margin-top: 6px; }
+.goal-card__metric { min-width: 0; padding: 4px 6px; border-radius: 7px; background: #FFFDF8; border: 1px solid #EDE4D6; }
+.goal-card__metric i { display: block; font-style: normal; font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+.goal-card__metric b { display: block; margin-top: 1px; font-family: var(--font-mono); font-size: 13px; font-weight: 500; color: #4A4237; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goal-card__gaps { margin-top: 5px; font-size: 12px; line-height: 1.55; color: #7A6052; word-break: break-word; }
+.goal-card__gaps b { color: #8F4634; font-weight: 600; }
+.goal-card__gaps.is-clear { color: #5F7254; }
+
+/* 时间线 */
+.dl-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding-right: 3px; scrollbar-width: thin; scrollbar-color: #D8CFC0 transparent; }
+.dl-timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dl-kind {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px;
+  padding: 7px 10px 8px; border: 1px solid #E4DCCF; border-radius: 10px; background: #FEFCF9;
+  box-shadow: 0 1px 2px rgba(80, 66, 45, .04);
+}
+.dl-kind__rail { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.dl-kind__no {
+  width: 26px; height: 26px; display: grid; place-items: center;
+  border-radius: 50%; border: 1px solid #DCCFB9; background: #F8F3EA;
+  font-family: var(--font-mono); font-size: 11px; color: #7A6B55;
+}
+.dl-kind__line { width: 1px; flex: 1; background: #E8DFD1; min-height: 8px; }
+.dl-kind__body { min-width: 0; }
+.dl-kind__head { display: flex; align-items: baseline; gap: 8px; }
+.dl-kind__head h2 { font-family: var(--font-serif); font-size: 15px; line-height: 1.25; font-weight: 600; color: #332D24; }
+.dl-kind__count { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+.dl-kind.is-empty { background: #FCFAF6; border-style: dashed; opacity: .82; }
+.dl-kind.is-empty .dl-kind__count { color: #A9513B; }
+.dl-kind__empty { margin-top: 3px; font-size: 12px; color: #A9513B; }
+.dl-kind__hint { margin-top: 2px; font-size: 11px; color: var(--ink-4); }
+.dl-items { list-style: none; margin: 5px 0 0; padding: 0; }
+.dl-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: baseline; padding: 3px 0; border-top: 1px dotted #EAE2D6; }
+.dl-item:first-child { border-top: 0; padding-top: 0; }
+.dl-item:last-child { padding-bottom: 0; }
+.dl-item__main { min-width: 0; display: flex; align-items: baseline; gap: 8px; }
+.dl-item__title { display: block; flex: 0 1 auto; max-width: 52%; font-size: 12.5px; line-height: 1.4; color: #3F382E; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dl-item__path {
+  display: block; flex: 1 1 auto; min-width: 0; max-width: 100%; margin-top: 0; padding: 0;
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.45; color: #7A5E33;
+  text-align: left; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.dl-item__path:hover { color: #8A611D; }
+.dl-item__status { font-size: 11px; padding: 1px 7px; border-radius: 999px; border: 1px solid #E2D8C8; background: #FFFCF6; color: #756A59; white-space: nowrap; }
+.dl-item__status[data-status="accepted"] { color: #4F6B45; background: #EEF3E8; border-color: #CBD8C0; }
+.dl-item__status[data-status="submitted"] { color: #8A611D; background: #FBEBCB; border-color: #E8D3A7; }
+.dl-item__status[data-status="rejected"] { color: #8F4634; background: #FBF0EC; border-color: #E3C4BB; }
+.dl-item time { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); white-space: nowrap; }
+.dl-more { padding: 4px 0 0; font-size: 11px; color: var(--ink-4); border-top: 1px dotted #EAE2D6; }
+
+/* 技术细节：默认折叠 */
+.dl-tech { flex: none; border: 1px solid #E4DCCF; border-radius: 9px; background: #FCFAF6; }
+.dl-tech summary { cursor: pointer; padding: 8px 12px; font-size: 12px; color: #6B6152; list-style: none; display: flex; align-items: baseline; gap: 8px; }
+.dl-tech summary::-webkit-details-marker { display: none; }
+.dl-tech summary::before { content: "▸"; font-size: 10px; color: #8A7F6E; }
+.dl-tech[open] summary::before { content: "▾"; }
+.dl-tech summary span { margin-left: auto; font-size: 11px; color: var(--ink-4); }
+.dl-tech__body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px 16px; padding: 0 12px 10px; }
+.dl-tech__row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--ink-3); border-top: 1px dotted #EAE2D6; padding-top: 4px; }
+.dl-tech__row b { font-family: var(--font-mono); font-weight: 500; color: #4A4237; }
+
+/* 未关联交付物区 */
+.dl-unlinked__head { padding: 11px 13px; border: 1px solid #E3C4BB; border-radius: 9px; background: #FBF0EC; }
+.dl-unlinked__head h1 { font-family: var(--font-serif); font-size: 18px; color: #6F3A2C; }
+.dl-unlinked__head p { margin-top: 3px; font-size: 12px; color: #8F5A48; }
+.dl-unlinked__groups { display: flex; flex-direction: column; gap: 8px; margin-top: 9px; }
+
+/* 右侧预览 */
+.preview__top { display: flex; align-items: center; gap: 8px; }
+.preview__back {
+  height: 28px; padding: 0 9px; border: 1px solid #E1D6C4; border-radius: 7px;
+  background: #FFFCF7; font-size: 12px; color: #5C4A2C;
+}
+.preview__back:hover { background: #FFF8EC; border-color: #DCC79F; }
+.preview__kind { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); }
+.preview h2 { margin-top: 9px; font-family: var(--font-serif); font-size: 17px; line-height: 1.35; color: #2B261F; word-break: break-word; }
+.preview__path { margin-top: 3px; font-family: var(--font-mono); font-size: 11px; color: #7A5E33; word-break: break-all; }
+.preview__meta { margin-top: 3px; font-size: 11px; color: var(--ink-4); }
+.preview__body { margin-top: 10px; font-size: 12.5px; line-height: 1.65; color: #3F382E; word-break: break-word; }
+.preview__body h1 { font-family: var(--font-serif); font-size: 18px; margin: 10px 0 5px; }
+.preview__body h2 { font-family: var(--font-serif); font-size: 16px; margin: 10px 0 4px; }
+.preview__body h3 { font-family: var(--font-serif); font-size: 14px; margin: 9px 0 3px; }
+.preview__body h4, .preview__body h5, .preview__body h6 { font-size: 13px; margin: 8px 0 3px; }
+.preview__body p { margin: 5px 0; }
+.preview__body ul, .preview__body ol { margin: 5px 0; padding-left: 18px; }
+.preview__body li { margin: 2px 0; }
+.preview__body blockquote { margin: 6px 0; padding: 4px 9px; border-left: 2px solid #D9C39C; color: #6B6152; background: #FAF5EC; }
+.preview__body code { font-family: var(--font-mono); font-size: 11.5px; padding: 1px 4px; border-radius: 4px; background: #F1EAE0; }
+.preview__body pre { margin: 7px 0; padding: 9px 10px; border-radius: 7px; background: #F7F1E8; border: 1px solid #E9DFD1; overflow-x: auto; }
+.preview__body pre code { padding: 0; background: none; font-size: 11px; line-height: 1.55; white-space: pre; }
+.preview__body table { border-collapse: collapse; width: 100%; margin: 7px 0; font-size: 11.5px; }
+.preview__body th, .preview__body td { border: 1px solid #E6DED1; padding: 3px 6px; text-align: left; vertical-align: top; }
+.preview__body th { background: #F6EFE4; font-weight: 600; }
+.preview__body a { color: #7A5E33; text-decoration: underline; }
+.preview__body hr { border: 0; border-top: 1px solid #E6DED1; margin: 8px 0; }
+.preview__code, .preview__text {
+  margin: 0; padding: 10px; max-height: 62vh; overflow: auto; border-radius: 8px;
+  border: 1px solid #E9DFD1; background: #F8F4EC;
+  font-family: var(--font-mono); font-size: 11px; line-height: 1.55; white-space: pre-wrap; word-break: break-word;
+}
+.preview__diff { margin: 0; padding: 9px 10px; max-height: 62vh; overflow: auto; border-radius: 8px; border: 1px solid #E9DFD1; background: #F8F4EC; font-family: var(--font-mono); font-size: 11px; line-height: 1.5; white-space: pre; }
+.diff-line { display: block; }
+.diff-line--add { color: #3F6B3A; background: #EDF4E8; }
+.diff-line--del { color: #8F4634; background: #FBEDE8; }
+.diff-line--hunk { color: #7A5E33; background: #F3EAD9; }
+.diff-line--meta { color: #6B6152; font-weight: 600; }
+.preview__img { display: block; max-width: 100%; margin-top: 10px; border: 1px solid #E4DCCF; border-radius: 8px; background: #fff; }
+.preview__note { margin-top: 8px; padding: 7px 9px; border-radius: 7px; background: #FBF0EC; border: 1px solid #E3C4BB; font-size: 12px; color: #8F4634; }
+.preview__empty { margin-top: 12px; padding: 12px; border: 1px dashed #D8CDBC; border-radius: 8px; font-size: 12px; color: var(--ink-4); }
+
+@media (max-width: 1360px) {
+  .dl-hero h1 { font-size: 19px; }
+  .goal-card__metrics { grid-template-columns: 1fr 1fr; }
+  .goal-card__metric:last-child { grid-column: span 2; }
+  .dl-item { grid-template-columns: minmax(0, 1fr) auto; }
+  .dl-item time { grid-column: 2; }
+}
