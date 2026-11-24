@@ -1,0 +1,9 @@
+{
+  "title": "Agent Chat P6：hermes adapter（F1-F2）",
+  "acceptance": "F1 hermes 能非交互对话：真实回复、session_id 入库、事件 started→delta→completed；F2 能续聊：--resume 同一 session，第 2 句答对第 1 句内容，界面可用。若做不到则 UI 明确标「不支持对话」。证据：docs/evidence/chat-p6/acceptance.md，复现：scripts/chat-v1/p6-acceptance/run.mjs；探测：scripts/chat-v1/probe-hermes.mjs",
+  "steps": [
+    { "key": "probe", "name": "实测 hermes 非交互入口与续聊能力" },
+    { "key": "adapter", "name": "hermes adapter + 引擎/面板接线" },
+    { "key": "acceptance", "name": "F1-F2 真实验收" }
+  ]
+}

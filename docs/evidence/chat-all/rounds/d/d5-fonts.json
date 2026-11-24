@@ -1,0 +1,642 @@
+{
+  "generatedAt": "2026-11-24T02:05:40.594Z",
+  "url": "http://127.0.0.1:8090/board-cromma.html",
+  "states": {
+    "claude-1440x900": {
+      "textNodes": 187,
+      "distribution": {
+        "12px": 111,
+        "12.5px": 3,
+        "13px": 39,
+        "14px": 20,
+        "16px": 1,
+        "18px": 6,
+        "19px": 1,
+        "22px": 3,
+        "24px": 1,
+        "34px": 1,
+        "40px": 1
+      },
+      "minFontSize": 12,
+      "under11": [],
+      "bodyRows": [
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        }
+      ],
+      "bodyTextMin": 13,
+      "buttonSizes": [
+        14
+      ],
+      "controls": [
+        {
+          "text": "对话 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "详情 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "给 Claude Code 的消 composer__input",
+          "size": 14,
+          "h": 48
+        },
+        {
+          "text": "发送 cbtn cbtn--primary",
+          "size": 14,
+          "h": 32
+        },
+        {
+          "text": "新对话 ",
+          "size": 12,
+          "h": 18
+        },
+        {
+          "text": "刷新记录 ",
+          "size": 12,
+          "h": 18
+        }
+      ],
+      "placeholder": 14
+    },
+    "dsh-1440x900": {
+      "textNodes": 165,
+      "distribution": {
+        "12px": 108,
+        "13px": 38,
+        "14px": 5,
+        "16px": 1,
+        "18px": 6,
+        "19px": 1,
+        "22px": 3,
+        "24px": 1,
+        "34px": 1,
+        "40px": 1
+      },
+      "minFontSize": 12,
+      "under11": [],
+      "bodyRows": [
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        }
+      ],
+      "bodyTextMin": 13,
+      "buttonSizes": [
+        14
+      ],
+      "controls": [
+        {
+          "text": "对话 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "详情 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "给 DSH 的消息 composer__input",
+          "size": 14,
+          "h": 48
+        },
+        {
+          "text": "发送 cbtn cbtn--primary",
+          "size": 14,
+          "h": 32
+        },
+        {
+          "text": "新对话 ",
+          "size": 12,
+          "h": 18
+        },
+        {
+          "text": "刷新记录 ",
+          "size": 12,
+          "h": 18
+        }
+      ],
+      "placeholder": 14
+    },
+    "claude-1280x800": {
+      "textNodes": 171,
+      "distribution": {
+        "12px": 99,
+        "12.5px": 3,
+        "13px": 35,
+        "14px": 20,
+        "16px": 1,
+        "17px": 4,
+        "18px": 2,
+        "19px": 1,
+        "22px": 4,
+        "30px": 1,
+        "34px": 1
+      },
+      "minFontSize": 12,
+      "under11": [],
+      "bodyRows": [
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        }
+      ],
+      "bodyTextMin": 13,
+      "buttonSizes": [
+        14
+      ],
+      "controls": [
+        {
+          "text": "对话 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "详情 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "给 Claude Code 的消 composer__input",
+          "size": 14,
+          "h": 48
+        },
+        {
+          "text": "发送 cbtn cbtn--primary",
+          "size": 14,
+          "h": 32
+        },
+        {
+          "text": "新对话 ",
+          "size": 12,
+          "h": 18
+        },
+        {
+          "text": "刷新记录 ",
+          "size": 12,
+          "h": 18
+        }
+      ],
+      "placeholder": 14
+    },
+    "claude-1936x1056": {
+      "textNodes": 191,
+      "distribution": {
+        "12px": 115,
+        "12.5px": 3,
+        "13px": 39,
+        "14px": 20,
+        "16px": 1,
+        "18px": 6,
+        "19px": 1,
+        "22px": 3,
+        "24px": 1,
+        "34px": 1,
+        "40px": 1
+      },
+      "minFontSize": 12,
+      "under11": [],
+      "bodyRows": [
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "task-row__title",
+          "size": 13
+        },
+        {
+          "sel": "",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "agent-card__doing",
+          "size": 13
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        },
+        {
+          "sel": "msg__bubble",
+          "size": 14
+        }
+      ],
+      "bodyTextMin": 13,
+      "buttonSizes": [
+        14
+      ],
+      "controls": [
+        {
+          "text": "对话 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "详情 seg__item",
+          "size": 13,
+          "h": 28
+        },
+        {
+          "text": "给 Claude Code 的消 composer__input",
+          "size": 14,
+          "h": 48
+        },
+        {
+          "text": "发送 cbtn cbtn--primary",
+          "size": 14,
+          "h": 32
+        },
+        {
+          "text": "新对话 ",
+          "size": 12,
+          "h": 18
+        },
+        {
+          "text": "刷新记录 ",
+          "size": 12,
+          "h": 18
+        }
+      ],
+      "placeholder": 14
+    }
+  },
+  "pass": true
+}

@@ -1,0 +1,56 @@
+{
+  "at": "2026-11-24T01:05:50.602Z",
+  "where": "C:\\Users\\Administrator\\AppData\\Local\\hermes\\hermes-agent\\venv\\Scripts\\hermes.exe\r\nC:\\Users\\Administrator\\AppData\\Local\\hermes\\bin\\hermes.exe",
+  "version": "Hermes Agent v0.21.3 (2026.9.14)\r\nInstall directory: C:\\Users\\Administrator\\AppData\\Local\\hermes\\hermes-agent\r\nInstall method: git\r\nPython: 3.11.16\r\nOpenAI SDK: 2.24.0",
+  "oneshot": {
+    "status": 0,
+    "stdout": "HERMES_ONESHOT_OK"
+  },
+  "turn1": {
+    "code": 0,
+    "sessionId": "20261124_090541_719645",
+    "text": "记住了：Leo，幸运数字 42，猫叫汽水。\n\n等下随时问。",
+    "event_types": [
+      "system",
+      "text",
+      "result"
+    ],
+    "stderr": "session_id: 20261124_090541_719645"
+  },
+  "turn2": {
+    "code": 0,
+    "sessionId": "20261124_090541_719645",
+    "text": "42",
+    "same_session": true
+  },
+  "bad_resume": {
+    "code": 1,
+    "sessionId": "does-not-exist-xyz",
+    "events": [
+      {
+        "type": "system",
+        "subtype": "init",
+        "model": "deepseek-v4-flash",
+        "session_id": "does-not-exist-xyz",
+        "timestamp": 1795482350019
+      },
+      {
+        "type": "result",
+        "session_id": "does-not-exist-xyz",
+        "exit_code": 1,
+        "text": "",
+        "tokens": {
+          "input": 0,
+          "output": 0,
+          "total": 0,
+          "cache_read": 0,
+          "cache_write": 0
+        },
+        "duration_ms": 355,
+        "error": "credentials or agent init failed",
+        "timestamp": 1795482350375
+      }
+    ],
+    "stderr": "Session not found: does-not-exist-xyz\r\nUse a session ID from a previous CLI run (hermes sessions list).\r\n\r\nsession_id: does-not-exist-xyz"
+  }
+}

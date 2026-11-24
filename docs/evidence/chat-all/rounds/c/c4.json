@@ -1,0 +1,60 @@
+{
+  "cases": [
+    {
+      "how": "把 thread 的 provider_session_id 改成不存在的 ID，dsh 真的报 does not exist",
+      "thread_id": "th-657ab3290f",
+      "turn_id": "ct-c4d046ff49",
+      "events": [
+        {
+          "id": null,
+          "event": "snapshot",
+          "at_ms": 1,
+          "data": "{\"type\":\"snapshot\",\"turn_id\":\"ct-c4d046ff49\",\"at\":\"2026-11-24T02:01:47.276Z\",\"status\":\"restoring\",\"text\":\"\",\"event_seq\":2,\"replay_from\":0,\"resume\":true,\"error\":null,\"queued_ahead\":0}"
+        },
+        {
+          "id": "1",
+          "event": "restoring",
+          "at_ms": 1,
+          "data": "{\"provider\":\"dsh\",\"resume\":true,\"status\":\"restoring\",\"provider_session_id\":\"session-00000000-0000-4000-8000-000000000000\",\"workspace\":\"E:\\\\DesktopProjects\\\\Soda Intelligence - AI Native Thinking\\\\Soda Office\",\"mode\":\"discuss\",\"attempt_id\":\"ca-88547431a1\",\"queued_ms\":99,\"queued_ahead\":0,\"seq\":1,\"type\":\"restoring\",\"turn_id\":\"ct-c4d046ff49\",\"at\":\"2026-11-24T02:01:47.192Z\"}"
+        },
+        {
+          "id": "2",
+          "event": "status",
+          "at_ms": 1,
+          "data": "{\"status\":\"restoring\",\"pid\":43472,\"cli_command\":\"\\\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\\\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-00000000-0000-4000-8000-000000000000 -\",\"seq\":2,\"type\":\"status\",\"turn_id\":\"ct-c4d046ff49\",\"at\":\"2026-11-24T02:01:47.247Z\"}"
+        },
+        {
+          "id": "3",
+          "event": "error",
+          "at_ms": 2224,
+          "data": "{\"seq\":3,\"type\":\"error\",\"turn_id\":\"ct-c4d046ff49\",\"at\":\"2026-11-24T02:01:49.474Z\",\"status\":\"failed\",\"text_len\":0,\"kind\":\"session_not_found\",\"code\":\"session_not_found\",\"reason\":\"session_not_found\",\"label\":\"会话已丢失\",\"message\":\"DSH 找不到会话 session-00000000-0000-4000-8000-000000000000：session \\\"session-00000000-0000-4000-8000-000000000000\\\" does not exist; omit --session-id to start a new Session\",\"text\":"
+        }
+      ]
+    },
+    {
+      "how": "建对话后把工作目录改成不存在的路径",
+      "thread_id": "th-926cb44a38",
+      "turn_id": "ct-2b015e8e86",
+      "events": [
+        {
+          "id": null,
+          "event": "snapshot",
+          "at_ms": 1,
+          "data": "{\"type\":\"snapshot\",\"turn_id\":\"ct-2b015e8e86\",\"at\":\"2026-11-24T02:01:49.809Z\",\"status\":\"failed\",\"text\":\"\",\"event_seq\":2,\"replay_from\":0,\"resume\":false,\"error\":{\"kind\":\"cli_start_failed\",\"code\":\"cli_start_failed\",\"reason\":\"workspace_not_found\",\"label\":\"Agent 启动失败\",\"message\":\"工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/c/ws-1795485706992"
+        },
+        {
+          "id": "1",
+          "event": "started",
+          "at_ms": 1,
+          "data": "{\"provider\":\"dsh\",\"resume\":false,\"status\":\"starting\",\"provider_session_id\":null,\"workspace\":\"E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/c/ws-1795485706992\",\"mode\":\"discuss\",\"attempt_id\":\"ca-6d76e430c9\",\"queued_ms\":115,\"queued_ahead\":0,\"seq\":1,\"type\":\"started\",\"turn_id\":\"ct-2b015e8e86\",\"at\":\"2026-11-24T02:01:49.641Z\"}"
+        },
+        {
+          "id": "2",
+          "event": "error",
+          "at_ms": 1,
+          "data": "{\"turn_id\":\"ct-2b015e8e86\",\"status\":\"failed\",\"text_len\":0,\"kind\":\"cli_start_failed\",\"code\":\"cli_start_failed\",\"reason\":\"workspace_not_found\",\"label\":\"Agent 启动失败\",\"message\":\"工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/c/ws-1795485706992\",\"text\":\"工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence"
+        }
+      ]
+    }
+  ]
+}

@@ -14,8 +14,8 @@
 | **P2** | dsh adapter | 和 dsh 连聊 3 轮，能接上下文 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p2/acceptance.md` / `.html`） |
 | **P3** | SSE 流式输出 | 回复是逐字出现的，不是等全部结束 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p3/acceptance.md` / `.html`） |
 | **P4** | 前端聊天面板（Coss 风格） | 点 agent 卡开面板，气泡左右对齐，刷新历史还在 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p4/acceptance.md` / `.html`） |
-| **P5** | 失败处理与状态机 | 429 / 启动失败 / 断流 都有明确状态和文案 | 待做 |
-| **P6** | hermes adapter | hermes 能对话（能力按实测，不强行伪装） | 待做 |
+| **P5** | 失败处理与状态机 | 429 / 启动失败 / 断流 都有明确状态和文案 | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p5/acceptance.md`，commit `f06ace6`） |
+| **P6** | hermes adapter | hermes 能对话（能力按实测，不强行伪装） | ✅ 完成 2026-11-24（证据：`docs/evidence/chat-p6/acceptance.md`，commit `1e09fcd`） |
 | **P7** | 全量回归 + 交付 | T1-T10 全过，交 GPT 评审 | 待做 |
 
 ---
@@ -303,7 +303,47 @@ GET /api/chat/turns/:turn_id/stream        text/event-stream；每帧 id: <seq>�
 
 ---
 
-## 后续批次（P1 完成后再细化，先给方向）
+## P5 完成记录（2026-11-24）
+
+- E1-E5 全过（11/11，`scripts/chat-v1/p5-acceptance/run.mjs` 退出码 0，预期外页面错误 0）：
+  - E1a 真 Claude CLI 打本地假上游吃真 HTTP 429，10 次退避后落 `rate_limited/rate_limit`，
+    没有重置时间就写「稍后可以重试；CLI 已自动重试 10/10 次仍未通过」，不编倒计时。
+  - E1b GLM 真实额度文案 + 真 429，`rate_limited/quota_exhausted`，从原文解析出
+    `2026-11-25T01:30:00.000Z`（本机 09:30），界面显示「请求受限 · 额度已用尽 · 额度 11/25 09:30 重置」。
+  - E2 三种启动失败都真制造：路径错 / 命令找不到 / `icacls` 真权限拒绝，轮次 `failed` + 具体 reason，
+    用户消息同时标 `failed`。
+  - E3a 掐断浏览器到服务的 5 条 TCP，横幅「连接中断，正在重连…」，自动重连后 108 字与库逐字一致；
+    E3b 真重启 8090，重连后如实落 `interrupted/server_restarted`。
+  - E4 新对话 / 服务被杀 / CLI 无 final 三种都没有证据，一律 `unknown`，全页没有把聊天状态写成「空闲」。
+  - E5 同一 thread 连发两条：第 2 条 `queued_ahead=1`，53 次采样「两个 turn 同时在跑」0 次，
+    第 2 条 `queued_ms=10412`，`started_at` 晚于第 1 条 `ended_at`。
+- 证据：`docs/evidence/chat-p5/acceptance.md` + `run.log` + 11 张截图 / e*.json；复现 `scripts/chat-v1/p5-acceptance/`。
+- Agent Office：task `t-20261123215344-206353` / attempt `a-0a2f3b7b-mwtsyz7u`，checkpoint `ck-mwu0fg3w-6c7a1d`，finish `completed`。
+- 口径：429 / 额度统一叫「请求受限」，细分 `error.code` 保留 `rate_limit` / `quota_exhausted`。
+
+---
+
+## P6 完成记录（2026-11-24）
+
+- 先探测后接：`hermes v0.21.3` 有非交互入口
+  `hermes chat --query-file - --format stream-json --oneshot`（stdout NDJSON：init/session_id → text → result），
+  `--resume <session_id>` 实测第 2 轮答对第 1 轮内容；未知 ID 报 `Session not found`。
+  原始探测：`docs/evidence/chat-p6/probe.txt` / `probe.json`，脚本 `scripts/chat-v1/probe-hermes.mjs`。
+- 新增 `web/chat/adapters/hermes-chat.mjs`：中文走 stdin（不经 Windows 命令行）、session_id 入库、
+  续聊 `--resume`、启动失败 / 会话丢失 / 限流各有归因；讨论模式只开 `web,session_search`，
+  不开放 file/terminal/code_execution，面板按 provider 如实写「读不了本机文件」。
+- F1-F2 全过（2/2，`scripts/chat-v1/p6-acceptance/run.mjs` 退出码 0，页面错误 0）：
+  F1 真 hermes thread `th-75a159e5b0`，事件 started → delta×3 → completed，delta 与助手消息逐字一致，
+  `provider_session_id=20261124_090702_ab2df9`；F2 界面第 2 句「数字是多少」答 `42`，
+  `resume=true`、首条事件 `restoring`、session 不变。
+- 证据：`docs/evidence/chat-p6/acceptance.md` + `f2-hermes-multiturn-1440x900.png`；commit `1e09fcd`。
+- Agent Office：task `t-20261124012312-4b272e` / attempt `a-85d2fa95-mwu0geq7` / finish `completed`。
+- 如实边界：`/api/agents/status-v2` 里 hermes 仍是 `available=null / no_self_report`（执行态未知），
+  但对话能力已实测可用；没有把执行态未知改成「可用」来美化看板。
+
+---
+
+## 后续批次（P7 完成后再细化，先给方向）
 
 **P2 dsh adapter**
 ```

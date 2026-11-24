@@ -1,0 +1,19 @@
+
+=== EaseDraw iframe 嵌入自检 ===
+hash=#easedraw route=easedraw boardHidden=true easeHidden=false
+iframe src=/easedraw/index.html
+iframe 尺寸 1144×737.5；容器 1146×739.5；贴合=true
+外层滚动：doc 900/900，body 900/900
+iframe 内滚动：doc 738/738，body 738/738，body overflow=hidden
+EaseDraw 内容：title=逸刻 EaseDraw · 一幅画的时间；#app 子节点=1；文案=逸刻 · EaseDraw 一幅画的时间 专注多久，画就画多久。 画完，盖上你的印，挂进自己的展厅。 白天 · 专注 选一幅名画，它陪你从线稿一直画到完成 夜里…
+点“开始”后进入下一屏：true；文案=今晚 02:34 · 从这一幅起，跟着呼吸慢慢画 入睡 睡莲 莫奈 1906 星月夜 梵高 1889 夜曲：蓝与金 惠斯勒 1872 罗纳河上的星夜 梵高 18…
+后退：{"hash":"#board","route":"board","boardHidden":false,"easeHidden":true}
+前进：{"hash":"#easedraw","route":"easedraw","boardHidden":true,"easeHidden":false} iframe 文案=逸刻 · EaseDraw
+一幅画的时间
+
+专注多久，画就画多久。
+画完，盖上你…
+点“看板”切回：{"hash":"#board","boardHidden":false,"easeHidden":true}
+页面错误：0
+
+PASS：EaseDraw 在中央真实跑通；无双滚动条；hash 可前进后退

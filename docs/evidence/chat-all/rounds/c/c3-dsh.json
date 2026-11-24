@@ -1,0 +1,57 @@
+{
+  "thread_id": "th-ca4647ad7a",
+  "turn_id": "ct-7007346f1c",
+  "first": [
+    {
+      "id": null,
+      "event": "snapshot",
+      "at_ms": 212,
+      "data": ""
+    },
+    {
+      "id": "1",
+      "event": "started",
+      "at_ms": 212,
+      "data": "{"
+    },
+    {
+      "id": "2",
+      "event": "status",
+      "at_ms": 212,
+      "data": "{\""
+    }
+  ],
+  "second": [
+    {
+      "id": null,
+      "event": "snapshot",
+      "at_ms": 213,
+      "data": ""
+    },
+    {
+      "id": "3",
+      "event": "status",
+      "at_ms": 2402,
+      "data": "{"
+    },
+    {
+      "id": "4",
+      "event": "delta",
+      "at_ms": 3351,
+      "data": "{\""
+    },
+    {
+      "id": "5",
+      "event": "status",
+      "at_ms": 3351,
+      "data": "{\"s"
+    },
+    {
+      "id": "6",
+      "event": "completed",
+      "at_ms": 3467,
+      "data": "{\"se"
+    }
+  ],
+  "final_text": "我是 DeepSeek 的编程智能体，可以阅读代码、运行命令，并帮你把开发任务从头做完。"
+}

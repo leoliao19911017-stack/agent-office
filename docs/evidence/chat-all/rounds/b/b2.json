@@ -1,0 +1,107 @@
+{
+  "m2": {
+    "request": "第二句：用一句话介绍你自己，不要用工具。",
+    "turn": {
+      "turn_id": "ct-934c628e09",
+      "thread_id": "th-76ecac2d79",
+      "attempt_id": "ca-a968f07942",
+      "status": "completed",
+      "status_label": "回答完成",
+      "display_status": "completed",
+      "display_label": "完成",
+      "provider": "dsh",
+      "resume": true,
+      "user_message_id": "cm-40df41bb74",
+      "assistant_message_id": "cm-af4055b109",
+      "error": null,
+      "started_at": "2026-11-24T02:00:38.073Z",
+      "ended_at": "2026-11-24T02:00:43.327Z",
+      "created_at": "2026-11-24T02:00:37.945Z"
+    },
+    "reply": "我是 DeepSeek Harness 驱动的编程智能体，能读写代码、运行命令、查资料并调度子智能体，帮你把开发任务从头做到尾。"
+  },
+  "m3": {
+    "request": "第三句：我在这次对话最开始告诉过你一个口令。请原样复述那个口令，只回复口令本身。",
+    "turn": {
+      "turn_id": "ct-920c8f7657",
+      "thread_id": "th-76ecac2d79",
+      "attempt_id": "ca-0629efafd6",
+      "status": "completed",
+      "status_label": "回答完成",
+      "display_status": "completed",
+      "display_label": "完成",
+      "provider": "dsh",
+      "resume": true,
+      "user_message_id": "cm-e52b3599f0",
+      "assistant_message_id": "cm-047e6aca2a",
+      "error": null,
+      "started_at": "2026-11-24T02:00:43.937Z",
+      "ended_at": "2026-11-24T02:00:49.141Z",
+      "created_at": "2026-11-24T02:00:43.821Z"
+    },
+    "reply": "青禾-9241",
+    "events": [
+      {
+        "provider": "dsh",
+        "resume": true,
+        "status": "restoring",
+        "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021",
+        "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+        "mode": "discuss",
+        "attempt_id": "ca-0629efafd6",
+        "queued_ms": 116,
+        "queued_ahead": 0,
+        "seq": 1,
+        "type": "restoring",
+        "turn_id": "ct-920c8f7657",
+        "at": "2026-11-24T02:00:43.970Z"
+      },
+      {
+        "status": "restoring",
+        "pid": 31872,
+        "cli_command": "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-91a3a22b-b827-4499-be1c-63944b1d7021 -",
+        "seq": 2,
+        "type": "status",
+        "turn_id": "ct-920c8f7657",
+        "at": "2026-11-24T02:00:44.042Z"
+      },
+      {
+        "status": "restoring",
+        "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021",
+        "resumed": true,
+        "seq": 3,
+        "type": "status",
+        "turn_id": "ct-920c8f7657",
+        "at": "2026-11-24T02:00:46.068Z"
+      },
+      {
+        "text": "青禾-9241",
+        "seq": 4,
+        "type": "delta",
+        "turn_id": "ct-920c8f7657",
+        "at": "2026-11-24T02:00:49.072Z"
+      },
+      {
+        "status": "running",
+        "label": null,
+        "seq": 5,
+        "type": "status",
+        "turn_id": "ct-920c8f7657",
+        "at": "2026-11-24T02:00:49.093Z"
+      },
+      {
+        "turn_id": "ct-920c8f7657",
+        "status": "completed",
+        "text_len": 7,
+        "message_id": "cm-047e6aca2a",
+        "usage": null,
+        "num_turns": null,
+        "duration_ms": null,
+        "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021",
+        "seq": 6,
+        "type": "completed",
+        "at": "2026-11-24T02:00:49.218Z"
+      }
+    ]
+  }
+}

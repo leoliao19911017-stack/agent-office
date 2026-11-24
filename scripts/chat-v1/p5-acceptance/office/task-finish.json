@@ -1,0 +1,6 @@
+{
+  "evidence": "docs/evidence/chat-p5/acceptance.md",
+  "note": "E1-E5 全过（scripts/chat-v1/p5-acceptance/run.mjs 退出码 0，11/11 断言，预期外页面错误 0）。真 Claude CLI 吃真 HTTP 429 两种；启动失败三种（含 icacls 真权限拒绝）；浏览器断流与服务重启；unknown 三种；同 thread 排队 queued_ahead=1、两 turn 同时在跑 0 次。证据含 run.log、summary.json、11 张截图。",
+  "attempt_id": "a-0a2f3b7b-mwtsyz7u",
+  "code_sha": "f06ace681f082e90d0daab353914acdd2fcf7d51"
+}

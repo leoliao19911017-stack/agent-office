@@ -1,0 +1,19 @@
+{
+  "bin": "C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd",
+  "at": "2026-11-24T02:01:10.314Z",
+  "flag": "session-id",
+  "first": {
+    "kind": "completed",
+    "sessionId": "session-5d5b8873-3f95-4bfa-938e-3d8438a68913",
+    "text": "收到"
+  },
+  "resume": {
+    "kind": "completed",
+    "reason": null,
+    "exitCode": 0,
+    "sessionId": "session-5d5b8873-3f95-4bfa-938e-3d8438a68913",
+    "text": "青禾-9241",
+    "message": null,
+    "command": "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-5d5b8873-3f95-4bfa-938e-3d8438a68913 -"
+  }
+}

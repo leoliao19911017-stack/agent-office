@@ -1,17 +1,17 @@
 {
-  "thread_id": "th-a0e2746961",
-  "turn_id": "ct-0f11417384",
+  "thread_id": "th-4b2ddf7371",
+  "turn_id": "ct-8c4d3665a6",
   "content_type": "text/event-stream; charset=utf-8",
   "retry": 1500,
   "raw_frames": [
-    "event: snapshot\ndata: {\"type\":\"snapshot\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:03.789Z\",\"status\":\"starting\",\"text\":\"\",\"event_seq\":2,\"replay_from\":0,\"resume\":false,\"error\":null,\"queued_ahead\":0}",
-    "id: 1\nevent: started\ndata: {\"provider\":\"claude\",\"resume\":false,\"status\":\"starting\",\"provider_session_id\":null,\"workspace\":\"E:\\\\DesktopProjects\\\\Soda Intelligence - AI Native Thinking\\\\Soda Office\",\"mode\":\"discuss\",\"attempt_id\":\"ca-ea45d00e66\",\"queued_ms\":114,\"queued_ahead\":0,\"seq\":1,\"ty",
-    "id: 2\nevent: status\ndata: {\"status\":\"starting\",\"pid\":32992,\"cli_command\":\"claude\",\"seq\":2,\"type\":\"status\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:03.754Z\"}",
-    "id: 3\nevent: status\ndata: {\"seq\":3,\"type\":\"status\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:04.467Z\",\"status\":\"starting\",\"provider_session_id\":\"5dee391d-521b-49d7-ae20-856db41f6e29\",\"resumed\":false}",
-    "id: 4\nevent: status\ndata: {\"seq\":4,\"type\":\"status\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:04.737Z\",\"status\":\"starting\",\"tools\":[\"Glob\",\"Grep\",\"Read\"],\"model\":\"glm-5.4[1m]\",\"permission_mode\":\"plan\"}",
-    "id: 5\nevent: delta\ndata: {\"seq\":5,\"type\":\"delta\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:14.227Z\",\"text\":\"S\"}",
-    "id: 6\nevent: status\ndata: {\"seq\":6,\"type\":\"status\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:14.227Z\",\"status\":\"running\",\"label\":null}",
-    "id: 7\nevent: delta\ndata: {\"seq\":7,\"type\":\"delta\",\"turn_id\":\"ct-0f11417384\",\"at\":\"2026-11-23T21:11:14.474Z\",\"text\":\"SE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览器用 `EventSource` 接收流式文本消息，断线自动重连、自带事件类型，实现简单。与 WebSocket 的核心区别是方向性：SSE 只能服务器推、客户端发数据仍需普通 HTTP 请求，且是纯文本协议；WebSocket 则是经 "
+    "event: snapshot\ndata: {\"type\":\"snapshot\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:20.423Z\",\"status\":\"starting\",\"text\":\"\",\"event_seq\":2,\"replay_from\":0,\"resume\":false,\"error\":null,\"queued_ahead\":0}",
+    "id: 1\nevent: started\ndata: {\"provider\":\"claude\",\"resume\":false,\"status\":\"starting\",\"provider_session_id\":null,\"workspace\":\"E:\\\\DesktopProjects\\\\Soda Intelligence - AI Native Thinking\\\\Soda Office\",\"mode\":\"discuss\",\"attempt_id\":\"ca-1d33de4357\",\"queued_ms\":47,\"queued_ahead\":0,\"seq\":1,\"typ",
+    "id: 2\nevent: status\ndata: {\"status\":\"starting\",\"pid\":45544,\"cli_command\":\"claude\",\"seq\":2,\"type\":\"status\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:20.419Z\"}",
+    "id: 3\nevent: status\ndata: {\"seq\":3,\"type\":\"status\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:21.112Z\",\"status\":\"starting\",\"provider_session_id\":\"7cd88291-1a24-4c7e-8d45-f868774eaa5d\",\"resumed\":false}",
+    "id: 4\nevent: status\ndata: {\"seq\":4,\"type\":\"status\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:26.003Z\",\"status\":\"starting\",\"tools\":[\"Glob\",\"Grep\",\"Read\"],\"model\":\"glm-5\",\"permission_mode\":\"plan\"}",
+    "id: 5\nevent: delta\ndata: {\"seq\":5,\"type\":\"delta\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:35.491Z\",\"text\":\"S\"}",
+    "id: 6\nevent: status\ndata: {\"seq\":6,\"type\":\"status\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:35.491Z\",\"status\":\"running\",\"label\":null}",
+    "id: 7\nevent: delta\ndata: {\"seq\":7,\"type\":\"delta\",\"turn_id\":\"ct-8c4d3665a6\",\"at\":\"2026-11-24T02:05:35.696Z\",\"text\":\"SE（Server-Sent Events）是一种基于 HTTP 的服务器推送技术\"}"
   ],
   "types": [
     "snapshot",
@@ -27,10 +27,16 @@
     "delta",
     "delta",
     "delta",
+    "delta",
+    "delta",
+    "delta",
+    "delta",
+    "delta",
+    "delta",
     "completed"
   ],
-  "event_count": 14,
-  "delta_count": 7,
-  "first_delta_ms": 10713,
-  "completed_ms": 13337
+  "event_count": 20,
+  "delta_count": 13,
+  "first_delta_ms": 15132,
+  "completed_ms": 20123
 }

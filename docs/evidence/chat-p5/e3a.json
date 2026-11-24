@@ -1,8 +1,8 @@
 {
-  "thread_id": "th-6cd5412d3b",
-  "turn_id": "ct-532598da87",
-  "connections_cut": 5,
-  "text_before_cut": 37,
+  "thread_id": "th-598a987604",
+  "turn_id": "ct-66f6b01520",
+  "connections_cut": 1,
+  "text_before_cut": 12,
   "before_cut": {
     "state": "执行中正在回答",
     "tone": "running",
@@ -10,7 +10,7 @@
     "notes": [],
     "errors": [],
     "empty": "",
-    "lastBubble": "雾还未散尽，海先醒了\n桅杆挑起第一缕薄光\n海鸥掠过湿漉漉的码头\n汽笛声揉开"
+    "lastBubble": "晨雾还压着桅杆的肩，\n海"
   },
   "banner": "连接中断，正在重连…（重连后按序号补发，内容不丢）",
   "recovered": {
@@ -20,27 +20,27 @@
     "notes": [],
     "errors": [],
     "empty": "",
-    "lastBubble": "雾还未散尽，海先醒了\n桅杆挑起第一缕薄光\n海鸥掠过湿漉漉的码头\n汽笛声揉开沉睡的浪\n渔船载着昨夜的星子归航\n缆绳上滴落咸涩的晨光\n灯塔收起最后一班岗\n起重机舒展腰身，吊臂轻扬\n潮水把黎明推上浅滩\n港口睁开眼，一日启航"
+    "lastBubble": "晨雾还压着桅杆的肩，\n海鸥先醒，掠过灰蓝的水面。\n缆绳松开昨夜的结，\n灯塔熄了它最后的一眼。\n鱼箱堆叠，银光闪闪，\n咸风翻动旧报纸的边。\n汽笛低吼，像谁在打哈欠，\n朝阳把波纹染成金线。\n船影拉开，桨声渐远，\n港口把新的一天揽进怀间。"
   },
   "final_state": "完成回答完成",
   "api_turn": {
-    "turn_id": "ct-532598da87",
-    "thread_id": "th-6cd5412d3b",
-    "attempt_id": "ca-a0fdcf59ce",
+    "turn_id": "ct-66f6b01520",
+    "thread_id": "th-598a987604",
+    "attempt_id": "ca-bf35958764",
     "status": "completed",
     "status_label": "回答完成",
     "display_status": "completed",
     "display_label": "完成",
     "provider": "claude",
     "resume": false,
-    "user_message_id": "cm-589a2fd896",
-    "assistant_message_id": "cm-ae1dee6b13",
+    "user_message_id": "cm-102ec6df40",
+    "assistant_message_id": "cm-5e36d2191a",
     "error": null,
-    "started_at": "2026-11-24T01:14:14.543Z",
-    "ended_at": "2026-11-24T01:14:27.197Z",
-    "created_at": "2026-11-24T01:14:14.437Z"
+    "started_at": "2026-11-24T02:06:02.728Z",
+    "ended_at": "2026-11-24T02:06:18.658Z",
+    "created_at": "2026-11-24T02:06:02.726Z"
   },
-  "bubble_len": 108,
-  "api_len": 108,
+  "bubble_len": 116,
+  "api_len": 116,
   "same": true
 }

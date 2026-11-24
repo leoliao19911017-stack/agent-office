@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-11-23T18:33:55.492Z",
+  "total": 0,
+  "states": {
+    "board-default": {
+      "textBoxes": 171,
+      "textNodes": 166,
+      "overlaps": [],
+      "overlapCount": 0
+    },
+    "board-task-detail": {
+      "textBoxes": 171,
+      "textNodes": 164,
+      "overlaps": [],
+      "overlapCount": 0
+    },
+    "board-filter-empty": {
+      "textBoxes": 149,
+      "textNodes": 149,
+      "overlaps": [],
+      "overlapCount": 0
+    },
+    "easedraw": {
+      "textBoxes": 66,
+      "textNodes": 166,
+      "overlaps": [],
+      "overlapCount": 0
+    },
+    "board-1280x800": {
+      "textBoxes": 156,
+      "textNodes": 166,
+      "overlaps": [],
+      "overlapCount": 0
+    },
+    "board-1936x1056": {
+      "textBoxes": 170,
+      "textNodes": 166,
+      "overlaps": [],
+      "overlapCount": 0
+    }
+  },
+  "pass": true
+}

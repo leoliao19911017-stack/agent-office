@@ -1,23 +1,23 @@
 {
-  "thread_id": "th-361faaf516",
-  "turn_id": "ct-6bc837c976",
+  "thread_id": "th-53e6fc5e3e",
+  "turn_id": "ct-8c43b73a59",
   "first": [
     {
       "id": null,
       "event": "snapshot",
-      "at_ms": 226,
+      "at_ms": 12,
       "data": ""
     },
     {
       "id": "1",
       "event": "started",
-      "at_ms": 227,
+      "at_ms": 12,
       "data": "{"
     },
     {
       "id": "2",
       "event": "status",
-      "at_ms": 227,
+      "at_ms": 12,
       "data": "{\""
     }
   ],
@@ -25,33 +25,33 @@
     {
       "id": null,
       "event": "snapshot",
-      "at_ms": 228,
+      "at_ms": 13,
       "data": ""
     },
     {
       "id": "3",
       "event": "status",
-      "at_ms": 2257,
+      "at_ms": 91,
       "data": "{"
     },
     {
       "id": "4",
       "event": "delta",
-      "at_ms": 3341,
+      "at_ms": 162,
       "data": "{\""
     },
     {
       "id": "5",
       "event": "status",
-      "at_ms": 3341,
+      "at_ms": 162,
       "data": "{\"s"
     },
     {
       "id": "6",
       "event": "completed",
-      "at_ms": 3474,
+      "at_ms": 172,
       "data": "{\"se"
     }
   ],
-  "final_text": "我是 DeepSeek Harness 驱动的编码 AI 智能体，可以帮你写代码、查资料、读文件和处理工程任务。"
+  "final_text": "假 DSH 收到：只用一句话说明：你是谁。不要用工具。｜本会话此前有 0 句"
 }

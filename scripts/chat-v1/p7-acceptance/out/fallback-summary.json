@@ -1,0 +1,19 @@
+{
+  "at": "2026-11-24T01:56:17.978Z",
+  "upstream": {
+    "at": "2026-11-24T01:51:44.430Z",
+    "model": "glm-5.4",
+    "http": 529,
+    "ms": 161,
+    "body": "{\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"code\":\"1305\",\"message\":\"[1305][该模型当前访问量过大，请您稍后再试][2026112409514451c24269e7be4ee9]\"},\"request_id\":\"2026112409514451c24269e7be4ee9\"}"
+  },
+  "base": "http://127.0.0.1:54903",
+  "models": {
+    "ANTHROPIC_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5"
+  },
+  "ok": false,
+  "note": "glm-5.4 持续 529 时，用 Claude Code --settings 临时覆盖为 glm-5；CLI/会话/适配器/DB 全真，报告如实标注。"
+}

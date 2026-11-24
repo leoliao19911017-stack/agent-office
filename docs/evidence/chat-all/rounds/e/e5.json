@@ -1,0 +1,504 @@
+{
+  "thread_id": "th-c3c4c67be3",
+  "post_response_second": {
+    "turn_id": "ct-04399980b2",
+    "thread_id": "th-c3c4c67be3",
+    "attempt_id": "ca-028ae0360c",
+    "status": "queued",
+    "status_label": "等待发送",
+    "display_status": "queued",
+    "display_label": "排队",
+    "provider": "dsh",
+    "resume": false,
+    "user_message_id": "cm-366aa6784d",
+    "assistant_message_id": null,
+    "error": null,
+    "started_at": null,
+    "ended_at": null,
+    "created_at": "2026-11-24T02:08:35.722Z",
+    "queued_ahead": 1
+  },
+  "timeline": [
+    {
+      "t": 507,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 772,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1037,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1303,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1568,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 1835,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2098,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2365,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2623,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 2884,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3144,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3409,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3672,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 3932,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4193,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4454,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4717,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 4979,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 5239,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 5491,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 5757,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6019,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6283,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6545,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 6804,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7067,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7328,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7592,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 7855,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8119,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8381,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8646,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 8910,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9169,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9431,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9693,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 9956,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 10220,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 10480,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 10742,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 11003,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 11263,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 11522,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 11780,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 12033,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 12295,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 12555,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 12820,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 13080,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 13342,
+      "first": "starting",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 15159,
+      "first": "running",
+      "second": "queued",
+      "second_queued_ahead": 1
+    },
+    {
+      "t": 15485,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 15749,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 16012,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 16275,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 16538,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 16801,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 17065,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 17330,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 17926,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 18183,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 18446,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 18707,
+      "first": "completed",
+      "second": "restoring",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 18961,
+      "first": "completed",
+      "second": "running",
+      "second_queued_ahead": 0
+    },
+    {
+      "t": 19215,
+      "first": "completed",
+      "second": "completed",
+      "second_queued_ahead": 0
+    }
+  ],
+  "process_samples": 45,
+  "process_max_cli": 3,
+  "process_counts": [
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+  ],
+  "both_running_samples": 0,
+  "queued_samples": 51,
+  "turn1": {
+    "id": "ct-28dd381c14",
+    "status": "completed",
+    "started_at": "2026-11-24T02:08:35.475Z",
+    "ended_at": "2026-11-24T02:08:50.478Z"
+  },
+  "turn2": {
+    "id": "ct-04399980b2",
+    "status": "completed",
+    "started_at": "2026-11-24T02:08:50.679Z",
+    "ended_at": "2026-11-24T02:08:54.275Z",
+    "restoring_event": {
+      "provider": "dsh",
+      "resume": true,
+      "status": "restoring",
+      "provider_session_id": "session-00a4065d-45aa-402c-9ab6-5688ffce3438",
+      "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office",
+      "mode": "discuss",
+      "attempt_id": "ca-028ae0360c",
+      "queued_ms": 14957,
+      "queued_ahead": 0,
+      "seq": 1,
+      "type": "restoring",
+      "turn_id": "ct-04399980b2",
+      "at": "2026-11-24T02:08:50.703Z"
+    }
+  },
+  "mid_shot": {
+    "state": "执行中正在启动 Agent",
+    "tone": "running",
+    "banner": "",
+    "notes": [
+      "正在启动 Agent",
+      "排队中（前面还有 1 条）"
+    ],
+    "errors": [],
+    "empty": "",
+    "lastBubble": ""
+  },
+  "final_ui_state": "完成回答完成"
+}

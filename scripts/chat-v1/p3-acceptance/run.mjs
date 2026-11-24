@@ -8,7 +8,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { postJson, getJson, sleep } from '../../../test/chat-harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT = resolve(HERE, 'out');
+const OUT = process.env.CHAT_EVIDENCE_DIR ? resolve(process.env.CHAT_EVIDENCE_DIR) : resolve(HERE, 'out');
 const REPO = resolve(HERE, '..', '..', '..');
 mkdirSync(OUT, { recursive: true });
 const args = process.argv.slice(2);
@@ -174,7 +174,7 @@ async function main() {
     const bad = await newThread('dsh', 'P3 验收 C4（坏 session）');
     const wsDir = resolve(OUT, `ws-${Date.now()}`);
     const wsThread = await newThread('dsh', 'P3 验收 C4（工作目录没了）');
-    const db = new DatabaseSync(resolve(REPO, 'data', 'agent-office.db'));
+    const db = new DatabaseSync(process.env.AGENT_OFFICE_DB || resolve(REPO, 'data', 'agent-office.db'));
     db.prepare('UPDATE chat_threads SET provider_session_id = ? WHERE thread_id = ?').run('session-00000000-0000-4000-8000-000000000000', bad);
     db.prepare('UPDATE chat_threads SET workspace = ? WHERE thread_id = ?').run(wsDir.replace(/\\/g, '/'), wsThread);   // 工作目录指向一个不存在的路径
     db.close();

@@ -1,0 +1,148 @@
+{
+  "at": "2026-11-24T02:03:50.099Z",
+  "base": "http://127.0.0.1:58648",
+  "thread": "th-6bceb664be",
+  "bad_thread": "th-b71ad9ba00",
+  "results": [
+    {
+      "id": "A1",
+      "title": "能创建 thread，返回 thread_id",
+      "pass": true,
+      "detail": "HTTP 201 thread_id=th-6bceb664be"
+    },
+    {
+      "id": "A2",
+      "title": "发一条消息，claude 有真实回复",
+      "pass": true,
+      "detail": "turn ct-3d27ef4c27：starting → running → completed；回复 88 字：你好 Leo！两件事都记住了： - 最喜欢的数字：**42**（宇宙终极答案，好品味） - 猫咪叫**汽水** 🐱（和 Soda Office 正好是一家） 随时来考我。"
+    },
+    {
+      "id": "A3",
+      "title": "第 3 条能体现第 1 条内容（真上下文）",
+      "pass": true,
+      "detail": "回复 48 字：当然记得： 1. 你最喜欢的数字是 **42** 2. 你养了一只叫「**汽水**」的猫 🐱"
+    },
+    {
+      "id": "A4",
+      "title": "「我刚才第一句说了什么？」一字不差引用原文",
+      "pass": true,
+      "detail": "回复：你第一句的原话是： > 你好，我是Leo。我最喜欢的数字是 42，养了一只叫「汽水」的猫。请记住这两件事，等下我会考你。\n去空白/引号后包含原句=true"
+    },
+    {
+      "id": "A5",
+      "title": "provider_session_id 正确保存，第 2 条起走 --resume",
+      "pass": true,
+      "detail": "session=4dd2d944-0da2-421f-9280-dbfa95e071f1\nturns: ct-3d27ef4c27:resume=false  ct-295a15ca62:resume=true  ct-4eac70d85c:resume=true  ct-a410f14d8d:resume=true"
+    },
+    {
+      "id": "A6",
+      "title": "数据库里能查到 thread / messages / turns",
+      "pass": true,
+      "detail": "chat_threads 1 行（mode=discuss，session=4dd2d944-0da2-421f-9280-dbfa95e071f1）\nchat_messages 8 行；chat_turns 4 行；chat_events 38 行"
+    },
+    {
+      "id": "A7",
+      "title": "坏 session id → 失败态，不冒充 completed",
+      "pass": true,
+      "detail": "status=failed error.kind=session_not_found message=「Claude 找不到会话 00000000-dead-beef-0000-000000000000（No conversation found with session ID）」\nprovider_session_id 已清=true；助手消息=failed 内容=「」"
+    }
+  ],
+  "messages": [
+    {
+      "role": "user",
+      "status": "sent",
+      "turn_id": "ct-3d27ef4c27",
+      "content": "你好，我是Leo。我最喜欢的数字是 42，养了一只叫「汽水」的猫。请记住这两件事，等下我会考你。"
+    },
+    {
+      "role": "assistant",
+      "status": "complete",
+      "turn_id": "ct-3d27ef4c27",
+      "content": "你好 Leo！两件事都记住了：\n\n- 最喜欢的数字：**42**（宇宙终极答案，好品味）\n- 猫咪叫**汽水** 🐱（和 Soda Office 正好是一家）\n\n随时来考我。"
+    },
+    {
+      "role": "user",
+      "status": "sent",
+      "turn_id": "ct-295a15ca62",
+      "content": "第二句：随便聊聊，你觉得养猫的人写代码会更有耐心吗？一两句话回答就行。"
+    },
+    {
+      "role": "assistant",
+      "status": "complete",
+      "turn_id": "ct-295a15ca62",
+      "content": "有可能哦——猫教不会、催不动，只能等它自己愿意，这种「不对结果着急」的心态拿来 debug 挺合适的。不过更可能反过来：有耐心的人才敢养猫。"
+    },
+    {
+      "role": "user",
+      "status": "sent",
+      "turn_id": "ct-4eac70d85c",
+      "content": "第三句：我在第一句话里告诉过你两件关于我的事，你还记得吗？请原样复述这两件事。"
+    },
+    {
+      "role": "assistant",
+      "status": "complete",
+      "turn_id": "ct-4eac70d85c",
+      "content": "当然记得：\n\n1. 你最喜欢的数字是 **42**\n2. 你养了一只叫「**汽水**」的猫 🐱"
+    },
+    {
+      "role": "user",
+      "status": "sent",
+      "turn_id": "ct-a410f14d8d",
+      "content": "我刚才第一句说了什么？请一字不差地引用原文。"
+    },
+    {
+      "role": "assistant",
+      "status": "complete",
+      "turn_id": "ct-a410f14d8d",
+      "content": "你第一句的原话是：\n\n> 你好，我是Leo。我最喜欢的数字是 42，养了一只叫「汽水」的猫。请记住这两件事，等下我会考你。"
+    }
+  ],
+  "turns": [
+    {
+      "turn_id": "ct-3d27ef4c27",
+      "status": "completed",
+      "resume": false,
+      "error": null
+    },
+    {
+      "turn_id": "ct-295a15ca62",
+      "status": "completed",
+      "resume": true,
+      "error": null
+    },
+    {
+      "turn_id": "ct-4eac70d85c",
+      "status": "completed",
+      "resume": true,
+      "error": null
+    },
+    {
+      "turn_id": "ct-a410f14d8d",
+      "status": "completed",
+      "resume": true,
+      "error": null
+    }
+  ],
+  "db": {
+    "messages": 8,
+    "turns": 4,
+    "events": 38,
+    "provider_session_id": "4dd2d944-0da2-421f-9280-dbfa95e071f1"
+  },
+  "a7": {
+    "status": "failed",
+    "error": {
+      "kind": "session_not_found",
+      "code": "session_not_found",
+      "reason": "session_not_found",
+      "label": "会话已丢失",
+      "message": "Claude 找不到会话 00000000-dead-beef-0000-000000000000（No conversation found with session ID）",
+      "text": "Claude 找不到会话 00000000-dead-beef-0000-000000000000（No conversation found with session ID）",
+      "retryable": true,
+      "api_error_status": null,
+      "retry_at": null,
+      "retry_hint": null
+    },
+    "provider_session_id": null
+  }
+}

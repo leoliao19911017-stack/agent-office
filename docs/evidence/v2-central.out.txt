@@ -1,0 +1,22 @@
+
+=== 中央区无装饰线自检 ===
+中央 <line>/<polyline>：0
+中央非 icon <path>：0
+旧的 arch / meter-card / feature-card / filmstrip：0
+Agent 卡：4 张；底部数据卡：4 张
+品牌 icon 24×24：claude=24×24 · codex=24×24 · dsh=24×24 · hermes=24×24
+进度条：10 条，全部绑定 task_id：true
+进度条 → 数据：
+  T-20261119-02  填充 57%  T-20261119-02 · 4/7 步 · ? 未知
+  T-20261119-01  填充 14%  T-20261119-01 · 1/7 步 · ? 未知
+  TEST-F01R10  填充 29%  TEST-F01R10 · 2/7 步 · ? 未知
+  TEST-R11  填充 29%  TEST-R11 · 2/7 步 · ? 未知
+  OFFICE-V3  填充 100%  OFFICE-V3 · 8/8 步 · ? 未知
+  OFFICE-V4  填充 43%  OFFICE-V4 · 3/7 步 · ? 未知
+  T-SKILLHUB  填充 100%  T-SKILLHUB · 7/7 步 · ? 未知
+  T-PRODUCT  填充 29%  T-PRODUCT · 2/7 步 · ? 未知
+  T-EASEDRAW  填充 57%  T-EASEDRAW · 4/7 步 · ? 未知
+  T-DAILY  填充 0%  T-DAILY · 0/7 步 · ? 未知
+API 请求：status-v2 1 次 / tasks 1 次 / state 1 次
+
+PASS：中央没有无数据支撑的装饰线；所有视觉元素都有真实数据来源

@@ -1,0 +1,13 @@
+{
+  "codex": {
+    "state": "未知没有接入对话",
+    "text": "不支持对话 本机 codex 执行器起不来（CreateProcess 超时），V1 不接入 所以这里没有输入框。",
+    "hasInput": false
+  },
+  "empty": {
+    "state": "未知还没有对话记录：没有证据，不显示空闲",
+    "text": "还没有和 Claude Code 的对话 在下面写第一句就会开始。 讨论模式：它能读代码、能分析、能回答，不会改你的文件。",
+    "hasInput": true,
+    "msgs": 0
+  }
+}

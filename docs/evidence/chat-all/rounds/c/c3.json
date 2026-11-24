@@ -1,0 +1,108 @@
+{
+  "turn_id": "ct-e968c1f069",
+  "disconnected_after_events": 10,
+  "last_seen_seq": 9,
+  "snapshot_on_reconnect": {
+    "type": "snapshot",
+    "turn_id": "ct-e968c1f069",
+    "at": "2026-11-24T02:01:41.464Z",
+    "status": "running",
+    "text": "斜阳半落染霜林，\n雁字南飞过远岑。\n风卷残荷池水瘦，\n露凝枯草暮烟深。\n一庭落叶随阶舞，\n满目金辉入巷沉。\n灯火初明人语细，\n秋光将尽夜寒侵。",
+    "event_seq": 11,
+    "replay_from": 9,
+    "resume": true,
+    "error": null,
+    "queued_ahead": 0
+  },
+  "replayed_ids": [
+    10,
+    11,
+    12
+  ],
+  "union_ids": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12
+  ],
+  "final_text": "斜阳半落染霜林，\n雁字南飞过远岑。\n风卷残荷池水瘦，\n露凝枯草暮烟深。\n一庭落叶随阶舞，\n满目金辉入巷沉。\n灯火初明人语细，\n秋光将尽夜寒侵。",
+  "assistant_message": {
+    "message_id": "cm-eb2783df4d",
+    "thread_id": "th-409dead442",
+    "turn_id": "ct-e968c1f069",
+    "role": "assistant",
+    "content": "斜阳半落染霜林，\n雁字南飞过远岑。\n风卷残荷池水瘦，\n露凝枯草暮烟深。\n一庭落叶随阶舞，\n满目金辉入巷沉。\n灯火初明人语细，\n秋光将尽夜寒侵。",
+    "status": "complete",
+    "error": null,
+    "seq": 4,
+    "event_seq": 12,
+    "created_at": "2026-11-24T02:01:31.405Z",
+    "updated_at": "2026-11-24T02:01:43.426Z"
+  },
+  "first_stream": [
+    {
+      "id": 1,
+      "event": "restoring"
+    },
+    {
+      "id": 2,
+      "event": "status"
+    },
+    {
+      "id": 3,
+      "event": "status"
+    },
+    {
+      "id": 4,
+      "event": "status"
+    },
+    {
+      "id": 5,
+      "event": "delta",
+      "text": "斜"
+    },
+    {
+      "id": 6,
+      "event": "status"
+    },
+    {
+      "id": 7,
+      "event": "delta",
+      "text": "阳半落染霜林，\n雁字南飞过远岑。\n风卷残荷池水瘦，\n露凝枯草"
+    },
+    {
+      "id": 8,
+      "event": "delta",
+      "text": "暮烟深。\n一庭落叶随阶舞，\n满目"
+    },
+    {
+      "id": 9,
+      "event": "delta",
+      "text": "金辉入巷沉。\n灯火初明"
+    }
+  ],
+  "second_stream": [
+    {
+      "id": 10,
+      "event": "delta",
+      "text": "人语细，\n秋光将"
+    },
+    {
+      "id": 11,
+      "event": "delta",
+      "text": "尽夜寒侵。"
+    },
+    {
+      "id": 12,
+      "event": "completed"
+    }
+  ]
+}

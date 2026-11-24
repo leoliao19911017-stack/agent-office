@@ -1,0 +1,54 @@
+{
+  "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021",
+  "turns": [
+    {
+      "turn_id": "ct-6148526b15",
+      "status": "completed",
+      "resume": true
+    },
+    {
+      "turn_id": "ct-920c8f7657",
+      "status": "completed",
+      "resume": true
+    },
+    {
+      "turn_id": "ct-934c628e09",
+      "status": "completed",
+      "resume": true
+    },
+    {
+      "turn_id": "ct-8d906a5646",
+      "status": "completed",
+      "resume": false
+    }
+  ],
+  "first_command": "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never -",
+  "resume_commands": [
+    "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-91a3a22b-b827-4499-be1c-63944b1d7021 -",
+    "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-91a3a22b-b827-4499-be1c-63944b1d7021 -",
+    "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --session-id session-91a3a22b-b827-4499-be1c-63944b1d7021 -"
+  ],
+  "resume_events": [
+    [
+      {
+        "type": "restoring",
+        "resume": true,
+        "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021"
+      }
+    ],
+    [
+      {
+        "type": "restoring",
+        "resume": true,
+        "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021"
+      }
+    ],
+    [
+      {
+        "type": "restoring",
+        "resume": true,
+        "provider_session_id": "session-91a3a22b-b827-4499-be1c-63944b1d7021"
+      }
+    ]
+  ]
+}

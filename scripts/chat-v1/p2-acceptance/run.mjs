@@ -12,7 +12,7 @@ import { runDshTurn, defaultDshBin } from '../../../web/chat/adapters/dsh-chat.m
 import { startChatServer, postJson, getJson, sleep } from '../../../test/chat-harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const OUT = resolve(HERE, 'out');
+const OUT = process.env.CHAT_EVIDENCE_DIR ? resolve(process.env.CHAT_EVIDENCE_DIR) : resolve(HERE, 'out');
 mkdirSync(OUT, { recursive: true });
 const args = process.argv.slice(2);
 const BASE = args.includes('--base') ? args[args.indexOf('--base') + 1] : 'http://127.0.0.1:8090';

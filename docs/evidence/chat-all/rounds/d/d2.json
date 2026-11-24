@@ -1,0 +1,79 @@
+{
+  "empty_after_new": 0,
+  "empty_state": "未知还没有对话记录：没有证据，不显示空闲",
+  "send_enabled_after_typing": true,
+  "own_bubble_ms": 531,
+  "state_right_after_send": "执行中正在启动 Agent",
+  "state_seen_meanwhile": "执行中正在启动 Agent",
+  "final_state": "完成回答完成",
+  "snapshot": {
+    "agent": "dsh",
+    "state": "完成回答完成",
+    "stateTone": "completed",
+    "msgs": [
+      {
+        "side": "out",
+        "text": "用两句话介绍一下你能帮我做什么。不要用工具。",
+        "note": "",
+        "live": false
+      },
+      {
+        "side": "in",
+        "text": "我是你的编码与内容生产助手：既能读代码、改代码、跑测试、排查问题、搭建页面和小工具，也能把一个想法做成文章、长图、卡片、公众号排版、漫画或视频等成品。你只要给出目标或材料，我会判断",
+        "note": "",
+        "live": false
+      }
+    ],
+    "rects": {
+      "side": {
+        "x": 1054,
+        "y": 80,
+        "w": 368,
+        "h": 806
+      },
+      "chat": {
+        "x": 1055,
+        "y": 81,
+        "w": 366,
+        "h": 804
+      },
+      "body": {
+        "x": 1055,
+        "y": 146,
+        "w": 366,
+        "h": 610
+      },
+      "composer": {
+        "x": 1067,
+        "y": 767,
+        "w": 342,
+        "h": 62
+      },
+      "input": {
+        "x": 1080,
+        "y": 774,
+        "w": 242,
+        "h": 48
+      },
+      "send": {
+        "x": 1330,
+        "y": 787,
+        "w": 72,
+        "h": 32
+      }
+    }
+  },
+  "thread_id": "th-8ac9a19d05",
+  "api_messages": [
+    {
+      "role": "user",
+      "status": "sent",
+      "content": "用两句话介绍一下你能帮我做什么。不要用工具。"
+    },
+    {
+      "role": "assistant",
+      "status": "complete",
+      "content": "我是你的编码与内容生产助手：既能读代码、改代码、跑测试、排查问题、搭建页面和小工具，也能把一个想法做成文章、长图、卡片、公众号排版、漫画或视频等成品。你只要给出目标或材料，我会判断该用什么办法，并直接动手做到能交付、能验证为止。"
+    }
+  ]
+}

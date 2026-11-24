@@ -1,0 +1,8 @@
+board-default: 文本节点 166 / 行盒 171 / 重叠 0
+board-task-detail: 文本节点 164 / 行盒 171 / 重叠 0
+board-filter-empty: 文本节点 149 / 行盒 149 / 重叠 0
+easedraw: 文本节点 166 / 行盒 66 / 重叠 0
+board-1280x800: 文本节点 166 / 行盒 156 / 重叠 0
+board-1936x1056: 文本节点 166 / 行盒 170 / 重叠 0
+
+PASS：所有状态文本 boundingBox 无交叠（重叠总数 0）

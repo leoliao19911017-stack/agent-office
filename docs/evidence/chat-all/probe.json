@@ -1,0 +1,27 @@
+{
+  "at": "2026-11-24T02:08:26.945Z",
+  "upstream": {
+    "glm-5.4": {
+      "at": "2026-11-24T02:08:27.088Z",
+      "model": "glm-5.4",
+      "http": 529,
+      "ms": 143,
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"code\":\"1305\",\"message\":\"[1305][该模型当前访问量过大，请您稍后再试][202611241008263c16725c10fa42cb]\"},\"request_id\":\"202611241008263c16725c10fa42cb\"}"
+    },
+    "glm-5": {
+      "at": "2026-11-24T02:08:28.675Z",
+      "model": "glm-5",
+      "http": 200,
+      "ms": 1587,
+      "body": "{\"id\":\"msg_20261124100826200abbc0722b41e7\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"glm-5\",\"content\":[{\"type\":\"text\",\"text\":\"OK\"}],\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"usage\":{\"input_tokens\":17,\"output_tokens\":3,\"cache_read_input_tokens\":0,\"server_tool_use\":{\"web_search_requests\":0},\"service_tier\":\"standard\"}}"
+    }
+  },
+  "use_fallback": true,
+  "fallback_models": {
+    "ANTHROPIC_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5"
+  },
+  "note": "glm-5.4 上游 529 过载；Claude Code CLI / 会话文件 / --resume / 适配器 / 数据库全真，仅本轮进程的模型临时覆盖为 glm-5。用户 settings.json 未改。"
+}

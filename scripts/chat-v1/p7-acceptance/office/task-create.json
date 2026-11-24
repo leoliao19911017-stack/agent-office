@@ -1,0 +1,9 @@
+{
+  "title": "Agent Chat P7：全量回归 + 证据打包",
+  "acceptance": "A1-A7、B1-B5、C1-C4、D1-D7、E1-E5、F1-F2 全部重跑；npm run test:g07 19/19；node scripts/selftest-p0.mjs 8/8；证据打包 docs/evidence/chat-all/（总报告 + 每项真实输出）；分批计划每批状态改完成。验收代码基线 1e09fcd。",
+  "steps": [
+    { "key": "regress", "name": "A-F 六组验收全部重跑" },
+    { "key": "gates", "name": "g07 19/19 + P0 selftest 8/8" },
+    { "key": "evidence", "name": "chat-all 证据打包与状态更新" }
+  ]
+}

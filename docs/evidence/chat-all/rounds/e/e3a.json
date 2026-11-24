@@ -1,0 +1,46 @@
+{
+  "thread_id": "th-79d3ed28a4",
+  "turn_id": "ct-ef77762252",
+  "connections_cut": 5,
+  "text_before_cut": 74,
+  "before_cut": {
+    "state": "执行中正在回答",
+    "tone": "running",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "",
+    "lastBubble": "晨雾还伏在海面上未醒，\n桅杆先接住了第一缕光。\n缆绳松开昨夜打的结，\n潮水把星光换成微凉。\n\n鸥鸟掠过防波堤的石肩，\n叫声落在空荡的甲板上。\n渔火一"
+  },
+  "banner": "连接中断，正在重连…（重连后按序号补发，内容不丢）",
+  "recovered": {
+    "state": "完成回答完成",
+    "tone": "completed",
+    "banner": "",
+    "notes": [],
+    "errors": [],
+    "empty": "",
+    "lastBubble": "晨雾还伏在海面上未醒，\n桅杆先接住了第一缕光。\n缆绳松开昨夜打的结，\n潮水把星光换成微凉。\n\n鸥鸟掠过防波堤的石肩，\n叫声落在空荡的甲板上。\n渔火一盏一盏地熄灭，\n灯塔交还了守夜的差事。\n柴油与咸腥在风里混合，\n港口睁开眼，迎来远处第一声汽笛长响。"
+  },
+  "final_state": "完成回答完成",
+  "api_turn": {
+    "turn_id": "ct-ef77762252",
+    "thread_id": "th-79d3ed28a4",
+    "attempt_id": "ca-5149d9a417",
+    "status": "completed",
+    "status_label": "回答完成",
+    "display_status": "completed",
+    "display_label": "完成",
+    "provider": "claude",
+    "resume": false,
+    "user_message_id": "cm-a6a9360c5e",
+    "assistant_message_id": "cm-4c8bb2b41d",
+    "error": null,
+    "started_at": "2026-11-24T02:09:05.382Z",
+    "ended_at": "2026-11-24T02:09:19.939Z",
+    "created_at": "2026-11-24T02:09:05.282Z"
+  },
+  "bubble_len": 124,
+  "api_len": 124,
+  "same": true
+}

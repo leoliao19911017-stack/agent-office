@@ -1,0 +1,31 @@
+
+=== 按钮逐个点击自检 ===
+按钮总数：22；可点击根元素：24（button 22 / a 2）
+cursor:pointer 但不在 button/a 内的元素：0
+  PASS   0 看板                                 变化：toast, toastVisible
+  PASS   1 EaseDraw                           变化：hash, route, boardHidden, easeHidden, detail, resources
+  PASS   2 刷新                                 变化：detail, toast, resources
+  PASS   3 全部 10                              变化：detail, toast
+  PASS   4 执行 0                               变化：detail, activeFilter, taskList, toast
+  PASS   5 接力 0                               变化：detail, activeFilter, toast
+  PASS   6 异常 0                               变化：detail, activeFilter, toast
+  PASS   7 未知 10                              变化：detail, activeFilter, taskList, updated, toast
+  PASS   8 帮我做一个记账小工具，能记录每笔支出、按分类统计每月花了多少 4/7 变化：detail, selectedAgent, selectedTask, updated, toast
+  PASS   9 R87 整改验证·喝水记录 1/7                  变化：detail, selectedTask, updated, toast
+  PASS  10 F01 两条历史登记独立保存验证（测完即删） 2/7         变化：detail, selectedTask, updated, toast
+  PASS  11 R11 决策端点自测（一次性，测完即删） 2/7           变化：detail, selectedTask, updated, toast
+  PASS  12 Agent Office 可视化与流程打通 8/8          变化：detail, selectedTask, updated, toast
+  PASS  13 UI 资产化与视觉统一 3/7                    变化：detail, selectedTask, updated, toast
+  PASS  14 Skill Hub 跨 Agent 技能安装 7/7         变化：detail, selectedTask, updated, toast
+  PASS  15 产物库文件浏览与预览 2/7                     变化：detail, selectedTask, updated, toast
+  PASS  16 EaseDraw 专注模式接入工作台 4/7             变化：detail, selectedTask, updated, toast
+  PASS  17 每日工作台日报自动生成 0/7                    变化：detail, selectedTask, updated, toast
+  PASS  18 Claude Code ? 未知 没有可信的执行证据（证据不足，不能 变化：detail, selectedAgent, selectedTask, updated, toast
+  PASS  19 Codex 不可用 没有可信的执行证据（证据不足，不能断言在执行）  变化：detail, selectedAgent, updated, toast
+  PASS  20 DSH 空闲 该 Agent 没有执行实例，也没有分配给它的待继续任 变化：detail, selectedAgent, updated, toast
+  PASS  21 Hermes ? 未知 没有可信的执行证据（证据不足，不能断言在执行 变化：detail, selectedAgent, updated, toast
+
+无反应按钮：0
+页面错误：0
+
+PASS：每个 button 点击都有真实变化；无 cursor:pointer 假按钮

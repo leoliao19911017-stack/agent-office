@@ -14,7 +14,7 @@ import { startChatServer, postJson, getJson, sleep } from '../../../test/chat-ha
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..', '..', '..');
-const DOC = resolve(REPO, 'docs', 'evidence', 'chat-p6');
+const DOC = process.env.CHAT_EVIDENCE_DIR ? resolve(process.env.CHAT_EVIDENCE_DIR) : resolve(REPO, 'docs', 'evidence', 'chat-p6');
 mkdirSync(DOC, { recursive: true });
 const CHROME = 'C:/Program Files/Google/Chrome/Application/chrome.exe';
 const results = [];

@@ -1,0 +1,135 @@
+{
+  "errors": [],
+  "shots": {
+    "state-default-1936x1056": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-state-default-1936x1056.png",
+    "state-codex-false-1936x1056": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-state-codex-false-1936x1056.png",
+    "state-hermes-null-1936x1056": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-state-hermes-null-1936x1056.png",
+    "state-terminal-1936x1056": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-state-terminal-1936x1056.png",
+    "state-task-detail-1936x1056": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-state-task-detail-1936x1056.png",
+    "state-empty-running-1936x1056": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-state-empty-running-1936x1056.png",
+    "final-1600x1000": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\screenshots/cromma-board-final-1600x1000.png"
+  },
+  "codex": {
+    "stateText": "⊘ 不可用",
+    "name": "Codex",
+    "offenders": [],
+    "feedText": "状态判断\n· 3 条独立依据\n\n可用、执行、任务三件事分开判断。没有最新可信证据，就保持 unknown，不兜底成 idle。\n\n可用性\n· 观测于 12 秒前\n\nspawn codex ENOENT\n\nprocess_probe\n⊘ 不可用\ncli_not_found\n执行\n· 观测于 刚刚\n\n没有可信的执行证据（证据不足，不能断言在执行）\n\n? 未知\nnone\nattempt —\nrelay false\n任务\n· 观测于 刚刚\n\n没有可信证据证明它有没有任务\n\n? 未知\ntask —\nstep —\n状态换算\n· 全部 4 个 agent\n可用性\ntrue 2\nfalse 1\nnull 1\n执行\nidle 1\nunknown 3\nrunning 0\n任务\nidle 1\nunknown 3\nrunning 0\n\n可用不等于在执行；false 的 agent 即使执行态是 idle，也不许显示绿色。\n\n三种「没有」，视觉上必须能分开\n?\nnull · 未知\nfalse · 不可用\n—\n空内容\n交付物\nNO TASK OWNER\n— 该 Agent 没有可信任务归属，未关联交付物。空内容显示 —，不借用别人的文件。\n项目最近交付物\nPROJECT-WIDE\n01-需求文档.md\n5.2kB\n02-开发计划.md\n10.2kB\nAVAIL EVIDENCE\n3 / 4至少一条可信来源\nEXEC EVIDENCE\n1 / 4none 不算证据",
+    "archFocus": "03 / 04\nCODEX ⊘ 不可用",
+    "selectedLabel": "CODEX"
+  },
+  "hermes": {
+    "stateText": "? 未知",
+    "name": "Hermes",
+    "availChip": [
+      "none",
+      "? 未知",
+      "no_self_report",
+      "? 未知",
+      "none",
+      "attempt —",
+      "relay false",
+      "? 未知"
+    ],
+    "feedText": "状态判断\n· 3 条独立依据\n\n可用、执行、任务三件事分开判断。没有最新可信证据，就保持 unknown，不兜底成 idle。\n\n可用性\n· 观测于 刚刚\n\nHermes 只信自报，当前没有自报记录\n\nnone\n? 未知\nno_self_report\n执行\n· 观测于 刚刚\n\n没有可信的执行证据（证据不足，不能断言在执行）\n\n? 未知\nnone\nattempt —\nrelay false\n任务\n· 观测于 刚刚\n\n没有可信证据证明它有没有任务\n\n? 未知\ntask —\nstep —\n状态换算\n· 全部 4 个 agent\n可用性\ntrue 2\nfalse 1\nnull 1\n执行\nidle 1\nunknown 3\nrunning 0\n任务\nidle 1\nunknown 3\nrunning 0\n\n可用不等于在执行；false 的 agent 即使执行态是 idle，也不许显示绿色。\n\n三种「没有」，视觉上必须能分开\n?\nnull · 未知\nfalse · 不可用\n—\n空内容\n交付物\nNO TASK OWNER\n— 该 Agent 没有可信任务归属，未关联交付物。空内容显示 —，不借用别人的文件。\n项目最近交付物\nPROJECT-WIDE\n01-需求文档.md\n5.2kB\n02-开发计划.md\n10.2kB\nAVAIL EVIDENCE\n3 / 4至少一条可信来源\nEXEC EVIDEN"
+  },
+  "terminal": {
+    "title": "本次会话 · 终端",
+    "lines": "只读终端\n· 页面本次真实请求\n\n这不是伪造的日志。每次刷新都会向同源 P0 API 发请求，下面保留本次的三条记录。\n\n$\nGET /api/agents/status-v2\n200\n8004 B · 123 ms\n$\nGET /api/tasks\n200\n12785 B · 122 ms\n$\nGET /api/state\n200\n34351 B · 122 ms\nstatus-v2\navailability 4 · execution 4 · task 4\ntasks\n10 rows · 19 artifacts\nstate\noutput 61.8k · doneToday 0\nORIGIN http://127.0.0.1:8090 · READ ONLY · 0 POST"
+  },
+  "taskDetail": {
+    "title": "T-20261119-02",
+    "state": "? 未知",
+    "feed": "任务详情\n· 来自 /api/tasks\n\n帮我做一个记账小工具，能记录每笔支出、按分类统计每月花了多少\n\n未知\nsystem\nT-20261119-02\n为什么是这个状态\n\n观测链路失效：最近证据在 106 小时前（超过 30 分钟阈值）\n\n4 / 7\n57%\n步骤\n· done 4 · remaining 3\nreq\ndoc\nplan\nbrief\ndeliverable\nverify\nfinal\n交付物\n3 FILES\n01-需求文档.md\n5.2kB\n02-开发计划.md\n10.2kB\nTASK-写计划.md\n7.9kB\nCREATED\n15:10:26\nUPDATED\n16:08:18\nEVIDENCE\nsystem\nARTIFACTS\n3\n证据口径\n?\nnull · 未知\nfalse · 不可用\n—\n空内容\nGET /api/tasks/T-20261119-02 · updated 16:08:18"
+  },
+  "emptyView": {
+    "active": "执行",
+    "taskCount": "0",
+    "listText": "此视图下没有任务。\n空内容显示 —，不兜底成 idle。\n交付物\n5 / 19\n01-需求文档.md\n5.2kB\n02-开发计划.md\n10.2kB\nTASK-写计划.md\n7.9kB\n01-需求文档.md\n6.2kB\nfixture-time.md\n133B\n10 个任务超出 30 分钟证据窗\n状态保持 unknown，不兜底 idle"
+  },
+  "hard": {
+    "dotgrid": {
+      "background-image": "radial-gradient(circle, rgba(173, 148, 113, 0.44) 0.75px, rgba(0, 0, 0, 0) 1.05px)",
+      "background-size": "11.5px 11.5px",
+      "background-color": "rgb(252, 250, 246)"
+    },
+    "tabular": {
+      "font-variant-numeric": "tabular-nums",
+      "font-family": "Bahnschrift, \"Arial Narrow\", \"Roboto Condensed\", \"Helvetica Neue\", sans-serif",
+      "font-stretch": "75%"
+    },
+    "tabularMeasureBody": {
+      "wa": 197.046875,
+      "wb": 197.046875,
+      "equal": true
+    },
+    "tabularMeasureScore": {
+      "wa": 178.828125,
+      "wb": 178.828125,
+      "equal": true
+    },
+    "emojiTextNodes": [],
+    "frameworks": [],
+    "resourceAPIs": [
+      "http://127.0.0.1:8090/api/agents/status-v2",
+      "http://127.0.0.1:8090/api/tasks",
+      "http://127.0.0.1:8090/api/state"
+    ],
+    "bodyBg": {
+      "background-color": "rgb(246, 241, 234)"
+    },
+    "stageBg": {
+      "background-color": "rgb(252, 250, 246)"
+    },
+    "panelBg": {
+      "background-color": "rgb(254, 252, 249)"
+    }
+  },
+  "overview1600": {
+    "scrollW": 1600,
+    "innerW": 1600,
+    "scrollH": 1000,
+    "innerH": 1000,
+    "cards": [
+      {
+        "x": 218.390625,
+        "y": 784,
+        "width": 181.203125,
+        "height": 160,
+        "top": 784,
+        "right": 399.59375,
+        "bottom": 944,
+        "left": 218.390625
+      },
+      {
+        "x": 407.59375,
+        "y": 784,
+        "width": 181.203125,
+        "height": 160,
+        "top": 784,
+        "right": 588.796875,
+        "bottom": 944,
+        "left": 407.59375
+      },
+      {
+        "x": 596.796875,
+        "y": 784,
+        "width": 181.203125,
+        "height": 160,
+        "top": 784,
+        "right": 778,
+        "bottom": 944,
+        "left": 596.796875
+      },
+      {
+        "x": 786,
+        "y": 784,
+        "width": 181.203125,
+        "height": 160,
+        "top": 784,
+        "right": 967.203125,
+        "bottom": 944,
+        "left": 786
+      }
+    ]
+  }
+}

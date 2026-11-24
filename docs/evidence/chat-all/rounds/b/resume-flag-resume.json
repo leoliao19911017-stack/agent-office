@@ -1,0 +1,19 @@
+{
+  "bin": "C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd",
+  "at": "2026-11-24T02:01:03.209Z",
+  "flag": "resume",
+  "first": {
+    "kind": "completed",
+    "sessionId": "session-88bb6fbb-0a21-4ce3-9f31-3aee03b94da6",
+    "text": "收到"
+  },
+  "resume": {
+    "kind": "cli_error",
+    "reason": "cli_error",
+    "exitCode": 1,
+    "sessionId": "session-88bb6fbb-0a21-4ce3-9f31-3aee03b94da6",
+    "text": "",
+    "message": "unknown option '--resume'",
+    "command": "\"C:/Users/Administrator/AppData/Local/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd\" --profile headless --json --permission-mode read-only --approval-policy never --resume session-88bb6fbb-0a21-4ce3-9f31-3aee03b94da6 -"
+  }
+}

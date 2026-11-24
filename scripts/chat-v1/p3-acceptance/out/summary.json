@@ -1,10 +1,10 @@
 {
-  "started_at": "2026-11-23T21:11:03.471Z",
-  "finished_at": "2026-11-23T21:11:32.366Z",
-  "base": "http://127.0.0.1:8090",
+  "started_at": "2026-11-24T02:05:17.328Z",
+  "finished_at": "2026-11-24T02:05:52.827Z",
+  "base": "http://127.0.0.1:58648",
   "health": {
     "ok": true,
-    "autoloop": true,
+    "autoloop": false,
     "build": "r73"
   },
   "results": [
@@ -12,25 +12,25 @@
       "id": "C1",
       "title": "订阅 stream 收到 started → delta(多个) → completed",
       "pass": true,
-      "detail": "Content-Type=text/event-stream; charset=utf-8；retry=1500\n事件序列=snapshot → started → status → status → status → delta → status → delta → delta → …（共 14 条）\n共 7 条 delta；首段增量在发送后 10713ms 到达，completed 在 13337ms ——增量先到、完成最后到"
+      "detail": "Content-Type=text/event-stream; charset=utf-8；retry=1500\n事件序列=snapshot → started → status → status → status → delta → status → delta → delta → …（共 20 条）\n共 13 条 delta；首段增量在发送后 15132ms 到达，completed 在 20123ms ——增量先到、完成最后到"
     },
     {
       "id": "C2",
       "title": "delta 拼起来等于最终完整回复；库里的 chat_events 与实时流是同一串序号",
       "pass": true,
-      "detail": "拼接长度=307 字，库里助手消息长度=307 字，逐字相等=true\n开头：「SSE（Server-Sent Events）是基于 HTTP 长连接的服务器→客户端单向推送技术，浏览器用 `Even」\n库内事件序号 1…13（13 条）= SSE id 1…13（13 条）"
+      "detail": "拼接长度=303 字，库里助手消息长度=303 字，逐字相等=true\n开头：「SSE（Server-Sent Events）是一种基于 HTTP 的服务器推送技术：客户端发起一个普通 HTTP 长连」\n库内事件序号 1…19（19 条）= SSE id 1…19（19 条）"
     },
     {
       "id": "C3",
       "title": "中途断开重连，按 seq 补发，内容不丢不重",
       "pass": true,
-      "detail": "断开时已收到 9 条（最后 seq=9）；重连带 Last-Event-ID: 9\n重连后 snapshot.replay_from=9，补发 2 条，seq 10…11（全部 > 9）\n两边序号并集 1…11 连续无重复（共 11 条）\n两段增量拼起来 75 字 = 库里完整回复 75 字，逐字相等=true"
+      "detail": "断开时已收到 9 条（最后 seq=9）；重连带 Last-Event-ID: 9\n重连后 snapshot.replay_from=9，补发 5 条，seq 10…14（全部 > 9）\n两边序号并集 1…14 连续无重复（共 14 条）\n两段增量拼起来 71 字 = 库里完整回复 71 字，逐字相等=true"
     },
     {
       "id": "C3-dsh",
       "title": "真 dsh：started 之后断开、带 Last-Event-ID 重连，后续事件全部补到、不重复",
       "pass": true,
-      "detail": "第一次收到 snapshot → started → status（断在 seq=2）\n重连补发 snapshot → status → delta → status → completed\n并集 1,2,3,4,5,6 = 库里全部 6 条事件；最终回复=「我是 DeepSeek Harness 驱动的编码 AI 智能体，可以帮你写代码、查资料、读文件和处理工程任务。」"
+      "detail": "第一次收到 snapshot → started → status（断在 seq=2）\n重连补发 snapshot → status → delta → status → completed\n并集 1,2,3,4,5,6 = 库里全部 6 条事件；最终回复=「假 DSH 收到：只用一句话说明：你是谁。不要用工具。｜本会话此前有 0 句」"
     },
     {
       "id": "C4",
@@ -42,7 +42,7 @@
       "id": "轮询保留",
       "title": "GET /api/chat/threads/:id/messages 仍在，返回 thread / messages / turns / thread_status",
       "pass": true,
-      "detail": "thread=th-25271578a4 messages=2 turns=1 thread_status=failed"
+      "detail": "thread=th-6756242751 messages=2 turns=1 thread_status=failed"
     }
   ],
   "pass": 6,

@@ -9,7 +9,7 @@ import { chromium } from 'playwright-core';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '..', '..', '..');
-const DOC = resolve(REPO, 'docs', 'evidence', 'chat-p4');
+const DOC = process.env.CHAT_EVIDENCE_DIR ? resolve(process.env.CHAT_EVIDENCE_DIR) : resolve(REPO, 'docs', 'evidence', 'chat-p4');
 mkdirSync(DOC, { recursive: true });
 const args = process.argv.slice(2);
 const BASE = args.includes('--base') ? args[args.indexOf('--base') + 1] : 'http://127.0.0.1:8090';

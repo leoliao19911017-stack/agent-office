@@ -1,14 +1,14 @@
 {
-  "turn_id": "ct-52906f6157",
+  "turn_id": "ct-13cad81243",
   "disconnected_after_events": 10,
   "last_seen_seq": 9,
   "snapshot_on_reconnect": {
     "type": "snapshot",
-    "turn_id": "ct-52906f6157",
-    "at": "2026-11-23T21:11:25.969Z",
-    "status": "completed",
-    "text": "斜阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮霭\n薄雾漫过收割后的田\n凉意悄悄爬上窗棂\n一盏灯火次第亮起\n秋夜在虫鸣里渐渐深了",
-    "event_seq": 11,
+    "turn_id": "ct-13cad81243",
+    "at": "2026-11-24T02:05:50.548Z",
+    "status": "running",
+    "text": "斜阳收尽柳梢金，\n落叶铺阶一径深。\n雁字横空书远意，\n虫声入夜伴幽吟。\n风梳瘦影凉初透，\n月洗疏枝露欲沉。\n谁把暮云裁作画，\n半山秋色半山心。",
+    "event_seq": 13,
     "replay_from": 9,
     "resume": true,
     "error": null,
@@ -16,7 +16,10 @@
   },
   "replayed_ids": [
     10,
-    11
+    11,
+    12,
+    13,
+    14
   ],
   "union_ids": [
     1,
@@ -29,21 +32,24 @@
     8,
     9,
     10,
-    11
+    11,
+    12,
+    13,
+    14
   ],
-  "final_text": "斜阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮霭\n薄雾漫过收割后的田\n凉意悄悄爬上窗棂\n一盏灯火次第亮起\n秋夜在虫鸣里渐渐深了",
+  "final_text": "斜阳收尽柳梢金，\n落叶铺阶一径深。\n雁字横空书远意，\n虫声入夜伴幽吟。\n风梳瘦影凉初透，\n月洗疏枝露欲沉。\n谁把暮云裁作画，\n半山秋色半山心。",
   "assistant_message": {
-    "message_id": "cm-3d838e529d",
-    "thread_id": "th-a0e2746961",
-    "turn_id": "ct-52906f6157",
+    "message_id": "cm-461b8c2977",
+    "thread_id": "th-4b2ddf7371",
+    "turn_id": "ct-13cad81243",
     "role": "assistant",
-    "content": "斜阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮霭\n薄雾漫过收割后的田\n凉意悄悄爬上窗棂\n一盏灯火次第亮起\n秋夜在虫鸣里渐渐深了",
+    "content": "斜阳收尽柳梢金，\n落叶铺阶一径深。\n雁字横空书远意，\n虫声入夜伴幽吟。\n风梳瘦影凉初透，\n月洗疏枝露欲沉。\n谁把暮云裁作画，\n半山秋色半山心。",
     "status": "complete",
     "error": null,
     "seq": 4,
-    "event_seq": 11,
-    "created_at": "2026-11-23T21:11:16.907Z",
-    "updated_at": "2026-11-23T21:11:24.780Z"
+    "event_seq": 14,
+    "created_at": "2026-11-24T02:05:40.487Z",
+    "updated_at": "2026-11-24T02:05:52.537Z"
   },
   "first_stream": [
     {
@@ -74,27 +80,42 @@
     {
       "id": 7,
       "event": "delta",
-      "text": "阳把天边染成蜜色\n风携落叶掠过屋檐\n雁声远远掠过山脊\n炊烟缓缓融进暮"
+      "text": "阳收尽柳梢金，\n"
     },
     {
       "id": 8,
       "event": "delta",
-      "text": "霭\n薄雾漫过收割"
+      "text": "落叶铺阶一径深。\n雁"
     },
     {
       "id": 9,
       "event": "delta",
-      "text": "后的田\n凉意悄悄爬上窗棂\n一盏灯火次"
+      "text": "字横空书远意，\n虫声入夜"
     }
   ],
   "second_stream": [
     {
       "id": 10,
       "event": "delta",
-      "text": "第亮起\n秋夜在虫鸣里渐渐深了"
+      "text": "伴幽吟。\n风梳瘦"
     },
     {
       "id": 11,
+      "event": "delta",
+      "text": "影凉初透，\n月洗"
+    },
+    {
+      "id": 12,
+      "event": "delta",
+      "text": "疏枝露"
+    },
+    {
+      "id": 13,
+      "event": "delta",
+      "text": "欲沉。\n谁把暮云裁作画，\n半山秋色半山心。"
+    },
+    {
+      "id": 14,
       "event": "completed"
     }
   ]

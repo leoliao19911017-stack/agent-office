@@ -1,0 +1,49 @@
+{
+  "at": "2026-11-24T02:07:24.990Z",
+  "started_at": "2026-11-24T02:05:16.428Z",
+  "base": "http://127.0.0.1:8090",
+  "use_fallback": true,
+  "fallback_models": {
+    "ANTHROPIC_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_SONNET_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "glm-5",
+    "ANTHROPIC_DEFAULT_HAIKU_MODEL": "glm-5"
+  },
+  "upstream": {
+    "glm-5.4": {
+      "at": "2026-11-24T02:05:16.568Z",
+      "model": "glm-5.4",
+      "http": 529,
+      "ms": 140,
+      "body": "{\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"code\":\"1305\",\"message\":\"[1305][该模型当前访问量过大，请您稍后再试][202611241005167b0ae2c0f87541a3]\"},\"request_id\":\"202611241005167b0ae2c0f87541a3\"}"
+    },
+    "glm-5": {
+      "at": "2026-11-24T02:05:18.412Z",
+      "model": "glm-5",
+      "http": 200,
+      "ms": 1844,
+      "body": "{\"id\":\"msg_20261124100516cacf285379724ded\",\"type\":\"message\",\"role\":\"assistant\",\"model\":\"glm-5\",\"content\":[{\"type\":\"text\",\"text\":\"OK\"}],\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"usage\":{\"input_tokens\":17,\"output_tokens\":3,\"cache_read_input_tokens\":0,\"server_tool_use\":{\"web_search_requests\":0},\"service_tier\":\"standard\"}}"
+    }
+  },
+  "health": {
+    "ok": true,
+    "autoloop": true,
+    "build": "r73"
+  },
+  "results": [
+    {
+      "key": "d",
+      "batch": "p4",
+      "name": "P4 前端面板（D1-D7）",
+      "exit": 0,
+      "pass": 7,
+      "total": 7,
+      "expected": 7,
+      "ok": true,
+      "evidence": "rounds/d",
+      "log": "logs/d.log"
+    }
+  ],
+  "gates": [],
+  "ok": true
+}

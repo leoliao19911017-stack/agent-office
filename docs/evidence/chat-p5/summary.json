@@ -1,84 +1,20 @@
 {
-  "started_at": "2026-11-24T01:13:47.480Z",
-  "finished_at": "2026-11-24T01:20:41.932Z",
-  "base": "http://127.0.0.1:8090",
+  "started_at": "2026-11-24T02:01:12.224Z",
+  "finished_at": "2026-11-24T02:03:46.205Z",
+  "base": "http://127.0.0.1:57797",
   "results": [
-    {
-      "id": "E5",
-      "title": "同一 thread 不能并发跑两个 turn，第二个排队",
-      "pass": true,
-      "detail": "连发两条：第 2 条 POST 202 时 status=queued、queued_ahead=1\n采样 53 次：第 1 条在跑而第 2 条排队 37 次；两条同时在跑 0 次\n第 1 条 2026-11-24T01:13:49.126Z → 2026-11-24T01:13:59.556Z；第 2 条 2026-11-24T01:13:59.765Z → 2026-11-24T01:14:03.587Z（在第 1 条结束之后才开始）\n第 2 条的 restoring 事件：queued_ms=10412\n期间系统里这个对话的 dsh CLI 进程（cmd /c …dsh.cmd --profile headless）最多 2 个（采样 35 次；切换到第 2 条时旧进程退出中，可能出现 2 个命令行进程，但两个 turn 同时在跑 0 次）\n排队时界面小字：[\"正在启动 Agent\",\"排队中（前面还有 1 条）\"]"
-    },
     {
       "id": "E3a",
       "title": "断流 → 「连接中断，正在重连」；重连后按序号补齐、不丢不重",
       "pass": true,
-      "detail": "断流前面板里已有 37 字；掐断浏览器到服务的 5 条 TCP 连接（服务端照跑）\n横幅=「连接中断，正在重连…（重连后按序号补发，内容不丢）」\n自动重连后横幅消失=true；最终状态=「完成回答完成」\n面板里的回复 108 字，与库里的完整回复一致=true"
-    },
-    {
-      "id": "E3b",
-      "title": "服务重启断流 → 「连接中断，正在重连」→ 重连后如实落「中断」并说明原因",
-      "pass": true,
-      "detail": "重启前检查：在跑的聊天轮次 1 个（就是本轮），别人的在途工作 0\n服务停掉期间横幅=「连接中断，正在重连…（重连后按序号补发，内容不丢）」\n重连后头部=「中断本轮中断」；气泡下的说明=「本轮中断 服务重启，本轮执行中断 重试」\n库里这一轮 status=interrupted error.kind=server_restarted"
-    },
-    {
-      "id": "E1a",
-      "title": "429 限流 → 「请求受限」；没有重置时间就不编时间",
-      "pass": true,
-      "detail": "真 Claude CLI 打本地假上游（真 HTTP 429）：上游共收到 11 次请求\n在途中：头部「请求受限CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次」，气泡小字 [\"请求受限 · CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次\"]\n结束：status=rate_limited code=rate_limit retry_at=null retry_hint=「稍后可以重试；CLI 已自动重试 10/10 次仍未通过」\n界面错误框=「请求受限 稍后可以重试；CLI 已自动重试 10/10 次仍未通过 · API Error: Request rejected (429) · This request would exceed your organization's rate limit of 50,000 input token」"
-    },
-    {
-      "id": "E1b",
-      "title": "额度耗尽 → 「请求受限」+ 具体何时可重试（有 resetAt 就显示）",
-      "pass": true,
-      "detail": "真 Claude CLI 打本地假上游（GLM 额度文案 + 真 HTTP 429）：上游共收到 11 次请求；首次文案=「{\"n\":1,\"method\":\"POST\",\"url\":\"/v1/messages?beta=true\",\"model\":\"glm-5.4\",\"mode\":\"glm-quota\",\"at\":\"2026-11-24T01:16:46.861」\n在途中：头部「请求受限CLI 正在自动重试（第 2/10 次），约 1 秒后第 3 次」\n结束：status=rate_limited code=quota_exhausted label=请求受限 retry_at=2026-11-25T01:30:00.000Z（本机 09:30） retry_hint=「额度 11/25 09:30 重置，之后可以重试」\n界面：头部=「请求受限额度已用尽 · 额度 11/25 09:30 重置，之后可以重试」错误框=「请求受限 额度 11/25 09:30 重置，之后可以重试 · API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-25 09:30 重置 API Error: Request rejected (429) · 已达到 5 小时的使用上限。限额将在 2026-11-」"
-    },
-    {
-      "id": "E4a",
-      "title": "没有任何轮次的新对话 → 未知（不显示空闲）",
-      "pass": true,
-      "detail": "头部=「未知还没有对话记录：没有证据，不显示空闲」"
-    },
-    {
-      "id": "E4b",
-      "title": "服务进程被杀后点「刷新记录」→ 未知 + 取不到状态的原因；服务回来后恢复",
-      "pass": true,
-      "detail": "服务停掉后：头部=「未知取不到状态：Failed to fetch」；正文=「」\n服务回来点「刷新记录」后：头部=「未知DSH 退出但没有 final 事件，执行结果未确认」"
-    },
-    {
-      "id": "E4c",
-      "title": "CLI 正常退出却没有结果 → 未知 / 执行结果未确认",
-      "pass": true,
-      "detail": "turn status=unknown code=unknown message=「DSH 退出但没有 final 事件，执行结果未确认」\n界面：头部=「未知DSH 退出但没有 final 事件，执行结果未确认」；说明=「执行结果未确认 DSH 退出但没有 final 事件，执行结果未确认」"
-    },
-    {
-      "id": "E2-cli_path_missing",
-      "title": "DSH_BIN 指到不存在的路径",
-      "pass": true,
-      "detail": "status=failed（界面 failed） code=cli_start_failed reason=cli_path_missing\nmessage=「找不到 CLI：C:/nope/never/installed/dsh.cmd 这个路径上没有文件（路径写错，或程序被卸载 / 移走了）」\n用户消息=failed 助手消息=failed"
-    },
-    {
-      "id": "E2-cli_not_found",
-      "title": "DSH_BIN 是 PATH 里没有的命令",
-      "pass": true,
-      "detail": "status=failed（界面 failed） code=cli_start_failed reason=cli_not_found\nmessage=「找不到命令 definitely-not-a-dsh-binary-xyz.cmd：系统找不到这个命令（不在 PATH 里，或名字写错了）」\n用户消息=failed 助手消息=failed"
-    },
-    {
-      "id": "E2-permission_denied",
-      "title": "DSH_BIN 指到的文件被 icacls 拒绝执行（Administrator:(RX) Deny）",
-      "pass": true,
-      "detail": "status=failed（界面 failed） code=cli_start_failed reason=permission_denied\nmessage=「没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问）」\n用户消息=failed 助手消息=failed\n界面：头部「失败Agent 启动失败」，说明「Agent 启动失败 没有权限执行 C:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-e2-1795483236228/dsh-denied.cmd（系统拒绝访问） 重试」"
+      "detail": "断流前面板里已有 14 字；掐断浏览器到服务的 1 条 TCP 连接（服务端照跑）\n横幅=「连接中断，正在重连…（重连后按序号补发，内容不丢）」\n自动重连后横幅消失=true；最终状态=「完成回答完成」\n面板里的回复 131 字，与库里的完整回复一致=true\n页面错误 0 条"
     }
   ],
   "page_errors_all": [
-    "requestfailed: http://127.0.0.1:18799/api/chat/turns/ct-532598da87/stream net::ERR_INCOMPLETE_CHUNKED_ENCODING",
-    "console: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING",
-    "requestfailed: http://127.0.0.1:8090/api/chat/turns/ct-8438985484/stream net::ERR_CONNECTION_RESET",
-    "console: Failed to load resource: net::ERR_CONNECTION_RESET",
-    "requestfailed: http://127.0.0.1:61350/api/chat/threads/th-fae8fcb30b/messages net::ERR_CONNECTION_REFUSED",
-    "console: Failed to load resource: net::ERR_CONNECTION_REFUSED"
+    "requestfailed: http://127.0.0.1:18799/api/chat/turns/ct-8ae63ce69a/stream net::ERR_INCOMPLETE_CHUNKED_ENCODING",
+    "console: Failed to load resource: net::ERR_INCOMPLETE_CHUNKED_ENCODING"
   ],
   "page_errors_unexpected": [],
-  "pass": 11,
-  "total": 11
+  "pass": 1,
+  "total": 1
 }

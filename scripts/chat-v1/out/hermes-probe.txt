@@ -1,0 +1,94 @@
+$ where hermes
+C:\Users\Administrator\AppData\Local\hermes\hermes-agent\venv\Scripts\hermes.exe
+C:\Users\Administrator\AppData\Local\hermes\bin\hermes.exe
+
+$ hermes --version
+Hermes Agent v0.21.3 (2026.9.14)
+Install directory: C:\Users\Administrator\AppData\Local\hermes\hermes-agent
+Install method: git
+Python: 3.11.16
+OpenAI SDK: 2.24.0
+
+$ hermes --help（与「非交互」相关的行）
+usage: hermes [-h] [--version] [-z PROMPT] [--usage-file PATH] [-m MODEL]
+              [--resume SESSION] [--no-restore-cwd] [--in DIR]
+  -z PROMPT, --oneshot PROMPT
+                        spend. No effect outside -z/--oneshot.
+                        anthropic/claude-sonnet-4.6). Applies to -z/--oneshot
+                        openrouter, anthropic). Applies to -z/--oneshot and
+  -t TOOLSETS, --toolsets TOOLSETS
+                        invocation. Applies to -z/--oneshot and --tui.
+  --resume SESSION, -r SESSION
+                        with '--resume latest' or -c, the most recent session
+    hermes --resume <session_id>  Resume a specific session by ID
+    hermes --resume latest        Resume the most recent session (same as -c)
+    hermes --tui --resume latest --in ./dir   Resume ./dir's latest session in the TUI
+
+$ hermes chat --help（query / format / resume）
+usage: hermes chat [-h] [-q QUERY | --query-file PATH] [--oneshot]
+                   [-Q] [--format {text,stream-json}] [--resume SESSION_ID]
+                        turn); combined with --oneshot or -Q, or on a non-TTY,
+  --query-file PATH     Read the single query from a file instead of the
+  --oneshot             With -q/--query-file: answer the query and exit
+  -t TOOLSETS, --toolsets TOOLSETS
+  --format {text,stream-json}
+                        'stream-json' emits newline-delimited JSON events
+  --resume SESSION_ID, -r SESSION_ID
+                        --resume latest' / -c lookups to DIR's workspace).
+
+$ hermes tools --summary（前 40 行）
+Built-in toolsets (cli):
+  ✓ enabled  web  🔍 Web Search & Scraping
+  ✓ enabled  browser  🌐 Browser Automation
+  ✓ enabled  terminal  💻 Terminal & Processes
+  ✓ enabled  file  📁 File Operations
+  ✓ enabled  code_execution  ⚡ Code Execution
+  ✓ enabled  vision  👁️  Vision / Image Analysis
+  ✗ disabled  video  🎬 Video Analysis
+  ✓ enabled  image_gen  🎨 Image Generation
+  ✗ disabled  video_gen  🎬 Video Generation
+  ✗ disabled  x_search  🐦 X (Twitter) Search
+  ✓ enabled  tts  🔊 Text-to-Speech
+  ✗ disabled  stt  🎙️ Speech-to-Text
+  ✓ enabled  skills  📚 Skills
+  ✓ enabled  todo  📋 Task Planning
+  ✗ disabled  kanban  📌 Kanban
+  ✓ enabled  memory  💾 Memory
+  ✗ disabled  context_engine  🧩 Context Engine
+  ✓ enabled  session_search  🔎 Session Search
+  ✓ enabled  connections  🔌 Connections
+  ✓ enabled  clarify  ❓ Clarifying Questions
+  ✓ enabled  delegation  👥 Task Delegation
+  ✓ enabled  cronjob  ⏰ Cron Jobs
+  ✗ disabled  homeassistant  🏠 Home Assistant
+  ✗ disabled  spotify  🎵 Spotify
+  ✗ disabled  yuanbao  🤖 Yuanbao
+  ✓ enabled  computer_use  🖱️  Computer Use (macOS/Windows/Linux)
+
+Plugin toolsets (cli):
+  ✗ disabled  a2a  🔌 A2A
+
+MCP servers:
+  claude-code  all tools enabled
+
+
+$ hermes -z "Reply with exactly: HERMES_ONESHOT_OK"
+exit=0
+stdout="HERMES_ONESHOT_OK"
+stderr=""
+
+$ hermes chat --query-file - --format stream-json --oneshot -t web,session_search
+exit=0 session_id=20261124_090541_719645
+事件类型=["system/init","text","result"]
+text 事件数=18
+最终文本="记住了：Leo，幸运数字 42，猫叫汽水。\n\n等下随时问。"
+stderr="session_id: 20261124_090541_719645"
+
+$ hermes chat ... --resume 20261124_090541_719645（第 2 轮）
+exit=0 session_id=20261124_090541_719645（与第 1 轮相同=true）
+第 2 轮回复="42"
+
+$ hermes chat ... --resume does-not-exist-xyz（坏 ID）
+exit=1 session_id=does-not-exist-xyz
+事件=[{"type":"system","subtype":"init","model":"deepseek-v4-flash","session_id":"does-not-exist-xyz","timestamp":1795482350019},{"type":"result","session_id":"does-not-exist-xyz","exit_code":1,"text":"","tokens":{"input":0,"output":0,"total":0,"cache_read":0,"cache_write":0},"duration_ms":355,"error":"credentials or agent init failed","timestamp":1795482350375}]
+stderr="Session not found: does-not-exist-xyz\r\nUse a session ID from a previous CLI run (hermes sessions list).\r\n\r\nsession_id: does-not-exist-xyz"

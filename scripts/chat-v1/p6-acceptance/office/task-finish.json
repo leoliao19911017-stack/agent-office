@@ -1,0 +1,6 @@
+{
+  "evidence": "docs/evidence/chat-p6/acceptance.md",
+  "note": "F1-F2 全过（scripts/chat-v1/p6-acceptance/run.mjs 退出码 0，页面错误 0）。探测：hermes v0.21.3 支持 --query-file - / --format stream-json / --resume（第 2 轮答对第 1 轮数字 42）；真实 hermes 对话 thread th-75a159e5b0，session 20261124_090702_ab2df9。讨论模式只开 web,session_search，面板如实标注不能读写本机文件。",
+  "attempt_id": "a-85d2fa95-mwu0geq7",
+  "code_sha": "1e09fcdc78016e9e46a98db331392b0d24a3529a"
+}

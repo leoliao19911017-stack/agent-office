@@ -1,0 +1,56 @@
+{
+  "thread_id": "th-70ed6ab814",
+  "workspace": "E:\\DesktopProjects\\Soda Intelligence - AI Native Thinking\\Soda Office\\docs\\evidence\\chat-all\\rounds\\b\\ws-1795485656594",
+  "turn": {
+    "turn_id": "ct-b466652873",
+    "thread_id": "th-70ed6ab814",
+    "attempt_id": "ca-9dd5364c5d",
+    "status": "failed",
+    "status_label": "Agent 启动失败",
+    "display_status": "failed",
+    "display_label": "Agent 启动失败",
+    "provider": "dsh",
+    "resume": false,
+    "user_message_id": "cm-02f51146a3",
+    "assistant_message_id": "cm-0d5aea2509",
+    "error": {
+      "kind": "cli_start_failed",
+      "code": "cli_start_failed",
+      "reason": "workspace_not_found",
+      "label": "Agent 启动失败",
+      "message": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/b/ws-1795485656594",
+      "text": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/b/ws-1795485656594",
+      "retryable": true,
+      "api_error_status": null,
+      "retry_at": null,
+      "retry_hint": null
+    },
+    "started_at": "2026-11-24T02:00:56.741Z",
+    "ended_at": "2026-11-24T02:00:56.824Z",
+    "created_at": "2026-11-24T02:00:56.627Z"
+  },
+  "error_event": {
+    "turn_id": "ct-b466652873",
+    "status": "failed",
+    "text_len": 0,
+    "kind": "cli_start_failed",
+    "code": "cli_start_failed",
+    "reason": "workspace_not_found",
+    "label": "Agent 启动失败",
+    "message": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/b/ws-1795485656594",
+    "text": "工作目录不存在：E:/DesktopProjects/Soda Intelligence - AI Native Thinking/Soda Office/docs/evidence/chat-all/rounds/b/ws-1795485656594",
+    "retryable": true,
+    "api_error_status": null,
+    "retry_at": null,
+    "retry_hint": null,
+    "provider_session_id": null,
+    "seq": 2,
+    "type": "error",
+    "at": "2026-11-24T02:00:56.899Z"
+  },
+  "event_types": [
+    "started",
+    "error"
+  ],
+  "user_message_status": "failed"
+}

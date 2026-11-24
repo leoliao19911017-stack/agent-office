@@ -1,0 +1,22 @@
+{
+  "request": "我第一句说了什么？请一字不差地引用原文。",
+  "turn": {
+    "turn_id": "ct-6148526b15",
+    "thread_id": "th-76ecac2d79",
+    "attempt_id": "ca-dd1a280c9c",
+    "status": "completed",
+    "status_label": "回答完成",
+    "display_status": "completed",
+    "display_label": "完成",
+    "provider": "dsh",
+    "resume": true,
+    "user_message_id": "cm-d74c750398",
+    "assistant_message_id": "cm-2aef2fe193",
+    "error": null,
+    "started_at": "2026-11-24T02:00:49.360Z",
+    "ended_at": "2026-11-24T02:00:53.773Z",
+    "created_at": "2026-11-24T02:00:49.246Z"
+  },
+  "reply": "口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。",
+  "first_message": "口令是：青禾-9241。它只是这次对话里的口令，不要写进任何文件。现在只回复两个字：收到。"
+}

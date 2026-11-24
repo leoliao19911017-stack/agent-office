@@ -1,0 +1,4 @@
+{
+  "agent_id": "dsh",
+  "note": "P6 执行：先实测 hermes v0.21.3 的非交互入口（--query-file - / stream-json / --resume），再按实测能力写 adapter；真 hermes 跑 F1-F2，真浏览器验收续聊。"
+}

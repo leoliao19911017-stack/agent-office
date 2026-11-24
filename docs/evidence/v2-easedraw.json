@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-11-23T18:34:08.045Z",
+  "url": "http://127.0.0.1:8090/board-cromma.html",
+  "initial": {
+    "hash": "#easedraw",
+    "route": "easedraw",
+    "boardHidden": true,
+    "easeHidden": false,
+    "src": "/easedraw/index.html",
+    "iframeRect": {
+      "x": 277,
+      "y": 147.5,
+      "w": 1144,
+      "h": 737.5
+    },
+    "wrapRect": {
+      "x": 276,
+      "y": 146.5,
+      "w": 1146,
+      "h": 739.5
+    },
+    "outerScroll": {
+      "deScrollH": 900,
+      "deClientH": 900,
+      "deScrollW": 1440,
+      "deClientW": 1440,
+      "bodyScrollH": 900,
+      "bodyClientH": 900,
+      "bodyScrollW": 1440,
+      "bodyClientW": 1440,
+      "bodyOverflow": "hidden"
+    }
+  },
+  "inner": {
+    "title": "逸刻 EaseDraw · 一幅画的时间",
+    "appChildren": 1,
+    "appText": "逸刻 · EaseDraw 一幅画的时间 专注多久，画就画多久。 画完，盖上你的印，挂进自己的展厅。 白天 · 专注 选一幅名画，它陪你从线稿一直画到完成 夜里 · 入睡 台灯下跟着呼吸，看三幅画慢慢长出来 你的展厅 每一幅都盖着你的印，记下你专注过的时间 开始 无需注册 · 记录只保存在这台设备上",
+    "deScrollH": 738,
+    "deClientH": 738,
+    "deScrollW": 1144,
+    "deClientW": 1144,
+    "bodyScrollH": 738,
+    "bodyClientH": 738,
+    "bodyScrollW": 1144,
+    "bodyClientW": 1144,
+    "bodyOverflow": "hidden",
+    "appOverflow": "hidden",
+    "appPosition": "fixed"
+  },
+  "fits": true,
+  "noDoubleScroll": true,
+  "hasContent": true,
+  "routing": true,
+  "started": {
+    "clicked": true,
+    "changed": true,
+    "text": "今晚 02:34 · 从这一幅起，跟着呼吸慢慢画 入睡 睡莲 莫奈 1906 星月夜 梵高 1889 夜曲：蓝与金 惠斯勒 1872 罗纳河上的星夜 梵高 1888 夜间露天咖啡座 梵高 1888 月升 英尼斯 1891 凝望月亮的两个人 弗里德里希 1820 海上月升 弗里德里希 1822 星夜 米勒 1851 麦田上升起的月亮 梵高 1889 月光下的利物浦码头 格里姆肖 1887 泰晤士河倒影 格里姆肖 1880 第聂伯河上的月夜"
+  },
+  "back": {
+    "hash": "#board",
+    "route": "board",
+    "boardHidden": false,
+    "easeHidden": true
+  },
+  "forward": {
+    "hash": "#easedraw",
+    "route": "easedraw",
+    "boardHidden": true,
+    "easeHidden": false
+  },
+  "forwardText": "逸刻 · EaseDraw\n一幅画的时间\n\n专注多久，画就画多久。\n画完，盖上你的印，挂进自己的展厅。\n\n白天 · 专注",
+  "backToBoard": {
+    "hash": "#board",
+    "boardHidden": false,
+    "easeHidden": true
+  },
+  "pageErrors": [],
+  "pass": true
+}

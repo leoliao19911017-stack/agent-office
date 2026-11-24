@@ -1,0 +1,193 @@
+{
+  "generatedAt": "2026-11-23T18:33:20.447Z",
+  "url": "http://127.0.0.1:8090/board-cromma.html",
+  "viewport": {
+    "w": 1440,
+    "h": 900
+  },
+  "textNodes": 163,
+  "distribution": {
+    "12px": 118,
+    "13px": 29,
+    "14px": 2,
+    "18px": 6,
+    "19px": 1,
+    "20px": 1,
+    "22px": 3,
+    "24px": 1,
+    "34px": 1,
+    "40px": 1
+  },
+  "minFontSize": 12,
+  "maxFontSize": 40,
+  "under11": [],
+  "under13Count": 118,
+  "bodyTextMin": 13,
+  "bodyRows": [
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "帮我做一个记账小工具，能记录每笔支出、按分类统计每月花了多少"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "R87 整改验证·喝水记录"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "F01 两条历史登记独立保存验证（测完即删）"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "R11 决策端点自测（一次性，测完即删）"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "Agent Office 可视化与流程打通"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "UI 资产化与视觉统一"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "Skill Hub 跨 Agent 技能安装"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "产物库文件浏览与预览"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "EaseDraw 专注模式接入工作台"
+    },
+    {
+      "sel": "task-row__title",
+      "size": 13,
+      "text": "每日工作台日报自动生成"
+    },
+    {
+      "sel": "",
+      "size": 13,
+      "text": "4 个 Agent · 卡片显示分配任务数与证据源 · 右侧同步选中详情"
+    },
+    {
+      "sel": "agent-card__doing",
+      "size": 13,
+      "text": "没有可信的执行证据（证据不足，不能断言在执行）"
+    },
+    {
+      "sel": "agent-card__doing",
+      "size": 13,
+      "text": "没有可信的执行证据（证据不足，不能断言在执行）"
+    },
+    {
+      "sel": "agent-card__doing",
+      "size": 13,
+      "text": "该 Agent 没有执行实例，也没有分配给它的待继续任务"
+    },
+    {
+      "sel": "agent-card__doing",
+      "size": 13,
+      "text": "没有可信的执行证据（证据不足，不能断言在执行）"
+    },
+    {
+      "sel": "detail__value",
+      "size": 13,
+      "text": "CLI 可用；执行状态仍只能看外部日志"
+    },
+    {
+      "sel": "detail__value",
+      "size": 13,
+      "text": "没有可信的执行证据（证据不足，不能断言在执行）"
+    },
+    {
+      "sel": "detail__value",
+      "size": 13,
+      "text": "没有可信证据证明它有没有任务"
+    }
+  ],
+  "samples": [
+    {
+      "text": "Soda",
+      "size": 19,
+      "tag": "SPAN",
+      "cls": "brand__name"
+    },
+    {
+      "text": "Office",
+      "size": 18,
+      "tag": "EM",
+      "cls": ""
+    },
+    {
+      "text": "V2",
+      "size": 12,
+      "tag": "SPAN",
+      "cls": "brand__ver"
+    },
+    {
+      "text": "看板",
+      "size": 14,
+      "tag": "SPAN",
+      "cls": ""
+    },
+    {
+      "text": "EaseDraw",
+      "size": 14,
+      "tag": "SPAN",
+      "cls": ""
+    },
+    {
+      "text": "数据源",
+      "size": 12,
+      "tag": "SPAN",
+      "cls": "datasrc"
+    },
+    {
+      "text": "127.0.0.1:8090",
+      "size": 12,
+      "tag": "B",
+      "cls": ""
+    },
+    {
+      "text": "观测",
+      "size": 12,
+      "tag": "SPAN",
+      "cls": "updated"
+    },
+    {
+      "text": "刚刚",
+      "size": 12,
+      "tag": "B",
+      "cls": ""
+    },
+    {
+      "text": "刷新",
+      "size": 13,
+      "tag": "SPAN",
+      "cls": ""
+    },
+    {
+      "text": "项目",
+      "size": 13,
+      "tag": "H2",
+      "cls": "eyebrow"
+    },
+    {
+      "text": "soda-office",
+      "size": 18,
+      "tag": "SPAN",
+      "cls": "project__name"
+    }
+  ],
+  "pass": true
+}
