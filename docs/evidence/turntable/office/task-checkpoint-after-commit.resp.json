@@ -1,0 +1,19 @@
+{
+  "status": 201,
+  "json": {
+    "ok": true,
+    "checkpoint": {
+      "checkpoint_id": "ck-mwualqx8-5f4b71",
+      "task_id": "t-20261124060650-8a75cd",
+      "attempt_id": "a-f385981d-mwual8on",
+      "git_sha": "b6c29556ff74c065e51d006dc5d5b39016656019",
+      "file_count": 8,
+      "created_at": "2026-11-24T06:07:20.760Z"
+    },
+    "git_sha": "b6c29556ff74c065e51d006dc5d5b39016656019",
+    "state": {
+      "status": "completed",
+      "status_reason": "验收通过，代码版本与检查点一致"
+    }
+  }
+}

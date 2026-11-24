@@ -210,3 +210,29 @@ node --no-warnings --test test/api.tasks.test.js test/api.agents.test.js \
 ## 七、第三批状态
 
 第三批（转盘区胶囊切换 `Agent 状态 ⇄ EaseDraw`）**未做**，等老板验收第二批后再做。
+
+---
+
+## 八、Agent Office 登记
+
+- 任务：`t-20261124060650-8a75cd`
+  「看板 P0 第二批：中央同心圆弧转盘 + tool_events 真实采集」
+- 执行实例：`a-f385981d-mwual8on`（dsh）
+- 提交前检查点：`ck-mwual9e9-b964f8`（git `e89b869`）
+- 提交后检查点：`ck-mwualqx8-5f4b71`（git `b6c2955`）
+- 代码提交：`b6c29556ff74c065e51d006dc5d5b39016656019`
+- 收尾：`POST /api/tasks/:id/finish` → **completed**
+  `验收通过，代码版本与检查点一致`
+
+登记响应留档：
+
+```
+docs/evidence/turntable/office/task-create.resp.json
+docs/evidence/turntable/office/task-attempt.resp.json
+docs/evidence/turntable/office/task-checkpoint.resp.json
+docs/evidence/turntable/office/task-checkpoint-after-commit.resp.json
+docs/evidence/turntable/office/task-finish.resp.json
+docs/evidence/turntable/office/ids.json
+```
+
+一句话：**第二批已完成，任务书验收项 24/24 全过，Agent Office 任务 completed，第三批未动，等验收。**
