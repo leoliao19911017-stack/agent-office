@@ -35,8 +35,10 @@ import { queryEvents, countArtifacts, EVIDENCE, recordAcceptance } from './lib/e
 import { detectDsh } from './adapters/dsh.mjs';
 import { detectClaude, listClaudeSessions } from './adapters/claude.mjs';
 import { probeCliBinary } from './adapters/external.mjs';
+import { listAgents, agentExists } from './lib/agents.mjs';
+import { spawnSync } from 'node:child_process';
+import { spawnPlan } from './chat/proc.mjs';
 
-const AGENTS = new Set(['dsh', 'claude', 'codex', 'hermes']);
 const TASK_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})$/;
 const TASK_ACTION_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})\/(attempt|checkpoint|handoff|finish)$/;
 
@@ -159,60 +161,127 @@ function pickString(obj, ...keys) {
   return null;
 }
 
-/** 可用性探测缓存：status-v2 会被前端轮询，不能每次都起子进程。 */
-const probeCache = { at: 0, dsh: null, claude: null, codex: null };
+/** 可用性探测缓存：status-v2 会被前端轮询，同一份配置 15 秒内不重复起子进程。 */
 const PROBE_TTL_MS = 15000;
+const probeCache = new Map(); // `${agent_id}|${updated_at}` → { at, probe }
 
-async function collectAvailability(opts = {}) {
-  const nowMs = Date.now();
-  if (probeCache.dsh && nowMs - probeCache.at < PROBE_TTL_MS) return probeCache;
+function probeKey(a) {
+  return [a.agent_id, a.updated_at, a.enabled, a.cli_command, a.base_url, a.model, a.protocol].join('|');
+}
 
-  const dsh = detectDsh({ now: nowMs });
-  let claude = {
-    available: null, reason: 'scan_failed', checked_at: stamp(nowMs), observed_at: stamp(nowMs),
-    evidence_source: EVIDENCE.EXTERNAL, detail: null,
-  };
-  try {
-    const cli = await detectClaude({ now: nowMs });
-    const scan = listClaudeSessions({ sinceMs: nowMs - 24 * 60 * 60 * 1000, limit: 1 });
-    const latest = scan.sessions && scan.sessions[0];
-    if (latest && latest.limited) {
-      claude = {
-        ...cli,
-        available: false,
-        reason: latest.reason || 'quota_5h',
-        detail: latest.reset_at ? `额度重置时间 ${latest.reset_at}` : (latest.sample || null),
-      };
-    } else {
-      claude = { ...cli, detail: cli.available ? (latest ? 'CLI 可用；执行状态仍只能看外部日志' : 'CLI 可用；未找到会话') : cli.detail };
-    }
-  } catch (err) {
-    claude = { ...claude, detail: String(err.message || err).slice(0, 200) };
+/** 通用 CLI 探测：支持完整路径（含空格）与 .cmd，失败不猜 0。 */
+function probeCommand(bin, nowMs) {
+  const checkedAt = stamp(nowMs);
+  if (!bin) {
+    return {
+      available: false, reason: 'cli_not_configured', version: null, checked_at: checkedAt,
+      observed_at: checkedAt, evidence_source: EVIDENCE.PROCESS_PROBE, detail: '这个 CLI Agent 还没配命令',
+    };
   }
-
-  let codex = {
-    available: null, reason: 'probe_failed', checked_at: stamp(nowMs), observed_at: stamp(nowMs),
+  const plan = spawnPlan(bin, ['--version']);
+  const r = spawnSync(plan.command, plan.args, {
+    encoding: 'utf8', timeout: 5000, windowsHide: true, shell: plan.shell, maxBuffer: 256 * 1024,
+  });
+  if (r.error) {
+    return {
+      available: false, reason: r.error.code === 'ENOENT' ? 'cli_not_found' : 'probe_failed',
+      version: null, checked_at: checkedAt, observed_at: checkedAt,
+      evidence_source: EVIDENCE.PROCESS_PROBE, detail: String(r.error.message || r.error).slice(0, 240),
+    };
+  }
+  if (r.status !== 0) {
+    return {
+      available: false, reason: 'cli_error', version: null, checked_at: checkedAt,
+      observed_at: checkedAt, evidence_source: EVIDENCE.PROCESS_PROBE,
+      detail: String(r.stderr || r.stdout || `exit ${r.status}`).slice(0, 240),
+    };
+  }
+  return {
+    available: true, reason: null,
+    version: String(r.stdout || '').trim().split(String.fromCharCode(10))[0].slice(0, 120) || null,
+    checked_at: checkedAt, observed_at: checkedAt,
     evidence_source: EVIDENCE.PROCESS_PROBE, detail: null,
   };
-  try {
-    const r = await probeCliBinary('codex', { now: nowMs });
-    codex = {
-      available: r.available,
-      reason: r.available ? null : 'cli_not_found',
-      checked_at: r.checked_at,
-      observed_at: r.observed_at,
-      evidence_source: EVIDENCE.PROCESS_PROBE,
-      detail: r.error || null,
+}
+
+/** 一个 Agent 的可用性证据。名册从 DB 来，探测按 kind 与 id 分流，不写死 agent 清单。 */
+async function probeAgent(db, a, nowIso) {
+  const nowMs = Date.now();
+  const key = probeKey(a);
+  const hit = probeCache.get(key);
+  if (hit && nowMs - hit.at < PROBE_TTL_MS) return hit.probe;
+
+  let probe;
+  if (a.kind === 'api') {
+    // 不为了一次轮询就花额度；能不能用由「测试连接 / 发一条消息」实测。
+    probe = {
+      available: null,
+      reason: 'api_not_probed',
+      checked_at: nowIso, observed_at: nowIso,
+      evidence_source: 'none',
+      detail: `API 已配置（${a.protocol || '?'} · ${a.model || '?'}）；可用性需发消息实测，不凭配置猜`,
     };
-  } catch (err) {
-    codex = { ...codex, detail: String(err.message || err).slice(0, 200) };
+  } else if (a.kind === 'external' && a.agent_id === 'hermes') {
+    probe = hermesAvailability(db, nowIso);
+  } else if (a.kind === 'external') {
+    probe = {
+      available: null, reason: 'no_self_report', checked_at: nowIso, observed_at: nowIso,
+      evidence_source: 'none', detail: '外部 Agent 只信自报，当前没有自报记录',
+    };
+  } else if (a.agent_id === 'claude') {
+    try {
+      const cli = await detectClaude({ now: nowMs });
+      const scan = listClaudeSessions({ sinceMs: nowMs - 24 * 60 * 60 * 1000, limit: 1 });
+      const latest = scan.sessions && scan.sessions[0];
+      if (latest && latest.limited) {
+        probe = {
+          ...cli, available: false, reason: latest.reason || 'quota_5h',
+          detail: latest.reset_at ? `额度重置时间 ${latest.reset_at}` : (latest.sample || null),
+        };
+      } else {
+        probe = { ...cli, detail: cli.available ? (latest ? 'CLI 可用；执行状态仍只能看外部日志' : 'CLI 可用；未找到会话') : cli.detail };
+      }
+    } catch (err) {
+      probe = {
+        available: null, reason: 'scan_failed', checked_at: nowIso, observed_at: nowIso,
+        evidence_source: EVIDENCE.EXTERNAL, detail: String(err.message || err).slice(0, 200),
+      };
+    }
+  } else if (a.agent_id === 'dsh') {
+    try {
+      probe = detectDsh({ now: nowMs, dshBin: a.cli_command || undefined });
+    } catch (err) {
+      probe = {
+        available: null, reason: 'probe_failed', checked_at: nowIso, observed_at: nowIso,
+        evidence_source: EVIDENCE.EXECUTOR, detail: String(err.message || err).slice(0, 200),
+      };
+    }
+  } else if (a.agent_id === 'codex') {
+    try {
+      const r = await probeCliBinary(a.cli_command || 'codex', { now: nowMs });
+      probe = {
+        available: r.available, reason: r.available ? null : 'cli_not_found',
+        checked_at: r.checked_at, observed_at: r.observed_at,
+        evidence_source: EVIDENCE.PROCESS_PROBE, detail: r.error || null,
+      };
+    } catch (err) {
+      probe = {
+        available: null, reason: 'probe_failed', checked_at: nowIso, observed_at: nowIso,
+        evidence_source: EVIDENCE.PROCESS_PROBE, detail: String(err.message || err).slice(0, 200),
+      };
+    }
+  } else {
+    probe = probeCommand(a.cli_command, nowMs);
   }
 
-  probeCache.at = nowMs;
-  probeCache.dsh = dsh;
-  probeCache.claude = claude;
-  probeCache.codex = codex;
-  return probeCache;
+  probeCache.set(key, { at: nowMs, probe });
+  return probe;
+}
+
+async function collectAvailability(db, agents, nowIso) {
+  const out = {};
+  for (const a of agents) out[a.agent_id] = await probeAgent(db, a, nowIso);
+  return out;
 }
 
 function hermesAvailability(db, nowIso) {
@@ -276,18 +345,14 @@ export async function handleTasksApi(req, res, path, method, deps = {}) {
 
   // ---- GET /api/agents/status-v2 ---------------------------------------
   if (isStatusV2) {
-    const probes = await collectAvailability();
-    const availability = {
-      dsh: probes.dsh,
-      claude: probes.claude,
-      codex: probes.codex,
-      hermes: hermesAvailability(db, nowIso),
-    };
-    const result = evaluateAgentStatuses(db, { availability, now: nowIso });
+    const agents = listAgents(db, { enabledOnly: true });
+    const probes = await collectAvailability(db, agents, nowIso);
+    const availability = Object.fromEntries(agents.map((a) => [a.agent_id, probes[a.agent_id]]));
+    const result = evaluateAgentStatuses(db, { availability, now: nowIso, agents });
     send(deps, res, 200, {
       ...result,
       probes: availability,
-      agents_available: [...AGENTS],
+      agents_available: agents.map((a) => a.agent_id),
     });
     return true;
   }
@@ -373,7 +438,7 @@ export async function handleTasksApi(req, res, path, method, deps = {}) {
     requireTask(db, taskId);
     const body = (await bodyOf(req, deps)) || {};
     const agentId = pickString(body, 'agent_id', 'agentId') || 'dsh';
-    if (!AGENTS.has(agentId)) throw httpError(400, 'BAD_AGENT', `未知 agent_id：${agentId}`);
+    if (!agentExists(db, agentId, { enabledOnly: true })) throw httpError(400, 'BAD_AGENT', `未知或已禁用的 agent_id：${agentId}`);
     const worktreePath = pickString(body, 'worktree_path', 'worktreePath');
     const attemptId = newAttemptId();
 
@@ -438,7 +503,7 @@ export async function handleTasksApi(req, res, path, method, deps = {}) {
     requireTask(db, taskId);
     const body = (await bodyOf(req, deps)) || {};
     const toAgent = pickString(body, 'to_agent_id', 'toAgentId', 'to');
-    if (!toAgent || !AGENTS.has(toAgent)) throw httpError(400, 'BAD_AGENT', 'to_agent_id 必填且必须已知');
+    if (!toAgent || !agentExists(db, toAgent, { enabledOnly: true })) throw httpError(400, 'BAD_AGENT', 'to_agent_id 必填且必须是启用中的已知 Agent');
     const fromAttemptId = pickString(body, 'from_attempt_id', 'fromAttemptId', 'from');
     const explicitPath = pickString(body, 'worktree_path', 'worktreePath');
 

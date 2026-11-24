@@ -1,0 +1,204 @@
+{
+  "started_at": "2026-11-24T05:24:25.473Z",
+  "checks": [
+    {
+      "name": "G4 现有 4 个 agent_id 原值保留",
+      "ok": true,
+      "detail": [
+        "claude",
+        "codex",
+        "dsh",
+        "hermes"
+      ]
+    },
+    {
+      "name": "G4 历史任务/尝试/对话/事件数量不变",
+      "ok": true,
+      "detail": {
+        "tasks": 21,
+        "attempts": 11,
+        "threads": 60,
+        "turns": 127,
+        "events": 89
+      }
+    },
+    {
+      "name": "Kimi K3 测试连接",
+      "ok": true,
+      "detail": {
+        "http": 200,
+        "model": "k3",
+        "latency": 222,
+        "error": null
+      }
+    },
+    {
+      "name": "Kimi K3 保存",
+      "ok": true,
+      "detail": {
+        "id": "kimi-k3",
+        "ref": "local:kimi-k3"
+      }
+    },
+    {
+      "name": "GLM 4.6 测试连接",
+      "ok": true,
+      "detail": {
+        "http": 200,
+        "model": "glm-4.6",
+        "latency": 697,
+        "error": null
+      }
+    },
+    {
+      "name": "GLM 4.6 保存",
+      "ok": true,
+      "detail": {
+        "id": "glm-46",
+        "ref": "local:glm-46"
+      }
+    },
+    {
+      "name": "G3 新 Agent 出现在 status-v2",
+      "ok": true,
+      "detail": [
+        "claude",
+        "codex",
+        "dsh",
+        "hermes",
+        "kimi-k3",
+        "glm-46"
+      ]
+    },
+    {
+      "name": "G3 API Agent 真回了一条消息（GLM 4.6）",
+      "ok": true,
+      "detail": {
+        "status": "completed",
+        "text": "收到",
+        "error": null
+      }
+    },
+    {
+      "name": "G5 禁用成功",
+      "ok": true
+    },
+    {
+      "name": "G5 禁用后从看板数据源消失",
+      "ok": true
+    },
+    {
+      "name": "G5 禁用后名册与配置仍在",
+      "ok": true
+    },
+    {
+      "name": "G5 禁用后聊天历史仍在",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "name": "G6 所有 HTTP 响应不含 key",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "G6 agent-office.db（含 WAL/SHM）无 key 明文",
+      "ok": true,
+      "detail": []
+    },
+    {
+      "name": "G4 历史数据量仍不变（新增聊天轮次除外）",
+      "ok": true,
+      "detail": {
+        "tasks": 21,
+        "attempts": 11,
+        "threads": 62,
+        "turns": 129,
+        "agents": [
+          {
+            "agent_id": "claude",
+            "kind": "cli",
+            "enabled": 1,
+            "api_key_ref": null
+          },
+          {
+            "agent_id": "codex",
+            "kind": "cli",
+            "enabled": 1,
+            "api_key_ref": null
+          },
+          {
+            "agent_id": "dsh",
+            "kind": "cli",
+            "enabled": 1,
+            "api_key_ref": null
+          },
+          {
+            "agent_id": "hermes",
+            "kind": "external",
+            "enabled": 1,
+            "api_key_ref": null
+          },
+          {
+            "agent_id": "kimi-k3",
+            "kind": "api",
+            "enabled": 1,
+            "api_key_ref": "local:kimi-k3"
+          },
+          {
+            "agent_id": "glm-46",
+            "kind": "api",
+            "enabled": 1,
+            "api_key_ref": "local:glm-46"
+          }
+        ]
+      }
+    }
+  ],
+  "responses": [],
+  "kimi_chat": {
+    "status": "failed",
+    "error_kind": "auth_failed",
+    "error": "Your current subscription does not have access to Kimi Code right now. Upgrade your plan to keep coding with Kimi Code: https://www.kimi.com/code/#pricing",
+    "verdict": "upstream_blocked"
+  },
+  "finished_at": "2026-11-24T05:24:29.766Z",
+  "agents": [
+    {
+      "agent_id": "claude",
+      "kind": "cli",
+      "enabled": 1,
+      "api_key_ref": null
+    },
+    {
+      "agent_id": "codex",
+      "kind": "cli",
+      "enabled": 1,
+      "api_key_ref": null
+    },
+    {
+      "agent_id": "dsh",
+      "kind": "cli",
+      "enabled": 1,
+      "api_key_ref": null
+    },
+    {
+      "agent_id": "hermes",
+      "kind": "external",
+      "enabled": 1,
+      "api_key_ref": null
+    },
+    {
+      "agent_id": "kimi-k3",
+      "kind": "api",
+      "enabled": 1,
+      "api_key_ref": "local:kimi-k3"
+    },
+    {
+      "agent_id": "glm-46",
+      "kind": "api",
+      "enabled": 1,
+      "api_key_ref": "local:glm-46"
+    }
+  ]
+}

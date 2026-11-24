@@ -515,3 +515,164 @@ b, strong { font-weight: 600; }
 @media (min-height: 1000px) {
   .agent-card--quota .agent-card__facts { display: grid; }
 }
+
+/* ---------- Agent 名册工具条（TASK-转盘与Agent可添加 第一批） ---------- */
+.agents-bar {
+  flex: none;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 10px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #FFFCF7;
+}
+.agents-bar__main { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.eyebrow {
+  font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-4); font-weight: 600;
+}
+.agents-bar__main b {
+  margin-left: 2px; font-family: var(--font-mono); font-size: 12px;
+  letter-spacing: 0; text-transform: none; color: #5B5245;
+}
+.agents-bar__hint { font-size: 12px; color: var(--ink-4); }
+.agents-bar__actions { display: flex; align-items: center; gap: 8px; flex: none; }
+.btn-primary {
+  height: 34px; padding: 0 14px;
+  border: 1px solid #2F2921; border-radius: 9px;
+  background: #2F2921; color: #FFF8EA;
+  font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+.btn-primary:hover { background: #40382D; border-color: #40382D; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-ghost {
+  height: 34px; padding: 0 13px;
+  border: 1px solid #E1D6C4; border-radius: 9px;
+  background: #FFFCF7; color: #5C4A2C;
+  font-size: 13px; white-space: nowrap;
+}
+.btn-ghost:hover { background: #FFF8EC; border-color: #DCC79F; }
+
+.agent-card-wrap { position: relative; min-width: 0; min-height: 0; display: flex; }
+.agent-card-wrap > .agent-card { flex: 1; }
+.agents[data-count="5"], .agents[data-count="6"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+}
+.agents[data-count="7"], .agents[data-count="8"], .agents[data-count="9"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+/* ---------- 弹窗 ---------- */
+.modal { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 24px; }
+.modal[hidden] { display: none !important; }
+.modal__scrim { position: absolute; inset: 0; background: rgba(43, 38, 31, .42); }
+.modal__panel {
+  position: relative; z-index: 1;
+  width: min(580px, 100%); max-height: calc(100vh - 48px);
+  display: flex; flex-direction: column;
+  background: #FEFCF9; border: 1px solid #DDD2C2; border-radius: 14px;
+  box-shadow: 0 24px 60px -24px rgba(43, 38, 31, .45), 0 2px 6px rgba(43, 38, 31, .12);
+  overflow: hidden;
+}
+.modal__head {
+  flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+  padding: 18px 20px 14px; border-bottom: 1px solid var(--line-soft);
+}
+.modal__head h2 { font-family: var(--font-serif); font-size: 20px; line-height: 1.3; color: #2B261F; }
+.modal__head p { margin-top: 3px; font-size: 12px; line-height: 1.5; color: var(--ink-4); }
+.modal__close {
+  width: 30px; height: 30px; border-radius: 8px; flex: none;
+  color: var(--ink-3); font-size: 20px; line-height: 1;
+  display: grid; place-items: center;
+}
+.modal__close:hover { background: #F3EDE3; color: var(--ink); }
+.modal__body { padding: 16px 20px 20px; overflow: auto; }
+.modal__section { display: flex; flex-direction: column; gap: 10px; }
+.modal__section + .modal__section { margin-top: 16px; padding-top: 16px; border-top: 1px dotted #E8E0D3; }
+.modal__label { font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.type-seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.type-seg button {
+  height: 36px; border: 1px solid #E4DCCF; border-radius: 8px;
+  background: #FAF5EC; color: var(--ink-3); font-size: 13px;
+}
+.type-seg button:hover { border-color: #D8C9AE; background: #FFF8EC; }
+.type-seg button[aria-pressed="true"] { border-color: #2F2921; background: #2F2921; color: #FFF8EA; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field--wide { grid-column: 1 / -1; }
+.field label { font-size: 12px; color: var(--ink-3); }
+.field input, .field select {
+  height: 35px; padding: 0 10px; border: 1px solid #DED5C6; border-radius: 8px;
+  background: #FFFDF9; color: var(--ink); font-size: 13px; min-width: 0;
+}
+.field input:focus, .field select:focus { outline: 2px solid var(--amber); outline-offset: 1px; border-color: #D8C9AE; }
+.field .hint { font-size: 11px; line-height: 1.45; color: var(--ink-4); }
+.test-box {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 10px; border: 1px dashed #DED5C6; border-radius: 8px; background: #FAF6EE;
+}
+.test-box .test-out { font-size: 12px; line-height: 1.5; color: var(--ink-3); min-width: 0; flex: 1; }
+.test-box .test-out[data-tone="ok"] { color: #55684B; }
+.test-box .test-out[data-tone="bad"] { color: #8F4634; }
+.test-box .test-out b { font-family: var(--font-mono); font-weight: 500; }
+.modal__foot { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.modal__foot .foot-note { margin-right: auto; font-size: 11px; line-height: 1.45; color: var(--ink-4); }
+.manage-list { display: flex; flex-direction: column; gap: 8px; }
+.manage-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border: 1px solid #E7E0D5; border-radius: 9px; background: #FFFCF7;
+}
+.manage-row[data-enabled="0"] { background: #F7F2EA; border-style: dashed; }
+.manage-row__name { font-weight: 600; font-size: 13px; color: #2F2921; }
+.manage-row__id { font-family: var(--font-mono); font-size: 11px; color: var(--ink-4); }
+.manage-row__meta { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.manage-row__kind { font-size: 11px; color: var(--ink-4); }
+.manage-row .btn-ghost { height: 28px; padding: 0 10px; font-size: 12px; }
+.manage-row--off .manage-row__name { color: var(--ink-4); }
+@media (max-width: 1100px) {
+  .agents[data-count="5"], .agents[data-count="6"] { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); }
+  .agents-bar__hint { display: none; }
+}
+
+/* 名册变长时（第一批：老板会加 Agent）：3 列 + 最小卡高 + 区域内滚动，不让卡片压到任务推进条上。 */
+.agents { overflow-x: hidden; overflow-y: auto; align-content: start; }
+.agent-card { overflow: hidden; }
+.agents[data-count="5"], .agents[data-count="6"], .agents[data-count="7"],
+.agents[data-count="8"], .agents[data-count="9"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: none;
+  grid-auto-rows: minmax(230px, 1fr);
+}
+.agents[data-count="5"] .agent-card--quota .agent-card__doing,
+.agents[data-count="6"] .agent-card--quota .agent-card__doing,
+.agents[data-count="7"] .agent-card--quota .agent-card__doing,
+.agents[data-count="8"] .agent-card--quota .agent-card__doing,
+.agents[data-count="9"] .agent-card--quota .agent-card__doing { display: none; }
+@media (max-width: 1100px) {
+  .agents[data-count="5"], .agents[data-count="6"], .agents[data-count="7"],
+  .agents[data-count="8"], .agents[data-count="9"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-rows: minmax(230px, 1fr);
+  }
+}
+
+/* 超过 4 个 Agent：主栏整体滚动，卡片保持 230px 高，不裁切、不压到任务推进条。 */
+.board-main--scroll { overflow-y: auto; overflow-x: hidden; }
+.board-main--scroll .board-grid { flex: none; }
+.board-main--scroll .agents { overflow: visible; }
+.board-main--scroll .agents-bar {
+  position: sticky; top: 0; z-index: 6;
+  box-shadow: 0 1px 0 var(--line), 0 6px 14px -12px rgba(80, 66, 45, .35);
+}
+
+/* 3 列时额度块变窄：去掉重置倒计时（行 title 里仍有完整时间），保证 5h/周 两条可读。 */
+.agents[data-count="5"] .quota-row, .agents[data-count="6"] .quota-row,
+.agents[data-count="7"] .quota-row, .agents[data-count="8"] .quota-row,
+.agents[data-count="9"] .quota-row { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr); gap: 5px; }
+.agents[data-count="5"] .quota-row__reset, .agents[data-count="6"] .quota-row__reset,
+.agents[data-count="7"] .quota-row__reset, .agents[data-count="8"] .quota-row__reset,
+.agents[data-count="9"] .quota-row__reset { display: none; }
+.agents[data-count="5"] .quota-block__head span, .agents[data-count="6"] .quota-block__head span,
+.agents[data-count="7"] .quota-block__head span, .agents[data-count="8"] .quota-block__head span,
+.agents[data-count="9"] .quota-block__head span { display: none; }

@@ -3,8 +3,7 @@
    状态口径：availability=false → 不可用；执行没有可信证据 → unknown，不兜底 idle。
    所有按钮都必须有真实行为；中央没有无数据支撑的装饰线。 */
 
-/** 已接入对话的 Agent（与服务端 chat-state.mjs 的 CHAT_PROVIDERS 一致；只用于提示语，能不能聊以服务端为准） */
-const CHAT_PROVIDERS = ['claude', 'dsh', 'hermes'];
+/** 内置 Agent 的品牌 icon / 短名；名册与显示名以 /api/agents 为准，这里只做图标映射。 */
 const AGENT_META = {
   claude: { name: 'Claude Code', short: 'CLAUDE', icon: 'claude' },
   codex: { name: 'Codex', short: 'CODEX', icon: 'codex' },
@@ -29,6 +28,7 @@ const state = {
   tasksData: null,
   hubState: null,
   quotas: null,
+  agents: null,
   loadError: null,
   quotasError: null,
   selectedAgentId: null,
@@ -38,6 +38,7 @@ const state = {
   loading: false,
   loadedAt: null,
   fetchLog: [],
+  agentModal: { open: false, mode: 'add', kind: 'cli', test: null, busy: false, error: null },
 };
 const ICONS = {};
 
@@ -130,8 +131,17 @@ function quotaErrorRow(p) {
     <span class="quota-row__err">接口失败 · ${esc(msg.slice(0, 42))}</span>
   </span>`;
 }
+function apiBlock(a) {
+  return `<span class="quota-block" aria-label="API 配置">
+    <span class="quota-block__head"><i>API</i><span>${esc(a.protocol || '?')} · ${esc(a.model || '?')}</span></span>
+    <span class="quota-note" title="${esc(a.base_url || '')}">${esc(a.base_url || '—')} · key 只存引用</span>
+  </span>`;
+}
 function quotaBlock(agentId) {
-  if (agentId !== 'claude' && agentId !== 'codex') {
+  const cfg = typeof agentId === 'string' ? null : agentId;
+  const id = cfg ? cfg.agent_id : agentId;
+  if (cfg && cfg.kind === 'api') return apiBlock(cfg);
+  if (id !== 'claude' && id !== 'codex') {
     return `<span class="quota-block quota-block--empty">
       <span class="quota-block__head"><i>额度</i><span>未接入</span></span>
       <span class="quota-note">没有该 Agent 的额度数据源，不编造。</span>
@@ -145,7 +155,7 @@ function quotaBlock(agentId) {
   }
   const q = state.quotas;
   const cacheNote = q.cache ? `缓存 ${Math.max(0, Math.round((q.cache.age_ms || 0) / 1000))}s` : '5 分钟缓存';
-  if (agentId === 'claude') {
+  if (id === 'claude') {
     const providers = Array.isArray(q.providers) ? q.providers : [];
     if (!providers.length) {
       return `<span class="quota-block quota-block--error">
@@ -202,6 +212,7 @@ async function loadData() {
     getJson('/api/tasks'),
     getJson('/api/state'),
     getJson('/api/quotas'),
+    getJson('/api/agents?all=1'),
   ]);
   const failures = [];
   state.statusV2 = results[0].status === 'fulfilled' ? results[0].value : null;
@@ -210,6 +221,7 @@ async function loadData() {
   if (results[1].status === 'rejected') failures.push(`tasks：${results[1].reason.message}`);
   state.hubState = results[2].status === 'fulfilled' ? results[2].value : null;
   state.quotas = results[3].status === 'fulfilled' ? results[3].value : null;
+  state.agents = results[4] && results[4].status === 'fulfilled' ? results[4].value : null;
   state.quotasError = results[3].status === 'rejected'
     ? results[3].reason.message
     : (state.quotas && state.quotas.ok === false ? '额度接口返回 ok=false' : null);
@@ -222,16 +234,26 @@ async function loadData() {
   ensureSelection();
 
   renderAll();
+  if (window.AgentAdmin) window.AgentAdmin.refresh();
 }
 
 /* ---------- 派生数据 ---------- */
 function agentsNow() {
   const rows = state.statusV2?.agents || [];
   return [...rows].sort((a, b) => {
+    const sa = Number.isFinite(Number(a.sort_index)) ? Number(a.sort_index) : 999;
+    const sb = Number.isFinite(Number(b.sort_index)) ? Number(b.sort_index) : 999;
+    if (sa !== sb) return sa - sb;
     const ia = AGENT_ORDER.indexOf(a.agent_id);
     const ib = AGENT_ORDER.indexOf(b.agent_id);
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
   });
+}
+function rosterAll() {
+  return state.agents?.agents || [];
+}
+function rosterById(id) {
+  return rosterAll().find((a) => a.agent_id === id) || null;
 }
 function tasksNow() { return state.tasksData?.tasks || []; }
 /** 上次点开的 Agent 记在本机：刷新页面回到同一个 Agent 的对话（历史从 API 拉，不靠本机） */
@@ -255,7 +277,17 @@ function pickDefaultAgent(agents) {
 }
 function selectedAgent() { return agentsNow().find((a) => a.agent_id === state.selectedAgentId) || null; }
 function selectedTask() { return tasksNow().find((t) => t.task_id === state.selectedTaskId) || null; }
-function meta(id) { return AGENT_META[id] || { name: id, short: String(id).toUpperCase(), icon: null }; }
+function meta(id) {
+  const builtin = AGENT_META[id] || null;
+  const cfg = rosterById(id);
+  const name = (cfg && cfg.display_name) || (builtin && builtin.name) || id;
+  return {
+    name,
+    short: (builtin && builtin.short) || String(name).toUpperCase().slice(0, 12),
+    icon: builtin ? builtin.icon : null,
+    kind: cfg ? cfg.kind : null,
+  };
+}
 
 function agentTone(a) {
   if (a?.availability?.available === false) return 'bad';
@@ -282,6 +314,9 @@ function taskTone(t) {
 }
 function taskLabel(t) { return t ? (STATUS_LABEL[t.status] || t.status || '—') : '—'; }
 function doingText(a) {
+  if (a?.kind === 'api' && !a?.task?.task_id && !a?.execution?.attempt_id) {
+    return `API · ${a.protocol || '?'} · ${a.model || '?'}；可用性以实测为准（聊天不并入任务状态）`;
+  }
   return a?.execution?.status_reason
     || a?.task?.status_reason
     || a?.availability?.detail
@@ -356,9 +391,16 @@ function renderMeta() {
   upd.title = obs ? `服务端观测时间 ${obs}` : '尚无观测时间';
 
   const n = agentsNow().length;
+  const all = rosterAll();
   $('#board-sub').textContent = state.loadError
     ? `读取失败：${state.loadError}`
     : `${n} 个 Agent · 卡片显示分配任务数与证据源 · 点卡片在右侧与它对话`;
+  const countNote = $('#agent-count-note');
+  if (countNote) {
+    countNote.textContent = state.statusV2
+      ? `${n} 个启用${all.length > n ? ` / 共 ${all.length}` : ''}`
+      : '—';
+  }
 }
 
 /* ---------- 渲染：Agent 卡 ---------- */
@@ -369,6 +411,9 @@ function renderAgentCards() {
     root.innerHTML = `<div class="task-empty" style="grid-column:1/-1">${state.loadError ? '读不到 /api/agents/status-v2，不编造 Agent。' : '正在读取 /api/agents/status-v2 …'}</div>`;
     return;
   }
+  root.dataset.count = String(agents.length);
+  const boardMain = $('.board-main');
+  if (boardMain) boardMain.classList.toggle('board-main--scroll', agents.length > 4);
   root.innerHTML = agents.map((a) => {
     const m = meta(a.agent_id);
     const tone = agentTone(a);
@@ -380,7 +425,7 @@ function renderAgentCards() {
     const av = a.availability?.available;
     const avLabel = av === true ? '可用' : av === false ? '不可用' : '可用性未知';
     const hasQuota = a.agent_id === 'claude' || a.agent_id === 'codex';
-    return `<button type="button" class="agent-card ${selected ? 'is-selected' : ''} ${hasQuota ? 'agent-card--quota' : ''}" data-agent="${esc(a.agent_id)}" aria-pressed="${selected}" data-tone="${tone}" data-task-count="${taskKnown ? 1 : 0}">
+    return `<div class="agent-card-wrap"><button type="button" class="agent-card ${selected ? 'is-selected' : ''} ${hasQuota ? 'agent-card--quota' : ''}" data-agent="${esc(a.agent_id)}" aria-pressed="${selected}" data-tone="${tone}" data-task-count="${taskKnown ? 1 : 0}">
       <span class="agent-card__top">
         ${iconHtml(a.agent_id)}
         <span class="agent-card__name">${esc(m.name)}</span>
@@ -388,17 +433,17 @@ function renderAgentCards() {
       </span>
       <span class="agent-card__state" data-tone="${tone}">${esc(stateLabel)}</span>
       <span class="agent-card__doing">${esc(doingText(a))}</span>
-      ${quotaBlock(a.agent_id)}
+      ${quotaBlock(a)}
       <span class="agent-card__facts">
         <span class="agent-card__fact"><i>最近活动</i><b>${esc(relTime(a.execution?.last_activity_at))}</b></span>
         <span class="agent-card__fact"><i>观测</i><b data-rel="${esc(a.execution?.observed_at || '')}">${esc(relTime(a.execution?.observed_at))}</b></span>
       </span>
       <span class="agent-card__meta">
         <span class="chip ${av === false ? 'chip--bad' : av === true ? 'chip--ok' : ''}">${esc(avLabel)}</span>
-        <span class="chip chip__mono">${esc(evidenceShort(a.availability?.evidence_source))}</span>
+        <span class="chip chip__mono">${a.kind === 'api' ? `API · ${esc(a.protocol || '?')}` : esc(evidenceShort(a.availability?.evidence_source))}</span>
         <span class="agent-card__load">${esc(loadLabel)}</span>
       </span>
-    </button>`;
+    </button></div>`;
   }).join('');
   $$('.agent-card', root).forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -407,7 +452,8 @@ function renderAgentCards() {
       rememberAgent(state.selectedAgentId);
       renderAll();
       if (window.SodaChat) SodaChat.focus(state.selectedAgentId);
-      const un = window.SodaChat && !CHAT_PROVIDERS.includes(btn.dataset.agent);
+      const agent = agents.find((x) => x.agent_id === btn.dataset.agent);
+      const un = agent && agent.chat_supported === false;
       showToast(un ? `${meta(btn.dataset.agent).name} 暂不支持对话 · 右侧写了原因` : `已打开与 ${meta(btn.dataset.agent).name} 的对话`);
     });
   });
@@ -774,6 +820,14 @@ async function init() {
   if (!location.hash) history.replaceState(null, '', '#board');
   applyRoute(routeFromHash());
   // 右列对话面板（Coss 风格）：给它看板里的 Agent 名册、Agent 实时数据和 toast
+  if (window.AgentAdmin) {
+    window.AgentAdmin.init({
+      toast: showToast,
+      loadData,
+      roster: rosterAll,
+      meta,
+    });
+  }
   if (window.SodaChat) {
     window.SodaChat.mount($('#detail-panel'), {
       toast: showToast,

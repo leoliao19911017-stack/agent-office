@@ -27,6 +27,7 @@ import {
   listAttempts, endAttempt, isPidAlive, strongestSource,
 } from './attempts.mjs';
 import { latestCheckpoint } from './checkpoint.mjs';
+import { listAgents, chatSupport } from './agents.mjs';
 
 export const STATES = Object.freeze({
   RUNNING: 'running',
@@ -593,7 +594,10 @@ function executionStatusOf(lastAttempt, taskState) {
  */
 export function evaluateAgentStatuses(db, opts = {}) {
   const nowIso = isoOf(opts.now);
-  const agentIds = opts.agentIds || ['claude', 'dsh', 'codex', 'hermes'];
+  // 名册从 agents 表读：加/禁一个 Agent 不需要改这里（G7）。显式传 agentIds 时仍尊重调用方。
+  const configs = opts.agents || listAgents(db, { enabledOnly: true });
+  const configById = new Map(configs.map((a) => [a.agent_id, a]));
+  const agentIds = opts.agentIds || configs.map((a) => a.agent_id);
   const availabilityMap = opts.availability || {};
   const availability = [];
   const execution = [];
@@ -696,8 +700,19 @@ export function evaluateAgentStatuses(db, opts = {}) {
     }
     taskObjects.push(taskObj);
 
+    const cfg = configById.get(agentId) || null;
+    const support = cfg ? chatSupport(cfg) : { supported: false, reason: 'Agent 不在名册里' };
     agents.push({
       agent_id: agentId,
+      display_name: cfg ? cfg.display_name : agentId,
+      kind: cfg ? cfg.kind : 'unknown',
+      protocol: cfg ? cfg.protocol : null,
+      model: cfg ? cfg.model : null,
+      base_url: cfg ? cfg.base_url : null,
+      api_key_ref: cfg ? cfg.api_key_ref : null,
+      sort_index: cfg ? cfg.sort_index : 999,
+      chat_supported: support.supported,
+      chat_reason: support.reason,
       availability: avail,
       execution: execObj,
       task: taskObj,

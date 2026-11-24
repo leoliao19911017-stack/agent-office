@@ -5,7 +5,8 @@
 
 import { randomUUID } from 'node:crypto';
 import { allRows, getRow, transaction } from '../lib/db.mjs';
-import { ACTIVE_TURN_STATUS, CHAT_MODES, CHAT_PROVIDERS, TURN, TURN_LABEL, errorLabel } from './chat-state.mjs';
+import { ACTIVE_TURN_STATUS, CHAT_MODES, TURN, TURN_LABEL, errorLabel } from './chat-state.mjs';
+import { getAgent, chatSupport } from '../lib/agents.mjs';
 
 const ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,95}$/;
 
@@ -91,7 +92,8 @@ const mapEvent = (r) => r && {
 
 export function createThread(db, input = {}) {
   const { agentId, workspace = null, mode = 'discuss', taskId = null, taskAttemptId = null, title = null, now = null } = input;
-  if (!CHAT_PROVIDERS.includes(agentId)) throw badRequest(`agent_id 不受支持：${agentId}`);
+  const support = chatSupport(getAgent(db, agentId));
+  if (!support.supported) throw badRequest(`agent_id 不支持对话：${agentId}（${support.reason}）`);
   if (!CHAT_MODES.includes(mode)) throw badRequest(`mode 不受支持：${mode}`);
   if (taskId != null && !isId(taskId)) throw badRequest('task_id 不合法');
   const at = stamp(now);

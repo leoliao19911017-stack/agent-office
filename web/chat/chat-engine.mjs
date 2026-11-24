@@ -27,6 +27,8 @@ import { isDirectory, killTree, redactSecrets } from './proc.mjs';
 import { runClaudeTurn, extraClaudeSettings } from './adapters/claude-chat.mjs';
 import { runDshTurn } from './adapters/dsh-chat.mjs';
 import { runHermesTurn } from './adapters/hermes-chat.mjs';
+import { runApiTurn } from './adapters/api-chat.mjs';
+import { getAgent, chatSupport } from '../lib/agents.mjs';
 
 const DEFAULT_TIMING = {
   stallWarnMs: 60 * 1000,          // 这么久没有新事件就提示「长时间无新事件，正在核实」（不按耗时判死）
@@ -336,6 +338,12 @@ export function createChatEngine(opts = {}) {
     }
     const assistant = store.appendMessage(db, { threadId: thread.thread_id, turnId: turn.turn_id, role: 'assistant', content: '', status: MSG.STREAMING });
     store.attachAssistantMessage(db, turn.turn_id, assistant.message_id);
+    // API 类型没有原生 Session 可续：把 thread 里已经说过的内容按序回放给适配器。
+    // CLI 适配器不使用这个字段，行为不变。
+    const history = store.listMessages(db, thread.thread_id, { limit: 200 })
+      .filter((m) => m.message_id !== assistant.message_id)
+      .filter((m) => (m.role === 'user' || m.role === 'assistant') && String(m.content || '').trim() !== '')
+      .map((m) => ({ role: m.role, content: m.content }));
 
     const run = {
       turnId: turn.turn_id, threadId: thread.thread_id, agentId: thread.agent_id,
@@ -374,16 +382,28 @@ export function createChatEngine(opts = {}) {
       if (!isDirectory(cwd)) {
         outcome = { kind: ERR.CLI_START_FAILED, reason: 'workspace_not_found', message: `工作目录不存在：${cwd}`, text: '' };
       } else {
-        const adapter = adapters[thread.agent_id];
+        let adapter = adapters[thread.agent_id];
+        let adapterAgent = null;
         if (typeof adapter !== 'function') {
-          outcome = { kind: ERR.UNKNOWN, message: `没有 ${thread.agent_id} 的适配器`, text: '' };
-        } else {
+          // 新加的 API Agent 没有预注册的适配器：按 DB 配置走通用 API 通道。
+          const agent = getAgent(db, thread.agent_id);
+          const support = chatSupport(agent);
+          if (support.supported && agent && agent.kind === 'api') {
+            adapter = runApiTurn;
+            adapterAgent = agent;
+          } else {
+            outcome = { kind: ERR.UNKNOWN, message: support.reason || `没有 ${thread.agent_id} 的适配器`, text: '' };
+          }
+        }
+        if (typeof adapter === 'function' && !outcome) {
           outcome = await adapter({
             prompt: userMsg.content,
+            history,
             resumeId: thread.provider_session_id || null,
             cwd,
             signal: run.abort.signal,
             onEvent: (ev) => onAdapterEvent(run, ev),
+            ...(adapterAgent ? { agent: adapterAgent } : {}),
             ...(thread.agent_id === 'claude' && claudeSettings ? { extraSettings: claudeSettings } : {}),
           });
         }

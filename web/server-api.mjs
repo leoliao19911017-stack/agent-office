@@ -26,6 +26,8 @@ import { makeAgentsRealRoute } from './server-agents-real.mjs';
 // P0 地基：任务/事件/检查点/三独立状态 API（/api/tasks*、/api/agents/status-v2）。
 // 路由体在 api-tasks.mjs；这里只做挂载，不重复任何状态判定。
 import { handleTasksApi } from './api-tasks.mjs';
+// TASK-转盘与Agent可添加 §2：agents 名册 CRUD + 测试连接；路由体在 api-agents.mjs。
+import { handleAgentsApi } from './api-agents.mjs';
 // Agent Chat V1 P1：聊天三路由（POST /api/chat/threads、GET|POST …/:id/messages）。
 // 路由体在 api-chat.mjs，同样只做挂载。
 import { handleChatApi } from './api-chat.mjs';
@@ -1325,6 +1327,13 @@ export function createApiRouter(deps) {
 
   // 派发层：只做路径/方法匹配与兜底，路由体在各 maker 内（R75 G02 拆分）。
   return async function api(req, res, path, method) {
+    // Agent 名册：/api/agents 与 /api/agents/:id、/api/agents/test-connection。
+    // status-v2 / real 是既有端点，api-agents 明确让路，交给下面的原路由。
+    if (path === '/api/agents' || path.startsWith('/api/agents/')) {
+      const handled = await handleAgentsApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
     // P0 地基层：先交给任务 API 匹配；不是它的路径再走原有路由。
     // 任务 API 自己负责 405，未匹配返回 false，原路由行为不变。
     if (path === '/api/tasks' || path.startsWith('/api/tasks/') || path === '/api/agents/status-v2') {

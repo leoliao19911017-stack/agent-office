@@ -16,13 +16,14 @@
 
 import { isAbsolute } from 'node:path';
 import { getDb } from './lib/db.mjs';
+import { getAgent, chatSupport, listAgents } from './lib/agents.mjs';
 import {
   createThread, requireThread, getThread, listThreads, listMessages, listTurns, createTurn, getTurn, threadStatusOf,
   setThreadTitleIfEmpty, listChatEvents, getMessage,
 } from './chat/chat-db.mjs';
 import { chatEngine } from './chat/chat-engine.mjs';
 import {
-  CHAT_MODES, CHAT_PROVIDERS, TURN, UNSUPPORTED_REASON, displayStatusOf, DISPLAY_LABEL, isTurnActive, turnStatusLabel,
+  CHAT_MODES, TURN, UNSUPPORTED_REASON, displayStatusOf, DISPLAY_LABEL, isTurnActive, turnStatusLabel,
 } from './chat/chat-state.mjs';
 import { isDirectory } from './chat/proc.mjs';
 
@@ -141,7 +142,13 @@ export async function handleChatApi(req, res, path, method, deps = {}) {
   if (isThreads && m === 'GET') {
     const agentId = new URL(req.url, 'http://127.0.0.1').searchParams.get('agent_id');
     const threads = listThreads(db, agentId ? { agentId } : {}).map((t) => threadView(t, { thread_status: threadStatusOf(db, t) }));
-    deps.sendJson(res, 200, { ok: true, generated_at: new Date().toISOString(), count: threads.length, threads, unsupported: UNSUPPORTED_REASON });
+    // 不支持对话的名单也从 DB 名册算：新增 API Agent 自动可聊，禁用/未接适配器的如实说明原因。
+    const unsupported = { ...UNSUPPORTED_REASON };
+    for (const a of listAgents(db, { enabledOnly: true })) {
+      const s = chatSupport(a);
+      if (!s.supported && !unsupported[a.agent_id]) unsupported[a.agent_id] = s.reason;
+    }
+    deps.sendJson(res, 200, { ok: true, generated_at: new Date().toISOString(), count: threads.length, threads, unsupported });
     return true;
   }
 
@@ -149,9 +156,11 @@ export async function handleChatApi(req, res, path, method, deps = {}) {
   if (isThreads) {
     const body = (await bodyOf(req, deps)) || {};
     const agentId = String(body.agent_id ?? body.agentId ?? '').trim();
-    if (!agentId) throw httpError(400, 'BAD_AGENT', 'agent_id 必填（支持：' + CHAT_PROVIDERS.join(' / ') + '）');
-    if (!CHAT_PROVIDERS.includes(agentId)) {
-      throw httpError(400, 'BAD_AGENT', `agent_id 不支持对话：${agentId}（${UNSUPPORTED_REASON[agentId] || '没有接入'}）`);
+    if (!agentId) throw httpError(400, 'BAD_AGENT', 'agent_id 必填');
+    const agent = getAgent(db, agentId);
+    const support = chatSupport(agent);
+    if (!support.supported) {
+      throw httpError(400, 'BAD_AGENT', `agent_id 不支持对话：${agentId}（${support.reason}）`);
     }
     let workspace = body.workspace == null ? null : String(body.workspace).trim() || null;
     if (workspace != null) {

@@ -16,7 +16,7 @@
 // 整个项目只有本文件创建数据库连接；其它模块一律接收 db 参数，便于测试隔离。
 
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,7 +24,7 @@ export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 
 /**
  * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
@@ -116,7 +116,98 @@ CREATE INDEX IF NOT EXISTS idx_chat_turns_thread    ON chat_turns(thread_id, cre
 `;
 
 /**
- * 建表 SQL。用 IF NOT EXISTS，保证重复调用安全。
+ * v3（TASK-转盘与Agent可添加 §2.2）：agents 表。
+ *
+ * 现有 claude / codex / dsh / hermes 四个 agent_id 原值迁移，历史 attempts /
+ * chat_threads 里引用的 agent_id 不变，不迁历史数据。
+ *
+ * 在任务书字段之外补了一列 protocol（anthropic | openai）：§2.4 的 API 表单
+ * 要求选协议，没有地方存就做不到「保存后按同一协议再调」。其余列严格按任务书。
+ *
+ * api_key 不落这张表：api_key_ref 只是引用（local:<agent_id> / ccswitch:<名称> /
+ * env:<变量名>），真正的 key 由 web/lib/secrets.mjs 存在库外。
+ */
+const SCHEMA_V3_AGENTS = `
+CREATE TABLE IF NOT EXISTS agents (
+  agent_id     TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  kind         TEXT NOT NULL CHECK (kind IN ('cli', 'api', 'external')),
+  enabled      INTEGER NOT NULL DEFAULT 1,
+  sort_index   INTEGER NOT NULL DEFAULT 0,
+
+  cli_command  TEXT,
+  cli_args     TEXT,
+  resume_flag  TEXT,
+
+  base_url     TEXT,
+  model        TEXT,
+  protocol     TEXT,
+  api_key_ref  TEXT,
+
+  extra_env    TEXT,
+  capabilities TEXT,
+  created_at   TEXT NOT NULL,
+  updated_at   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_agents_enabled ON agents(enabled, sort_index, agent_id);
+`;
+
+/** 本机 DSH 的完整命令路径（任务书 §2.3 要求 cli_command 存完整路径）。 */
+function defaultDshCommand() {
+  if (process.env.DSH_BIN) return String(process.env.DSH_BIN);
+  const local = process.env.LOCALAPPDATA
+    || (process.env.USERPROFILE ? `${process.env.USERPROFILE}/AppData/Local` : null);
+  if (local) {
+    const known = `${String(local).replace(/\\/g, '/')}/Programs/DeepSeek Harness/resources/runtime/cli/bin/dsh.cmd`;
+    try {
+      if (existsSync(known)) return known;
+    } catch { /* 目录不可读就退回 PATH */ }
+  }
+  return 'dsh';
+}
+
+/**
+ * 四个历史 Agent 的初始配置。只 INSERT OR IGNORE：已有行绝不覆盖，
+ * 以后用户在界面上改过的名字 / 命令 / 禁用状态不会被迁移冲掉。
+ */
+function seedAgents(db) {
+  const at = new Date().toISOString();
+  const rows = [
+    {
+      agent_id: 'claude', display_name: 'Claude Code', kind: 'cli', sort_index: 10,
+      cli_command: 'claude', resume_flag: '--resume',
+      capabilities: JSON.stringify({ chat: true, tools: true }),
+    },
+    {
+      agent_id: 'codex', display_name: 'Codex', kind: 'cli', sort_index: 20,
+      cli_command: 'codex', resume_flag: '--resume',
+      capabilities: JSON.stringify({ chat: false, tools: true }),
+    },
+    {
+      agent_id: 'dsh', display_name: 'DSH', kind: 'cli', sort_index: 30,
+      cli_command: defaultDshCommand(), resume_flag: '--session-id',
+      capabilities: JSON.stringify({ chat: true, tools: true }),
+    },
+    {
+      agent_id: 'hermes', display_name: 'Hermes', kind: 'external', sort_index: 40,
+      cli_command: null, resume_flag: null,
+      capabilities: JSON.stringify({ chat: true, self_report: true }),
+    },
+  ];
+  const stmt = db.prepare(
+    'INSERT OR IGNORE INTO agents (agent_id, display_name, kind, enabled, sort_index, ' +
+    'cli_command, cli_args, resume_flag, base_url, model, protocol, api_key_ref, ' +
+    'extra_env, capabilities, created_at, updated_at) ' +
+    'VALUES (?, ?, ?, 1, ?, ?, NULL, ?, NULL, NULL, NULL, NULL, NULL, ?, ?, ?)',
+  );
+  for (const r of rows) {
+    stmt.run(r.agent_id, r.display_name, r.kind, r.sort_index,
+      r.cli_command, r.resume_flag, r.capabilities, at, at);
+  }
+}
+
+/** 建表 SQL。用 IF NOT EXISTS，保证重复调用安全。
  * 字段严格按任务书 §2.1；带 + 注释的是本实现补充的辅助列/索引，
  * 只做增量，不改任务书点名的任何列。
  */
@@ -218,6 +309,7 @@ CREATE INDEX IF NOT EXISTS idx_steps_task       ON task_steps(task_id, seq);
 const MIGRATIONS = [
   { version: 1, up(db) { db.exec(SCHEMA_V1); } },
   { version: 2, up(db) { db.exec(SCHEMA_V2_CHAT); } },
+  { version: 3, up(db) { db.exec(SCHEMA_V3_AGENTS); seedAgents(db); } },
 ];
 
 /** 已打开的连接缓存：同一个 db 文件在一个进程里只建一个连接。 */
