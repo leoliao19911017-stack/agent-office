@@ -300,6 +300,13 @@ const server = createServer(async (req, res) => {
   const method = req.method || 'GET';
 
   try {
+    if ((method === 'GET' || method === 'HEAD') && path === '/office') {
+      const html = readFileSync(join(HERE, 'office.html'));
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+      res.end(method === 'HEAD' ? undefined : html);
+      return;
+    }
+
     // 静态首页：只服务本目录的 index.html，不做目录列表
     if (method === 'GET' && (path === '/' || path === '/index.html')) {
       let html;
@@ -325,6 +332,9 @@ const server = createServer(async (req, res) => {
         '/app-pages.css': 'text/css; charset=utf-8',
         '/app-layers.css': 'text/css; charset=utf-8',
         '/app-cabin.css': 'text/css; charset=utf-8',
+        '/workflow-runs.css': 'text/css; charset=utf-8',
+        '/office.css': 'text/css; charset=utf-8',
+        '/office.js': 'application/javascript; charset=utf-8',
         '/app.js': 'application/javascript; charset=utf-8',
         '/shared.js': 'application/javascript; charset=utf-8',
         '/version.js': 'application/javascript; charset=utf-8',
@@ -334,6 +344,8 @@ const server = createServer(async (req, res) => {
         '/preview.js': 'application/javascript; charset=utf-8',
         '/agents.js': 'application/javascript; charset=utf-8',
         '/cabin.js': 'application/javascript; charset=utf-8',
+        '/workflow-templates.js': 'application/javascript; charset=utf-8',
+        '/workflow-runs.js': 'application/javascript; charset=utf-8',
         '/theme.js': 'application/javascript; charset=utf-8',
         '/render.js': 'application/javascript; charset=utf-8',
         '/offline-snapshot.js': 'application/javascript; charset=utf-8',
@@ -459,11 +471,17 @@ const server = createServer(async (req, res) => {
       ? '服务内部错误'
       : err.message;
     if (statusCode >= 500) console.error(`[错误] ${method} ${path} → ${err.code}: ${err.message}`);
-    sendJson(res, statusCode, { error: message, code: err.code || 'INTERNAL' });
+    // 4xx 的结构化附加字段原样带给前端（比如停止确认要绑定的 attempt_id，R2-1）；5xx 仍不回传内部细节。
+    sendJson(res, statusCode, {
+      error: message,
+      code: err.code || 'INTERNAL',
+      ...(statusCode < 500 && err.details ? err.details : {}),
+    });
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+const HOST = process.env.HOST || '127.0.0.1'; // HOST=0.0.0.0 时对局域网开放
+server.listen(PORT, HOST, () => {
   console.log(`Soda Agent 工作台  http://127.0.0.1:${PORT}  build=${BUILD_VERSION}`);
   console.log(`代理到中台        ${HUB}（owner key 已从 config.json 载入内存，不出服务端）`);
   // TASK-R87整改 X01：服务重启时，把中断在半路（讨论中/写文档中）的新流程任务

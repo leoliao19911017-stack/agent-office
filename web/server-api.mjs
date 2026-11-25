@@ -39,6 +39,12 @@ import { handleHandoffsApi } from './api-handoffs.mjs';
 import { makeQuotasRoute } from './api-quotas.mjs';
 // TASK-交付物视图：GET /api/deliverables（按任务分组）+ 内容预览；只读 deliverables 表。
 import { handleDeliverablesApi } from './api-deliverables.mjs';
+// P0 第二步：工作流模板 CRUD + 自然语言生成草稿（/api/workflow/templates*）。
+// 路由体在 api-workflow-templates.mjs；解析器在 workflow-parse.mjs。
+import { handleWorkflowTemplatesApi } from './api-workflow-templates.mjs';
+// P0 第三步：执行状态机（/api/workflow/runs*）。路由体在 api-workflow-runs.mjs，
+// 状态判定在 workflow-engine.mjs。
+import { handleWorkflowRunsApi } from './api-workflow-runs.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1331,6 +1337,20 @@ export function createApiRouter(deps) {
 
   // 派发层：只做路径/方法匹配与兜底，路由体在各 maker 内（R75 G02 拆分）。
   return async function api(req, res, path, method) {
+    // 工作流模板：/api/workflow/templates*（CRUD + from-text + confirm）。
+    if (path === '/api/workflow/templates' || path.startsWith('/api/workflow/templates/')) {
+      const handled = await handleWorkflowTemplatesApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
+    // 工作流执行：/api/workflow/runs*（创建 / 推进 / 交付物 / 失败 / 返工 / 确认）。
+    // 看板只读辅助：/api/workflow/artifact（交付物原文）、/api/workflow/tasklist（任务清单）。
+    if (path === '/api/workflow/runs' || path.startsWith('/api/workflow/runs/')
+        || path === '/api/workflow/artifact' || path === '/api/workflow/tasklist') {
+      const handled = await handleWorkflowRunsApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
     // Agent 名册：/api/agents 与 /api/agents/:id、/api/agents/test-connection。
     // status-v2 / real 是既有端点，api-agents 明确让路，交给下面的原路由。
     if (path === '/api/agents' || path.startsWith('/api/agents/')) {

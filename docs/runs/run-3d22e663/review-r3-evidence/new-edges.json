@@ -1,0 +1,246 @@
+{
+  "at": "2026-11-25T03:48:54.024Z",
+  "base": "http://127.0.0.1:60670",
+  "handoff": {
+    "task": "t-20261125034854-936932",
+    "a": "a-b4605b4d-mwvl3jxe",
+    "b": "a-c0db298c-mwvl3jxo",
+    "normalAttempt": {
+      "status": 409,
+      "body": {
+        "error": "任务已有执行实例在运行（a-c0db298c-mwvl3jxo），同一任务同时只允许一个活动实例；请先停止或等它结束再启动新的：t-20261125034854-936932",
+        "code": "ATTEMPT_ALREADY_RUNNING"
+      }
+    },
+    "handoff": {
+      "status": 201,
+      "body": {
+        "ok": true,
+        "observed_at": "2026-11-25T03:48:54.066Z",
+        "evidence_source": "executor",
+        "from_attempt": {
+          "attempt_id": "a-b4605b4d-mwvl3jxe",
+          "task_id": "t-20261125034854-936932",
+          "agent_id": "dsh",
+          "status": "completed",
+          "worktree_path": null,
+          "checkpoint_id": null,
+          "started_at": "2026-11-25T03:48:54.049Z",
+          "ended_at": "2026-11-25T03:48:54.055Z",
+          "end_reason": "done",
+          "pid": null,
+          "session_id": null,
+          "relay_pending": false,
+          "note": null,
+          "evidence_source": "executor",
+          "observed_at": "2026-11-25T03:48:54.055Z"
+        },
+        "to_attempt": {
+          "attempt_id": "a-8d444fe4-mwvl3jxu",
+          "task_id": "t-20261125034854-936932",
+          "agent_id": "codex",
+          "status": "running",
+          "worktree_path": "C:\\Users\\ADMINI~1\\AppData\\Local\\Temp\\soda-chat-test-nOi0u9\\handoff-probe",
+          "checkpoint_id": null,
+          "started_at": "2026-11-25T03:48:54.066Z",
+          "ended_at": null,
+          "end_reason": null,
+          "pid": null,
+          "session_id": null,
+          "relay_pending": false,
+          "note": "从 dsh/a-b4605b4d-mwvl3jxe 交接",
+          "evidence_source": "external",
+          "observed_at": "2026-11-25T03:48:54.066Z"
+        },
+        "write_owner": {
+          "worktree_path": "c:/Users/ADMINI~1/AppData/Local/Temp/soda-chat-test-nOi0u9/handoff-probe",
+          "task_id": "t-20261125034854-936932",
+          "attempt_id": "a-8d444fe4-mwvl3jxu",
+          "agent_id": "codex",
+          "acquired_at": "2026-11-25T03:48:54.066Z",
+          "released_at": null,
+          "heartbeat_at": "2026-11-25T03:48:54.066Z",
+          "evidence_source": "executor",
+          "observed_at": "2026-11-25T03:48:54.066Z"
+        },
+        "checkpoint_id": null,
+        "state": {
+          "task_id": "t-20261125034854-936932",
+          "status": "unknown",
+          "status_reason": "外部终端启动（Claude/Codex），拿不到结构化事件，无法确认执行状态",
+          "evidence_source": "external",
+          "observed_at": "2026-11-25T03:48:54.066Z",
+          "evaluated_at": "2026-11-25T03:48:54.066Z",
+          "last_activity_at": "2026-11-25T03:48:54.066Z",
+          "last_progress_at": "2026-11-25T03:48:54.055Z",
+          "last_event_type": "handoff",
+          "attempt_id": "a-8d444fe4-mwvl3jxu",
+          "attempt_status": "running",
+          "active_attempt_id": "a-8d444fe4-mwvl3jxu",
+          "process_alive": null,
+          "relay_pending": false,
+          "blocked_reason": null,
+          "verification": {
+            "result": "passed",
+            "code_sha": null,
+            "command": null,
+            "report": "independent review finished A",
+            "observed_at": "2026-11-25T03:48:54.055Z",
+            "evidence_source": "user"
+          },
+          "acceptance": {
+            "event_type": "acceptance_passed",
+            "observed_at": "2026-11-25T03:48:54.055Z",
+            "evidence_source": "user"
+          },
+          "current_step": null,
+          "done": [
+            "deliverable"
+          ],
+          "remaining": [],
+          "done_count": 1,
+          "total": 1
+        }
+      }
+    },
+    "running": [
+      {
+        "attempt_id": "a-c0db298c-mwvl3jxo",
+        "status": "running"
+      },
+      {
+        "attempt_id": "a-8d444fe4-mwvl3jxu",
+        "status": "running"
+      }
+    ]
+  },
+  "refresh": {
+    "before": {
+      "confirm": {
+        "taskId": "t-20261125034854-936932",
+        "attemptId": "a-c0db298c-mwvl3jxo",
+        "at": 1795578535356,
+        "message": "执行实例 a-c0db298c-mwvl3jxo（dsh）不是本服务启动的，也没有登记进程号，本服务无法确认它是否还在运行。请先在启动它的地方停止它；确认已经停止后再点一次「确认已停止」（接口上是带 confirm=true 和这个实例的 attempt_id），本服务会把这次实例记为「用户停止」，不写任何验收结论。"
+      },
+      "task": {
+        "task_id": "t-20261125034854-936932",
+        "title": "R3 independent handoff constraint",
+        "acceptance": null,
+        "status": "completed",
+        "status_reason": "验收通过（未绑定代码版本）",
+        "evidence_source": "user",
+        "observed_at": "2026-11-25T03:48:54.055Z",
+        "last_activity_at": "2026-11-25T03:48:54.066Z",
+        "last_progress_at": "2026-11-25T03:48:54.055Z",
+        "last_event_type": "task_stopped",
+        "attempt_id": "a-8d444fe4-mwvl3jxu",
+        "active_attempt_id": null,
+        "attempt_status": "interrupted",
+        "running_attempts": 1,
+        "blocked_reason": null,
+        "relay_pending": false,
+        "verification": {
+          "result": "passed",
+          "code_sha": null,
+          "command": null,
+          "report": "independent review finished A",
+          "observed_at": "2026-11-25T03:48:54.055Z",
+          "evidence_source": "user"
+        },
+        "current_step": null,
+        "done": [
+          "deliverable"
+        ],
+        "remaining": [],
+        "progress": {
+          "done": 1,
+          "total": 1
+        },
+        "artifact_count": 0,
+        "latest_artifacts": [],
+        "created_at": "2026-11-25T03:48:54.042Z",
+        "updated_at": "2026-11-25T03:48:54.075Z",
+        "closed_at": null,
+        "archived_at": null,
+        "archived_from": null,
+        "deleted_at": null,
+        "is_archived": false,
+        "is_deleted": false,
+        "workflow_run_id": null,
+        "workflow_step_id": null,
+        "workflow_step_name": null
+      }
+    },
+    "after": {
+      "confirm": null,
+      "task": {
+        "task_id": "t-20261125034854-936932",
+        "title": "R3 independent handoff constraint",
+        "acceptance": null,
+        "status": "completed",
+        "status_reason": "验收通过（未绑定代码版本）",
+        "evidence_source": "user",
+        "observed_at": "2026-11-25T03:48:54.055Z",
+        "last_activity_at": "2026-11-25T03:48:54.066Z",
+        "last_progress_at": "2026-11-25T03:48:54.055Z",
+        "last_event_type": "task_stopped",
+        "attempt_id": "a-8d444fe4-mwvl3jxu",
+        "active_attempt_id": null,
+        "attempt_status": "interrupted",
+        "running_attempts": 1,
+        "blocked_reason": null,
+        "relay_pending": false,
+        "verification": {
+          "result": "passed",
+          "code_sha": null,
+          "command": null,
+          "report": "independent review finished A",
+          "observed_at": "2026-11-25T03:48:54.055Z",
+          "evidence_source": "user"
+        },
+        "current_step": null,
+        "done": [
+          "deliverable"
+        ],
+        "remaining": [],
+        "progress": {
+          "done": 1,
+          "total": 1
+        },
+        "artifact_count": 0,
+        "latest_artifacts": [],
+        "created_at": "2026-11-25T03:48:54.042Z",
+        "updated_at": "2026-11-25T03:48:54.075Z",
+        "closed_at": null,
+        "archived_at": null,
+        "archived_from": null,
+        "deleted_at": null,
+        "is_archived": false,
+        "is_deleted": false,
+        "workflow_run_id": null,
+        "workflow_step_id": null,
+        "workflow_step_name": null
+      }
+    },
+    "remaining": {
+      "attempt_id": "a-c0db298c-mwvl3jxo",
+      "task_id": "t-20261125034854-936932",
+      "agent_id": "dsh",
+      "status": "running",
+      "worktree_path": null,
+      "checkpoint_id": null,
+      "started_at": "2026-11-25T03:48:54.060Z",
+      "ended_at": null,
+      "end_reason": null,
+      "pid": null,
+      "session_id": null,
+      "relay_pending": 0,
+      "note": null
+    },
+    "button": "停止"
+  },
+  "control": {
+    "stop": 200,
+    "delete": 200
+  }
+}

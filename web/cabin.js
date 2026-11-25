@@ -572,7 +572,7 @@ function planHeroHtml(plan) {
 }
 
 /* ================= 页面状态 ================= */
-let settingsTab = 'general';            // 设置页当前子页签：general | skills（agents/files 已升一级页，不再住这里）
+let settingsTab = 'general';            // 设置页当前子页签：general | skills | workflow（agents/files 已升一级页，不再住这里）
 const cabinUI = { pastOpen: false, noteOpen: false, scoreEdit: false, tasksOpen: false, newOpen: false, reviewOpen: false,
   rosterOpen: false };   // X07 展开名册（R86·X02：hideTest 下线——测试任务在首页固定隐藏，开关不再需要）
 // 新建软件/评审表单的草稿：轮询重渲染不丢正在打的字（按输入框 id 存，重建后回填）
@@ -601,7 +601,7 @@ function syncSettingsTabs() {
   document.querySelectorAll('#page-settings [data-settab]').forEach((b) => {
     b.classList.toggle('on', b.dataset.settab === settingsTab);
   });
-  for (const [tab, id] of [['general', 'set-general'], ['skills', 'page-skills']]) {
+  for (const [tab, id] of [['general', 'set-general'], ['skills', 'page-skills'], ['workflow', 'page-workflow']]) {
     const el = document.getElementById(id);
     if (el) el.hidden = tab !== settingsTab;
   }

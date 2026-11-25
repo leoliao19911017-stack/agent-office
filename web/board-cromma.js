@@ -1,5 +1,5 @@
 /* Soda Office · Agent 看板 V2
-   真实数据源：GET /api/agents/status-v2、GET /api/tasks、GET /api/state；右列对话走 /api/chat/*（board-chat.js）
+   真实数据源：GET /api/agents/status-v2、GET /api/tasks、GET /api/workflow/runs（左栏工作流下拉）、GET /api/state；右列对话走 /api/chat/*（board-chat.js）
    状态口径：availability=false → 不可用；执行没有可信证据 → unknown，不兜底 idle。
    所有按钮都必须有真实行为；中央没有无数据支撑的装饰线。 */
 
@@ -15,13 +15,29 @@ const STATUS_LABEL = {
   running: '执行中', waiting: '待接力', idle: '空闲', completed: '已完成',
   blocked: '已阻塞', interrupted: '已中断', failed: '失败', unknown: '? 未知',
 };
-const FILTERS = {
-  all: () => true,
-  running: (t) => t.status === 'running',
-  relay: (t) => t.relay_pending === true,
-  risk: (t) => ['blocked', 'interrupted', 'failed'].includes(t.status),
-  unknown: (t) => !t.status || t.status === 'unknown',
-};
+/**
+ * 任务筛选分类。除了「全部」，每条任务恰好落进一个分类：按下面的顺序取第一个命中的，
+ * 所以不可能出现「有任务、但每个分类都是 0」。
+ * 以前 completed / waiting / idle 三种状态不在任何一个分类里——十条已完成的任务只出现在「全部」中。
+ * 顺序有讲究：待接力的优先归「接力」（不管它此刻是执行中还是已阻塞，那都是需要有人接手的状态）；
+ * 不认识的状态值（将来新增的、缺失的）一律归「未知」，保证总有归属。
+ */
+const TASK_BUCKETS = [
+  { key: 'relay', label: '接力', hint: '额度阻塞等待接力，或任务在「等待」', test: (t) => t.relay_pending === true || t.status === 'waiting' },
+  { key: 'running', label: '执行', hint: '执行中', test: (t) => t.status === 'running' },
+  { key: 'risk', label: '异常', hint: '已阻塞 / 已中断 / 失败', test: (t) => ['blocked', 'interrupted', 'failed'].includes(t.status) },
+  { key: 'unknown', label: '未知', hint: '状态未知，或不在已知状态里', test: (t) => !t.status || t.status === 'unknown' },
+  { key: 'completed', label: '完成', hint: '已完成', test: (t) => t.status === 'completed' },
+  { key: 'idle', label: '空闲', hint: '已关闭，没有待继续的工作', test: (t) => t.status === 'idle' },
+];
+const BUCKET_LABELS = { all: '全部', ...Object.fromEntries(TASK_BUCKETS.map((b) => [b.key, b.label])) };
+function taskBucketOf(task) {
+  const t = task || {};
+  for (const b of TASK_BUCKETS) if (b.test(t)) return b.key;
+  return 'unknown';
+}
+const FILTERS = { all: () => true };
+for (const b of TASK_BUCKETS) FILTERS[b.key] = (t) => taskBucketOf(t) === b.key;
 
 /** 交付物时间线六类：顺序固定；goal_report 单独放在任务头「目标达成」。 */
 const DL_TIMELINE = [
@@ -50,6 +66,29 @@ const state = {
   selectedAgentId: null,
   selectedTaskId: null,
   filter: 'all',
+  // TASK-任务归档：多选集合 / 是否向 API 要归档行 / 正在执行批量或单条操作
+  selectedTaskIds: new Set(),
+  includeArchived: false,
+  taskBusy: false,
+  // 回收站：只看软删的任务（真请求 ?only_deleted=1，服务端 SQL 过滤）。和「显示已归档」是两件事：
+  // 归档的任务在列表里灰显；删除的任务只有进了回收站才看得见、才恢复得了。
+  trashMode: false,
+  // 「停止」的第二步在等用户再点一次：{ taskId, attemptId, at, message }。服务端无法确认的那种执行实例
+  //（不是本服务启动的、也没登记 pid）要先由用户确认「我已经停掉了」。确认绑定到具体实例（R2-1）：
+  // attemptId 是第一次被拒时服务端在响应里给的，确认请求原样带回；实例换了（别人完成了它 / 新实例
+  // 接替），列表刷新会作废这次确认。旧后端不给 attempt_id，退回只认任务的老行为。
+  stopConfirm: null,
+  // 服务端对「停止」给的做法（比如「不是本服务启动的、进程还在，请去它的终端里停」）：挂在按钮的悬停提示上
+  stopNotice: null,
+  // 服务端任务 API 有哪些能力（Set）；null = 还没读到任务列表。
+  apiFeatures: null,
+  // TASK-tasks 挂工作流步骤：按当前选中的工作流 run 过滤任务（真请求 ?workflow_run_id=…，服务端 SQL 过滤）；
+  // '' = 不过滤。workflowRuns 是左栏下拉的选项来源（GET /api/workflow/runs），失败不拖垮任务列表。
+  workflowRunId: '',
+  workflowRuns: null,
+  workflowRunsError: null,
+  // null = 还不知道（没读到任务）；false = 服务端进程是旧代码，不支持按工作流过滤（下拉禁用）
+  workflowFilterSupported: null,
   route: 'board',
   // TASK-交付物视图：选中任务 → 中央交付物时间线；右侧预览。
   deliverables: null,
@@ -243,13 +282,19 @@ async function loadData() {
   if (state.loading) return;
   state.loading = true;
   state.fetchLog = [];
+  const taskQuery = new URLSearchParams();
+  // 回收站优先：进了回收站就只看已删除的，「显示已归档」的原有开关留着，退出回收站后继续生效。
+  if (state.trashMode) taskQuery.set('only_deleted', '1');
+  else if (state.includeArchived) taskQuery.set('include_archived', '1');
+  if (state.workflowRunId) taskQuery.set('workflow_run_id', state.workflowRunId);
   const results = await Promise.allSettled([
     getJson('/api/agents/status-v2'),
-    getJson('/api/tasks'),
+    getJson(`/api/tasks${taskQuery.toString() ? `?${taskQuery}` : ''}`),
     getJson('/api/state'),
     getJson('/api/quotas'),
     getJson('/api/agents?all=1'),
     getJson('/api/tool-events?recent=200&tools=30'),
+    getJson('/api/workflow/runs'),
   ]);
   const failures = [];
   state.statusV2 = results[0].status === 'fulfilled' ? results[0].value : null;
@@ -261,6 +306,32 @@ async function loadData() {
   state.agents = results[4] && results[4].status === 'fulfilled' ? results[4].value : null;
   state.toolEvents = results[5] && results[5].status === 'fulfilled' ? results[5].value : null;
   state.toolEventsError = results[5] && results[5].status === 'rejected' ? results[5].reason.message : null;
+  // 工作流 run 列表只喂左栏下拉：读不到时下拉只剩「全部任务」，不算整个看板读取失败。
+  state.workflowRuns = results[6] && results[6].status === 'fulfilled' ? results[6].value : null;
+  // 选中的 run 刚被归档：下拉里不会再有它。筛选退回「全部任务」并重拉一次，
+  // 不留一个指向看不见的 run 的筛选条件（上面按旧条件取回的任务列表直接作废）。
+  if (state.workflowRunId && (state.workflowRuns?.runs || []).some((r) => r.run_id === state.workflowRunId && r.archived_at)) {
+    state.workflowRunId = '';
+    state.loading = false;
+    await loadData();
+    return;
+  }
+  state.workflowRunsError = results[6] && results[6].status === 'rejected'
+    ? String(results[6].reason.message || results[6].reason)
+    : null;
+  // v9 后端会在 /api/tasks 响应里回显 workflow_run_id。没有这个键 = 服务端进程还是旧代码（改了磁盘上的
+  // 文件但没重启）：旧代码会悄悄忽略 ?workflow_run_id=，列表不会变。那种时候下拉必须禁用并说明——
+  // 这个看板的规矩是按钮必须有真实行为，不能留一个选了没反应的过滤器。
+  state.workflowFilterSupported = state.tasksData ? Object.hasOwn(state.tasksData, 'workflow_run_id') : null;
+  if (state.workflowFilterSupported === false) state.workflowRunId = '';
+  // 服务端任务 API 的能力清单（停止 / 回收站……）。静态文件是每次请求从磁盘读的，后端却要重启才换：
+  // 旧进程的响应里没有 api_features，依赖新后端的按钮就禁用并说明，不留一个点了没反应的控件。
+  state.apiFeatures = state.tasksData && Array.isArray(state.tasksData.api_features)
+    ? new Set(state.tasksData.api_features)
+    : null;
+  // 回收站是 05c 返工才有的查询。旧后端会悄悄忽略 ?only_deleted=1、把普通列表回来——那样回收站里
+  // 显示的就不是已删除的任务了。响应里没有 only_deleted 回显 = 服务端还是旧代码：退出回收站模式。
+  if (state.trashMode && state.tasksData && !Object.hasOwn(state.tasksData, 'only_deleted')) state.trashMode = false;
   // 工具采集失败不冒充 0：转盘左弧显示读取失败，不让状态/任务一起背锅。
   state.quotasError = results[3].status === 'rejected'
     ? results[3].reason.message
@@ -271,6 +342,21 @@ async function loadData() {
   state.loading = false;
 
   if (state.selectedTaskId && !tasksNow().some((t) => t.task_id === state.selectedTaskId)) state.selectedTaskId = null;
+  // 归档 / 删除后，已选集合里不存在的 id 立刻清掉，批量条不显示幽灵计数。
+  {
+    const alive = new Set(tasksNow().map((t) => t.task_id));
+    for (const id of [...state.selectedTaskIds]) if (!alive.has(id)) state.selectedTaskIds.delete(id);
+  }
+  // 「确认已停止」绑定的是具体执行实例（R2-1）：列表刷新发现那个实例已经不是当前在跑的（别人完成了
+  // 它、新实例接替、任务没了 / 被筛走），确认就作废——按钮变回「停止」。旧确认再去点只会被服务端
+  // 409 拒掉，先把过期的确认态收掉，别让界面挂着一个点了注定失败的按钮。
+  if (state.stopConfirm) {
+    const t = tasksNow().find((x) => x.task_id === state.stopConfirm.taskId);
+    const stillCurrent = t && (state.stopConfirm.attemptId
+      ? t.active_attempt_id === state.stopConfirm.attemptId
+      : hasActiveAttempt(t)); // 旧后端没给实例 id：以「还有没有在跑」近似
+    if (!stillCurrent) state.stopConfirm = null;
+  }
   ensureSelection();
 
   renderAll();
@@ -454,11 +540,10 @@ function counts() {
   const artifacts = tasks.reduce((n, t) => n + (Number(t.artifact_count) || 0), 0);
   const done = tasks.reduce((n, t) => n + (Number(t.progress?.done) || 0), 0);
   const total = tasks.reduce((n, t) => n + (Number(t.progress?.total) || 0), 0);
-  const running = tasks.filter(FILTERS.running).length;
-  const relay = tasks.filter(FILTERS.relay).length;
-  const risk = tasks.filter(FILTERS.risk).length;
-  const unknown = tasks.filter(FILTERS.unknown).length;
-  return { tasks: tasks.length, artifacts, done, total, running, relay, risk, unknown };
+  // 每条任务只计一次：各分类之和恒等于 tasks
+  const byBucket = Object.fromEntries(TASK_BUCKETS.map((b) => [b.key, 0]));
+  for (const t of tasks) byBucket[taskBucketOf(t)] += 1;
+  return { tasks: tasks.length, artifacts, done, total, byBucket };
 }
 function usage() {
   const u = state.hubState?.totals?.usage;
@@ -490,13 +575,44 @@ function renderMeta() {
   $('#stat-artifacts').textContent = state.tasksData ? c.artifacts : '—';
   $('#task-count').textContent = state.tasksData ? c.tasks : '—';
 
-  const filterCounts = { all: c.tasks, running: c.running, relay: c.relay, risk: c.risk, unknown: c.unknown };
+  const filterCountOf = (f) => (f === 'all' ? c.tasks : c.byBucket[f]);
   $$('#task-filters .filter').forEach((btn) => {
     const f = btn.dataset.filter;
-    btn.querySelector('b').textContent = state.tasksData ? filterCounts[f] : '—';
+    btn.querySelector('b').textContent = state.tasksData ? filterCountOf(f) : '—';
     btn.classList.toggle('is-active', f === state.filter);
     btn.setAttribute('aria-pressed', String(f === state.filter));
   });
+
+  // 归档开关：按钮文案与 aria 跟着真实请求参数走（不是只翻本地状态）。
+  // 回收站里不请求归档行，这个开关暂时不适用 → 禁用；退出回收站后原来的开关状态继续生效。
+  const archToggle = $('#task-archived-toggle');
+  if (archToggle) {
+    archToggle.setAttribute('aria-pressed', String(state.includeArchived && !state.trashMode));
+    archToggle.textContent = state.includeArchived ? '隐藏已归档' : '显示已归档';
+    archToggle.disabled = state.trashMode;
+    archToggle.title = state.trashMode
+      ? '回收站里只显示已删除的任务；「显示已归档」要退出回收站后才用'
+      : '归档任务默认不返回；打开后显示并可恢复';
+  }
+  // 回收站开关：依赖 05c 返工后的后端（?only_deleted=1）。服务端进程还是旧代码时禁用并说明。
+  const trashToggle = $('#task-trash-toggle');
+  if (trashToggle) {
+    const supported = apiHas('trash');
+    trashToggle.disabled = !supported;
+    trashToggle.setAttribute('aria-pressed', String(state.trashMode));
+    trashToggle.textContent = state.trashMode ? '退出回收站' : '回收站';
+    trashToggle.title = !state.tasksData
+      ? '任务列表还没读到（/api/tasks 读取失败），回收站暂时不可用'
+      : !supported
+        ? '服务端进程还是旧代码（没重启）：回收站要重启 8090 后才生效'
+        : state.trashMode
+          ? '回到普通任务列表'
+          : '回收站：只看已删除的任务（软删，行还在库里，可恢复）';
+  }
+  const tasksSection = $('.tasks');
+  if (tasksSection) tasksSection.classList.toggle('is-trash', state.trashMode);
+  const hint = $('#tasks-hint');
+  if (hint) hint.textContent = state.trashMode ? '回收站 · 只显示已删除的任务' : '点一行看详情';
 
   const obs = state.statusV2?.observed_at;
   const upd = $('#updated-at');
@@ -788,31 +904,212 @@ function filteredTasks() {
   const allow = FILTERS[state.filter] || FILTERS.all;
   return tasksNow().filter(allow);
 }
+function isArchivedTask(t) {
+  return Boolean(t && (t.archived_at || t.is_archived));
+}
+function isDeletedTask(t) {
+  return Boolean(t && (t.deleted_at || t.is_deleted));
+}
+/** 服务端任务 API 有没有这项能力（清单在 GET /api/tasks 响应的 api_features 里；旧后端的响应没有这个键）。 */
+function apiHas(feature) {
+  return Boolean(state.apiFeatures && state.apiFeatures.has(feature));
+}
+/** 有执行实例在跑的行才有「停止」。
+ * 新后端给 running_attempts（还在跑的实例总数，R2-2）：状态机的 active_attempt_id 只认「最新一条
+ * running」，遗留的多实例数据里最新那条停掉后它是 null，但更早的还在跑——按钮不能跟着消失。
+ * 旧后端的响应里没有这个键：退回 active_attempt_id（旧后端本来也到不了多实例形态的新入口）。 */
+function hasActiveAttempt(t) {
+  if (!t) return false;
+  if (typeof t.running_attempts === 'number') return t.running_attempts > 0;
+  return Boolean(t.active_attempt_id);
+}
+function taskTitleOf(taskId) {
+  return tasksNow().find((t) => t.task_id === taskId)?.title || taskId;
+}
+
+/** 多选 / 批量条的 UI 同步：全选框、已选高亮、批量条显隐。 */
+function syncTaskSelectionUi() {
+  const ids = filteredTasks().map((t) => t.task_id);
+  // 选择只能是「此刻看得见的行」。切筛选 / 进出回收站 / 切工作流的时候已经清空过（见 bindEvents）；
+  // 这里再兜一层：列表刷新后某一行不再符合当前筛选（比如在「执行」下把它停掉了），
+  // 它的勾选要跟着消失，不让批量条挂着一个看不见的计数。
+  for (const id of [...state.selectedTaskIds]) if (!ids.includes(id)) state.selectedTaskIds.delete(id);
+  const picked = ids.filter((id) => state.selectedTaskIds.has(id));
+  const all = $('#task-select-all');
+  if (all) {
+    all.checked = ids.length > 0 && picked.length === ids.length;
+    all.indeterminate = picked.length > 0 && picked.length < ids.length;
+  }
+  const n = state.selectedTaskIds.size;
+  const bar = $('#task-batch');
+  if (bar) bar.hidden = n === 0;
+  // 回收站里只有「恢复」有意义：已删除的任务再归档 / 再删除都是 409。
+  $$('#task-batch [data-batch]').forEach((b) => { b.hidden = state.trashMode && b.dataset.batch !== 'restore'; });
+  const count = $('#task-batch-count');
+  if (count) count.textContent = String(n);
+  $$('.task-line').forEach((line) => {
+    line.classList.toggle('is-checked', state.selectedTaskIds.has(line.dataset.line));
+  });
+}
+
+/**
+ * v9：任务挂在工作流哪一步。标签文字「05 开发执行」；步骤名服务端没查到时只显示步骤号，不编名字。
+ * 标签画在每行下方的操作行左端（右端是归档 / 删除），不占标题那一行的宽度——
+ * 左栏只有 272px，标签挤在标题前面会把标题压成三四个字。
+ */
+function stepTagOf(t) {
+  const id = t && t.workflow_step_id ? String(t.workflow_step_id) : '';
+  if (!id) return null;
+  const name = t.workflow_step_name ? String(t.workflow_step_name) : '';
+  return { id, name, text: name ? `${id} ${name}` : id };
+}
+
+/** v9：任务的工作流归属文案（详情面板用）。没挂工作流返回 null。 */
+function workflowLinkText(t) {
+  if (!t || !t.workflow_run_id) return null;
+  const run = (state.workflowRuns?.runs || []).find((r) => r.run_id === t.workflow_run_id);
+  const runTitle = run ? run.title : t.workflow_run_id;
+  if (!t.workflow_step_id) return `${runTitle} · 未挂到具体步骤`;
+  return `${runTitle} · 第 ${t.workflow_step_id} 步${t.workflow_step_name ? ` ${t.workflow_step_name}` : ''}`;
+}
+
+/**
+ * 行上的「停止」按钮。只在有执行实例在跑的行上出现，停下之后（active_attempt_id 没了）自然消失。
+ * · 后端还是旧代码（没重启）：按钮禁用，悬停提示写明原因——不留一个点了没反应的控件；
+ * · 服务端刚回「无法确认」（不是本服务启动的、也没登记 pid）：按钮变成「确认已停止」，等用户再点一次；
+ * · 服务端刚回「不是本服务启动的、进程还活着」：按钮不变，悬停提示换成服务端给的做法。
+ */
+function stopButtonHtml(t) {
+  if (!hasActiveAttempt(t)) return '';
+  const supported = apiHas('stop');
+  const confirming = Boolean(state.stopConfirm && state.stopConfirm.taskId === t.task_id);
+  const notice = state.stopNotice && state.stopNotice.taskId === t.task_id ? state.stopNotice.message : '';
+  const title = !supported
+    ? '服务端进程还是旧代码（没重启）：停止要重启 8090 后才生效'
+    : confirming
+      ? (state.stopConfirm.message || '本服务无法确认这个实例是否还在跑；确认已经停掉了就再点一次')
+      : (notice || '停止正在跑的执行实例；停下之后才能删除');
+  return `<button type="button" data-act="stop"${supported ? '' : ' disabled'}${confirming ? ' class="is-confirm" data-confirm="1"' : ''} title="${esc(title)}">${confirming ? '确认已停止' : '停止'}</button>`;
+}
+
+function taskLineHtml(t) {
+  const id = esc(t.task_id);
+  const tone = taskTone(t);
+  const done = Number(t.progress?.done) || 0;
+  const total = Number(t.progress?.total) || 0;
+  const selected = t.task_id === state.selectedTaskId;
+  const archived = isArchivedTask(t);
+  const deleted = isDeletedTask(t);
+  const checked = state.selectedTaskIds.has(t.task_id);
+  const title = esc(t.title || t.task_id);
+  const step = stepTagOf(t);
+  const stepNote = step ? `第 ${step.id} 步${step.name ? ` ${step.name}` : ''}` : '';
+  const stepTag = step
+    ? `<span class="task-tag task-tag--step${step.name ? '' : ' is-unknown'}" data-step="${esc(step.id)}" title="${esc(`属于工作流${stepNote}${step.name ? '' : '（步骤名未取到，只显示步骤号）'}`)}">${esc(step.text)}</span>`
+    : '';
+  const stop = stopButtonHtml(t);
+  // 已删除的行（回收站）：「已删除」标签放在操作行左端（步骤标签的位置），标题那一行留整行宽度——
+  // 左栏只有 272px，标签挤在标题后面会把标题压得只剩三四个字，回收站里就分不清哪条是哪条了。
+  const leftTag = deleted
+    ? `<span class="task-tag task-tag--deleted" title="删除于 ${esc(fmtDate(t.deleted_at))} · 行还在库里，可恢复">已删除</span>`
+    : stepTag;
+  const actions = deleted
+    // 回收站里的行：只能恢复（已删除的任务再归档 / 再删除都是 409）
+    ? `${stop}<button type="button" data-act="restore" title="恢复：清掉删除标记，回到任务列表（状态按最新执行证据重算）">恢复</button>`
+    : archived
+      ? `${stop}<button type="button" data-act="restore" title="恢复归档前的状态">恢复</button>
+         <button type="button" data-act="delete" title="软删除；删除后进回收站，可以再恢复">删除</button>`
+      : `${stop}<button type="button" data-act="archive" title="归档：不改状态，只写 archived_at">归档</button>
+         <button type="button" data-act="delete" title="软删除；运行中的任务会被拒绝，需先停止；删除后进回收站">删除</button>`;
+  const stateTag = !deleted && archived ? '<span class="task-tag">已归档</span>' : '';
+  return `<div class="task-line${archived ? ' is-archived' : ''}${deleted ? ' is-deleted' : ''}${checked ? ' is-checked' : ''}" data-line="${id}">
+    <div class="task-line__top">
+      <input type="checkbox" class="task-pick" data-pick="${id}"${checked ? ' checked' : ''} aria-label="选择 ${title}">
+      <button type="button" class="task-row ${selected ? 'is-selected' : ''}" data-task="${id}" aria-pressed="${selected}" aria-label="${title} · ${esc(stepNote ? `${stepNote} · ` : '')}${esc(taskLabel(t))} · ${done}/${total}" title="${title} · ${esc(stepNote ? `${stepNote} · ` : '')}${esc(taskLabel(t))} · 已完成 ${done}/${total}">
+        <span class="task-row__dot" data-tone="${tone}" aria-hidden="true"></span>
+        <span class="task-row__title"><span class="task-row__name">${title}</span>${stateTag}</span>
+        <span class="task-row__meta">
+          <span class="task-row__prog">${done}/${total}</span>
+        </span>
+      </button>
+    </div>
+    <div class="task-line__acts">${leftTag}${actions}</div>
+  </div>`;
+}
+
+/** v9：左栏「工作流」下拉。选项来自 GET /api/workflow/runs；选中哪个 run，任务列表就按它过滤。 */
+function renderWorkflowRunPicker() {
+  const sel = $('#task-run-select');
+  if (!sel) return;
+  // 只列未归档的 run（archived_at IS NULL）。归档是独立的一列、和 status 无关——线上就有
+  // status 还是 running、但已经被归档的 run。服务端进程要是还没重启到会带 archived_at 的那一版，
+  // 这里无从判断，只能照旧全列（提示里说明）。
+  const allRuns = state.workflowRuns?.runs || [];
+  const archivedKnown = allRuns.length === 0 || Object.hasOwn(allRuns[0], 'archived_at');
+  const runs = allRuns.filter((r) => !r.archived_at);
+  const current = state.workflowRunId || '';
+  // 服务端进程还是旧代码：下拉只能停在「全部任务」，并在悬停提示里说清楚为什么、怎么办。
+  const unsupported = state.workflowFilterSupported === false;
+  const option = (value, text, title) => `<option value="${esc(value)}"${value === current ? ' selected' : ''} title="${esc(title)}">${esc(text)}</option>`;
+
+  const options = [option('',
+    unsupported ? '全部任务（服务端未重启，暂不能按工作流过滤）' : '全部任务（不按工作流过滤）',
+    unsupported ? '服务端进程还是 v9 之前的代码，/api/tasks 不认 workflow_run_id' : '显示所有任务，包括没挂工作流的')];
+  for (const r of runs) {
+    const where = r.current_step_id
+      ? `第 ${r.current_step_id} 步${r.current_step_name ? ` ${r.current_step_name}` : ''}`
+      : (r.status || '');
+    options.push(option(r.run_id, `${r.title} · ${where}`, `${r.title}（${r.status || '—'}）· ${r.run_id}`));
+  }
+  // 选中的 run 不在列表里（run 列表读取失败 / run 已不存在）：留一个占位项，不让筛选条件悄悄变回「全部」。
+  if (current && !runs.some((r) => r.run_id === current)) {
+    options.push(option(current, `（${current}）`, `run 列表里找不到：${current}`));
+  }
+  // renderAll 走得很勤：选项没变就不重建 <option>，免得用户正开着下拉时被重绘关掉。
+  const sig = JSON.stringify([unsupported, current, runs.map((r) => [r.run_id, r.title, r.current_step_id, r.current_step_name, r.status])]);
+  if (sel.dataset.sig !== sig) {
+    sel.innerHTML = options.join('');
+    sel.dataset.sig = sig;
+  }
+  sel.disabled = unsupported;
+  const bar = sel.closest('.task-runbar');
+  if (bar) {
+    bar.classList.toggle('is-active', Boolean(current));
+    bar.title = unsupported
+      ? '服务端进程还是 v9 之前的代码（没重启），按工作流过滤要重启 8090 后才生效；重启会把数据库迁到 v9'
+      : state.workflowRunsError
+        ? `工作流列表读取失败：${state.workflowRunsError}（下拉暂时只有已缓存的选项）`
+        : archivedKnown
+          ? '按工作流 run 过滤：只看这一次需求拆出来的任务；已归档的 run 不在下拉里'
+          : '按工作流 run 过滤：只看这一次需求拆出来的任务（服务端进程还没重启到能识别归档的那一版，已归档的 run 暂时还在下拉里）';
+  }
+}
+
 function renderTasks() {
   const list = $('#task-list');
   if (!state.tasksData) {
     list.innerHTML = `<div class="task-empty">读不到 /api/tasks。<br>不是 0 个任务，是证据没到。</div>`;
+    syncTaskSelectionUi();
     return;
   }
   const rows = filteredTasks();
   if (!rows.length) {
-    list.innerHTML = `<div class="task-empty">此筛选下没有任务。<br>空内容显示 —，不兜底成别的状态。</div>`;
+    // 一条都没有：说清是「回收站是空的」「回收站里有、只是当前筛选下没有」「这次需求还没拆出任务」还是「状态筛选把任务筛没了」。
+    const loaded = tasksNow().length;
+    const run = state.workflowRuns?.runs?.find((r) => r.run_id === state.workflowRunId);
+    list.innerHTML = state.trashMode
+      ? (loaded
+        ? `<div class="task-empty">回收站里有 ${loaded} 条已删除的任务，但当前筛选下没有。<br>切回「全部」查看。</div>`
+        : '<div class="task-empty">回收站是空的。<br>删除的任务会出现在这里，可以恢复。</div>')
+      : state.workflowRunId && !loaded
+        ? `<div class="task-empty">这次需求下还没有任务。<br>${esc(run ? run.title : state.workflowRunId)}<br>任务书批量建任务后会出现在这里。</div>`
+        : '<div class="task-empty">此筛选下没有任务。<br>空内容显示 —，不兜底成别的状态。</div>';
+    syncTaskSelectionUi();
     return;
   }
-  list.innerHTML = rows.map((t) => {
-    const tone = taskTone(t);
-    const done = Number(t.progress?.done) || 0;
-    const total = Number(t.progress?.total) || 0;
-    const selected = t.task_id === state.selectedTaskId;
-    return `<button type="button" class="task-row ${selected ? 'is-selected' : ''}" data-task="${esc(t.task_id)}" aria-pressed="${selected}" aria-label="${esc(t.title || t.task_id)} · ${esc(taskLabel(t))} · ${done}/${total}" title="${esc(t.title || t.task_id)} · ${esc(taskLabel(t))}">
-      <span class="task-row__dot" data-tone="${tone}" aria-hidden="true"></span>
-      <span class="task-row__title">${esc(t.title || t.task_id)}</span>
-      <span class="task-row__meta">
-        <span class="task-row__prog">${done}/${total}</span>
-      </span>
-    </button>`;
-  }).join('');
+  list.innerHTML = rows.map(taskLineHtml).join('');
   list.classList.toggle('is-scrollable', list.scrollHeight > list.clientHeight + 1);
+
   $$('.task-row', list).forEach((btn) => {
     btn.addEventListener('click', () => {
       const next = state.selectedTaskId === btn.dataset.task ? null : btn.dataset.task;
@@ -833,6 +1130,231 @@ function renderTasks() {
       showToast(next ? `中间显示交付物 · ${next}` : '已返回 Agent 详情');
     });
   });
+
+  // 行内归档 / 删除 / 恢复 / 停止：按钮在行上，点击不冒泡成「选中任务」。
+  $$('[data-act]', list).forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const taskId = btn.closest('.task-line')?.dataset.line;
+      if (!taskId) return;
+      if (btn.dataset.act === 'stop') runStopAction(taskId, btn);
+      else runTaskAction(btn.dataset.act, taskId, btn);
+    });
+  });
+
+  // 多选：只改集合与批量条，不重排列表。
+  $$('[data-pick]', list).forEach((box) => {
+    box.addEventListener('change', () => {
+      const id = box.dataset.pick;
+      if (box.checked) state.selectedTaskIds.add(id);
+      else state.selectedTaskIds.delete(id);
+      syncTaskSelectionUi();
+    });
+  });
+
+  syncTaskSelectionUi();
+}
+
+/* ---------- 任务归档 / 删除 / 恢复 / 停止：真实 API 调用 ---------- */
+const TASK_ACTION_TEXT = { archive: '归档', restore: '恢复', delete: '删除', stop: '停止' };
+
+/** 服务端错误体是 { error, code }（web/server.js 的收口）；拿到什么就显示什么，不自己编原因。 */
+function errorTextOf(json) {
+  if (!json || typeof json !== 'object') return '未知错误';
+  const text = json.message || json.error || json.code;
+  return typeof text === 'string' && text ? text : '未知错误';
+}
+
+async function taskApi(method, path, body) {
+  const res = await fetch(path, {
+    method,
+    headers: body === undefined ? { accept: 'application/json' } : { accept: 'application/json', 'content-type': 'application/json' },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  let json = null;
+  try { json = await res.json(); } catch { /* 非 JSON 按 HTTP 状态报错 */ }
+  return { res, json };
+}
+
+async function runTaskAction(action, taskId, btn) {
+  if (state.taskBusy) return;
+  const label = TASK_ACTION_TEXT[action] || action;
+  const title = taskTitleOf(taskId);
+  state.taskBusy = true;
+  if (btn) btn.disabled = true;
+  try {
+    const path = action === 'delete'
+      ? `/api/tasks/${encodeURIComponent(taskId)}`
+      : `/api/tasks/${encodeURIComponent(taskId)}/${action}`;
+    const { res, json } = await taskApi(
+      action === 'delete' ? 'DELETE' : 'POST',
+      path,
+      { actor: 'board:ui' },
+    );
+    if (!res.ok) {
+      // 服务端的原因原样带出来（比如「任务正在运行，不能删除；请先停止再删」），多停一会儿让人读完
+      showToast(`${label}失败（HTTP ${res.status}）：${errorTextOf(json)}`, 6500);
+      return;
+    }
+    // 归档后自动把归档行亮出来——用户能立刻看到灰显 +「已归档」，也能马上恢复。
+    if (action === 'archive') state.includeArchived = true;
+    if (state.stopConfirm && state.stopConfirm.taskId === taskId) state.stopConfirm = null;
+    await loadData();
+    showToast(action === 'delete'
+      ? `已删除（软删）· ${title} · 行还在库里，可在「回收站」恢复`
+      : action === 'restore'
+        ? `已恢复 · ${title}${json?.status ? `（${json.status}）` : ''}`
+        : `已归档 · ${title}（灰显，可恢复）`, action === 'delete' ? 5200 : undefined);
+  } catch (err) {
+    showToast(`${label}失败：${String(err.message || err)}`, 6500);
+  } finally {
+    state.taskBusy = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+/** 停止成功后的提示：按服务端实际确认到什么程度来说，不把「用户确认的」说成「验证过的」。
+ * 任务里还有别的实例在跑（遗留的多实例形态）时把剩余数说出来——「可以删除」只有全停干净才成立。 */
+function stopToast(json, title) {
+  const remaining = Number(json?.remaining_running?.count);
+  const hasMore = Number.isFinite(remaining) && remaining > 0;
+  if (hasMore) {
+    const head = json?.mode === 'managed'
+      ? `已停止 · ${title} · 进程 ${json.pid ?? '—'} 已退出，实例记为「用户停止」`
+      : json?.mode === 'unmanaged'
+        ? `进程已退出 · ${title} · 执行实例记为已中断`
+        : json?.mode === 'declared'
+          ? `已记为「用户停止」· ${title}（本服务没有可核对的进程，未经系统验证）`
+          : `要停的执行实例已经不在了 · ${title}`;
+    return `${head}；这个任务还有 ${remaining} 个执行实例在运行，「停止」按钮还在，全停下来才能删除`;
+  }
+  if (json?.mode === 'managed') {
+    return `已停止 · ${title} · 进程 ${json.pid ?? '—'} 已退出，实例记为「用户停止」；现在可以删除`;
+  }
+  if (json?.mode === 'unmanaged') {
+    return `进程已退出 · ${title} · 执行实例记为已中断；现在可以删除`;
+  }
+  if (json?.mode === 'declared') {
+    return `已记为「用户停止」· ${title}（本服务没有可核对的进程，未经系统验证）；现在可以删除`;
+  }
+  return `已停止 · ${title}（没有在跑的执行实例了，可以删除）`;
+}
+
+/**
+ * 停止这个任务正在跑的执行实例（POST /api/tasks/:id/stop）。
+ * 服务端分几种回答，界面照实转达：
+ *   200              停下了（托管的实例是等进程真的退出之后才回的）→ 刷新列表；任务里没有别的
+ *                    在跑实例时「停止」按钮消失、可以删除，还有就照 remaining_running 说剩余（R2-2）；
+ *   409 STOP_UNVERIFIED  实例不是本服务启动的、也没登记 pid，服务端无法确认 → 按钮变成「确认已停止」，
+ *                    用户先去把它停掉，再点一次带上 confirm=true 和那个实例的 attempt_id
+ *                    （响应体里结构化给的，服务端会记为「用户停止 / 未验证」）；
+ *   409 STOP_TARGET_CHANGED / ATTEMPT_MISMATCH  确认的对象已经不是当前在跑的实例（别人完成了它 /
+ *                    新实例接替）：旧确认作废，列表也旧了，重拉后重新走一遍（R2-1）；
+ *   409 STOP_NOT_MANAGED 实例不是本服务启动的、进程还活着，服务端不代杀 → 原样显示它给的停止路径，
+ *                    用户停完再点一次，服务端确认进程已退出。
+ */
+async function runStopAction(taskId, btn) {
+  if (state.taskBusy) return;
+  // 确认必须是「绑定到了具体实例」的那次（R2-1）。旧后端（没重启）的 409 里没有 attempt_id：
+  // 退回只认任务的老行为，不在旧后端上强求新契约。
+  const confirmFor = state.stopConfirm && state.stopConfirm.taskId === taskId ? state.stopConfirm : null;
+  const confirming = Boolean(confirmFor && (confirmFor.attemptId || !apiHas('stop_attempt_binding')));
+  const title = taskTitleOf(taskId);
+  state.taskBusy = true;
+  if (btn) btn.disabled = true;
+  try {
+    const { res, json } = await taskApi('POST', `/api/tasks/${encodeURIComponent(taskId)}/stop`, {
+      actor: 'board:ui',
+      confirm: confirming,
+      // 确认绑定的实例原样带回：服务端只对它落「用户停止」，换了实例就 409 要求重新确认。
+      ...(confirming && confirmFor.attemptId ? { attempt_id: confirmFor.attemptId } : {}),
+    });
+    if (res.ok) {
+      state.stopConfirm = null;
+      state.stopNotice = null;
+      await loadData();
+      showToast(stopToast(json, title), 7000);
+      return;
+    }
+    const why = errorTextOf(json);
+    state.stopNotice = { taskId, message: why };
+    if (res.status === 409 && json?.code === 'STOP_UNVERIFIED') {
+      state.stopConfirm = {
+        taskId,
+        attemptId: json?.attempt_id || null,
+        at: Date.now(),
+        message: why,
+      };
+      renderTasks();
+      showToast('本服务无法确认这个执行实例是否还在跑（不是本服务启动的，也没登记进程号）。请先在启动它的地方停掉它，再点一次「确认已停止」', 9000);
+      // 确认态只保留一小会儿：用户没接着点，按钮就变回「停止」，免得留下一个过期的「确认」。
+      // 记的是「这一次」确认（整个对象）：列表刷新发现实例换了会作废它（见 loadData），新的确认
+      // 会换成新对象——这个旧超时不得把新确认提前清掉。
+      const pending = state.stopConfirm;
+      setTimeout(() => {
+        if (state.stopConfirm === pending) {
+          state.stopConfirm = null;
+          renderTasks();
+        }
+      }, 30000);
+    } else if (res.status === 409 && (json?.code === 'STOP_TARGET_CHANGED' || json?.code === 'ATTEMPT_MISMATCH')) {
+      // 确认的对象已经不是当前在跑的实例：确认作废。按钮行的数据也过期了（还画着「确认已停止」），重拉列表。
+      state.stopConfirm = null;
+      state.stopNotice = null;
+      await loadData();
+      showToast(`确认已失效：${why}`, 9000);
+    } else {
+      state.stopConfirm = null;
+      renderTasks();
+      showToast(`停止失败（HTTP ${res.status}）：${why}`, 10000);
+    }
+  } catch (err) {
+    showToast(`停止失败：${String(err.message || err)}`, 6500);
+  } finally {
+    state.taskBusy = false;
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function runBatchAction(action) {
+  // 只提交当前列表里看得见的任务。切筛选 / 进出回收站 / 切工作流时选择已经清空了（见 bindEvents），
+  // 这里再和「此刻可见的行」取一次交集：将来别处漏清了，也不会把用户看不见的任务带出去（P1-1）。
+  const visible = new Set(filteredTasks().map((t) => t.task_id));
+  const ids = [...state.selectedTaskIds].filter((id) => visible.has(id));
+  const dropped = state.selectedTaskIds.size - ids.length;
+  if (dropped > 0) {
+    for (const id of [...state.selectedTaskIds]) if (!visible.has(id)) state.selectedTaskIds.delete(id);
+    syncTaskSelectionUi();
+  }
+  if (!ids.length || state.taskBusy) return;
+  // 回收站里只有「恢复」有意义（已删除的任务再归档 / 再删除都是 409）；批量条在那边也只给了恢复。
+  const effective = state.trashMode ? 'restore' : action;
+  const label = TASK_ACTION_TEXT[effective] || effective;
+  state.taskBusy = true;
+  try {
+    const { res, json } = await taskApi('POST', '/api/tasks/batch', { action: effective, ids, actor: 'board:ui' });
+    if (!res.ok) {
+      showToast(`批量${label}失败（HTTP ${res.status}）：${errorTextOf(json)}`, 6500);
+      return;
+    }
+    if (effective === 'archive') state.includeArchived = true;
+    state.selectedTaskIds.clear();
+    await loadData();
+    const failed = (json?.results || []).filter((r) => !r.ok);
+    const skipped = dropped > 0 ? `（已忽略 ${dropped} 条当前看不见的任务）` : '';
+    if (failed.length) {
+      const first = failed[0];
+      const why = first.error?.code === 'TASK_RUNNING' ? '正在运行，需先停止' : (first.error?.message || first.error?.code);
+      showToast(`批量${label}：成功 ${json.succeeded} 条，失败 ${json.failed} 条${skipped} · ${first.task_id}：${why}`, 8000);
+    } else {
+      showToast(`批量${label}：${json.succeeded} 条全部成功${skipped}`, 6000);
+    }
+  } catch (err) {
+    showToast(`批量${label}失败：${String(err.message || err)}`, 6500);
+  } finally {
+    state.taskBusy = false;
+  }
 }
 
 /* ---------- 渲染：中央交付物时间线 ---------- */
@@ -1293,6 +1815,15 @@ function taskDetailHtml(t) {
       .slice(0, 4)
     : [];
   const step = t.current_step?.name || t.current_step?.key || '—';
+  const link = workflowLinkText(t);
+  // 归档 / 删除 / 有实例在跑：都是「现在能对这条任务做什么」的前提，在详情最上面说清楚
+  const flags = [
+    isDeletedTask(t) ? `已删除${t.deleted_at ? ` · ${fmtDate(t.deleted_at)}` : ''} · 可在回收站恢复` : '',
+    isArchivedTask(t) ? '已归档 · 可恢复' : '',
+    hasActiveAttempt(t)
+      ? `有执行实例在跑（${t.active_attempt_id || `共 ${t.running_attempts} 个`}）· 先停止才能删除`
+      : '',
+  ].filter(Boolean).join(' · ');
   return `
     <div class="detail__top">
       <span class="agent-icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 20 20" fill="none"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="3" stroke="#4A4237" stroke-width="1.5"/><path d="M6.2 7.2h7.6M6.2 10h7.6M6.2 12.8h4.6" stroke="#4A4237" stroke-width="1.5" stroke-linecap="round"/></svg></span>
@@ -1302,7 +1833,7 @@ function taskDetailHtml(t) {
       </div>
       <span class="detail__state chip">${esc(taskLabel(t))}</span>
     </div>
-    <div class="detail__note"><b>${esc(t.title || t.task_id)}</b><br>${esc(t.status_reason || '没有状态说明。')}<br><span class="detail__back">六类交付物已显示在中间主区 · 点路径在右侧预览</span></div>
+    <div class="detail__note"><b>${esc(t.title || t.task_id)}</b><br>${esc(t.status_reason || '没有状态说明。')}${flags ? `<br><span class="detail__flags">${esc(flags)}</span>` : ''}<br><span class="detail__back">六类交付物已显示在中间主区 · 点路径在右侧预览</span></div>
 
     ${goal ? `<section class="detail__section">
       <div class="detail__label">目标达成<span>${esc(goalLabel)}</span></div>
@@ -1318,6 +1849,7 @@ function taskDetailHtml(t) {
       <div class="detail__label">进度<span>${p}%</span></div>
       <div class="detail__value">${done} / ${total} 步完成</div>
       <div class="kv-list">
+        ${link ? `<div class="kv-row"><span>工作流</span><b>${esc(link)}</b></div>` : ''}
         <div class="kv-row"><span>当前步骤</span><b>${esc(step)}</b></div>
         <div class="kv-row"><span>剩余步骤</span><b>${remaining.length ? remaining.map((r) => esc(r)).join(' / ') : '—'}</b></div>
         <div class="kv-row"><span>交付物</span><b>${dl ? (dl.total || 0) : (Number(t.artifact_count) || 0)} 个</b></div>
@@ -1414,7 +1946,9 @@ function renderDataCards() {
 function renderAll() {
   renderMeta();
   renderTurntable();
+  renderWorkflowRunPicker();
   renderTasks();
+  syncTaskSelectionUi();
   renderDeliverables();
   renderDetail();
   renderProgress();
@@ -1455,13 +1989,14 @@ function go(route) {
 
 /* ---------- toast ---------- */
 let toastTimer = null;
-function showToast(text) {
+function showToast(text, ms = 2600) {
   const el = $('#toast');
   el.dataset.count = String(Number(el.dataset.count || 0) + 1);   // 每次提示都计数（自检脚本据此判断按钮真的触发了）
   el.textContent = text;
   el.classList.add('is-show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('is-show'), 2600);
+  // 需要用户照着做的提示（先停止再删、去哪里停止……） callers 传更长的停留时间，让人读得完
+  toastTimer = setTimeout(() => el.classList.remove('is-show'), ms);
 }
 
 /* ---------- 事件 ---------- */
@@ -1524,7 +2059,15 @@ function bindEvents() {
   $('#task-filters').addEventListener('click', (e) => {
     const btn = e.target.closest('.filter');
     if (!btn) return;
-    state.filter = btn.dataset.filter;
+    const next = btn.dataset.filter;
+    const changed = next !== state.filter;
+    const hadSelection = state.selectedTaskIds.size > 0;
+    state.filter = next;
+    // 切了筛选就清空选择：行被筛走了，勾选不能还留着——否则批量操作会打到用户此刻看不见的任务上。
+    if (changed) {
+      state.selectedTaskIds.clear();
+      state.stopConfirm = null;
+    }
     if (state.selectedTaskId && !filteredTasks().some((t) => t.task_id === state.selectedTaskId)) {
       state.selectedTaskId = null;
       ensureSelection();
@@ -1532,8 +2075,67 @@ function bindEvents() {
     renderMeta();
     renderTasks();
     renderDetail();
-    const labels = { all: '全部', running: '执行', relay: '接力', risk: '异常', unknown: '未知' };
-    showToast(`筛选：${labels[state.filter]} · ${filteredTasks().length} 个任务`);
+    const labels = BUCKET_LABELS;
+    showToast(`筛选：${labels[state.filter]} · ${filteredTasks().length} 个任务${changed && hadSelection ? '（已清空之前的选择）' : ''}`);
+  });
+
+  // 全选只作用于当前筛选后的可见行，不偷偷选中看不见的任务。
+  $('#task-select-all').addEventListener('change', (e) => {
+    const ids = filteredTasks().map((t) => t.task_id);
+    if (e.currentTarget.checked) ids.forEach((id) => state.selectedTaskIds.add(id));
+    else ids.forEach((id) => state.selectedTaskIds.delete(id));
+    renderTasks();
+    showToast(state.selectedTaskIds.size ? `已选 ${state.selectedTaskIds.size} 条` : '已取消选择');
+  });
+
+  // 显示已归档 = 真请求 /api/tasks?include_archived=1（A4），不是前端本地过滤。
+  $('#task-archived-toggle').addEventListener('click', async () => {
+    state.includeArchived = !state.includeArchived;
+    state.selectedTaskIds.clear();
+    state.stopConfirm = null;
+    await loadData();
+    showToast(state.includeArchived ? '已显示归档任务（灰显，可恢复）' : '已隐藏归档任务');
+  });
+
+  // 回收站 = 真请求 /api/tasks?only_deleted=1（只返回软删的行），不是前端本地筛。
+  // 归档 ≠ 删除：归档的任务在列表里灰显；删除的任务只有这里看得见、恢复得了。
+  $('#task-trash-toggle').addEventListener('click', async () => {
+    if (!apiHas('trash')) return;
+    state.trashMode = !state.trashMode;
+    state.selectedTaskIds.clear();
+    state.stopConfirm = null;
+    state.stopNotice = null;
+    await loadData();
+    showToast(state.trashMode
+      ? `回收站 · ${counts().tasks} 条已删除的任务，可恢复`
+      : `已回到任务列表 · ${counts().tasks} 个任务`);
+  });
+
+  // 工作流过滤 = 真请求 /api/tasks?workflow_run_id=…（v9，服务端 SQL 过滤），不是前端本地筛。
+  // 只动任务列表的数据源；其它按钮（归档 / 删除 / 批量 / 状态筛选）照常作用于过滤后的可见行。
+  $('#task-run-select').addEventListener('change', async (e) => {
+    state.workflowRunId = e.currentTarget.value || '';
+    state.selectedTaskIds.clear();
+    state.stopConfirm = null;
+    await loadData();
+    // 选中的任务还在新列表里：交付物 / 预览原样保留。被过滤掉了（loadData 已清 selectedTaskId）：
+    // 把它的交付物与右侧预览一并收掉，不留一块指向看不见的任务的内容。
+    if (!state.selectedTaskId || !tasksNow().some((t) => t.task_id === state.selectedTaskId)) {
+      state.deliverables = null;
+      state.deliverablesFor = null;
+      state.preview = null;
+      renderDetail();
+    }
+    const run = (state.workflowRuns?.runs || []).find((r) => r.run_id === state.workflowRunId);
+    showToast(state.workflowRunId
+      ? `按工作流过滤：${run ? run.title : state.workflowRunId} · ${counts().tasks} 个任务`
+      : `已取消工作流过滤 · ${counts().tasks} 个任务`);
+  });
+
+  $('#task-batch').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-batch]');
+    if (!btn) return;
+    runBatchAction(btn.dataset.batch);
   });
 
   setInterval(() => {

@@ -1,0 +1,289 @@
+# 第二轮追问（显示层 D1–D5）的改动：和「这一轮开工时（2026-11-25 01:36）的工作目录」比
+# 生成：2026-11-25 02:05:41 · 第一轮返工的改动另见 05c-my-changes.patch
+# 测试文件的改动不在这里（test/tasks-rework.test.js 新增 D1–D5、D1b；test/fixtures/tasks-rework-harness.mjs 多挂了工作流 run API）
+--- a/web/lib/state-machine.mjs (这一轮之前)
++++ b/web/lib/state-machine.mjs (这一轮之后)
+@@ -15,6 +15,12 @@
+ // 任务状态判定的优先级（从高到低）：
+ //   完成（验收通过）> 阻塞 > 明确等待 > 自称完成待验收 > 外部证据（unknown）
+ //   > 活动中的实例（running/interrupted/unknown）> 无实例时的中断/待验/待开始
++//
++// 硬规矩 3 的一条边界（2026-11-25）：「completed 必须绑定验收通过」管的是在本系统里跑过的任务。
++// 一条任务从来没有执行实例、也没有任何验收事件，却被记成 completed（迁移进来的历史任务、
++// 人工直接改库），那它不是在这里跑完的，状态列就是它唯一的记录——按 completed 显示，并在理由里写明
++// 凭什么。以前这种情况会落成 idle（「任务已关闭」），于是库里是 completed、接口和界面却是「空闲」。
++// 有执行实例的任务不适用：它们仍然只认验收事件。
+ 
+ import { getRow } from './db.mjs';
+ import {
+@@ -421,6 +427,18 @@
+   }
+ 
+   // ⑧ 从未有执行实例。
++  // 库里记着已完成、而这里既没有它的执行实例也没有验收事件：这条任务不是在本系统里跑完的
++  //（迁移进来的历史任务、人工直接记成完成的），状态列就是它唯一的记录，按它显示。
++  // 走到这一步说明前面没有悬而未决的阻塞 / 等待 / 自称完成（那些在 ②③④ 已经先返回了）。
++  // 执行过的任务不走这条——有 attempt 的仍然只认验收事件（硬规矩 3 不变）。
++  if (task.status === STATES.COMPLETED && !acceptance) {
++    return finish(
++      STATES.COMPLETED,
++      '任务记录为已完成（库里的状态；本系统没有它的执行实例，也没有验收事件）',
++      EVIDENCE.SYSTEM,
++      task.closed_at || task.updated_at,
++    );
++  }
+   if (task.closed_at) {
+     return finish(STATES.IDLE, '任务已关闭，没有待继续的工作', EVIDENCE.USER, task.updated_at);
+   }
+@@ -473,7 +491,8 @@
+   });
+ 
+   const steps = getSteps(db, taskId);
+-  return { ...state, ...summarizeSteps(steps) };
++  // 任务已完成时步骤按全部完成算：进度、剩余步骤要和状态说的是同一件事
++  return { ...state, ...summarizeSteps(steps, { completed: state.status === STATES.COMPLETED }) };
+ }
+ 
+ function nowIsoDefault(now) {
+@@ -663,7 +682,7 @@
+     let taskObj;
+     if (taskState) {
+       const steps = getSteps(db, lastAttempt.task_id);
+-      const summary = summarizeSteps(steps);
++      const summary = summarizeSteps(steps, { completed: taskState.status === STATES.COMPLETED });
+       taskObj = {
+         agent_id: agentId,
+         task_id: lastAttempt.task_id,
+--- a/web/lib/tasks.mjs (这一轮之前)
++++ b/web/lib/tasks.mjs (这一轮之后)
+@@ -372,16 +372,31 @@
+  * 步骤摘要：当前步骤、已完成、剩余。
+  * current 优先取 running/awaiting 的第一个，其次取第一个 pending；
+  * 全部 done 时 current 为 null（表示没有「进行中的步骤」）。
++ *
++ * opts.completed：任务已经完成。此时步骤全部按 done 算、current / remaining 为空。
++ * 「任务完成了、步骤行却还挂在 pending」是一种数据不一致：finish 验收通过时本来就会把步骤全落成 done，
++ * 但任务也可能是在本系统之外被直接记成完成的（迁移进来的历史任务、人工改库）。
++ * 界面不该一边写「已完成」、一边写「0 / 1 步 · 剩余 deliverable」。
++ *
++ * 没有步骤行时（total 本来会是 0）：不编一个步骤出来，但「这条任务做没做完」仍然要答得出来——
++ * 按任务状态给 1 / 1 或 0 / 1（done / remaining 两个清单照旧是空的，current 为 null）。
+  */
+-export function summarizeSteps(steps) {
++export function summarizeSteps(steps, opts = {}) {
++  const completed = Boolean(opts.completed);
+   const list = Array.isArray(steps) ? steps : [];
+-  const done = list.filter((s) => s.status === 'done' || s.status === 'skipped');
+-  const remaining = list.filter((s) => s.status !== 'done' && s.status !== 'skipped');
+-  const current = list.find((s) => s.status === 'running')
+-    || list.find((s) => s.status === 'awaiting')
+-    || list.find((s) => s.status === 'failed')
+-    || remaining[0]
+-    || null;
++  if (!list.length) {
++    return { current_step: null, done: [], remaining: [], done_count: completed ? 1 : 0, total: 1 };
++  }
++  const isDone = (s) => completed || s.status === 'done' || s.status === 'skipped';
++  const done = list.filter(isDone);
++  const remaining = completed ? [] : list.filter((s) => !isDone(s));
++  const current = completed
++    ? null
++    : list.find((s) => s.status === 'running')
++      || list.find((s) => s.status === 'awaiting')
++      || list.find((s) => s.status === 'failed')
++      || remaining[0]
++      || null;
+   return {
+     current_step: current ? { key: current.key, name: current.name, status: current.status } : null,
+     done: done.map((s) => s.key),
+--- a/web/lib/workflow-engine.mjs (这一轮之前)
++++ b/web/lib/workflow-engine.mjs (这一轮之后)
+@@ -375,6 +375,9 @@
+       steps,
+       created_at: run.created_at,
+       updated_at: run.updated_at,
++      // 归档是独立的一列，和 status 无关（run 可以 status 仍是 running 但已被归档）。
++      // 看板的工作流下拉靠它把已归档的 run 筛掉；以前没带出来，前端无从判断。
++      archived_at: run.archived_at ?? null,
+     };
+   }
+ 
+@@ -389,6 +392,7 @@
+         title: state.title,
+         status: state.status,
+         status_reason: state.status_reason,
++        archived_at: state.archived_at,
+         current_step_id: state.current_step_id,
+         current_step_name: state.current_step_detail ? state.current_step_detail.name : null,
+         current_step_status: state.current_step_detail ? state.current_step_detail.status : null,
+--- a/web/api-tasks.mjs (这一轮之前)
++++ b/web/api-tasks.mjs (这一轮之后)
+@@ -150,7 +150,8 @@
+ 
+ function taskView(db, task, state, opts = {}) {
+   const steps = getSteps(db, task.task_id);
+-  const summary = summarizeSteps(steps);
++  // 任务已完成时步骤按全部完成算（规则见 summarizeSteps）：进度要和状态说的是同一件事
++  const summary = summarizeSteps(steps, { completed: state.status === STATES.COMPLETED });
+   const artifacts = countArtifacts(db, task.task_id);
+   const stepNameOf = opts.stepNameOf || stepNameResolver(db);
+   return {
+--- a/web/api-deliverables.mjs (这一轮之前)
++++ b/web/api-deliverables.mjs (这一轮之后)
+@@ -69,7 +69,8 @@
+ 
+ function taskHead(db, task) {
+   const steps = getSteps(db, task.task_id);
+-  const s = summarizeSteps(steps);
++  // 这里的 status 是库里的状态列；进度按同一个口径算（已完成的任务步骤按全部完成算，见 summarizeSteps）
++  const s = summarizeSteps(steps, { completed: task.status === 'completed' });
+   return {
+     task_id: task.task_id,
+     title: task.title,
+--- a/web/board-cromma.html (这一轮之前)
++++ b/web/board-cromma.html (这一轮之后)
+@@ -63,12 +63,16 @@
+           <h2 class="eyebrow">任务 <span id="task-count">—</span></h2>
+           <span class="tasks__hint" id="tasks-hint">点一行看详情</span>
+         </div>
++        <!-- 除了「全部」，六个分类两两互斥、合起来覆盖所有任务状态（见 board-cromma.js 的 TASK_BUCKETS）：
++             以前没有「完成」「空闲」，已完成的任务只出现在「全部」里 -->
+         <div class="filters" id="task-filters" role="group" aria-label="任务筛选">
+           <button type="button" data-filter="all" class="filter is-active" aria-pressed="true">全部 <b>—</b></button>
+           <button type="button" data-filter="running" class="filter" aria-pressed="false">执行 <b>—</b></button>
+           <button type="button" data-filter="relay" class="filter" aria-pressed="false">接力 <b>—</b></button>
+           <button type="button" data-filter="risk" class="filter" aria-pressed="false">异常 <b>—</b></button>
+           <button type="button" data-filter="unknown" class="filter" aria-pressed="false">未知 <b>—</b></button>
++          <button type="button" data-filter="completed" class="filter" aria-pressed="false" title="已完成的任务">完成 <b>—</b></button>
++          <button type="button" data-filter="idle" class="filter filter--wide" aria-pressed="false" title="已关闭、没有待继续工作的任务">空闲 <b>—</b></button>
+         </div>
+         <div class="task-tools">
+           <label class="task-all"><input type="checkbox" id="task-select-all" aria-label="全选当前列表"><span>全选</span></label>
+--- a/web/board-cromma.css (这一轮之前)
++++ b/web/board-cromma.css (这一轮之后)
+@@ -165,6 +165,8 @@
+ .filter:hover { background: #F8F1E6; }
+ .filter.is-active { background: #FFF7E7; border-color: #E3CA97; color: #6B4B12; }
+ .filter.is-active b { color: var(--amber-deep); }
++/* 「空闲」是第七个分类，三列网格里单独占一行：占满整行，不留两个空格 */
++.filter--wide { grid-column: 1 / -1; }
+ 
+ /* 归档 / 删除 / 批量（TASK-任务归档） */
+ .task-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 7px; }
+--- a/web/board-cromma.js (这一轮之前)
++++ b/web/board-cromma.js (这一轮之后)
+@@ -15,13 +15,29 @@
+   running: '执行中', waiting: '待接力', idle: '空闲', completed: '已完成',
+   blocked: '已阻塞', interrupted: '已中断', failed: '失败', unknown: '? 未知',
+ };
+-const FILTERS = {
+-  all: () => true,
+-  running: (t) => t.status === 'running',
+-  relay: (t) => t.relay_pending === true,
+-  risk: (t) => ['blocked', 'interrupted', 'failed'].includes(t.status),
+-  unknown: (t) => !t.status || t.status === 'unknown',
+-};
++/**
++ * 任务筛选分类。除了「全部」，每条任务恰好落进一个分类：按下面的顺序取第一个命中的，
++ * 所以不可能出现「有任务、但每个分类都是 0」。
++ * 以前 completed / waiting / idle 三种状态不在任何一个分类里——十条已完成的任务只出现在「全部」中。
++ * 顺序有讲究：待接力的优先归「接力」（不管它此刻是执行中还是已阻塞，那都是需要有人接手的状态）；
++ * 不认识的状态值（将来新增的、缺失的）一律归「未知」，保证总有归属。
++ */
++const TASK_BUCKETS = [
++  { key: 'relay', label: '接力', hint: '额度阻塞等待接力，或任务在「等待」', test: (t) => t.relay_pending === true || t.status === 'waiting' },
++  { key: 'running', label: '执行', hint: '执行中', test: (t) => t.status === 'running' },
++  { key: 'risk', label: '异常', hint: '已阻塞 / 已中断 / 失败', test: (t) => ['blocked', 'interrupted', 'failed'].includes(t.status) },
++  { key: 'unknown', label: '未知', hint: '状态未知，或不在已知状态里', test: (t) => !t.status || t.status === 'unknown' },
++  { key: 'completed', label: '完成', hint: '已完成', test: (t) => t.status === 'completed' },
++  { key: 'idle', label: '空闲', hint: '已关闭，没有待继续的工作', test: (t) => t.status === 'idle' },
++];
++const BUCKET_LABELS = { all: '全部', ...Object.fromEntries(TASK_BUCKETS.map((b) => [b.key, b.label])) };
++function taskBucketOf(task) {
++  const t = task || {};
++  for (const b of TASK_BUCKETS) if (b.test(t)) return b.key;
++  return 'unknown';
++}
++const FILTERS = { all: () => true };
++for (const b of TASK_BUCKETS) FILTERS[b.key] = (t) => taskBucketOf(t) === b.key;
+ 
+ /** 交付物时间线六类：顺序固定；goal_report 单独放在任务头「目标达成」。 */
+ const DL_TIMELINE = [
+@@ -290,6 +306,14 @@
+   state.toolEventsError = results[5] && results[5].status === 'rejected' ? results[5].reason.message : null;
+   // 工作流 run 列表只喂左栏下拉：读不到时下拉只剩「全部任务」，不算整个看板读取失败。
+   state.workflowRuns = results[6] && results[6].status === 'fulfilled' ? results[6].value : null;
++  // 选中的 run 刚被归档：下拉里不会再有它。筛选退回「全部任务」并重拉一次，
++  // 不留一个指向看不见的 run 的筛选条件（上面按旧条件取回的任务列表直接作废）。
++  if (state.workflowRunId && (state.workflowRuns?.runs || []).some((r) => r.run_id === state.workflowRunId && r.archived_at)) {
++    state.workflowRunId = '';
++    state.loading = false;
++    await loadData();
++    return;
++  }
+   state.workflowRunsError = results[6] && results[6].status === 'rejected'
+     ? String(results[6].reason.message || results[6].reason)
+     : null;
+@@ -504,11 +528,10 @@
+   const artifacts = tasks.reduce((n, t) => n + (Number(t.artifact_count) || 0), 0);
+   const done = tasks.reduce((n, t) => n + (Number(t.progress?.done) || 0), 0);
+   const total = tasks.reduce((n, t) => n + (Number(t.progress?.total) || 0), 0);
+-  const running = tasks.filter(FILTERS.running).length;
+-  const relay = tasks.filter(FILTERS.relay).length;
+-  const risk = tasks.filter(FILTERS.risk).length;
+-  const unknown = tasks.filter(FILTERS.unknown).length;
+-  return { tasks: tasks.length, artifacts, done, total, running, relay, risk, unknown };
++  // 每条任务只计一次：各分类之和恒等于 tasks
++  const byBucket = Object.fromEntries(TASK_BUCKETS.map((b) => [b.key, 0]));
++  for (const t of tasks) byBucket[taskBucketOf(t)] += 1;
++  return { tasks: tasks.length, artifacts, done, total, byBucket };
+ }
+ function usage() {
+   const u = state.hubState?.totals?.usage;
+@@ -540,10 +563,10 @@
+   $('#stat-artifacts').textContent = state.tasksData ? c.artifacts : '—';
+   $('#task-count').textContent = state.tasksData ? c.tasks : '—';
+ 
+-  const filterCounts = { all: c.tasks, running: c.running, relay: c.relay, risk: c.risk, unknown: c.unknown };
++  const filterCountOf = (f) => (f === 'all' ? c.tasks : c.byBucket[f]);
+   $$('#task-filters .filter').forEach((btn) => {
+     const f = btn.dataset.filter;
+-    btn.querySelector('b').textContent = state.tasksData ? filterCounts[f] : '—';
++    btn.querySelector('b').textContent = state.tasksData ? filterCountOf(f) : '—';
+     btn.classList.toggle('is-active', f === state.filter);
+     btn.setAttribute('aria-pressed', String(f === state.filter));
+   });
+@@ -1001,7 +1024,12 @@
+ function renderWorkflowRunPicker() {
+   const sel = $('#task-run-select');
+   if (!sel) return;
+-  const runs = state.workflowRuns?.runs || [];
++  // 只列未归档的 run（archived_at IS NULL）。归档是独立的一列、和 status 无关——线上就有
++  // status 还是 running、但已经被归档的 run。服务端进程要是还没重启到会带 archived_at 的那一版，
++  // 这里无从判断，只能照旧全列（提示里说明）。
++  const allRuns = state.workflowRuns?.runs || [];
++  const archivedKnown = allRuns.length === 0 || Object.hasOwn(allRuns[0], 'archived_at');
++  const runs = allRuns.filter((r) => !r.archived_at);
+   const current = state.workflowRunId || '';
+   // 服务端进程还是旧代码：下拉只能停在「全部任务」，并在悬停提示里说清楚为什么、怎么办。
+   const unsupported = state.workflowFilterSupported === false;
+@@ -1034,7 +1062,9 @@
+       ? '服务端进程还是 v9 之前的代码（没重启），按工作流过滤要重启 8090 后才生效；重启会把数据库迁到 v9'
+       : state.workflowRunsError
+         ? `工作流列表读取失败：${state.workflowRunsError}（下拉暂时只有已缓存的选项）`
+-        : '按工作流 run 过滤：只看这一次需求拆出来的任务（真请求 /api/tasks?workflow_run_id=…）';
++        : archivedKnown
++          ? '按工作流 run 过滤：只看这一次需求拆出来的任务；已归档的 run 不在下拉里'
++          : '按工作流 run 过滤：只看这一次需求拆出来的任务（服务端进程还没重启到能识别归档的那一版，已归档的 run 暂时还在下拉里）';
+   }
+ }
+ 
+@@ -1990,7 +2020,7 @@
+     renderMeta();
+     renderTasks();
+     renderDetail();
+-    const labels = { all: '全部', running: '执行', relay: '接力', risk: '异常', unknown: '未知' };
++    const labels = BUCKET_LABELS;
+     showToast(`筛选：${labels[state.filter]} · ${filteredTasks().length} 个任务${changed && hadSelection ? '（已清空之前的选择）' : ''}`);
+   });
+ 

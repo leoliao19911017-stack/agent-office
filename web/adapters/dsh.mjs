@@ -9,7 +9,10 @@
 //      api_error / claim_done / artifact_produced ...，全部标 evidence_source=executor；
 //   3) 额度阻塞：识别 quota/rate-limit/auth，写 block 事件 + 标记 relay_pending +
 //      自动生成检查点（保存现场），但**不杀进程**——任务书 T04 要求进程还在时判 blocked；
-//   4) 退出归因：正常退出→completed，被强杀/异常→interrupted，并把 attempt 落库。
+//   4) 退出归因：正常退出→completed，被强杀/异常→interrupted，并把 attempt 落库；
+//   5) 在跑登记：本进程托管的实例记在一张进程内的表里（attempt_id → 停止句柄），进程退出时注销。
+//      任务 API 的「停止」按 attempt_id 来这里找句柄，找得到就真的把进程停掉
+//      （web/api-tasks.mjs 的 POST /api/tasks/:id/stop）；找不到就如实说「不是本服务启动的」。
 //
 // 启动失败（命令不存在等）不抛到调用方：写 agent_start_failed、把 attempt 标
 // failed/spawn_failed，任务保持原状态（T06 要求仍是 interrupted，不是 idle）。
@@ -18,12 +21,13 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { appendEvent, classifyFailure, recordBlockEvent, EVIDENCE } from '../lib/events.mjs';
 import {
-  createAttempt, endAttempt, getAttempt, setRelayPending,
+  createAttempt, endAttempt, getAttempt, setRelayPending, listRunningAttempts,
 } from '../lib/attempts.mjs';
 import { acquireWriteOwner, releaseAllForAttempt } from '../lib/write-owner.mjs';
 import { createCheckpoint } from '../lib/checkpoint.mjs';
 import { refreshTaskState } from '../lib/state-machine.mjs';
-import { requireTask, newAttemptId } from '../lib/tasks.mjs';
+import { requireNotDeletedTask, newAttemptId } from '../lib/tasks.mjs';
+import { transaction } from '../lib/db.mjs';
 
 export const DSH_BIN_ENV = 'DSH_BIN';
 
@@ -216,6 +220,28 @@ function killTree(child) {
   try { child.kill('SIGKILL'); } catch { /* 已退出 */ }
 }
 
+/**
+ * 本进程托管、还没结束的执行实例：attempt_id → { attemptId, taskId, agentId, pid, stop, kill, done }。
+ *
+ * 「停止一个任务」得先找到「谁握着这个进程的句柄」。句柄只存在于调用 startDshAttempt 的那个进程里，
+ * 所以由这里登记、进程退出时注销；任务 API 的停止路由按 attempt_id 来查——查得到就调它的 stop()，
+ * 查不到就如实告诉用户「不是本服务启动的」，不拿改一个状态值冒充停止。
+ * 服务重启后这张表是空的：之前起的子进程如果还活着，本进程确实没有它的句柄。
+ */
+const liveAttempts = new Map();
+
+/** 本进程是否托管着这个执行实例；在的话返回它的句柄（stop / kill / done / pid）。 */
+export function getLiveAttempt(attemptId) {
+  return liveAttempts.get(attemptId) || null;
+}
+
+/** 本进程当前托管着的全部执行实例（只有 id / 任务 / agent / pid，不带句柄）。 */
+export function listLiveAttempts() {
+  return [...liveAttempts.values()].map((h) => ({
+    attempt_id: h.attemptId, task_id: h.taskId, agent_id: h.agentId, pid: h.pid, started_at: h.startedAt,
+  }));
+}
+
 function safeRefresh(db, taskId, opts = {}) {
   try {
     return refreshTaskState(db, taskId, opts);
@@ -241,19 +267,31 @@ export async function startDshAttempt(opts = {}) {
   } = opts;
 
   if (!db) throw Object.assign(new Error('startDshAttempt 需要 db'), { code: 'BAD_DSH', statusCode: 400 });
-  requireTask(db, taskId);
 
-  // 先抢写入权再建实例：抢不到就不留一条「running 但没人管」的孤儿 attempt。
   const attemptId = newAttemptId();
   let owner = null;
-  if (acquireOwner && worktreePath) {
-    owner = acquireWriteOwner(db, {
-      worktreePath, taskId, attemptId, agentId, now,
-    });
-  }
-
   let attempt;
-  try {
+  // 「任务没被删」的检查、抢写入权、建实例行，三步在同一个事务里：
+  // 检查和建行之间插不进一次删除（否则会留下「已删除却在运行」的隐藏任务，评审 P1-2），
+  // 建行失败时写入权也跟着回滚，不会留下一条没人用的所有权记录。
+  // 同一个事务里还有单活动实例约束（R2-2，与任务 API 的 attempt 路由同一口径）：
+  // 已有 running 的实例就不许再开第二个。
+  transaction(db, () => {
+    requireNotDeletedTask(db, taskId);
+    const alreadyRunning = listRunningAttempts(db, taskId);
+    if (alreadyRunning.length) {
+      throw Object.assign(
+        new Error(`任务已有执行实例在运行（${alreadyRunning.map((a) => a.attempt_id).join('、')}），`
+          + `同一任务同时只允许一个活动实例；请先停止或等它结束再启动新的：${taskId}`),
+        { code: 'ATTEMPT_ALREADY_RUNNING', statusCode: 409 },
+      );
+    }
+    // 先抢写入权再建实例：抢不到就不留一条「running 但没人管」的孤儿 attempt。
+    if (acquireOwner && worktreePath) {
+      owner = acquireWriteOwner(db, {
+        worktreePath, taskId, attemptId, agentId, now,
+      });
+    }
     attempt = createAttempt(db, {
       taskId,
       agentId,
@@ -265,10 +303,7 @@ export async function startDshAttempt(opts = {}) {
       note: 'DSH 托管实例',
       evidenceSource: EVIDENCE.EXECUTOR,
     });
-  } catch (err) {
-    if (owner) releaseAllForAttempt(db, attemptId, now);
-    throw err;
-  }
+  });
 
   const spawnArgs = Array.isArray(args) ? args : dshArgs({ sessionId });
   const childEnv = { ...process.env, ...(env || {}) };
@@ -452,6 +487,8 @@ export async function startDshAttempt(opts = {}) {
     child.once('close', (code, signal) => {
       if (ended) return;
       ended = true;
+      // 进程退出了：从「在跑」登记表里摘掉。停止路由是先等这个 close 事件、再来查实例行的。
+      liveAttempts.delete(attempt.attempt_id);
 
       // 退出前把最后一行没换行的 JSON 也读掉。
       if (lineBuf.trim()) {
@@ -521,8 +558,13 @@ export async function startDshAttempt(opts = {}) {
     killTree(child);
     return done;
   };
+  const kill = () => stop('crash');
 
   safeRefresh(db, taskId, { now });
+  liveAttempts.set(attempt.attempt_id, {
+    attemptId: attempt.attempt_id, taskId, agentId, pid, startedAt: attempt.started_at,
+    stop, kill, done,
+  });
   return {
     ok: true,
     attempt: getAttempt(db, attempt.attempt_id),
@@ -530,6 +572,6 @@ export async function startDshAttempt(opts = {}) {
     pid,
     done,
     stop,
-    kill: () => stop('crash'),
+    kill,
   };
 }

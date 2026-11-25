@@ -1,0 +1,67 @@
+{
+  "at": "2026-11-25T00:28:10.620Z",
+  "base": "http://127.0.0.1:8090",
+  "backend": {
+    "hasApiFeatures": true,
+    "runListHasArchivedAt": true,
+    "verdict": "第二轮（显示层）的代码"
+  },
+  "frontend": {
+    "hasCompletedFilter": true,
+    "hasIdleFilter": true,
+    "jsHasTaskBuckets": true,
+    "jsFiltersArchivedRuns": true
+  },
+  "api": {
+    "tasksStatus": 200,
+    "count": 10,
+    "byStatus": {
+      "completed": 10
+    },
+    "byProgress": {
+      "1/1": 10
+    },
+    "sampleReason": "任务记录为已完成（库里的状态；本系统没有它的执行实例，也没有验收事件）",
+    "runCount": 4,
+    "archivedRunsInApi": 1
+  },
+  "board": {
+    "rows": 10,
+    "filterCounts": {
+      "all": "10",
+      "running": "0",
+      "relay": "0",
+      "risk": "0",
+      "unknown": "0",
+      "completed": "10",
+      "idle": "0"
+    },
+    "rowProgress": [
+      "1/1"
+    ],
+    "rowStatusTitles": [
+      "已完成"
+    ],
+    "runOptions": [
+      {
+        "value": "",
+        "text": "全部任务（不按工作流过滤）"
+      },
+      {
+        "value": "3d22e663-a27f-417c-829b-b6b7fbcc5fad",
+        "text": "验证A：任务归档与删除（九步全流程实测） · 第 05 步 开发执行"
+      },
+      {
+        "value": "c556be13-a0cb-4717-8f65-6f637f74b6ef",
+        "text": "Agent Office 工作流编排（从定义到可执行） · 第 07 步 独立验证与评审"
+      },
+      {
+        "value": "ac42b1fc-8efa-4ea1-8898-33f8eac96b41",
+        "text": "测试：归档功能实战 · 第 02 步 需求澄清"
+      }
+    ],
+    "errors": [],
+    "nonGetRequests": [],
+    "specificSum": 10
+  }
+}

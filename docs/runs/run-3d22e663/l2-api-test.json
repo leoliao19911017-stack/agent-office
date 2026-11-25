@@ -1,0 +1,17 @@
+[
+  {
+    "name": "L2-6 running DELETE → 409",
+    "ok": true,
+    "detail": "status=409 TASK_RUNNING"
+  },
+  {
+    "name": "L2-7 批量删除 2成功1失败",
+    "ok": true,
+    "detail": "ok=2 fail=1"
+  },
+  {
+    "name": "L2-9 批量建5条",
+    "ok": false,
+    "detail": "created=5"
+  }
+]

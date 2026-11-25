@@ -1,0 +1,49 @@
+{
+  "at": "2026-11-24T17:40:43.160Z",
+  "base": "http://127.0.0.1:8090",
+  "tasks": {
+    "status": 200,
+    "count": 10,
+    "byStatus": {
+      "idle": 10
+    },
+    "withActiveAttempt": 0
+  },
+  "backend": {
+    "hasApiFeatures": true,
+    "apiFeatures": [
+      "archive",
+      "restore",
+      "soft_delete",
+      "batch",
+      "workflow_link",
+      "stop",
+      "trash",
+      "execution_guard_deleted",
+      "admin_atomic"
+    ],
+    "hasOnlyDeletedEcho": true,
+    "verdict": "新代码（进程在返工之后重启过）"
+  },
+  "frontend": {
+    "htmlHasTrashToggle": true,
+    "jsHasStopHandler": true,
+    "jsReadsApiFeatures": true
+  },
+  "board": {
+    "rows": 10,
+    "trashToggle": {
+      "present": 1,
+      "disabled": false,
+      "text": "回收站",
+      "title": "回收站：只看已删除的任务（软删，行还在库里，可恢复）"
+    },
+    "stopButtons": {
+      "total": 0,
+      "enabled": 0
+    },
+    "archToggleDisabled": false,
+    "errors": [],
+    "nonGetRequests": []
+  }
+}

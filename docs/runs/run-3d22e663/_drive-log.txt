@@ -1,0 +1,5 @@
+01 挂交付物: {"error":"artifacts 的每一项都必须是非空字符串","code":"BAD_ARTIFACTS"}
+02 挂交付物: {"error":"artifacts 的每一项都必须是非空字符串","code":"BAD_ARTIFACTS"}
+02 approve → next=03
+03 挂交付物: {"error":"artifacts 的每一项都必须是非空字符串","code":"BAD_ARTIFACTS"}
+03 approve → next=04

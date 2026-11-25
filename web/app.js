@@ -297,6 +297,10 @@ async function tick() {
 
     applyInitPhase(sR, hR, fR);   // G06：四态判定（拆出见下方 applyInitPhase，口径不变）
 
+    // 看板工作流：列表 + 当前 run 详情（真读 workflow_runs / workflow_run_steps）。
+    // 失败不挡主轮询，函数内部保留上一份好数据并记录错误。
+    if (typeof refreshWorkflowRuns === 'function') await refreshWorkflowRuns(tmo);
+
     renderAll();
   } finally {
     tickInFlight = false;
@@ -449,6 +453,7 @@ function restoreUiPos() {
     if (p.settingsTab === 'agents') location.hash = '/agents';
     if (p.settingsTab === 'files') location.hash = '/files';
     if (p.settingsTab === 'skills') settingsTab = 'skills';
+    if (p.settingsTab === 'workflow') settingsTab = 'workflow';
     if (p.settingsTab === 'general') settingsTab = 'general';
     // R9：技能页与文件页的检索状态接回（选择器/输入框的值在各自 render 时回填）
     if (typeof p.skillQuery === 'string') { skillQuery = p.skillQuery; document.getElementById('skill-search').value = p.skillQuery; }
@@ -483,6 +488,8 @@ function completeUiPosRestore() {
 // TASK-R6（评审 #4）：不再清反馈/草稿——它们按 key 隔离存取，切回来还在
 //（反馈 10 分钟内有效），不会串台，也就没有「切走即丢」的问题。
 function selectTask(id, opts = {}) {
+  // 切回普通 tasks 任务时，退出工作流视图（两套列表共用中间区，只能有一个选中）。
+  if (typeof resetWorkflowSelection === 'function') resetWorkflowSelection();
   ui.taskId = id;
   // R9（评审 IA）：切需求直接落到「卡住 Leo 的那一步」——决策面板立刻可见，
   // 不用再自己找哪步等拍板。找不到阻塞步才停在第一格。
@@ -589,8 +596,15 @@ document.addEventListener('click', (ev) => {
   const el = ev.target.closest('[data-task],[data-step],button');
   if (!el) return;
 
+  // 工作流任务：点 run 看九步；点步骤展开交付物；点交付物看内容。
+  if (el.dataset.wfRun) { selectWorkflowRun(el.dataset.wfRun); return; }
+  if (el.dataset.wfStep) { toggleWorkflowStep(el.dataset.wfStep); return; }
+  if (el.dataset.wfArtifact) { openWorkflowArtifact(el.dataset.wfArtifact); return; }
+
   if (el.classList.contains('req-item') && el.dataset.task) {
-    if (el.dataset.task !== ui.taskId) selectTask(el.dataset.task);
+    // 工作流视图下点任意普通任务都要切回 tasks（哪怕点的就是当前 taskId）。
+    if (el.dataset.task !== ui.taskId
+        || (typeof workflowSelected === 'function' && workflowSelected())) selectTask(el.dataset.task);
     else if (ui.view === 'overview') selectTask(el.dataset.task);
     return;
   }
@@ -606,6 +620,10 @@ document.addEventListener('click', (ev) => {
 // G02（第 5 轮）：顶栏/设置弹层的按钮动作分发,自全局 click 委托拆出（原回调 130 行 > 120 上限）
 function handleAction(el, pop) {
   switch (el.id) {
+    case 'tb-tasklist': {
+      openWorkflowTaskList();
+      return;
+    }
     case 'tb-decision': {
       // 弹出待决策清单：可处理的点进去直达，条件未到的如实列出卡在哪
       const dp = document.getElementById('decision-pop');
@@ -621,6 +639,8 @@ function handleAction(el, pop) {
       document.getElementById('cabin-score-input')?.focus();
       return;
     case 'btn-overview':
+      // 工作流视图下点「全部需求」：退回 tasks 概览，不把工作流和概览叠在一起。
+      if (typeof workflowSelected === 'function' && workflowSelected()) resetWorkflowSelection();
       ui.view = ui.view === 'overview' ? 'chain' : 'overview';
       saveUiPos();
       renderCenter();
@@ -972,6 +992,7 @@ function renderModules(){
  if(activePage==='settings'){
   if(settingsTab==='general')renderSettingsGeneral();
   if(settingsTab==='skills')renderSkills();
+  if(settingsTab==='workflow')renderWorkflowTemplates();
  }
 }
 document.addEventListener('click',e=>{

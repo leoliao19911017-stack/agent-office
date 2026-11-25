@@ -69,7 +69,8 @@ function decorate(d) {
 
 function taskHead(db, task) {
   const steps = getSteps(db, task.task_id);
-  const s = summarizeSteps(steps);
+  // 这里的 status 是库里的状态列；进度按同一个口径算（已完成的任务步骤按全部完成算，见 summarizeSteps）
+  const s = summarizeSteps(steps, { completed: task.status === 'completed' });
   return {
     task_id: task.task_id,
     title: task.title,

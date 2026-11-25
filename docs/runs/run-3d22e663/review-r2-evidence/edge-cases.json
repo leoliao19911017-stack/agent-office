@@ -1,0 +1,440 @@
+{
+  "at": "2026-11-25T00:29:32.555Z",
+  "base": "http://127.0.0.1:61998",
+  "display": {
+    "counts": {
+      "all": "10",
+      "running": "0",
+      "relay": "0",
+      "risk": "0",
+      "unknown": "0",
+      "completed": "10",
+      "idle": "0"
+    },
+    "progress": [
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1",
+      "1/1"
+    ],
+    "options": [
+      {
+        "value": "",
+        "text": "全部任务（不按工作流过滤）"
+      },
+      {
+        "value": "51bf9131-4613-4c29-b923-f768a00caad8",
+        "text": "R2 completed fixture · 第 01 步 需求输入"
+      }
+    ],
+    "archivedRun": "1e55a104-0356-46aa-b851-5059099f3d14"
+  },
+  "staleStopConfirmation": {
+    "task": "t-20261125002934-0691b5",
+    "a": "a-bb863cd9-mwvdz7ip",
+    "b": "a-5c917613-mwvdz818",
+    "firstConfirm": {
+      "taskId": "t-20261125002934-0691b5",
+      "at": 1795566574669,
+      "message": "执行实例 a-bb863cd9-mwvdz7ip（dsh）不是本服务启动的，也没有登记进程号，本服务无法确认它是否还在运行。请先在启动它的地方停止它；确认已经停止后再点一次「确认已停止」（接口上是带 confirm=true），本服务会把这次实例记为「用户停止」，不写任何验收结论。"
+    },
+    "confirmText": "确认已停止",
+    "request": {
+      "actor": "board:ui",
+      "confirm": true
+    },
+    "response": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "action": "stop",
+        "task_id": "t-20261125002934-0691b5",
+        "actor": "board:ui",
+        "observed_at": "2026-11-25T00:29:34.804Z",
+        "evidence_source": "user",
+        "stopped": true,
+        "verified": false,
+        "mode": "declared",
+        "already_stopped": false,
+        "attempt": {
+          "attempt_id": "a-5c917613-mwvdz818",
+          "task_id": "t-20261125002934-0691b5",
+          "agent_id": "dsh",
+          "status": "interrupted",
+          "worktree_path": null,
+          "checkpoint_id": null,
+          "started_at": "2026-11-25T00:29:34.700Z",
+          "ended_at": "2026-11-25T00:29:34.804Z",
+          "end_reason": "user_stop",
+          "pid": null,
+          "session_id": null,
+          "relay_pending": false,
+          "note": null,
+          "evidence_source": "executor",
+          "observed_at": "2026-11-25T00:29:34.804Z"
+        },
+        "pid": null,
+        "process_alive": null,
+        "event": {
+          "event_id": 20,
+          "task_id": "t-20261125002934-0691b5",
+          "attempt_id": null,
+          "agent_id": "board:ui",
+          "event_type": "task_stopped",
+          "payload": {
+            "attempt_id": "a-5c917613-mwvdz818",
+            "mode": "declared",
+            "verified": false,
+            "pid": null,
+            "process_alive": null,
+            "confirmed_by": "board:ui",
+            "note": "用户确认已停止；本服务没有可观测的进程，未经系统验证",
+            "action": "stop",
+            "actor": "board:ui",
+            "at": "2026-11-25T00:29:34.804Z"
+          },
+          "evidence_source": "user",
+          "observed_at": "2026-11-25T00:29:34.804Z"
+        },
+        "state": {
+          "task_id": "t-20261125002934-0691b5",
+          "status": "completed",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "evidence_source": "user",
+          "observed_at": "2026-11-25T00:29:34.689Z",
+          "evaluated_at": "2026-11-25T00:29:34.804Z",
+          "last_activity_at": "2026-11-25T00:29:34.700Z",
+          "last_progress_at": "2026-11-25T00:29:34.689Z",
+          "last_event_type": "task_stopped",
+          "attempt_id": "a-5c917613-mwvdz818",
+          "attempt_status": "interrupted",
+          "active_attempt_id": null,
+          "process_alive": null,
+          "relay_pending": false,
+          "blocked_reason": null,
+          "verification": {
+            "result": "passed",
+            "code_sha": null,
+            "command": null,
+            "report": "R2 A finished",
+            "observed_at": "2026-11-25T00:29:34.689Z",
+            "evidence_source": "user"
+          },
+          "acceptance": {
+            "event_type": "acceptance_passed",
+            "observed_at": "2026-11-25T00:29:34.689Z",
+            "evidence_source": "user"
+          },
+          "current_step": null,
+          "done": [
+            "deliverable"
+          ],
+          "remaining": [],
+          "done_count": 1,
+          "total": 1
+        },
+        "task": {
+          "task_id": "t-20261125002934-0691b5",
+          "title": "R2 stale stop confirmation",
+          "acceptance": null,
+          "status": "completed",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "evidence_source": "user",
+          "observed_at": "2026-11-25T00:29:34.689Z",
+          "last_activity_at": "2026-11-25T00:29:34.700Z",
+          "last_progress_at": "2026-11-25T00:29:34.689Z",
+          "last_event_type": "task_stopped",
+          "attempt_id": "a-5c917613-mwvdz818",
+          "active_attempt_id": null,
+          "attempt_status": "interrupted",
+          "blocked_reason": null,
+          "relay_pending": false,
+          "verification": {
+            "result": "passed",
+            "code_sha": null,
+            "command": null,
+            "report": "R2 A finished",
+            "observed_at": "2026-11-25T00:29:34.689Z",
+            "evidence_source": "user"
+          },
+          "current_step": null,
+          "done": [
+            "deliverable"
+          ],
+          "remaining": [],
+          "progress": {
+            "done": 1,
+            "total": 1
+          },
+          "artifact_count": 0,
+          "latest_artifacts": [],
+          "created_at": "2026-11-25T00:29:34.029Z",
+          "updated_at": "2026-11-25T00:29:34.804Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": null,
+          "is_archived": false,
+          "is_deleted": false,
+          "workflow_run_id": null,
+          "workflow_step_id": null,
+          "workflow_step_name": null
+        }
+      }
+    },
+    "attempts": [
+      {
+        "attempt_id": "a-bb863cd9-mwvdz7ip",
+        "status": "completed",
+        "end_reason": "done"
+      },
+      {
+        "attempt_id": "a-5c917613-mwvdz818",
+        "status": "interrupted",
+        "end_reason": "user_stop"
+      }
+    ],
+    "deleteAfter": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "action": "delete",
+        "task_id": "t-20261125002934-0691b5",
+        "actor": "user:local",
+        "observed_at": "2026-11-25T00:29:34.828Z",
+        "evidence_source": "user",
+        "deleted_at": "2026-11-25T00:29:34.828Z",
+        "status": "completed",
+        "event": {
+          "event_id": 22,
+          "task_id": "t-20261125002934-0691b5",
+          "attempt_id": null,
+          "agent_id": "user:local",
+          "event_type": "task_deleted",
+          "payload": {
+            "status_before": "completed",
+            "deleted_at": "2026-11-25T00:29:34.828Z",
+            "running_attempt_id": null,
+            "action": "delete",
+            "actor": "user:local",
+            "at": "2026-11-25T00:29:34.828Z"
+          },
+          "evidence_source": "user",
+          "observed_at": "2026-11-25T00:29:34.828Z"
+        },
+        "task": {
+          "task_id": "t-20261125002934-0691b5",
+          "title": "R2 stale stop confirmation",
+          "acceptance": null,
+          "status": "completed",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "created_at": "2026-11-25T00:29:34.029Z",
+          "updated_at": "2026-11-25T00:29:34.828Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": "2026-11-25T00:29:34.828Z",
+          "workflow_run_id": null,
+          "workflow_step_id": null
+        }
+      }
+    },
+    "externalWorker": {
+      "pid": 23260,
+      "registeredPid": null,
+      "aliveAfterStopAndDelete": true
+    }
+  },
+  "multiAttempt": {
+    "task": "t-20261125002934-4d9754",
+    "startStatuses": [
+      201,
+      201
+    ],
+    "stop": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "action": "stop",
+        "task_id": "t-20261125002934-4d9754",
+        "actor": "user:local",
+        "observed_at": "2026-11-25T00:29:34.941Z",
+        "evidence_source": "user",
+        "stopped": true,
+        "verified": false,
+        "mode": "declared",
+        "already_stopped": false,
+        "attempt": {
+          "attempt_id": "a-a62f11ea-mwvdz87u",
+          "task_id": "t-20261125002934-4d9754",
+          "agent_id": "dsh",
+          "status": "interrupted",
+          "worktree_path": null,
+          "checkpoint_id": null,
+          "started_at": "2026-11-25T00:29:34.937Z",
+          "ended_at": "2026-11-25T00:29:34.941Z",
+          "end_reason": "user_stop",
+          "pid": null,
+          "session_id": null,
+          "relay_pending": false,
+          "note": null,
+          "evidence_source": "executor",
+          "observed_at": "2026-11-25T00:29:34.941Z"
+        },
+        "pid": null,
+        "process_alive": null,
+        "event": {
+          "event_id": 28,
+          "task_id": "t-20261125002934-4d9754",
+          "attempt_id": null,
+          "agent_id": "user:local",
+          "event_type": "task_stopped",
+          "payload": {
+            "attempt_id": "a-a62f11ea-mwvdz87u",
+            "mode": "declared",
+            "verified": false,
+            "pid": null,
+            "process_alive": null,
+            "confirmed_by": "user:local",
+            "note": "用户确认已停止；本服务没有可观测的进程，未经系统验证",
+            "action": "stop",
+            "actor": "user:local",
+            "at": "2026-11-25T00:29:34.941Z"
+          },
+          "evidence_source": "user",
+          "observed_at": "2026-11-25T00:29:34.941Z"
+        },
+        "state": {
+          "task_id": "t-20261125002934-4d9754",
+          "status": "interrupted",
+          "status_reason": "用户主动停止执行实例，任务未完成",
+          "evidence_source": "executor",
+          "observed_at": "2026-11-25T00:29:34.941Z",
+          "evaluated_at": "2026-11-25T00:29:34.941Z",
+          "last_activity_at": "2026-11-25T00:29:34.937Z",
+          "last_progress_at": null,
+          "last_event_type": "task_stopped",
+          "attempt_id": "a-a62f11ea-mwvdz87u",
+          "attempt_status": "interrupted",
+          "active_attempt_id": null,
+          "process_alive": null,
+          "relay_pending": false,
+          "blocked_reason": null,
+          "verification": {
+            "result": "none",
+            "code_sha": null,
+            "command": null,
+            "report": null,
+            "observed_at": null,
+            "evidence_source": null
+          },
+          "acceptance": null,
+          "current_step": {
+            "key": "deliverable",
+            "name": "交付",
+            "status": "pending"
+          },
+          "done": [],
+          "remaining": [
+            "deliverable"
+          ],
+          "done_count": 0,
+          "total": 1
+        },
+        "task": {
+          "task_id": "t-20261125002934-4d9754",
+          "title": "R2 two running attempts",
+          "acceptance": null,
+          "status": "interrupted",
+          "status_reason": "用户主动停止执行实例，任务未完成",
+          "evidence_source": "executor",
+          "observed_at": "2026-11-25T00:29:34.941Z",
+          "last_activity_at": "2026-11-25T00:29:34.937Z",
+          "last_progress_at": null,
+          "last_event_type": "task_stopped",
+          "attempt_id": "a-a62f11ea-mwvdz87u",
+          "active_attempt_id": null,
+          "attempt_status": "interrupted",
+          "blocked_reason": null,
+          "relay_pending": false,
+          "verification": {
+            "result": "none",
+            "code_sha": null,
+            "command": null,
+            "report": null,
+            "observed_at": null,
+            "evidence_source": null
+          },
+          "current_step": {
+            "key": "deliverable",
+            "name": "交付",
+            "status": "pending"
+          },
+          "done": [],
+          "remaining": [
+            "deliverable"
+          ],
+          "progress": {
+            "done": 0,
+            "total": 1
+          },
+          "artifact_count": 0,
+          "latest_artifacts": [],
+          "created_at": "2026-11-25T00:29:34.927Z",
+          "updated_at": "2026-11-25T00:29:34.941Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": null,
+          "is_archived": false,
+          "is_deleted": false,
+          "workflow_run_id": null,
+          "workflow_step_id": null,
+          "workflow_step_name": null
+        }
+      }
+    },
+    "running": [
+      {
+        "attempt_id": "a-1d7daef6-mwvdz87o"
+      }
+    ],
+    "stopButtons": 0,
+    "delete": {
+      "status": 409,
+      "body": {
+        "error": "任务正在运行，不能删除；请先停止再删：t-20261125002934-4d9754（执行实例 a-1d7daef6-mwvdz87o，未登记进程号）",
+        "code": "TASK_RUNNING"
+      }
+    }
+  },
+  "detailAtomicity": {
+    "task": "t-20261125002935-76e8c3",
+    "before": {
+      "status": "running",
+      "status_reason": "任务已创建，尚未开始执行（等待派活）",
+      "updated_at": "2026-11-25T00:29:35.595Z"
+    },
+    "response": {
+      "status": 500,
+      "body": {
+        "error": "服务内部错误",
+        "code": "ERR_SQLITE_ERROR"
+      }
+    },
+    "after": {
+      "status": "waiting",
+      "status_reason": "任务已创建，尚未开始执行（等待派活）",
+      "updated_at": "2026-11-25T00:29:35.599Z"
+    },
+    "events": {
+      "n": 0
+    }
+  }
+}

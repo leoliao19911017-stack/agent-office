@@ -1,0 +1,39 @@
+{
+  "at": "2026-11-24T17:12:53.295Z",
+  "base": "http://127.0.0.1:8090",
+  "tasks": {
+    "status": 200,
+    "count": 10,
+    "byStatus": {
+      "idle": 10
+    },
+    "withActiveAttempt": 0
+  },
+  "backend": {
+    "hasApiFeatures": false,
+    "apiFeatures": null,
+    "hasOnlyDeletedEcho": false,
+    "verdict": "旧代码（进程还没重启：响应里没有 api_features）"
+  },
+  "frontend": {
+    "htmlHasTrashToggle": true,
+    "jsHasStopHandler": true,
+    "jsReadsApiFeatures": true
+  },
+  "board": {
+    "rows": 10,
+    "trashToggle": {
+      "present": 1,
+      "disabled": true,
+      "text": "回收站",
+      "title": "服务端进程还是旧代码（没重启）：回收站要重启 8090 后才生效"
+    },
+    "stopButtons": {
+      "total": 0,
+      "enabled": 0
+    },
+    "archToggleDisabled": false,
+    "errors": [],
+    "nonGetRequests": []
+  }
+}

@@ -29,3 +29,9 @@ web/offline-snapshot.js
 # 其它位置的备份
 docs/backup-9.1/
 *.codegen.bak
+
+# 临时探针脚本和运行时产物
+.probe-*.mjs
+.work/
+web-8090.out
+web-8090.err

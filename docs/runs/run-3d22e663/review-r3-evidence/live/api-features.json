@@ -1,0 +1,16 @@
+{
+  "at": "2026-11-25T03:49:00.716Z",
+  "api_features": [
+    "archive",
+    "restore",
+    "soft_delete",
+    "batch",
+    "workflow_link",
+    "stop",
+    "trash",
+    "execution_guard_deleted",
+    "admin_atomic",
+    "stop_attempt_binding",
+    "single_active_attempt"
+  ]
+}

@@ -12,6 +12,8 @@
 <link rel="stylesheet" href="app-layers.css">
 <!-- TASK-工作台重做：小白三页（我的任务/干活记录/设置）样式，最后加载压轴 -->
 <link rel="stylesheet" href="app-cabin.css">
+<!-- 看板工作流视图：左侧工作流任务 / 九步进度 / 交付物弹窗 / 任务清单 -->
+<link rel="stylesheet" href="workflow-runs.css">
 <!-- R90 双主题：head 内联，避免深色用户看到白屏闪一下 -->
 <script>
 try{if(localStorage.getItem('agentoffice-theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}
@@ -25,6 +27,7 @@ try{if(localStorage.getItem('agentoffice-theme')==='dark')document.documentEleme
   <span class="tb-logo">Leo's Agent Office</span>
   <span class="tb-div"></span>
   <span id="tb-task">—</span>
+  <button id="tb-tasklist" type="button" title="开发任务清单与完成情况">任务清单</button>
   <button id="tb-decision" type="button" hidden title="点击查看待决策清单"></button>
   <!-- TASK-工作台重做：目标分常驻顶栏（有任务才显示，点击跳「我的任务」改分） -->
   <button id="tb-score" type="button" hidden></button>
@@ -134,12 +137,37 @@ try{if(localStorage.getItem('agentoffice-theme')==='dark')document.documentEleme
     <nav class="set-tabs" aria-label="设置分区">
       <button type="button" data-settab="general" class="on">常用</button>
       <button type="button" data-settab="skills">技能管理</button>
+      <button type="button" data-settab="workflow">工作流模板</button>
     </nav>
     <div id="set-general" class="module-page"></div>
     <section id="page-skills" class="module-page" hidden><header class="page-heading"><div><span class="eyebrow">TOOLS &amp; CRAFT</span><h1>技能</h1></div><p id="skill-count"></p></header><div class="skill-tools"><input id="skill-search" aria-label="搜索技能" placeholder="搜索技能名称或用途"><div class="skill-filter-rows"><div class="skill-filter-row"><span class="sfr-label">用途</span><div id="skill-cat-filters" class="chip-row" role="group" aria-label="按用途筛选"></div></div><div class="skill-filter-row"><span class="sfr-label">来源</span><div id="skill-filters" class="chip-row" role="group" aria-label="按来源筛选"></div></div></div></div><div class="skill-layout"><div class="skill-list-column"><div id="skill-list"></div><div id="skill-pagination" class="pagination"></div></div><aside id="skill-detail" class="skilldetail" aria-label="技能详情" hidden></aside></div></section>
+    <section id="page-workflow" class="module-page" hidden>
+      <header class="page-heading wf-heading"><div><span class="eyebrow">PLAYBOOKS</span><h1>工作流模板</h1></div><button id="wf-new" class="btn btn-primary" type="button">＋ 从描述生成</button></header>
+      <p class="page-scope">一套流程的步骤、角色、判据和返工路由。点模板看完整定义（只读）；新模板用 Leo 的口述生成。</p>
+      <div id="wf-list"></div>
+      <div id="wf-detail" hidden></div>
+    </section>
   </section>
   </div><!-- /#shell -->
 </div>
+<dialog id="wf-dialog" class="wf-dialog">
+  <div class="wf-dialog-head"><h3>从描述生成工作流</h3><button id="wf-close" type="button" aria-label="关闭">✕</button></div>
+  <p class="wf-dialog-tip">把 Leo 的原话整段贴进来，不用整理格式。生成的是草稿，确认后才入库。</p>
+  <textarea id="wf-text" rows="6" placeholder="例如：我先给需求，不清楚就问我，然后跟 GPT 确认，确认完拆成任务给 Claude 做，做完我自己先测，再让 Codex 评审，不到 8 分继续改，最后我验收，然后复盘"></textarea>
+  <div class="wf-dialog-actions"><button id="wf-generate" class="btn btn-primary" type="button">生成草稿</button></div>
+  <section id="wf-result" hidden>
+    <h4>我理解成这样</h4>
+    <p id="wf-summary" class="wf-summary"></p>
+    <div id="wf-missing-wrap">
+      <h4>没识别出来的（确认前你可以补）</h4>
+      <ul id="wf-missing" class="wf-missing"></ul>
+    </div>
+    <div class="wf-name-row"><label for="wf-name">模板名字</label><input id="wf-name" type="text" placeholder="给这套流程起个名字"></div>
+    <details class="wf-json"><summary>看模板 JSON</summary><pre id="wf-draft-json"></pre></details>
+    <div class="wf-dialog-actions"><span id="wf-save-hint" class="wf-hint"></span><button id="wf-confirm" class="btn btn-primary" type="button">确认保存</button></div>
+  </section>
+</dialog>
+
 <dialog id="step-files"><div class="picker-heading"><h3>选择产物</h3><button class="btn btn-ghost" data-close-picker>关闭</button></div><div id="step-file-list"></div></dialog>
 
 <!-- ================= 底部状态栏 56px（R9：Agent 状态条） ================= -->
@@ -169,6 +197,23 @@ try{if(localStorage.getItem('agentoffice-theme')==='dark')document.documentEleme
   </div>
 </div>
 
+<!-- ================= 工作流交付物 / 任务清单 弹窗 ================= -->
+<div id="wf-modal" hidden>
+  <div class="wf-modal-panel" role="dialog" aria-modal="true" aria-labelledby="wf-modal-title">
+    <div class="wf-modal-bar">
+      <div class="wf-modal-heading">
+        <span id="wf-modal-kicker" class="wf-modal-kicker">交付物</span>
+        <h3 id="wf-modal-title">—</h3>
+      </div>
+      <div class="wf-modal-actions">
+        <span id="wf-modal-meta" class="wf-modal-meta"></span>
+        <button id="wf-modal-close" type="button">关闭</button>
+      </div>
+    </div>
+    <div id="wf-modal-body" class="wf-modal-body"><div class="wf-loading">读取中…</div></div>
+  </div>
+</div>
+
 <!-- ================= 全局提示（R11/G03：统一 320px toast） ================= -->
 <div id="toast-root" aria-live="polite"></div>
 
@@ -189,6 +234,8 @@ try{if(localStorage.getItem('agentoffice-theme')==='dark')document.documentEleme
 <script src="preview.js"></script>
 <script src="agents.js"></script>
 <script src="cabin.js"></script>
+<script src="workflow-templates.js"></script>
+<script src="workflow-runs.js"></script>
 <script src="render.js"></script>
 <script src="app.js"></script>
 </body>

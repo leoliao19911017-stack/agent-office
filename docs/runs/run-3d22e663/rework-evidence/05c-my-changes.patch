@@ -1,0 +1,1766 @@
+# 05c 返工的改动（和「开工时的工作目录」比，不是和 git 上一个提交比——工作树里本来就有上一轮未提交的改动）
+# 生成：2026-11-25 01:28:47 · 基线 = 2026-11-25 00:05 之前的工作目录快照（7 个文件 mtime 均早于 22:54）
+# 新增文件不在这里：test/tasks-rework.test.js、test/fixtures/tasks-rework-harness.mjs、test/fixtures/tasks-longrun-worker.mjs、docs/runs/run-3d22e663/probes/*-after-rework.mjs、probes/live-8090-readonly.mjs、05c-md2html.mjs
+--- a/web/lib/db.mjs (返工前)
++++ b/web/lib/db.mjs (返工后)
+@@ -16,7 +16,7 @@
+ // 整个项目只有本文件创建数据库连接；其它模块一律接收 db 参数，便于测试隔离。
+ 
+ import { DatabaseSync } from 'node:sqlite';
+-import { existsSync, mkdirSync } from 'node:fs';
++import { closeSync, existsSync, mkdirSync, openSync, readSync } from 'node:fs';
+ import { dirname, resolve } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import { WORKFLOW_SCHEMA, WORKFLOW_VERSION_SCHEMA, seedWorkflowTemplates } from './workflow-schema.mjs';
+@@ -428,10 +428,75 @@
+ /** 已打开的连接缓存：同一个 db 文件在一个进程里只建一个连接。 */
+ const cache = new Map();
+ 
++/** 撞锁时最多等多久。busy_timeout 交给 SQLite 自己等；切 WAL 那一步 SQLite 不吃它，由 enableWal 自己等同样长。 */
++const BUSY_TIMEOUT_MS = 5000;
++
+ export function resolveDbPath(p) {
+   return resolve(p || process.env.AGENT_OFFICE_DB || DEFAULT_DB_PATH);
+ }
+ 
++/** 同步睡一小会儿（openDb 是同步的，不能 await）。Node 的主线程允许 Atomics.wait。 */
++function sleepSync(ms) {
++  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
++}
++
++/** 是不是「撞锁」：SQLite 的 busy handler 没等到（或根本没被调用）时抛出来的那种错。 */
++function isLockedError(err) {
++  if (!err) return false;
++  // errcode 5 = SQLITE_BUSY，6 = SQLITE_LOCKED；拿不到 errcode（版本差异）时按消息文本判
++  if (err.errcode === 5 || err.errcode === 6) return true;
++  return /database is locked/i.test(String(err.message || ''));
++}
++
++/**
++ * 库文件是不是已经是 WAL 模式：看文件头第 18 / 19 字节（写 / 读格式版本，2 = WAL）。
++ * 空文件、文件不存在、读不到，一律当作「还不是」——宁可多跑一次切换，也不凭猜测跳过。
++ */
++function isWalFile(path) {
++  let fd = null;
++  try {
++    fd = openSync(path, 'r');
++    const head = Buffer.alloc(20);
++    if (readSync(fd, head, 0, 20, 0) < 20) return false;
++    return head[18] === 2 && head[19] === 2;
++  } catch {
++    return false;
++  } finally {
++    if (fd != null) {
++      try { closeSync(fd); } catch { /* 关不上不影响判断 */ }
++    }
++  }
++}
++
++/**
++ * 把库切到 WAL，并且在别的进程正好也在首开时等得起。
++ *
++ * 为什么不能只靠 busy_timeout：切 WAL 要改写文件头，SQLite 为此要在「自己已经拿着读锁」的
++ * 状态下去拿写锁。这时如果别的进程正拿着写锁，SQLite 为了避免死锁会**直接**返回 SQLITE_BUSY，
++ * 不调用 busy handler——busy_timeout 设多大都没用。多个进程同时第一次打开同一个（还不存在的）
++ * 库时，晚到一步的那个就会这样报 database is locked（实测 10 个服务同时首开：20 个首请求里
++ * 2 ~ 8 个 500，全部出在这一句）。
++ *
++ * 两道处理：
++ *   1. 文件已经是 WAL 就根本不碰 journal_mode（线上库、绝大多数测试打开的都是这种）；
++ *   2. 确实要切（新库 / 旧模式库）又撞上了，就退让重试，直到切成为止或超过 busy_timeout。
++ *      第一个切完之后，后面的进程再读文件头已经是 WAL，同一条 PRAGMA 立刻返回、不再要独占锁。
++ */
++function enableWal(db, path) {
++  if (isWalFile(path)) return;
++  const deadline = Date.now() + BUSY_TIMEOUT_MS;
++  for (;;) {
++    try {
++      db.exec('PRAGMA journal_mode = WAL');
++      return;
++    } catch (err) {
++      if (!isLockedError(err) || Date.now() >= deadline) throw err;
++      // 退让一小段再试（带一点随机，免得几个进程步调一致地反复同时撞）
++      sleepSync(15 + Math.floor(Math.random() * 40));
++    }
++  }
++}
++
+ /**
+  * 打开（或新建）数据库并建表。
+  * @param {{path?: string, memory?: boolean}} opts
+@@ -441,10 +506,11 @@
+   if (!opts.memory) mkdirSync(dirname(path), { recursive: true });
+ 
+   const db = new DatabaseSync(path);
+-  // WAL：读写不互相堵；busy_timeout 防止多进程（server / 迁移脚本）偶发锁冲突。
+-  db.exec('PRAGMA journal_mode = WAL');
++  // busy_timeout 要在任何会抢锁的语句之前设：它是这条连接后面所有读写（包括迁移事务）的排队上限。
++  db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
++  // WAL：读写不互相堵。
++  enableWal(db, path);
+   db.exec('PRAGMA foreign_keys = ON');
+-  db.exec('PRAGMA busy_timeout = 5000');
+   applyMigrations(db);
+ 
+   if (!opts.memory) cache.set(path, db);
+@@ -483,31 +549,74 @@
+   return row ? { ...row } : null;
+ }
+ 
+-/** 建表版本；幂等：已经到版本 1 的库不会重复建表。 */
++/**
++ * 建表版本；幂等，并且跨进程串行。
++ *
++ * 已经是最新版本的库（线上库、绝大多数次打开）：只读一下版本号就返回，不写任何东西。
++ * 有版本要迁时，每个版本各占一个 BEGIN IMMEDIATE 事务（走下面的 transaction()）：拿到写锁之后
++ * 在事务里重读 schema_version，别的进程已经迁过这一版就什么都不做。不这样做的话，多个进程
++ * 同时首开同一个库会各跑一遍同样的迁移、互相撞出 database is locked。
++ * 按版本分事务、进事务后重读版本，而不是把整串迁移包成一个大事务：
++ *   - 别的进程迁到一半就退出了，接手的进程从它停下的那一版继续，不重跑也不漏跑；
++ *   - 迁移内容和「版本号 +1」永远一起提交，不会出现「表建了、版本没记」的半截库。
++ *
++ * 前提：MIGRATIONS 里任何一版的 up() 都不自己开事务（否则和这里的 BEGIN 嵌套会报错）。
++ * 现有 v1–v9 都只有 CREATE / ALTER / INSERT，满足这个前提。
++ */
+ export function applyMigrations(db) {
++  // 表已经在了时这条语句不写库；新库上多个进程同时建它，靠前面设好的 busy_timeout 排队。
+   db.exec('CREATE TABLE IF NOT EXISTS schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
+-  const row = getRow(db, 'SELECT value FROM schema_meta WHERE key = ?', ['schema_version']);
+-  const current = row ? Number(row.value) || 0 : 0;
++  const readVersion = () => {
++    const row = getRow(db, 'SELECT value FROM schema_meta WHERE key = ?', ['schema_version']);
++    return row ? Number(row.value) || 0 : 0;
++  };
++  const current = readVersion();
++  if (current >= SCHEMA_VERSION) return { version: current };
++
+   for (const m of MIGRATIONS) {
+-    if (m.version <= current) continue;
+-    m.up(db);
+-    db.prepare(
+-      'INSERT INTO schema_meta (key, value) VALUES (?, ?) ' +
+-      'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+-    ).run('schema_version', String(m.version));
++    transaction(db, () => {
++      // 拿到写锁之后再读一次：别的进程可能刚刚迁过这一版。
++      if (m.version <= readVersion()) return;
++      m.up(db);
++      db.prepare(
++        'INSERT INTO schema_meta (key, value) VALUES (?, ?) ' +
++        'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
++      ).run('schema_version', String(m.version));
++    });
+   }
+-  return { version: Math.max(current, SCHEMA_VERSION) };
++  return { version: readVersion() };
+ }
+ 
+-/** 事务包装：BEGIN IMMEDIATE 保证抢锁语义；异常统一回滚。 */
++/** 每个连接当前嵌套在第几层事务里（弱引用：连接对象回收后这一项跟着没了）。 */
++const txDepth = new WeakMap();
++
++/**
++ * 事务包装：最外层 BEGIN IMMEDIATE 保证抢锁语义；嵌套调用落成 SAVEPOINT。
++ * 异常统一回滚（内层只撤自己那一段，并把错误原样抛给外层），不吞错。
++ *
++ * 可以嵌套：一个操作要原子地做「校验 → 调一个自己会开事务的函数 → 自己的写入」时，
++ * 外面直接再包一层就行，不用为了避开嵌套 BEGIN 把顺序拆开再写补偿代码。
++ * 例：声明一次执行 = 查任务是否已删除 → acquireWriteOwner（内部有事务）→ createAttempt，
++ * 三步必须同生同死（web/api-tasks.mjs 的 attempt 路由）。
++ * 注意：这里只认得出经本函数开的事务；别处手写 db.exec('BEGIN …') 之后再调它，
++ * 仍然会撞上 SQLite 的「不能在事务里开事务」——和以前一样。
++ */
+ export function transaction(db, fn) {
+-  db.exec('BEGIN IMMEDIATE');
++  const depth = txDepth.get(db) || 0;
++  const savepoint = `tx_sp_${depth}`;
++  db.exec(depth === 0 ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
++  txDepth.set(db, depth + 1);
+   try {
+     const out = fn();
+-    db.exec('COMMIT');
++    txDepth.set(db, depth);
++    db.exec(depth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
+     return out;
+   } catch (err) {
+-    try { db.exec('ROLLBACK'); } catch { /* 回滚失败不掩盖原错误 */ }
++    txDepth.set(db, depth);
++    try {
++      db.exec(depth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}`);
++      if (depth > 0) db.exec(`RELEASE ${savepoint}`);
++    } catch { /* 回滚失败不掩盖原错误 */ }
+     throw err;
+   }
+ }
+--- a/web/lib/tasks.mjs (返工前)
++++ b/web/lib/tasks.mjs (返工后)
+@@ -244,6 +244,24 @@
+ }
+ 
+ /**
++ * 执行入口（声明实例 / 交接 / 检查点 / 收尾）共用的守卫：已软删的任务不能再执行。
++ *
++ * 软删的任务在界面上默认看不见。还能在它上面起一个 running 的实例的话，就会留下一条
++ * 「看不见却在跑」的任务，之后既停不了也删不掉（评审 P1-2）。恢复之后可以重新执行。
++ * 调用方要把它和后面的写入放进同一个事务：检查和写入之间才插不进一次删除。
++ */
++export function requireNotDeletedTask(db, taskId) {
++  const task = requireTask(db, taskId);
++  if (task.deleted_at) {
++    throw Object.assign(
++      new Error(`任务已删除，不能再开始执行：${taskId}（恢复之后才能再执行）`),
++      { code: 'TASK_DELETED', statusCode: 409 },
++    );
++  }
++  return task;
++}
++
++/**
+  * 任务列表。
+  *
+  * visibility 决定归档 / 软删的行是否返回（默认 'all'，与加列前行为一致，
+@@ -251,6 +269,7 @@
+  *   'all'         全部行（内部工具用）
+  *   'not_deleted' 排除软删，保留归档 —— GET /api/tasks?include_archived=1
+  *   'active'      排除软删 + 排除归档 —— GET /api/tasks 默认
++ *   'deleted'     只要软删的行（归档与否都算）—— GET /api/tasks?only_deleted=1（回收站）
+  * 归档 / 删除的判定只在这里做 SQL 过滤，不把过滤逻辑散到路由里。
+  *
+  * v9 追加两个可选过滤（走 idx_tasks_workflow 联合索引）：
+@@ -263,6 +282,7 @@
+   const where = [];
+   if (visibility === 'active') where.push('archived_at IS NULL', 'deleted_at IS NULL');
+   else if (visibility === 'not_deleted') where.push('deleted_at IS NULL');
++  else if (visibility === 'deleted') where.push('deleted_at IS NOT NULL');
+   const params = [];
+   const run = linkOf(workflowRunId);
+   const step = linkOf(workflowStepId);
+--- a/web/adapters/dsh.mjs (返工前)
++++ b/web/adapters/dsh.mjs (返工后)
+@@ -9,7 +9,10 @@
+ //      api_error / claim_done / artifact_produced ...，全部标 evidence_source=executor；
+ //   3) 额度阻塞：识别 quota/rate-limit/auth，写 block 事件 + 标记 relay_pending +
+ //      自动生成检查点（保存现场），但**不杀进程**——任务书 T04 要求进程还在时判 blocked；
+-//   4) 退出归因：正常退出→completed，被强杀/异常→interrupted，并把 attempt 落库。
++//   4) 退出归因：正常退出→completed，被强杀/异常→interrupted，并把 attempt 落库；
++//   5) 在跑登记：本进程托管的实例记在一张进程内的表里（attempt_id → 停止句柄），进程退出时注销。
++//      任务 API 的「停止」按 attempt_id 来这里找句柄，找得到就真的把进程停掉
++//      （web/api-tasks.mjs 的 POST /api/tasks/:id/stop）；找不到就如实说「不是本服务启动的」。
+ //
+ // 启动失败（命令不存在等）不抛到调用方：写 agent_start_failed、把 attempt 标
+ // failed/spawn_failed，任务保持原状态（T06 要求仍是 interrupted，不是 idle）。
+@@ -23,7 +26,8 @@
+ import { acquireWriteOwner, releaseAllForAttempt } from '../lib/write-owner.mjs';
+ import { createCheckpoint } from '../lib/checkpoint.mjs';
+ import { refreshTaskState } from '../lib/state-machine.mjs';
+-import { requireTask, newAttemptId } from '../lib/tasks.mjs';
++import { requireNotDeletedTask, newAttemptId } from '../lib/tasks.mjs';
++import { transaction } from '../lib/db.mjs';
+ 
+ export const DSH_BIN_ENV = 'DSH_BIN';
+ 
+@@ -216,6 +220,28 @@
+   try { child.kill('SIGKILL'); } catch { /* 已退出 */ }
+ }
+ 
++/**
++ * 本进程托管、还没结束的执行实例：attempt_id → { attemptId, taskId, agentId, pid, stop, kill, done }。
++ *
++ * 「停止一个任务」得先找到「谁握着这个进程的句柄」。句柄只存在于调用 startDshAttempt 的那个进程里，
++ * 所以由这里登记、进程退出时注销；任务 API 的停止路由按 attempt_id 来查——查得到就调它的 stop()，
++ * 查不到就如实告诉用户「不是本服务启动的」，不拿改一个状态值冒充停止。
++ * 服务重启后这张表是空的：之前起的子进程如果还活着，本进程确实没有它的句柄。
++ */
++const liveAttempts = new Map();
++
++/** 本进程是否托管着这个执行实例；在的话返回它的句柄（stop / kill / done / pid）。 */
++export function getLiveAttempt(attemptId) {
++  return liveAttempts.get(attemptId) || null;
++}
++
++/** 本进程当前托管着的全部执行实例（只有 id / 任务 / agent / pid，不带句柄）。 */
++export function listLiveAttempts() {
++  return [...liveAttempts.values()].map((h) => ({
++    attempt_id: h.attemptId, task_id: h.taskId, agent_id: h.agentId, pid: h.pid, started_at: h.startedAt,
++  }));
++}
++
+ function safeRefresh(db, taskId, opts = {}) {
+   try {
+     return refreshTaskState(db, taskId, opts);
+@@ -241,19 +267,21 @@
+   } = opts;
+ 
+   if (!db) throw Object.assign(new Error('startDshAttempt 需要 db'), { code: 'BAD_DSH', statusCode: 400 });
+-  requireTask(db, taskId);
+ 
+-  // 先抢写入权再建实例：抢不到就不留一条「running 但没人管」的孤儿 attempt。
+   const attemptId = newAttemptId();
+   let owner = null;
+-  if (acquireOwner && worktreePath) {
+-    owner = acquireWriteOwner(db, {
+-      worktreePath, taskId, attemptId, agentId, now,
+-    });
+-  }
+-
+   let attempt;
+-  try {
++  // 「任务没被删」的检查、抢写入权、建实例行，三步在同一个事务里：
++  // 检查和建行之间插不进一次删除（否则会留下「已删除却在运行」的隐藏任务，评审 P1-2），
++  // 建行失败时写入权也跟着回滚，不会留下一条没人用的所有权记录。
++  transaction(db, () => {
++    requireNotDeletedTask(db, taskId);
++    // 先抢写入权再建实例：抢不到就不留一条「running 但没人管」的孤儿 attempt。
++    if (acquireOwner && worktreePath) {
++      owner = acquireWriteOwner(db, {
++        worktreePath, taskId, attemptId, agentId, now,
++      });
++    }
+     attempt = createAttempt(db, {
+       taskId,
+       agentId,
+@@ -265,10 +293,7 @@
+       note: 'DSH 托管实例',
+       evidenceSource: EVIDENCE.EXECUTOR,
+     });
+-  } catch (err) {
+-    if (owner) releaseAllForAttempt(db, attemptId, now);
+-    throw err;
+-  }
++  });
+ 
+   const spawnArgs = Array.isArray(args) ? args : dshArgs({ sessionId });
+   const childEnv = { ...process.env, ...(env || {}) };
+@@ -452,6 +477,8 @@
+     child.once('close', (code, signal) => {
+       if (ended) return;
+       ended = true;
++      // 进程退出了：从「在跑」登记表里摘掉。停止路由是先等这个 close 事件、再来查实例行的。
++      liveAttempts.delete(attempt.attempt_id);
+ 
+       // 退出前把最后一行没换行的 JSON 也读掉。
+       if (lineBuf.trim()) {
+@@ -521,8 +548,13 @@
+     killTree(child);
+     return done;
+   };
++  const kill = () => stop('crash');
+ 
+   safeRefresh(db, taskId, { now });
++  liveAttempts.set(attempt.attempt_id, {
++    attemptId: attempt.attempt_id, taskId, agentId, pid, startedAt: attempt.started_at,
++    stop, kill, done,
++  });
+   return {
+     ok: true,
+     attempt: getAttempt(db, attempt.attempt_id),
+@@ -530,6 +562,6 @@
+     pid,
+     done,
+     stop,
+-    kill: () => stop('crash'),
++    kill,
+   };
+ }
+--- a/web/api-tasks.mjs (返工前)
++++ b/web/api-tasks.mjs (返工后)
+@@ -9,10 +9,12 @@
+ //   POST /api/tasks/:id/checkpoint 生成检查点
+ //   POST /api/tasks/:id/handoff    交接（from → to，转移 write_owner）
+ //   POST /api/tasks/:id/finish     收尾：结束执行实例 + 记验收结论 → 任务 completed（必须带证据）
++//   POST /api/tasks/:id/stop       停止：结束正在跑的执行实例（interrupted / user_stop），不写验收；
++//                                   本进程托管的实例等进程真的退出才回，停止之后才允许删除
+ //   POST /api/tasks/:id/archive    归档（只写 archived_at / archived_from，不动 status）
+-//   POST /api/tasks/:id/restore    恢复（清 archived_at，用 archived_from 还原原状态）
+-//   DELETE /api/tasks/:id          软删（running 返回 409，必须显式先停止）
+-//   POST /api/tasks/batch          批量 archive / delete / restore，逐条返回结果
++//   POST /api/tasks/:id/restore    恢复（清 archived_at，用 archived_from 还原原状态，再按最新执行证据重算）
++//   DELETE /api/tasks/:id          软删（有 running 的执行实例返回 409，必须显式先停止）
++//   POST /api/tasks/batch          批量 archive / delete / restore，逐条返回结果（逐条事务，允许部分失败）
+ //   POST /api/workflow/runs/:runId/steps/:stepId/tasks
+ //                                   从任务书批量建任务，整批挂到该 run 的这一步（v9）。
+ //                                   路由匹配在 api-workflow-runs.mjs（/api/workflow/runs* 先于本文件分发），
+@@ -22,17 +24,30 @@
+ //   GET  /api/tasks?workflow_run_id=X[&workflow_step_id=05]   按挂点过滤（真 SQL 过滤，不是前端筛）
+ //   POST /api/tasks 带 workflow_run_id / workflow_step_id       建任务时就挂上；run / 步骤不存在 → 404
+ //
++// 归档 / 软删的可见性（GET /api/tasks）：
++//   默认                         不要归档、不要软删
++//   ?include_archived=1          带上归档的
++//   ?only_deleted=1              只看软删的（回收站），归档与否都算
++//   ?include_deleted=1           全部行（内部工具用）
++//
++// 生命周期约束（返工 run-3d22e663 · 05c）：
++//   · 已软删的任务不能再开始执行：attempt / handoff / checkpoint / finish 一律 409 TASK_DELETED；
++//     「检查没被删」和「建实例行」在同一个事务里（P1-2）。
++//   · 归档 / 恢复 / 删除各自是一个事务：读取、校验、更新、事件同生同死（P1-4）。
++//   · 恢复写回 archived_from 之后，再按最新执行证据重算状态；删除守卫看的也是执行证据，
++//     不是可能过期的 status 列（P1-3）。
++//
+ // 所有返回状态的地方都带 evidence_source + observed_at。状态一律来自
+ // state-machine.mjs，本文件不写第二套判定。
+ 
+-import { getDb } from './lib/db.mjs';
++import { getDb, transaction } from './lib/db.mjs';
+ import {
+-  createTask, listTasks, getTask, getSteps, summarizeSteps, requireTask,
++  createTask, listTasks, getTask, getSteps, summarizeSteps, requireTask, requireNotDeletedTask,
+   newAttemptId, updateStep, createTasksForWorkflowStep, DEFAULT_TASK_STEPS,
+ } from './lib/tasks.mjs';
+ import {
+   createAttempt, listAttempts, getAttempt, endAttempt, latestAttempt,
+-  reconcileOrphanedAttempts,
++  reconcileOrphanedAttempts, isPidAlive,
+ } from './lib/attempts.mjs';
+ import { createCheckpoint, listCheckpoints, latestCheckpoint } from './lib/checkpoint.mjs';
+ import {
+@@ -44,7 +59,7 @@
+   STATES,
+ } from './lib/state-machine.mjs';
+ import { queryEvents, countArtifacts, EVIDENCE, recordAcceptance, appendEvent } from './lib/events.mjs';
+-import { detectDsh } from './adapters/dsh.mjs';
++import { detectDsh, getLiveAttempt } from './adapters/dsh.mjs';
+ import { detectClaude, listClaudeSessions } from './adapters/claude.mjs';
+ import { probeCliBinary } from './adapters/external.mjs';
+ import { listAgents, agentExists } from './lib/agents.mjs';
+@@ -53,10 +68,22 @@
+ import { spawnPlan } from './chat/proc.mjs';
+ 
+ const TASK_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})$/;
+-const TASK_ACTION_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})\/(attempt|checkpoint|handoff|finish|archive|restore)$/;
++const TASK_ACTION_PATH = /^\/api\/tasks\/([A-Za-z0-9][A-Za-z0-9_.-]{0,95})\/(attempt|checkpoint|handoff|finish|stop|archive|restore)$/;
+ const BATCH_PATH = '/api/tasks/batch';
+ const BATCH_ACTIONS = new Set(['archive', 'delete', 'restore']);
+ 
++/**
++ * 这个进程的任务 API 有哪几样能力——随 GET /api/tasks 一起回显。
++ *
++ * 看板的静态文件是每次请求从磁盘读的：改完前端的一瞬间线上界面就是新的，而本文件要重启才换。
++ * 旧进程的响应里没有这个键，前端据此把依赖新后端的按钮（停止、回收站）禁用并说明原因，
++ * 不留一个点了没反应的控件。新增能力时往这里加一项，前端按名字认。
++ */
++const API_FEATURES = Object.freeze([
++  'archive', 'restore', 'soft_delete', 'batch', 'workflow_link',
++  'stop', 'trash', 'execution_guard_deleted', 'admin_atomic',
++]);
++
+ function stamp(now) {
+   return (now instanceof Date ? now : new Date(now ?? Date.now())).toISOString();
+ }
+@@ -295,72 +322,286 @@
+ }
+ 
+ /**
++ * 把派生状态（tasks.status / status_reason）对齐到最新执行证据，返回对齐后的任务行。
++ *
++ * 状态一律由 state-machine.mjs 算，这里不写第二套判定；只是让删除守卫看「此刻按证据算出来的状态」，
++ * 而不是一列可能过期的缓存（进程消失后没人触发刷新，状态列就会落后）。要在事务里调用。
++ */
++function syncDerivedState(db, taskId, at) {
++  refreshTaskState(db, taskId, { now: at });
++  return requireTask(db, taskId);
++}
++
++/**
+  * 归档：只写 archived_at / archived_from，status 一个字都不改（A2）。
+- * archived_from 记的是归档瞬间的状态，恢复时按它还原（A5）。
++ * archived_from 记的是归档前 status 列的值，恢复时按它写回（A5）。
++ * 即便这一列已经落后于执行证据，恢复那一步也会按最新证据重算，所以这里不去动它。
++ *
++ * 读取、校验、更新、事件在同一个事务里：审计事件写不进去，archived_at 就跟着回滚，
++ * 不会出现「接口报 500、库里却已经归档」（P1-4）。
+  */
+ function archiveOne(db, taskId, { actor, at, httpError }) {
+-  const task = requireTask(db, taskId);
+-  if (task.deleted_at) throw httpError(409, 'TASK_DELETED', `任务已删除，不能归档：${taskId}`);
+-  if (task.archived_at) throw httpError(409, 'TASK_ALREADY_ARCHIVED', `任务已归档：${taskId}`);
+-  db.prepare('UPDATE tasks SET archived_at = ?, archived_from = ?, updated_at = ? WHERE task_id = ?')
+-    .run(at, task.status, at, taskId);
+-  const updated = requireTask(db, taskId);
+-  const event = taskAdminEvent(db, {
+-    taskId, actor, eventType: 'task_archived', action: 'archive', at,
+-    payload: { status_before: task.status, archived_at: at, archived_from: task.status },
++  return transaction(db, () => {
++    const task = requireTask(db, taskId);
++    if (task.deleted_at) throw httpError(409, 'TASK_DELETED', `任务已删除，不能归档：${taskId}`);
++    if (task.archived_at) throw httpError(409, 'TASK_ALREADY_ARCHIVED', `任务已归档：${taskId}`);
++    db.prepare('UPDATE tasks SET archived_at = ?, archived_from = ?, updated_at = ? WHERE task_id = ?')
++      .run(at, task.status, at, taskId);
++    const updated = requireTask(db, taskId);
++    const event = taskAdminEvent(db, {
++      taskId, actor, eventType: 'task_archived', action: 'archive', at,
++      payload: { status_before: task.status, archived_at: at, archived_from: task.status },
++    });
++    return { task: updated, event, archived_at: at, archived_from: task.status };
+   });
+-  return { task: updated, event, archived_at: at, archived_from: task.status };
+ }
+ 
+-/** 恢复：清 archived_at（A6），并写回 archived_from 记录的原状态（A5）。 */
++/**
++ * 恢复：清 archived_at（A6），并写回 archived_from 记录的原状态（A5）。
++ *
++ * 写回去的只是「归档那一刻」的状态。归档 / 删除期间执行可能已经结束（完成、被停、进程消失），
++ * 所以写回之后紧接着按最新执行证据重算一次并落库——恢复不能把一个早就结束的实例重新伪造成
++ * 「执行中」，否则界面显示「已完成」、删除却被拒（P1-3）。实例还活着的话（A5 那种），
++ * 重算结果就是原状态，状态不变、也不写 status_changed。
++ * 整段在一个事务里；事件里把「写回了什么」和「最后落库的是什么」都记下来。
++ */
+ function restoreOne(db, taskId, { actor, at, httpError }) {
+-  const task = requireTask(db, taskId);
+-  if (!task.archived_at && !task.deleted_at) {
+-    throw httpError(409, 'NOT_ARCHIVED', `任务没有归档或删除，不能恢复：${taskId}`);
+-  }
+-  const restoredStatus = task.archived_from || task.status;
+-  db.prepare(
+-    'UPDATE tasks SET archived_at = NULL, archived_from = NULL, deleted_at = NULL, status = ?, updated_at = ? ' +
+-    'WHERE task_id = ?',
+-  ).run(restoredStatus, at, taskId);
+-  const updated = requireTask(db, taskId);
+-  const event = taskAdminEvent(db, {
+-    taskId, actor, eventType: 'task_restored', action: 'restore', at,
+-    payload: {
+-      status_after: restoredStatus,
+-      status_before: task.status,
+-      was_archived: Boolean(task.archived_at),
+-      was_deleted: Boolean(task.deleted_at),
+-    },
++  return transaction(db, () => {
++    const task = requireTask(db, taskId);
++    if (!task.archived_at && !task.deleted_at) {
++      throw httpError(409, 'NOT_ARCHIVED', `任务没有归档或删除，不能恢复：${taskId}`);
++    }
++    const restoredStatus = task.archived_from || task.status;
++    db.prepare(
++      'UPDATE tasks SET archived_at = NULL, archived_from = NULL, deleted_at = NULL, status = ?, updated_at = ? ' +
++      'WHERE task_id = ?',
++    ).run(restoredStatus, at, taskId);
++    const state = refreshTaskState(db, taskId, { now: at });
++    const updated = requireTask(db, taskId);
++    const event = taskAdminEvent(db, {
++      taskId, actor, eventType: 'task_restored', action: 'restore', at,
++      payload: {
++        status_before: task.status,
++        // 按 archived_from 写回去的状态，和按最新证据重算后落库的状态。两者不同 = 归档 / 删除期间状态变过。
++        status_restored: restoredStatus,
++        status_after: updated.status,
++        was_archived: Boolean(task.archived_at),
++        was_deleted: Boolean(task.deleted_at),
++      },
++    });
++    return { task: updated, event, status: updated.status, restored_status: restoredStatus, state };
+   });
+-  return { task: updated, event, status: restoredStatus };
+ }
+ 
+ /**
+- * 软删：running 一律 409（A7），非 running 只写 deleted_at，行不删（A8）。
+- * 「正在运行」除了 tasks.status，还查最新 attempt——状态列可能还没刷新，
+- * 但执行实例已经在跑，这种任务同样不能删。
++ * 软删：有 running 的执行实例一律 409（A7），否则只写 deleted_at，行不删（A8）。
++ *
++ * 守卫看的是执行证据，不是 tasks.status 这一列：状态列可能已经过期（返工前的 restore 会把
++ * 「归档那一刻的 running」原样写回，而实例其实早就结束了；线上库里就有这样的行）。
++ * 所以先让状态机按最新证据对齐——进程已经没了的 running 实例在这一步落成 interrupted——
++ * 再问「还有没有 running 的执行实例」，有才拒。「正在跑的不能删，需要先停」这条不变。
+  */
+ function deleteOne(db, taskId, { actor, at, httpError }) {
++  return transaction(db, () => {
++    let task = requireTask(db, taskId);
++    if (task.deleted_at) throw httpError(409, 'TASK_ALREADY_DELETED', `任务已删除：${taskId}`);
++    syncDerivedState(db, taskId, at);
++    const liveAttempt = runningAttemptOf(db, taskId);
++    if (liveAttempt) {
++      throw httpError(409, 'TASK_RUNNING',
++        `任务正在运行，不能删除；请先停止再删：${taskId}（执行实例 ${liveAttempt.attempt_id}`
++        + `${liveAttempt.pid != null ? `，pid ${liveAttempt.pid}` : '，未登记进程号'}）`);
++    }
++    task = requireTask(db, taskId);
++    db.prepare('UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE task_id = ?')
++      .run(at, at, taskId);
++    const updated = requireTask(db, taskId);
++    const event = taskAdminEvent(db, {
++      taskId, actor, eventType: 'task_deleted', action: 'delete', at,
++      payload: {
++        status_before: task.status,
++        deleted_at: at,
++        // 走到这里一定没有在跑的实例；字段留着，保持事件形状不变
++        running_attempt_id: null,
++      },
++    });
++    return { task: updated, event, deleted_at: at };
++  });
++}
++
++/** 等托管进程退出的上限。执行器的 killTree 自己有 8 秒超时，这里再留一倍余量。 */
++const STOP_WAIT_MS = 20000;
++
++/** 正在停止中的执行实例（同一个实例不许两个请求同时停）。 */
++const stoppingAttempts = new Set();
++
++const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
++
++/** 实例进程退出事件的统一写法（detected 写明是谁发现的，reason 写明为什么）。 */
++function processExitEvent(db, { taskId, attempt, detected, expected, reason, at }) {
++  return appendEvent(db, {
++    taskId,
++    attemptId: attempt.attempt_id,
++    agentId: attempt.agent_id,
++    eventType: 'process_exit',
++    payload: { detected, pid: attempt.pid ?? null, expected, reason },
++    evidenceSource: EVIDENCE.EXECUTOR,
++    observedAt: at,
++  });
++}
++
++/**
++ * 停止任务当前的执行实例。按「本服务能确认到什么程度」分三种情况，不混为一谈：
++ *
++ *   managed   实例是本进程用执行器（startDshAttempt）起的：先把停止请求记进审计（写不进去就不停），
++ *             调它的 stop()，等到进程退出（执行器在 close 事件里写 process_exit、把实例落成
++ *             interrupted / user_stop），再回库核对实例行和 pid。确认之后才算停了。
++ *   unmanaged 实例不是本进程起的，但登记了 pid：本服务不代为结束别人的进程。pid 还活着 → 409，
++ *             告诉用户去哪里停、停完再点一次。那种情况下通常等不到这里——每次请求开头的对账
++ *             （reconcileOrphanedAttempts）发现 pid 没了就把实例落成中断了，停止路由直接回「已停止」。
++ *   declared  实例不是本进程起的，也没有 pid：本服务没有任何可观测的进程，无法确认。
++ *             必须由用户显式 confirm：确认后把实例记为 interrupted / user_stop，事件里写明
++ *             「用户确认，未经系统验证」。
++ *
++ * 三种情况都不写验收结论——停止不是 finish，任务不会因此变成 completed。
++ * 停下来之后任务里不再有 running 的实例，DELETE 的守卫才放行。
++ * 不在事务里等进程：等的过程可能要几秒，期间不能占着写锁。
++ */
++async function stopOne(db, taskId, { actor, httpError, confirm = false }) {
+   const task = requireTask(db, taskId);
+-  if (task.deleted_at) throw httpError(409, 'TASK_ALREADY_DELETED', `任务已删除：${taskId}`);
+-  const liveAttempt = runningAttemptOf(db, taskId);
+-  if (task.status === 'running' || liveAttempt) {
+-    throw httpError(409, 'TASK_RUNNING',
+-      `任务正在运行，不能删除；请先停止再删：${taskId}`);
+-  }
+-  db.prepare('UPDATE tasks SET deleted_at = ?, updated_at = ? WHERE task_id = ?')
+-    .run(at, at, taskId);
+-  const updated = requireTask(db, taskId);
+-  const event = taskAdminEvent(db, {
+-    taskId, actor, eventType: 'task_deleted', action: 'delete', at,
+-    payload: {
+-      status_before: task.status,
+-      deleted_at: at,
+-      running_attempt_id: liveAttempt ? liveAttempt.attempt_id : null,
+-    },
++  const active = runningAttemptOf(db, taskId);
++  if (!active) {
++    // 没有在跑的实例：无事可做，幂等返回成功。
++    return {
++      task, attempt: null, mode: 'none', verified: true, already_stopped: true,
++      process_alive: null, pid: null, event: null, state: evaluateTaskState(db, taskId),
++    };
++  }
++  const attemptId = active.attempt_id;
++  const managed = getLiveAttempt(attemptId);
++  // 读完 active 到落库之间，别的进程（对账 / 收尾）可能已经把这个实例结束了。要写之前在事务里再看一眼：
++  // 已经不是 running 就以库里为准，不拿「用户停止」覆盖别人写下的结论。
++  const endedElsewhere = () => {
++    const current = getAttempt(db, attemptId);
++    if (current && current.status === 'running') return null;
++    return {
++      task: requireTask(db, taskId), attempt: current, mode: 'none', verified: true, already_stopped: true,
++      process_alive: current && current.pid != null ? isPidAlive(current.pid) : null,
++      pid: current ? current.pid : null, event: null, state: evaluateTaskState(db, taskId),
++    };
++  };
++
++  if (managed) {
++    if (stoppingAttempts.has(attemptId)) {
++      throw httpError(409, 'STOP_IN_PROGRESS', `这个执行实例正在停止中，请稍候：${attemptId}`);
++    }
++    stoppingAttempts.add(attemptId);
++    try {
++      // 先把「谁、何时要求停止」记下来，再去停。进程一旦被杀是撤不回来的，所以审计事件必须先落库：
++      // 写不进去就在这里报错返回，进程不动——不会出现「进程被杀了、库里却没有这次操作的记录」。
++      // 停下来的证据（process_exit、实例结束）由执行器在进程退出时写，不在这里预先断言。
++      const requestedAt = stamp();
++      const event = transaction(db, () => taskAdminEvent(db, {
++        taskId, actor, eventType: 'task_stopped', action: 'stop', at: requestedAt,
++        payload: {
++          attempt_id: attemptId, mode: 'managed', phase: 'requested', pid: managed.pid ?? null, requested_by: actor,
++        },
++      }));
++      await Promise.race([
++        managed.stop('user_stop'),
++        sleep(STOP_WAIT_MS).then(() => {
++          throw httpError(504, 'STOP_TIMEOUT',
++            `停止已经发出，但进程 ${managed.pid ?? ''} 在 ${Math.round(STOP_WAIT_MS / 1000)} 秒内没有退出：${attemptId}。`
++            + '任务仍算运行中；稍后重试，必要时请人工结束该进程');
++        }),
++      ]);
++      // 进程退出后再回库核对一遍：实例行确实结束了、pid 确实不在了，才回「已停止」。
++      return transaction(db, () => {
++        const at = stamp();
++        let row = getAttempt(db, attemptId);
++        const alive = row && row.pid != null ? isPidAlive(row.pid) : null;
++        if (alive === true) {
++          // 进程没退干净（比如被 shell 包了一层、孙进程还活着）：不确认停止。
++          throw httpError(504, 'STOP_UNCONFIRMED', `进程 ${row.pid} 仍在运行，停止没有得到确认：${attemptId}`);
++        }
++        if (row && row.status === 'running') {
++          // 执行器的 close 处理没来得及落库（不应发生）：补落。原因如实写 user_stop，不写验收。
++          row = endAttempt(db, {
++            attemptId, status: 'interrupted', endReason: 'user_stop', endedAt: at, evidenceSource: EVIDENCE.USER,
++          });
++          processExitEvent(db, {
++            taskId, attempt: row, detected: 'stop_route', expected: true, reason: '用户停止；进程已退出', at,
++          });
++        }
++        const state = refreshTaskState(db, taskId, { now: at });
++        return {
++          task: requireTask(db, taskId), attempt: row, mode: 'managed', verified: true, already_stopped: false,
++          process_alive: false, pid: row ? row.pid : null, event, state,
++        };
++      });
++    } finally {
++      stoppingAttempts.delete(attemptId);
++    }
++  }
++
++  if (active.pid != null) {
++    const alive = isPidAlive(active.pid);
++    if (alive !== false) {
++      throw httpError(409, 'STOP_NOT_MANAGED',
++        `执行实例 ${attemptId}（${active.agent_id}，pid ${active.pid}）不是本服务启动的`
++        + `${alive === true ? '，进程仍在运行' : '，进程状态无法确认'}；本服务不代为结束别人的进程。`
++        + '请先在启动它的那个终端 / 会话里停止它，再回来点一次「停止」，本服务会确认进程已经退出。');
++    }
++    // 登记的进程已经不在了（用户刚在别处停掉了它）：把实例落成中断——不是完成，不写验收。
++    return transaction(db, () => {
++      const done = endedElsewhere();
++      if (done) return done;
++      const at = stamp();
++      const row = endAttempt(db, {
++        attemptId, status: 'interrupted', endReason: 'crash', endedAt: at, evidenceSource: EVIDENCE.EXECUTOR,
++      });
++      processExitEvent(db, {
++        taskId, attempt: row, detected: 'stop_request', expected: false, reason: '收到停止请求时进程已经退出', at,
++      });
++      const event = taskAdminEvent(db, {
++        taskId, actor, eventType: 'task_stopped', action: 'stop', at,
++        payload: { attempt_id: attemptId, mode: 'unmanaged', verified: true, pid: row.pid, process_alive: false },
++      });
++      const state = refreshTaskState(db, taskId, { now: at });
++      return {
++        task: requireTask(db, taskId), attempt: row, mode: 'unmanaged', verified: true, already_stopped: false,
++        process_alive: false, pid: row.pid, event, state,
++      };
++    });
++  }
++
++  if (!confirm) {
++    throw httpError(409, 'STOP_UNVERIFIED',
++      `执行实例 ${attemptId}（${active.agent_id}）不是本服务启动的，也没有登记进程号，本服务无法确认它是否还在运行。`
++      + '请先在启动它的地方停止它；确认已经停止后再点一次「确认已停止」（接口上是带 confirm=true），'
++      + '本服务会把这次实例记为「用户停止」，不写任何验收结论。');
++  }
++  return transaction(db, () => {
++    const done = endedElsewhere();
++    if (done) return done;
++    const at = stamp();
++    const row = endAttempt(db, {
++      attemptId, status: 'interrupted', endReason: 'user_stop', endedAt: at, evidenceSource: EVIDENCE.USER,
++    });
++    const event = taskAdminEvent(db, {
++      taskId, actor, eventType: 'task_stopped', action: 'stop', at,
++      payload: {
++        attempt_id: attemptId, mode: 'declared', verified: false, pid: null, process_alive: null,
++        confirmed_by: actor,
++        note: '用户确认已停止；本服务没有可观测的进程，未经系统验证',
++      },
++    });
++    const state = refreshTaskState(db, taskId, { now: at });
++    return {
++      task: requireTask(db, taskId), attempt: row, mode: 'declared', verified: false, already_stopped: false,
++      process_alive: null, pid: null, event, state,
++    };
+   });
+-  return { task: updated, event, deleted_at: at };
+ }
+ 
+ function batchResultOf(taskId, fn) {
+@@ -586,7 +827,9 @@
+     const params = queryOf(req);
+     const includeArchived = flagParam(params, 'include_archived');
+     const includeDeleted = flagParam(params, 'include_deleted');
+-    const visibility = includeDeleted ? 'all' : includeArchived ? 'not_deleted' : 'active';
++    // 回收站：只要软删的行（归档与否都算）。给了它就按它，不再看 include_*。
++    const onlyDeleted = flagParam(params, 'only_deleted');
++    const visibility = onlyDeleted ? 'deleted' : includeDeleted ? 'all' : includeArchived ? 'not_deleted' : 'active';
+     // v9：按工作流挂点过滤（真 SQL 过滤，走 idx_tasks_workflow）；不带参数就是原来的全量列表，
+     // 没挂工作流的老任务照常返回（B6）。
+     const link = workflowLinkOf(queryFields(params), httpError);
+@@ -604,6 +847,9 @@
+       evidence_source: EVIDENCE.SYSTEM,
+       include_archived: includeArchived,
+       include_deleted: includeDeleted,
++      only_deleted: onlyDeleted,
++      // 本进程的任务 API 有哪些能力（前端据此识别「服务端还是旧代码」）；见 API_FEATURES。
++      api_features: API_FEATURES,
+       workflow_run_id: link.runId,
+       workflow_step_id: link.stepId,
+       count: tasks.length,
+@@ -645,6 +891,8 @@
+   // ---- POST /api/tasks/batch -------------------------------------------
+   // A9：action = archive | delete | restore，ids 逐条执行，逐条返回。
+   // 一条 running 删除失败不能拖垮其它两条——所以这里绝不整体抛错/整体回滚。
++  // 每一条自己是一个事务（archiveOne / deleteOne / restoreOne）：某一条的审计事件写失败了，
++  // 报的是失败、库里也确实没改；逐条结果和实际写入一致。
+   if (isBatch && normalizedMethod === 'POST') {
+     const body = (await bodyOf(req, deps)) || {};
+     const action = pickString(body, 'action', 'op');
+@@ -680,9 +928,17 @@
+   // ---- GET /api/tasks/:id ----------------------------------------------
+   if (mTask && normalizedMethod === 'GET') {
+     const taskId = mTask[1];
+-    const task = getTask(db, taskId);
++    let task = getTask(db, taskId);
+     if (!task) throw httpError(404, 'TASK_NOT_FOUND', `任务不存在：${taskId}`);
+-    const state = evaluateTaskState(db, taskId, { now: nowIso });
++    // 响应里的三个状态必须说的是同一件事：state / view 是按证据实时算的，task 是库里的状态列。
++    // 状态列落后于证据时（返工前的 restore 写回了旧值、进程消失后还没人触发刷新……），
++    // 读一次详情就对齐一次。只在确实不一致时才写：不然每看一眼详情都会刷 updated_at，把任务顶到列表最上面。
++    const live = evaluateTaskState(db, taskId, { now: nowIso });
++    if (live.status !== task.status) {
++      refreshTaskState(db, taskId, { now: nowIso });
++      task = getTask(db, taskId);
++    }
++    const state = live.status === task.status ? live : evaluateTaskState(db, taskId, { now: nowIso });
+     const attempts = listAttempts(db, { taskId, limit: 100 }).map(attemptView);
+     const checkpoints = listCheckpoints(db, taskId, 100).map(checkpointView);
+     const events = queryEvents(db, { taskId, limit: 1000 }).map(eventView);
+@@ -747,9 +1003,49 @@
+       observed_at: nowIso,
+       evidence_source: EVIDENCE.USER,
+       archived_at: null,
++      // status = 恢复之后的当前状态（按最新执行证据重算过的）；restored_status = 按 archived_from 写回去的那个。
++      // 实例在归档期间结束了的话两者不同（running → completed / interrupted）。
+       status: result.status,
++      restored_status: result.restored_status,
+       event: result.event,
+       task: result.task,
++      state: result.state,
++      view: taskView(db, result.task, result.state),
++    });
++    return true;
++  }
++
++  // ---- POST /api/tasks/:id/stop ----------------------------------------
++  // 「正在跑的不能删，需要先停」里的那个「停」：结束正在跑的执行实例，不写验收。
++  // body: { actor?, confirm? }。confirm 只对「不是本服务启动、也没登记 pid」的实例有意义：
++  // 那种实例本服务无法确认，必须由用户明确说「我已经停掉了」才记为用户停止。
++  if (mAction && mAction[2] === 'stop' && normalizedMethod === 'POST') {
++    const taskId = mAction[1];
++    const body = (await bodyOf(req, deps)) || {};
++    const actor = actorOf(req, body);
++    const result = await stopOne(db, taskId, {
++      actor, httpError, confirm: body.confirm === true || body.confirm === 'true',
++    });
++    const observedAt = result.event ? result.event.observed_at : nowIso;
++    send(deps, res, 200, {
++      ok: true,
++      action: 'stop',
++      task_id: taskId,
++      actor,
++      observed_at: observedAt,
++      evidence_source: EVIDENCE.USER,
++      stopped: true,
++      // verified：本服务是否亲眼确认进程已退出。declared 那种是用户确认的，这里是 false。
++      verified: result.verified,
++      // mode：managed（本进程托管，等到了退出）/ unmanaged（别处起的，pid 已不在）/ declared（用户确认）/ none（本来就没在跑）
++      mode: result.mode,
++      already_stopped: result.already_stopped,
++      attempt: result.attempt ? attemptView(result.attempt) : null,
++      pid: result.pid ?? null,
++      process_alive: result.process_alive ?? null,
++      event: result.event,
++      state: result.state,
++      task: taskView(db, result.task, result.state),
+     });
+     return true;
+   }
+@@ -780,6 +1076,7 @@
+   // ---- POST /api/tasks/:id/attempt -------------------------------------
+   if (mAction && mAction[2] === 'attempt' && normalizedMethod === 'POST') {
+     const taskId = mAction[1];
++    // 先挡一道「任务不存在」（在读请求体之前就回 404）；真正算数的是下面事务里的检查。
+     requireTask(db, taskId);
+     const body = (await bodyOf(req, deps)) || {};
+     const agentId = pickString(body, 'agent_id', 'agentId') || 'dsh';
+@@ -787,19 +1084,25 @@
+     const worktreePath = pickString(body, 'worktree_path', 'worktreePath');
+     const attemptId = newAttemptId();
+ 
+-    if (worktreePath) {
+-      acquireWriteOwner(db, {
+-        worktreePath, taskId, attemptId, agentId, now: nowIso,
+-        force: Boolean(body.force), forceReason: body.force_reason || null,
++    // 「任务没被删」的检查、抢写入权、建实例行在同一个事务里：检查和建行之间插不进一次删除
++    // （多进程下「先删后启动」会留下一条看不见却在运行的任务，评审 P1-2）；
++    // 建行失败时写入权也跟着回滚，不再需要事后补偿。
++    const attempt = transaction(db, () => {
++      requireNotDeletedTask(db, taskId);
++      if (worktreePath) {
++        acquireWriteOwner(db, {
++          worktreePath, taskId, attemptId, agentId, now: nowIso,
++          force: Boolean(body.force), forceReason: body.force_reason || null,
++        });
++      }
++      return createAttempt(db, {
++        taskId, agentId, attemptId, worktreePath,
++        pid: body.pid == null ? null : Number(body.pid),
++        sessionId: pickString(body, 'session_id', 'sessionId'),
++        startedAt: nowIso,
++        note: pickString(body, 'note'),
++        evidenceSource: agentId === 'claude' || agentId === 'codex' ? EVIDENCE.EXTERNAL : EVIDENCE.EXECUTOR,
+       });
+-    }
+-    const attempt = createAttempt(db, {
+-      taskId, agentId, attemptId, worktreePath,
+-      pid: body.pid == null ? null : Number(body.pid),
+-      sessionId: pickString(body, 'session_id', 'sessionId'),
+-      startedAt: nowIso,
+-      note: pickString(body, 'note'),
+-      evidenceSource: agentId === 'claude' || agentId === 'codex' ? EVIDENCE.EXTERNAL : EVIDENCE.EXECUTOR,
+     });
+     const state = refreshTaskState(db, taskId, { now: nowIso });
+     send(deps, res, 201, {
+@@ -816,7 +1119,8 @@
+   // ---- POST /api/tasks/:id/checkpoint ----------------------------------
+   if (mAction && mAction[2] === 'checkpoint' && normalizedMethod === 'POST') {
+     const taskId = mAction[1];
+-    requireTask(db, taskId);
++    // 已软删的任务不能再产生执行痕迹（检查点要跑 git，比较慢，所以不把守卫包进事务，只在入口挡）。
++    requireNotDeletedTask(db, taskId);
+     const body = (await bodyOf(req, deps)) || {};
+     const attemptId = pickString(body, 'attempt_id', 'attemptId')
+       || (latestAttempt(db, { taskId, status: 'running' }) || latestAttempt(db, { taskId }) || {}).attempt_id
+@@ -852,75 +1156,83 @@
+     const fromAttemptId = pickString(body, 'from_attempt_id', 'fromAttemptId', 'from');
+     const explicitPath = pickString(body, 'worktree_path', 'worktreePath');
+ 
+-    const activeOwner = listWriteOwners(db, { activeOnly: true })
+-      .find((o) => o.task_id === taskId && (!explicitPath || normalizeWorktreePath(o.worktree_path) === normalizeWorktreePath(explicitPath)));
+-    const fromAttempt = fromAttemptId
+-      ? getAttempt(db, fromAttemptId)
+-      : (activeOwner ? getAttempt(db, activeOwner.attempt_id) : latestAttempt(db, { taskId }));
+-    if (!fromAttempt || fromAttempt.task_id !== taskId) {
+-      throw httpError(409, 'NO_FROM_ATTEMPT', '找不到可交接的源执行实例');
+-    }
+-    const worktreePath = explicitPath || (activeOwner && activeOwner.worktree_path) || fromAttempt.worktree_path;
+-    if (!worktreePath) throw httpError(400, 'NO_WORKTREE', '交接需要 worktree_path（或源实例带路径）');
+-
+-    const toAttemptId = pickString(body, 'to_attempt_id', 'toAttemptId') || newAttemptId();
+-    if (getAttempt(db, toAttemptId)) {
+-      throw httpError(409, 'ATTEMPT_EXISTS', `目标执行实例已存在：${toAttemptId}`);
+-    }
+-    const checkpointId = pickString(body, 'checkpoint_id', 'checkpointId')
+-      || (latestCheckpoint(db, taskId) || {}).checkpoint_id || null;
+-
+-    const transfer = transferWriteOwner(db, {
+-      worktreePath, taskId,
+-      fromAttemptId: fromAttempt.attempt_id,
+-      toAttemptId, agentId: toAgent,
+-      now: nowIso, reason: pickString(body, 'reason') || 'handoff',
+-    });
+-
+-    const toAttempt = createAttempt(db, {
+-      taskId, agentId: toAgent, attemptId: toAttemptId,
+-      worktreePath, status: 'running', startedAt: nowIso,
+-      checkpointId,
+-      note: pickString(body, 'note') || `从 ${fromAttempt.agent_id}/${fromAttempt.attempt_id} 交接`,
+-      evidenceSource: toAgent === 'claude' || toAgent === 'codex' ? EVIDENCE.EXTERNAL : EVIDENCE.EXECUTOR,
+-    });
+-
+-    if (fromAttempt.status === 'running') {
+-      endAttempt(db, {
+-        attemptId: fromAttempt.attempt_id,
+-        status: 'interrupted',
+-        endReason: 'handoff',
+-        endedAt: nowIso,
+-        evidenceSource: EVIDENCE.EXECUTOR,
++    // 交接会新建一个 running 的实例，所以同样是执行入口：已软删的任务 409。
++    // 整段（转移写入权、建新实例、结束旧实例、写事件）在一个事务里：
++    // 半路失败不会出现「写入权转了、新实例没建」。
++    const handoff = transaction(db, () => {
++      requireNotDeletedTask(db, taskId);
++
++      const activeOwner = listWriteOwners(db, { activeOnly: true })
++        .find((o) => o.task_id === taskId && (!explicitPath || normalizeWorktreePath(o.worktree_path) === normalizeWorktreePath(explicitPath)));
++      const fromAttempt = fromAttemptId
++        ? getAttempt(db, fromAttemptId)
++        : (activeOwner ? getAttempt(db, activeOwner.attempt_id) : latestAttempt(db, { taskId }));
++      if (!fromAttempt || fromAttempt.task_id !== taskId) {
++        throw httpError(409, 'NO_FROM_ATTEMPT', '找不到可交接的源执行实例');
++      }
++      const worktreePath = explicitPath || (activeOwner && activeOwner.worktree_path) || fromAttempt.worktree_path;
++      if (!worktreePath) throw httpError(400, 'NO_WORKTREE', '交接需要 worktree_path（或源实例带路径）');
++
++      const toAttemptId = pickString(body, 'to_attempt_id', 'toAttemptId') || newAttemptId();
++      if (getAttempt(db, toAttemptId)) {
++        throw httpError(409, 'ATTEMPT_EXISTS', `目标执行实例已存在：${toAttemptId}`);
++      }
++      const checkpointId = pickString(body, 'checkpoint_id', 'checkpointId')
++        || (latestCheckpoint(db, taskId) || {}).checkpoint_id || null;
++
++      const transfer = transferWriteOwner(db, {
++        worktreePath, taskId,
++        fromAttemptId: fromAttempt.attempt_id,
++        toAttemptId, agentId: toAgent,
++        now: nowIso, reason: pickString(body, 'reason') || 'handoff',
+       });
+-    }
+ 
+-    db.prepare(
+-      'INSERT INTO events (task_id, attempt_id, agent_id, event_type, payload, evidence_source, observed_at) ' +
+-      'VALUES (?, ?, ?, ?, ?, ?, ?)',
+-    ).run(
+-      taskId, toAttemptId, toAgent, 'handoff',
+-      JSON.stringify({
+-        from_attempt_id: fromAttempt.attempt_id,
+-        from_agent_id: fromAttempt.agent_id,
+-        to_attempt_id: toAttemptId,
+-        to_agent_id: toAgent,
+-        worktree_path: transfer.owner.worktree_path,
+-        checkpoint_id: checkpointId,
+-        reason: pickString(body, 'reason') || 'handoff',
+-      }),
+-      EVIDENCE.EXECUTOR, nowIso,
+-    );
++      const toAttempt = createAttempt(db, {
++        taskId, agentId: toAgent, attemptId: toAttemptId,
++        worktreePath, status: 'running', startedAt: nowIso,
++        checkpointId,
++        note: pickString(body, 'note') || `从 ${fromAttempt.agent_id}/${fromAttempt.attempt_id} 交接`,
++        evidenceSource: toAgent === 'claude' || toAgent === 'codex' ? EVIDENCE.EXTERNAL : EVIDENCE.EXECUTOR,
++      });
++
++      if (fromAttempt.status === 'running') {
++        endAttempt(db, {
++          attemptId: fromAttempt.attempt_id,
++          status: 'interrupted',
++          endReason: 'handoff',
++          endedAt: nowIso,
++          evidenceSource: EVIDENCE.EXECUTOR,
++        });
++      }
++
++      db.prepare(
++        'INSERT INTO events (task_id, attempt_id, agent_id, event_type, payload, evidence_source, observed_at) ' +
++        'VALUES (?, ?, ?, ?, ?, ?, ?)',
++      ).run(
++        taskId, toAttemptId, toAgent, 'handoff',
++        JSON.stringify({
++          from_attempt_id: fromAttempt.attempt_id,
++          from_agent_id: fromAttempt.agent_id,
++          to_attempt_id: toAttemptId,
++          to_agent_id: toAgent,
++          worktree_path: transfer.owner.worktree_path,
++          checkpoint_id: checkpointId,
++          reason: pickString(body, 'reason') || 'handoff',
++        }),
++        EVIDENCE.EXECUTOR, nowIso,
++      );
++      return { fromAttempt, toAttempt, transfer, checkpointId };
++    });
+ 
+     const state = refreshTaskState(db, taskId, { now: nowIso });
+     send(deps, res, 201, {
+       ok: true,
+       observed_at: nowIso,
+       evidence_source: EVIDENCE.EXECUTOR,
+-      from_attempt: attemptView(getAttempt(db, fromAttempt.attempt_id)),
+-      to_attempt: attemptView(toAttempt),
+-      write_owner: ownerView(transfer.owner),
+-      checkpoint_id: checkpointId,
++      from_attempt: attemptView(getAttempt(db, handoff.fromAttempt.attempt_id)),
++      to_attempt: attemptView(handoff.toAttempt),
++      write_owner: ownerView(handoff.transfer.owner),
++      checkpoint_id: handoff.checkpointId,
+       state,
+     });
+     return true;
+@@ -943,50 +1255,56 @@
+     const command = pickString(body, 'command');
+     const codeSha = pickString(body, 'code_sha', 'codeSha');
+ 
+-    const attemptId = pickString(body, 'attempt_id', 'attemptId')
+-      || (latestAttempt(db, { taskId, status: 'running' }) || latestAttempt(db, { taskId }) || {}).attempt_id
+-      || null;
+-    let attempt = null;
+-    if (attemptId) {
+-      const found = getAttempt(db, attemptId);
+-      if (!found || found.task_id !== taskId) {
+-        throw httpError(409, 'ATTEMPT_MISMATCH', `执行实例 ${attemptId} 不属于任务 ${taskId}`);
+-      }
+-      attempt = found;
+-      if (attempt.status === 'running') {
+-        // 实例是正常跑到头的：落 completed/done。任务最终是不是 completed 由下面的验收结论决定
+-        attempt = endAttempt(db, {
+-          attemptId, status: 'completed', endReason: 'done', endedAt: nowIso, evidenceSource: EVIDENCE.USER,
+-        });
++    // 已软删的任务不能再收尾记验收（先恢复）。结束实例、记验收、落步骤、刷状态在同一个事务里：
++    // 验收事件写不进去时，实例不会已经被记成「正常跑完」却没有任何验收结论。
++    const finished = transaction(db, () => {
++      requireNotDeletedTask(db, taskId);
++
++      const attemptId = pickString(body, 'attempt_id', 'attemptId')
++        || (latestAttempt(db, { taskId, status: 'running' }) || latestAttempt(db, { taskId }) || {}).attempt_id
++        || null;
++      let attempt = null;
++      if (attemptId) {
++        const found = getAttempt(db, attemptId);
++        if (!found || found.task_id !== taskId) {
++          throw httpError(409, 'ATTEMPT_MISMATCH', `执行实例 ${attemptId} 不属于任务 ${taskId}`);
++        }
++        attempt = found;
++        if (attempt.status === 'running') {
++          // 实例是正常跑到头的：落 completed/done。任务最终是不是 completed 由下面的验收结论决定
++          attempt = endAttempt(db, {
++            attemptId, status: 'completed', endReason: 'done', endedAt: nowIso, evidenceSource: EVIDENCE.USER,
++          });
++        }
+       }
+-    }
+ 
+-    const acceptance = recordAcceptance(db, {
+-      taskId, attemptId: attempt ? attempt.attempt_id : null, result, codeSha, command,
+-      report: evidence, note,
+-      // 带了验收命令 = 脚本验的（verifier）；否则是人工验收（user）
+-      evidenceSource: command ? EVIDENCE.VERIFIER : EVIDENCE.USER,
+-      observedAt: nowIso,
+-    });
++      const acceptance = recordAcceptance(db, {
++        taskId, attemptId: attempt ? attempt.attempt_id : null, result, codeSha, command,
++        report: evidence, note,
++        // 带了验收命令 = 脚本验的（verifier）；否则是人工验收（user）
++        evidenceSource: command ? EVIDENCE.VERIFIER : EVIDENCE.USER,
++        observedAt: nowIso,
++      });
+ 
+-    if (result === 'passed') {
+-      // 任务完成 ⇒ 步骤一并落 done（没跳过的），看板的「N / N 步」才和状态对得上
+-      for (const step of getSteps(db, taskId)) {
+-        if (step.status === 'done' || step.status === 'skipped') continue;
+-        updateStep(db, taskId, step.key, { status: 'done', at: nowIso, note: step.note || '' });
++      if (result === 'passed') {
++        // 任务完成 ⇒ 步骤一并落 done（没跳过的），看板的「N / N 步」才和状态对得上
++        for (const step of getSteps(db, taskId)) {
++          if (step.status === 'done' || step.status === 'skipped') continue;
++          updateStep(db, taskId, step.key, { status: 'done', at: nowIso, note: step.note || '' });
++        }
+       }
+-    }
+ 
+-    const state = refreshTaskState(db, taskId, { now: nowIso });
+-    const task = requireTask(db, taskId);
++      return { attempt, acceptance, state: refreshTaskState(db, taskId, { now: nowIso }) };
++    });
++
+     send(deps, res, 200, {
+       ok: true,
+-      observed_at: state.observed_at,
+-      evidence_source: state.evidence_source,
+-      acceptance,
+-      attempt: attempt ? attemptView(getAttempt(db, attempt.attempt_id)) : null,
+-      state,
+-      task: taskView(db, task, state),
++      observed_at: finished.state.observed_at,
++      evidence_source: finished.state.evidence_source,
++      acceptance: finished.acceptance,
++      attempt: finished.attempt ? attemptView(getAttempt(db, finished.attempt.attempt_id)) : null,
++      state: finished.state,
++      task: taskView(db, requireTask(db, taskId), finished.state),
+     });
+     return true;
+   }
+--- a/web/board-cromma.html (返工前)
++++ b/web/board-cromma.html (返工后)
+@@ -61,7 +61,7 @@
+       <section class="tasks" aria-label="任务列表">
+         <div class="tasks__head">
+           <h2 class="eyebrow">任务 <span id="task-count">—</span></h2>
+-          <span class="tasks__hint">点一行看详情</span>
++          <span class="tasks__hint" id="tasks-hint">点一行看详情</span>
+         </div>
+         <div class="filters" id="task-filters" role="group" aria-label="任务筛选">
+           <button type="button" data-filter="all" class="filter is-active" aria-pressed="true">全部 <b>—</b></button>
+@@ -72,7 +72,11 @@
+         </div>
+         <div class="task-tools">
+           <label class="task-all"><input type="checkbox" id="task-select-all" aria-label="全选当前列表"><span>全选</span></label>
+-          <button type="button" class="task-arch-toggle" id="task-archived-toggle" aria-pressed="false" title="归档任务默认不返回；打开后显示并可恢复">显示已归档</button>
++          <!-- 归档 ≠ 删除：归档的任务在「显示已归档」里看；删除的任务进「回收站」，两边各自恢复 -->
++          <span class="task-tools__toggles">
++            <button type="button" class="task-arch-toggle" id="task-archived-toggle" aria-pressed="false" title="归档任务默认不返回；打开后显示并可恢复">显示已归档</button>
++            <button type="button" class="task-arch-toggle task-trash-toggle" id="task-trash-toggle" aria-pressed="false" title="回收站：只看已删除的任务（软删，可恢复）">回收站</button>
++          </span>
+         </div>
+         <!-- v9：任务挂在工作流步骤上。选中一次需求（run）= 只看它拆出来的任务；「全部任务」= 不过滤 -->
+         <label class="task-runbar" for="task-run-select" title="按工作流 run 过滤：只看这一次需求拆出来的任务（真请求 /api/tasks?workflow_run_id=…）">
+--- a/web/board-cromma.css (返工前)
++++ b/web/board-cromma.css (返工后)
+@@ -176,6 +176,14 @@
+ }
+ .task-arch-toggle:hover { background: #F8F1E6; }
+ .task-arch-toggle[aria-pressed="true"] { background: #FFF7E7; border-color: #E3CA97; color: #6B4B12; }
++.task-tools__toggles { display: inline-flex; align-items: center; gap: 5px; }
++/* 旧后端没重启时按钮禁用：不是「没有这个功能」，悬停提示里写了为什么、怎么办 */
++.task-arch-toggle:disabled { cursor: not-allowed; opacity: .45; }
++.task-arch-toggle:disabled:hover { background: #FCFAF6; }
++/* 回收站（只看已删除）：和「显示已归档」用同一档尺寸，暖红区别于归档的琥珀 */
++.task-trash-toggle[aria-pressed="true"] { background: #FBF0EA; border-color: #E3B7A8; color: #A8543F; }
++.tasks.is-trash .tasks__hint { color: #A8543F; }
++.task-batch button[hidden] { display: none; }
+ .task-batch {
+   display: flex; align-items: center; gap: 6px; margin: 0 0 7px; padding: 6px 7px;
+   border: 1px solid #E3CA97; border-radius: 7px; background: #FFF7E7;
+@@ -219,17 +227,30 @@
+ .task-line:hover { background: #F6F0E5; }
+ .task-line.is-archived { opacity: .55; background: #F1EDE5; }
+ .task-line.is-archived:hover { background: #EDE8DF; }
++/* 已删除（回收站里的行）：比归档再暗一档、偏红，一眼分得清「归档」和「删除」 */
++.task-line.is-deleted { opacity: .6; background: #F3EAE3; }
++.task-line.is-deleted:hover { background: #EEE3DA; }
+ .task-line.is-checked { background: #F1E7D6; }
++.task-line.is-archived.is-checked, .task-line.is-deleted.is-checked { opacity: .92; background: #F1E7D6; }
+ .task-line__top { display: grid; grid-template-columns: 14px minmax(0, 1fr); align-items: center; gap: 5px; }
+ .task-pick { width: 13px; height: 13px; margin: 0; accent-color: #B9975B; cursor: pointer; }
+ .task-line__acts { display: flex; gap: 5px; justify-content: flex-end; margin: 3px 2px 0 19px; }
+ .task-line__acts button {
+   height: 22px; padding: 0 7px; border: 1px solid var(--line); border-radius: 5px;
+-  background: #FCFAF6; color: var(--ink-3); font-size: 11px; line-height: 1;
++  background: #FCFAF6; color: var(--ink-3); font-size: 11px; line-height: 1; white-space: nowrap;
+ }
+ .task-line__acts button:hover { background: #F8F1E6; border-color: #D8C7A6; }
+ .task-line__acts button[data-act="delete"] { color: #A8543F; }
+ .task-line__acts button[data-act="delete"]:hover { background: #FBEDE8; border-color: #E3B7A8; }
++/* 停止：只出现在有执行实例在跑的行上。确认态 = 服务端无法确认、等用户再点一次 */
++.task-line__acts button[data-act="stop"] { color: #A8543F; border-color: #E3B7A8; }
++.task-line__acts button[data-act="stop"]:hover { background: #FBEDE8; }
++.task-line__acts button[data-act="stop"].is-confirm { background: #A8543F; border-color: #A8543F; color: #FFF9F6; font-weight: 600; }
++.task-line__acts button[data-act="stop"].is-confirm:hover { background: #984734; }
++.task-line__acts button:disabled { cursor: not-allowed; opacity: .45; }
++.task-line__acts button:disabled:hover { background: #FCFAF6; border-color: var(--line); }
++/* 已删除标签待在操作行左端（和步骤标签同一个位置），把标题那一行整行留给标题 */
++.task-tag--deleted { margin-right: auto; align-self: center; background: #F3DED6; color: #A8543F; }
+ .task-tag {
+   flex: none; display: inline-block; padding: 1px 5px; border-radius: 4px;
+   background: #E7DFD1; color: #6F5F47; font-size: 10.5px; font-weight: 500; vertical-align: 1px;
+@@ -550,6 +571,8 @@
+ .detail__artifact span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--font-mono); }
+ .detail__artifact span:last-child { color: var(--ink-4); white-space: nowrap; }
+ .detail__back { font-size: 12px; color: var(--ink-4); }
++/* 任务详情最上面那行「已删除 / 已归档 / 有实例在跑」：决定现在能做什么，比返回提示重一点 */
++.detail__flags { font-size: 12px; font-weight: 600; color: #A8543F; }
+ 
+ /* 任务推进带（每条都有 data-task-id） */
+ .progress-strip {
+--- a/web/board-cromma.js (返工前)
++++ b/web/board-cromma.js (返工后)
+@@ -54,6 +54,16 @@
+   selectedTaskIds: new Set(),
+   includeArchived: false,
+   taskBusy: false,
++  // 回收站：只看软删的任务（真请求 ?only_deleted=1，服务端 SQL 过滤）。和「显示已归档」是两件事：
++  // 归档的任务在列表里灰显；删除的任务只有进了回收站才看得见、才恢复得了。
++  trashMode: false,
++  // 「停止」的第二步在等用户再点一次：{ taskId, at, message }。服务端无法确认的那种执行实例
++  //（不是本服务启动的、也没登记 pid）要先由用户确认「我已经停掉了」。
++  stopConfirm: null,
++  // 服务端对「停止」给的做法（比如「不是本服务启动的、进程还在，请去它的终端里停」）：挂在按钮的悬停提示上
++  stopNotice: null,
++  // 服务端任务 API 有哪些能力（Set）；null = 还没读到任务列表。
++  apiFeatures: null,
+   // TASK-tasks 挂工作流步骤：按当前选中的工作流 run 过滤任务（真请求 ?workflow_run_id=…，服务端 SQL 过滤）；
+   // '' = 不过滤。workflowRuns 是左栏下拉的选项来源（GET /api/workflow/runs），失败不拖垮任务列表。
+   workflowRunId: '',
+@@ -255,7 +265,9 @@
+   state.loading = true;
+   state.fetchLog = [];
+   const taskQuery = new URLSearchParams();
+-  if (state.includeArchived) taskQuery.set('include_archived', '1');
++  // 回收站优先：进了回收站就只看已删除的，「显示已归档」的原有开关留着，退出回收站后继续生效。
++  if (state.trashMode) taskQuery.set('only_deleted', '1');
++  else if (state.includeArchived) taskQuery.set('include_archived', '1');
+   if (state.workflowRunId) taskQuery.set('workflow_run_id', state.workflowRunId);
+   const results = await Promise.allSettled([
+     getJson('/api/agents/status-v2'),
+@@ -286,6 +298,14 @@
+   // 这个看板的规矩是按钮必须有真实行为，不能留一个选了没反应的过滤器。
+   state.workflowFilterSupported = state.tasksData ? Object.hasOwn(state.tasksData, 'workflow_run_id') : null;
+   if (state.workflowFilterSupported === false) state.workflowRunId = '';
++  // 服务端任务 API 的能力清单（停止 / 回收站……）。静态文件是每次请求从磁盘读的，后端却要重启才换：
++  // 旧进程的响应里没有 api_features，依赖新后端的按钮就禁用并说明，不留一个点了没反应的控件。
++  state.apiFeatures = state.tasksData && Array.isArray(state.tasksData.api_features)
++    ? new Set(state.tasksData.api_features)
++    : null;
++  // 回收站是 05c 返工才有的查询。旧后端会悄悄忽略 ?only_deleted=1、把普通列表回来——那样回收站里
++  // 显示的就不是已删除的任务了。响应里没有 only_deleted 回显 = 服务端还是旧代码：退出回收站模式。
++  if (state.trashMode && state.tasksData && !Object.hasOwn(state.tasksData, 'only_deleted')) state.trashMode = false;
+   // 工具采集失败不冒充 0：转盘左弧显示读取失败，不让状态/任务一起背锅。
+   state.quotasError = results[3].status === 'rejected'
+     ? results[3].reason.message
+@@ -529,11 +549,35 @@
+   });
+ 
+   // 归档开关：按钮文案与 aria 跟着真实请求参数走（不是只翻本地状态）。
++  // 回收站里不请求归档行，这个开关暂时不适用 → 禁用；退出回收站后原来的开关状态继续生效。
+   const archToggle = $('#task-archived-toggle');
+   if (archToggle) {
+-    archToggle.setAttribute('aria-pressed', String(state.includeArchived));
++    archToggle.setAttribute('aria-pressed', String(state.includeArchived && !state.trashMode));
+     archToggle.textContent = state.includeArchived ? '隐藏已归档' : '显示已归档';
+-  }
++    archToggle.disabled = state.trashMode;
++    archToggle.title = state.trashMode
++      ? '回收站里只显示已删除的任务；「显示已归档」要退出回收站后才用'
++      : '归档任务默认不返回；打开后显示并可恢复';
++  }
++  // 回收站开关：依赖 05c 返工后的后端（?only_deleted=1）。服务端进程还是旧代码时禁用并说明。
++  const trashToggle = $('#task-trash-toggle');
++  if (trashToggle) {
++    const supported = apiHas('trash');
++    trashToggle.disabled = !supported;
++    trashToggle.setAttribute('aria-pressed', String(state.trashMode));
++    trashToggle.textContent = state.trashMode ? '退出回收站' : '回收站';
++    trashToggle.title = !state.tasksData
++      ? '任务列表还没读到（/api/tasks 读取失败），回收站暂时不可用'
++      : !supported
++        ? '服务端进程还是旧代码（没重启）：回收站要重启 8090 后才生效'
++        : state.trashMode
++          ? '回到普通任务列表'
++          : '回收站：只看已删除的任务（软删，行还在库里，可恢复）';
++  }
++  const tasksSection = $('.tasks');
++  if (tasksSection) tasksSection.classList.toggle('is-trash', state.trashMode);
++  const hint = $('#tasks-hint');
++  if (hint) hint.textContent = state.trashMode ? '回收站 · 只显示已删除的任务' : '点一行看详情';
+ 
+   const obs = state.statusV2?.observed_at;
+   const upd = $('#updated-at');
+@@ -828,10 +872,28 @@
+ function isArchivedTask(t) {
+   return Boolean(t && (t.archived_at || t.is_archived));
+ }
++function isDeletedTask(t) {
++  return Boolean(t && (t.deleted_at || t.is_deleted));
++}
++/** 服务端任务 API 有没有这项能力（清单在 GET /api/tasks 响应的 api_features 里；旧后端的响应没有这个键）。 */
++function apiHas(feature) {
++  return Boolean(state.apiFeatures && state.apiFeatures.has(feature));
++}
++/** 有执行实例在跑的行才有「停止」。看的是状态机给的 active_attempt_id，不是 status 列。 */
++function hasActiveAttempt(t) {
++  return Boolean(t && t.active_attempt_id);
++}
++function taskTitleOf(taskId) {
++  return tasksNow().find((t) => t.task_id === taskId)?.title || taskId;
++}
+ 
+ /** 多选 / 批量条的 UI 同步：全选框、已选高亮、批量条显隐。 */
+ function syncTaskSelectionUi() {
+   const ids = filteredTasks().map((t) => t.task_id);
++  // 选择只能是「此刻看得见的行」。切筛选 / 进出回收站 / 切工作流的时候已经清空过（见 bindEvents）；
++  // 这里再兜一层：列表刷新后某一行不再符合当前筛选（比如在「执行」下把它停掉了），
++  // 它的勾选要跟着消失，不让批量条挂着一个看不见的计数。
++  for (const id of [...state.selectedTaskIds]) if (!ids.includes(id)) state.selectedTaskIds.delete(id);
+   const picked = ids.filter((id) => state.selectedTaskIds.has(id));
+   const all = $('#task-select-all');
+   if (all) {
+@@ -841,6 +903,8 @@
+   const n = state.selectedTaskIds.size;
+   const bar = $('#task-batch');
+   if (bar) bar.hidden = n === 0;
++  // 回收站里只有「恢复」有意义：已删除的任务再归档 / 再删除都是 409。
++  $$('#task-batch [data-batch]').forEach((b) => { b.hidden = state.trashMode && b.dataset.batch !== 'restore'; });
+   const count = $('#task-batch-count');
+   if (count) count.textContent = String(n);
+   $$('.task-line').forEach((line) => {
+@@ -869,6 +933,25 @@
+   return `${runTitle} · 第 ${t.workflow_step_id} 步${t.workflow_step_name ? ` ${t.workflow_step_name}` : ''}`;
+ }
+ 
++/**
++ * 行上的「停止」按钮。只在有执行实例在跑的行上出现，停下之后（active_attempt_id 没了）自然消失。
++ * · 后端还是旧代码（没重启）：按钮禁用，悬停提示写明原因——不留一个点了没反应的控件；
++ * · 服务端刚回「无法确认」（不是本服务启动的、也没登记 pid）：按钮变成「确认已停止」，等用户再点一次；
++ * · 服务端刚回「不是本服务启动的、进程还活着」：按钮不变，悬停提示换成服务端给的做法。
++ */
++function stopButtonHtml(t) {
++  if (!hasActiveAttempt(t)) return '';
++  const supported = apiHas('stop');
++  const confirming = Boolean(state.stopConfirm && state.stopConfirm.taskId === t.task_id);
++  const notice = state.stopNotice && state.stopNotice.taskId === t.task_id ? state.stopNotice.message : '';
++  const title = !supported
++    ? '服务端进程还是旧代码（没重启）：停止要重启 8090 后才生效'
++    : confirming
++      ? (state.stopConfirm.message || '本服务无法确认这个实例是否还在跑；确认已经停掉了就再点一次')
++      : (notice || '停止正在跑的执行实例；停下之后才能删除');
++  return `<button type="button" data-act="stop"${supported ? '' : ' disabled'}${confirming ? ' class="is-confirm" data-confirm="1"' : ''} title="${esc(title)}">${confirming ? '确认已停止' : '停止'}</button>`;
++}
++
+ function taskLineHtml(t) {
+   const id = esc(t.task_id);
+   const tone = taskTone(t);
+@@ -876,6 +959,7 @@
+   const total = Number(t.progress?.total) || 0;
+   const selected = t.task_id === state.selectedTaskId;
+   const archived = isArchivedTask(t);
++  const deleted = isDeletedTask(t);
+   const checked = state.selectedTaskIds.has(t.task_id);
+   const title = esc(t.title || t.task_id);
+   const step = stepTagOf(t);
+@@ -883,23 +967,33 @@
+   const stepTag = step
+     ? `<span class="task-tag task-tag--step${step.name ? '' : ' is-unknown'}" data-step="${esc(step.id)}" title="${esc(`属于工作流${stepNote}${step.name ? '' : '（步骤名未取到，只显示步骤号）'}`)}">${esc(step.text)}</span>`
+     : '';
+-  const actions = archived
+-    ? `<button type="button" data-act="restore" title="恢复归档前的状态">恢复</button>
+-       <button type="button" data-act="delete" title="软删除（可恢复行仍在库里）">删除</button>`
+-    : `<button type="button" data-act="archive" title="归档：不改状态，只写 archived_at">归档</button>
+-       <button type="button" data-act="delete" title="软删除；运行中的任务会被拒绝">删除</button>`;
+-  return `<div class="task-line${archived ? ' is-archived' : ''}${checked ? ' is-checked' : ''}" data-line="${id}">
++  const stop = stopButtonHtml(t);
++  // 已删除的行（回收站）：「已删除」标签放在操作行左端（步骤标签的位置），标题那一行留整行宽度——
++  // 左栏只有 272px，标签挤在标题后面会把标题压得只剩三四个字，回收站里就分不清哪条是哪条了。
++  const leftTag = deleted
++    ? `<span class="task-tag task-tag--deleted" title="删除于 ${esc(fmtDate(t.deleted_at))} · 行还在库里，可恢复">已删除</span>`
++    : stepTag;
++  const actions = deleted
++    // 回收站里的行：只能恢复（已删除的任务再归档 / 再删除都是 409）
++    ? `${stop}<button type="button" data-act="restore" title="恢复：清掉删除标记，回到任务列表（状态按最新执行证据重算）">恢复</button>`
++    : archived
++      ? `${stop}<button type="button" data-act="restore" title="恢复归档前的状态">恢复</button>
++         <button type="button" data-act="delete" title="软删除；删除后进回收站，可以再恢复">删除</button>`
++      : `${stop}<button type="button" data-act="archive" title="归档：不改状态，只写 archived_at">归档</button>
++         <button type="button" data-act="delete" title="软删除；运行中的任务会被拒绝，需先停止；删除后进回收站">删除</button>`;
++  const stateTag = !deleted && archived ? '<span class="task-tag">已归档</span>' : '';
++  return `<div class="task-line${archived ? ' is-archived' : ''}${deleted ? ' is-deleted' : ''}${checked ? ' is-checked' : ''}" data-line="${id}">
+     <div class="task-line__top">
+       <input type="checkbox" class="task-pick" data-pick="${id}"${checked ? ' checked' : ''} aria-label="选择 ${title}">
+       <button type="button" class="task-row ${selected ? 'is-selected' : ''}" data-task="${id}" aria-pressed="${selected}" aria-label="${title} · ${esc(stepNote ? `${stepNote} · ` : '')}${esc(taskLabel(t))} · ${done}/${total}" title="${title} · ${esc(stepNote ? `${stepNote} · ` : '')}${esc(taskLabel(t))} · 已完成 ${done}/${total}">
+         <span class="task-row__dot" data-tone="${tone}" aria-hidden="true"></span>
+-        <span class="task-row__title"><span class="task-row__name">${title}</span>${archived ? '<span class="task-tag">已归档</span>' : ''}</span>
++        <span class="task-row__title"><span class="task-row__name">${title}</span>${stateTag}</span>
+         <span class="task-row__meta">
+           <span class="task-row__prog">${done}/${total}</span>
+         </span>
+       </button>
+     </div>
+-    <div class="task-line__acts">${stepTag}${actions}</div>
++    <div class="task-line__acts">${leftTag}${actions}</div>
+   </div>`;
+ }
+ 
+@@ -953,12 +1047,16 @@
+   }
+   const rows = filteredTasks();
+   if (!rows.length) {
+-    // 按工作流过滤后一条都没有：说清是「这次需求还没拆出任务」还是「状态筛选把任务筛没了」。
++    // 一条都没有：说清是「回收站是空的」「回收站里有、只是当前筛选下没有」「这次需求还没拆出任务」还是「状态筛选把任务筛没了」。
+     const loaded = tasksNow().length;
+     const run = state.workflowRuns?.runs?.find((r) => r.run_id === state.workflowRunId);
+-    list.innerHTML = state.workflowRunId && !loaded
+-      ? `<div class="task-empty">这次需求下还没有任务。<br>${esc(run ? run.title : state.workflowRunId)}<br>任务书批量建任务后会出现在这里。</div>`
+-      : `<div class="task-empty">此筛选下没有任务。<br>空内容显示 —，不兜底成别的状态。</div>`;
++    list.innerHTML = state.trashMode
++      ? (loaded
++        ? `<div class="task-empty">回收站里有 ${loaded} 条已删除的任务，但当前筛选下没有。<br>切回「全部」查看。</div>`
++        : '<div class="task-empty">回收站是空的。<br>删除的任务会出现在这里，可以恢复。</div>')
++      : state.workflowRunId && !loaded
++        ? `<div class="task-empty">这次需求下还没有任务。<br>${esc(run ? run.title : state.workflowRunId)}<br>任务书批量建任务后会出现在这里。</div>`
++        : '<div class="task-empty">此筛选下没有任务。<br>空内容显示 —，不兜底成别的状态。</div>';
+     syncTaskSelectionUi();
+     return;
+   }
+@@ -986,13 +1084,15 @@
+     });
+   });
+ 
+-  // 行内归档 / 删除 / 恢复：按钮在行上，点击不冒泡成「选中任务」。
++  // 行内归档 / 删除 / 恢复 / 停止：按钮在行上，点击不冒泡成「选中任务」。
+   $$('[data-act]', list).forEach((btn) => {
+     btn.addEventListener('click', (e) => {
+       e.preventDefault();
+       e.stopPropagation();
+       const taskId = btn.closest('.task-line')?.dataset.line;
+-      if (taskId) runTaskAction(btn.dataset.act, taskId, btn);
++      if (!taskId) return;
++      if (btn.dataset.act === 'stop') runStopAction(taskId, btn);
++      else runTaskAction(btn.dataset.act, taskId, btn);
+     });
+   });
+ 
+@@ -1009,8 +1109,15 @@
+   syncTaskSelectionUi();
+ }
+ 
+-/* ---------- 任务归档 / 删除 / 恢复：真实 API 调用 ---------- */
+-const TASK_ACTION_TEXT = { archive: '归档', restore: '恢复', delete: '删除' };
++/* ---------- 任务归档 / 删除 / 恢复 / 停止：真实 API 调用 ---------- */
++const TASK_ACTION_TEXT = { archive: '归档', restore: '恢复', delete: '删除', stop: '停止' };
++
++/** 服务端错误体是 { error, code }（web/server.js 的收口）；拿到什么就显示什么，不自己编原因。 */
++function errorTextOf(json) {
++  if (!json || typeof json !== 'object') return '未知错误';
++  const text = json.message || json.error || json.code;
++  return typeof text === 'string' && text ? text : '未知错误';
++}
+ 
+ async function taskApi(method, path, body) {
+   const res = await fetch(path, {
+@@ -1026,7 +1133,7 @@
+ async function runTaskAction(action, taskId, btn) {
+   if (state.taskBusy) return;
+   const label = TASK_ACTION_TEXT[action] || action;
+-  const title = tasksNow().find((t) => t.task_id === taskId)?.title || taskId;
++  const title = taskTitleOf(taskId);
+   state.taskBusy = true;
+   if (btn) btn.disabled = true;
+   try {
+@@ -1039,19 +1146,88 @@
+       { actor: 'board:ui' },
+     );
+     if (!res.ok) {
+-      showToast(`${label}失败（HTTP ${res.status}）：${json?.message || json?.code || '未知错误'}`);
++      // 服务端的原因原样带出来（比如「任务正在运行，不能删除；请先停止再删」），多停一会儿让人读完
++      showToast(`${label}失败（HTTP ${res.status}）：${errorTextOf(json)}`, 6500);
+       return;
+     }
+     // 归档后自动把归档行亮出来——用户能立刻看到灰显 +「已归档」，也能马上恢复。
+     if (action === 'archive') state.includeArchived = true;
++    if (state.stopConfirm && state.stopConfirm.taskId === taskId) state.stopConfirm = null;
+     await loadData();
+     showToast(action === 'delete'
+-      ? `已删除（软删）· ${title}`
++      ? `已删除（软删）· ${title} · 行还在库里，可在「回收站」恢复`
+       : action === 'restore'
+         ? `已恢复 · ${title}${json?.status ? `（${json.status}）` : ''}`
+-        : `已归档 · ${title}（灰显，可恢复）`);
++        : `已归档 · ${title}（灰显，可恢复）`, action === 'delete' ? 5200 : undefined);
+   } catch (err) {
+-    showToast(`${label}失败：${String(err.message || err)}`);
++    showToast(`${label}失败：${String(err.message || err)}`, 6500);
++  } finally {
++    state.taskBusy = false;
++    if (btn) btn.disabled = false;
++  }
++}
++
++/** 停止成功后的提示：按服务端实际确认到什么程度来说，不把「用户确认的」说成「验证过的」。 */
++function stopToast(json, title) {
++  if (json?.mode === 'managed') {
++    return `已停止 · ${title} · 进程 ${json.pid ?? '—'} 已退出，实例记为「用户停止」；现在可以删除`;
++  }
++  if (json?.mode === 'unmanaged') {
++    return `进程已退出 · ${title} · 执行实例记为已中断；现在可以删除`;
++  }
++  if (json?.mode === 'declared') {
++    return `已记为「用户停止」· ${title}（本服务没有可核对的进程，未经系统验证）；现在可以删除`;
++  }
++  return `已停止 · ${title}（没有在跑的执行实例了，可以删除）`;
++}
++
++/**
++ * 停止这个任务正在跑的执行实例（POST /api/tasks/:id/stop）。
++ * 服务端分三种回答，界面照实转达：
++ *   200              停下了（托管的实例是等进程真的退出之后才回的）→ 刷新列表，「停止」按钮消失，可以删除；
++ *   409 STOP_UNVERIFIED  实例不是本服务启动的、也没登记 pid，服务端无法确认 → 按钮变成「确认已停止」，
++ *                    用户先去把它停掉，再点一次才带上 confirm=true（服务端会记为「用户停止 / 未验证」）；
++ *   409 STOP_NOT_MANAGED 实例不是本服务启动的、进程还活着，服务端不代杀 → 原样显示它给的停止路径，
++ *                    用户停完再点一次，服务端确认进程已退出。
++ */
++async function runStopAction(taskId, btn) {
++  if (state.taskBusy) return;
++  const confirming = Boolean(state.stopConfirm && state.stopConfirm.taskId === taskId);
++  const title = taskTitleOf(taskId);
++  state.taskBusy = true;
++  if (btn) btn.disabled = true;
++  try {
++    const { res, json } = await taskApi('POST', `/api/tasks/${encodeURIComponent(taskId)}/stop`, {
++      actor: 'board:ui',
++      confirm: confirming,
++    });
++    if (res.ok) {
++      state.stopConfirm = null;
++      state.stopNotice = null;
++      await loadData();
++      showToast(stopToast(json, title), 7000);
++      return;
++    }
++    const why = errorTextOf(json);
++    state.stopNotice = { taskId, message: why };
++    if (res.status === 409 && json?.code === 'STOP_UNVERIFIED') {
++      state.stopConfirm = { taskId, at: Date.now(), message: why };
++      renderTasks();
++      showToast('本服务无法确认这个执行实例是否还在跑（不是本服务启动的，也没登记进程号）。请先在启动它的地方停掉它，再点一次「确认已停止」', 9000);
++      // 确认态只保留一小会儿：用户没接着点，按钮就变回「停止」，免得留下一个过期的「确认」
++      setTimeout(() => {
++        if (state.stopConfirm && state.stopConfirm.taskId === taskId) {
++          state.stopConfirm = null;
++          renderTasks();
++        }
++      }, 30000);
++    } else {
++      state.stopConfirm = null;
++      renderTasks();
++      showToast(`停止失败（HTTP ${res.status}）：${why}`, 10000);
++    }
++  } catch (err) {
++    showToast(`停止失败：${String(err.message || err)}`, 6500);
+   } finally {
+     state.taskBusy = false;
+     if (btn) btn.disabled = false;
+@@ -1059,29 +1235,40 @@
+ }
+ 
+ async function runBatchAction(action) {
+-  const ids = [...state.selectedTaskIds];
++  // 只提交当前列表里看得见的任务。切筛选 / 进出回收站 / 切工作流时选择已经清空了（见 bindEvents），
++  // 这里再和「此刻可见的行」取一次交集：将来别处漏清了，也不会把用户看不见的任务带出去（P1-1）。
++  const visible = new Set(filteredTasks().map((t) => t.task_id));
++  const ids = [...state.selectedTaskIds].filter((id) => visible.has(id));
++  const dropped = state.selectedTaskIds.size - ids.length;
++  if (dropped > 0) {
++    for (const id of [...state.selectedTaskIds]) if (!visible.has(id)) state.selectedTaskIds.delete(id);
++    syncTaskSelectionUi();
++  }
+   if (!ids.length || state.taskBusy) return;
+-  const label = TASK_ACTION_TEXT[action] || action;
++  // 回收站里只有「恢复」有意义（已删除的任务再归档 / 再删除都是 409）；批量条在那边也只给了恢复。
++  const effective = state.trashMode ? 'restore' : action;
++  const label = TASK_ACTION_TEXT[effective] || effective;
+   state.taskBusy = true;
+   try {
+-    const { res, json } = await taskApi('POST', '/api/tasks/batch', { action, ids, actor: 'board:ui' });
++    const { res, json } = await taskApi('POST', '/api/tasks/batch', { action: effective, ids, actor: 'board:ui' });
+     if (!res.ok) {
+-      showToast(`批量${label}失败（HTTP ${res.status}）：${json?.message || json?.code || '未知错误'}`);
++      showToast(`批量${label}失败（HTTP ${res.status}）：${errorTextOf(json)}`, 6500);
+       return;
+     }
+-    if (action === 'archive') state.includeArchived = true;
++    if (effective === 'archive') state.includeArchived = true;
+     state.selectedTaskIds.clear();
+     await loadData();
+     const failed = (json?.results || []).filter((r) => !r.ok);
++    const skipped = dropped > 0 ? `（已忽略 ${dropped} 条当前看不见的任务）` : '';
+     if (failed.length) {
+       const first = failed[0];
+       const why = first.error?.code === 'TASK_RUNNING' ? '正在运行，需先停止' : (first.error?.message || first.error?.code);
+-      showToast(`批量${label}：成功 ${json.succeeded} 条，失败 ${json.failed} 条 · ${first.task_id}：${why}`);
++      showToast(`批量${label}：成功 ${json.succeeded} 条，失败 ${json.failed} 条${skipped} · ${first.task_id}：${why}`, 8000);
+     } else {
+-      showToast(`批量${label}：${json.succeeded} 条全部成功`);
++      showToast(`批量${label}：${json.succeeded} 条全部成功${skipped}`, 6000);
+     }
+   } catch (err) {
+-    showToast(`批量${label}失败：${String(err.message || err)}`);
++    showToast(`批量${label}失败：${String(err.message || err)}`, 6500);
+   } finally {
+     state.taskBusy = false;
+   }
+@@ -1546,6 +1733,12 @@
+     : [];
+   const step = t.current_step?.name || t.current_step?.key || '—';
+   const link = workflowLinkText(t);
++  // 归档 / 删除 / 有实例在跑：都是「现在能对这条任务做什么」的前提，在详情最上面说清楚
++  const flags = [
++    isDeletedTask(t) ? `已删除${t.deleted_at ? ` · ${fmtDate(t.deleted_at)}` : ''} · 可在回收站恢复` : '',
++    isArchivedTask(t) ? '已归档 · 可恢复' : '',
++    hasActiveAttempt(t) ? `有执行实例在跑（${t.active_attempt_id}）· 先停止才能删除` : '',
++  ].filter(Boolean).join(' · ');
+   return `
+     <div class="detail__top">
+       <span class="agent-icon" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 20 20" fill="none"><rect x="2.6" y="2.6" width="14.8" height="14.8" rx="3" stroke="#4A4237" stroke-width="1.5"/><path d="M6.2 7.2h7.6M6.2 10h7.6M6.2 12.8h4.6" stroke="#4A4237" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+@@ -1555,7 +1748,7 @@
+       </div>
+       <span class="detail__state chip">${esc(taskLabel(t))}</span>
+     </div>
+-    <div class="detail__note"><b>${esc(t.title || t.task_id)}</b><br>${esc(t.status_reason || '没有状态说明。')}<br><span class="detail__back">六类交付物已显示在中间主区 · 点路径在右侧预览</span></div>
++    <div class="detail__note"><b>${esc(t.title || t.task_id)}</b><br>${esc(t.status_reason || '没有状态说明。')}${flags ? `<br><span class="detail__flags">${esc(flags)}</span>` : ''}<br><span class="detail__back">六类交付物已显示在中间主区 · 点路径在右侧预览</span></div>
+ 
+     ${goal ? `<section class="detail__section">
+       <div class="detail__label">目标达成<span>${esc(goalLabel)}</span></div>
+@@ -1711,13 +1904,14 @@
+ 
+ /* ---------- toast ---------- */
+ let toastTimer = null;
+-function showToast(text) {
++function showToast(text, ms = 2600) {
+   const el = $('#toast');
+   el.dataset.count = String(Number(el.dataset.count || 0) + 1);   // 每次提示都计数（自检脚本据此判断按钮真的触发了）
+   el.textContent = text;
+   el.classList.add('is-show');
+   clearTimeout(toastTimer);
+-  toastTimer = setTimeout(() => el.classList.remove('is-show'), 2600);
++  // 需要用户照着做的提示（先停止再删、去哪里停止……） callers 传更长的停留时间，让人读得完
++  toastTimer = setTimeout(() => el.classList.remove('is-show'), ms);
+ }
+ 
+ /* ---------- 事件 ---------- */
+@@ -1780,7 +1974,15 @@
+   $('#task-filters').addEventListener('click', (e) => {
+     const btn = e.target.closest('.filter');
+     if (!btn) return;
+-    state.filter = btn.dataset.filter;
++    const next = btn.dataset.filter;
++    const changed = next !== state.filter;
++    const hadSelection = state.selectedTaskIds.size > 0;
++    state.filter = next;
++    // 切了筛选就清空选择：行被筛走了，勾选不能还留着——否则批量操作会打到用户此刻看不见的任务上。
++    if (changed) {
++      state.selectedTaskIds.clear();
++      state.stopConfirm = null;
++    }
+     if (state.selectedTaskId && !filteredTasks().some((t) => t.task_id === state.selectedTaskId)) {
+       state.selectedTaskId = null;
+       ensureSelection();
+@@ -1789,7 +1991,7 @@
+     renderTasks();
+     renderDetail();
+     const labels = { all: '全部', running: '执行', relay: '接力', risk: '异常', unknown: '未知' };
+-    showToast(`筛选：${labels[state.filter]} · ${filteredTasks().length} 个任务`);
++    showToast(`筛选：${labels[state.filter]} · ${filteredTasks().length} 个任务${changed && hadSelection ? '（已清空之前的选择）' : ''}`);
+   });
+ 
+   // 全选只作用于当前筛选后的可见行，不偷偷选中看不见的任务。
+@@ -1805,15 +2007,31 @@
+   $('#task-archived-toggle').addEventListener('click', async () => {
+     state.includeArchived = !state.includeArchived;
+     state.selectedTaskIds.clear();
++    state.stopConfirm = null;
+     await loadData();
+     showToast(state.includeArchived ? '已显示归档任务（灰显，可恢复）' : '已隐藏归档任务');
+   });
+ 
++  // 回收站 = 真请求 /api/tasks?only_deleted=1（只返回软删的行），不是前端本地筛。
++  // 归档 ≠ 删除：归档的任务在列表里灰显；删除的任务只有这里看得见、恢复得了。
++  $('#task-trash-toggle').addEventListener('click', async () => {
++    if (!apiHas('trash')) return;
++    state.trashMode = !state.trashMode;
++    state.selectedTaskIds.clear();
++    state.stopConfirm = null;
++    state.stopNotice = null;
++    await loadData();
++    showToast(state.trashMode
++      ? `回收站 · ${counts().tasks} 条已删除的任务，可恢复`
++      : `已回到任务列表 · ${counts().tasks} 个任务`);
++  });
++
+   // 工作流过滤 = 真请求 /api/tasks?workflow_run_id=…（v9，服务端 SQL 过滤），不是前端本地筛。
+   // 只动任务列表的数据源；其它按钮（归档 / 删除 / 批量 / 状态筛选）照常作用于过滤后的可见行。
+   $('#task-run-select').addEventListener('change', async (e) => {
+     state.workflowRunId = e.currentTarget.value || '';
+     state.selectedTaskIds.clear();
++    state.stopConfirm = null;
+     await loadData();
+     // 选中的任务还在新列表里：交付物 / 预览原样保留。被过滤掉了（loadData 已清 selectedTaskId）：
+     // 把它的交付物与右侧预览一并收掉，不留一块指向看不见的任务的内容。

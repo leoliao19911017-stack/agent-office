@@ -10,7 +10,7 @@
 //
 // 只读：一个字节都不写被观测对象的目录/日志。
 
-import { execFile } from 'node:child_process';
+import { execFile, exec } from 'node:child_process';
 import { statSync } from 'node:fs';
 import { appendEvent, EVIDENCE } from '../lib/events.mjs';
 import { isPidAlive } from '../lib/attempts.mjs';
@@ -170,11 +170,26 @@ export function recordExternalObservation(db, input = {}) {
   return { observations: [observation], event };
 }
 
-/** 可用性探测：外部 Agent 的 CLI 是否存在（只作为可用性证据，不冒充执行证据）。 */
+/** 可用性探测：外部 Agent 的 CLI 是否存在（只作为可用性证据，不冒充执行证据）。
+ *  Windows 上 npm 装的 CLI 是 .cmd 批处理，execFile 不会自动补后缀 → ENOENT。
+ *  所以 win32 走 shell 并做一次「只允许安全字符」的命令名校验，避免拼串注入。 */
 export function probeCliBinary(bin, opts = {}) {
   const checkedAt = stamp(opts.now);
+  const onWin = process.platform === 'win32';
+  const safeBin = /^[A-Za-z0-9._-]+$/.test(bin);
+  if (onWin && !safeBin) {
+    return Promise.resolve({
+      available: false,
+      reason: 'probe_failed',
+      version: null,
+      checked_at: checkedAt,
+      observed_at: checkedAt,
+      evidence_source: EVIDENCE.PROCESS_PROBE,
+      error: `unsafe command name: ${String(bin).slice(0, 80)}`,
+    });
+  }
   return new Promise((resolve) => {
-    execFile(bin, ['--version'], { timeout: opts.timeoutMs || 4000, maxBuffer: 64 * 1024, windowsHide: true }, (err, stdout) => {
+    const cb = (err, stdout) => {
       if (err) {
         resolve({
           available: false,
@@ -196,6 +211,12 @@ export function probeCliBinary(bin, opts = {}) {
         evidence_source: EVIDENCE.PROCESS_PROBE,
         error: null,
       });
-    });
+    };
+    const execOpts = { timeout: opts.timeoutMs || 4000, maxBuffer: 64 * 1024, windowsHide: true };
+    if (onWin) {
+      exec(`${bin} --version`, execOpts, cb);
+    } else {
+      execFile(bin, ['--version'], execOpts, cb);
+    }
   });
 }

@@ -552,3 +552,97 @@ button.btn-primary,
   background: oklch(0.30 0.016 78);
   border-color: oklch(0.42 0.016 78);
 }
+
+/* ================= 设置 · 工作流模板（P0 第二步） ================= */
+/* #page-settings .page-heading 的统一隐藏规则不适用于工作流页：它需要自己的标题与主按钮 */
+#page-workflow .page-heading {display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding:16px 0 10px; max-width:900px}
+#page-workflow .page-heading h1 {margin:2px 0 0; font-size:22px; color:var(--text)}
+#page-workflow .page-scope {max-width:900px; margin:0 0 14px; color:var(--muted); font-size:13px; line-height:1.6}
+
+#wf-list {max-width:900px}
+#wf-detail {max-width:1080px}
+.wf-rows {display:flex; flex-direction:column; gap:10px}
+.wf-row {display:grid; grid-template-columns:1fr auto; gap:4px 16px; align-items:center;
+  width:100%; text-align:left; background:var(--card); border:1px solid var(--line); border-radius:12px;
+  padding:14px 18px; color:var(--text); cursor:pointer}
+.wf-row:hover {border-color:var(--blue); background:var(--hover)}
+.wf-row-main {display:flex; align-items:center; gap:10px; min-width:0}
+.wf-row-main b {font-size:15px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.wf-row-meta {grid-column:1; color:var(--muted); font-size:12px}
+.wf-row-arrow {grid-column:2; grid-row:1 / span 2; color:var(--faint); font-size:18px}
+.wf-ver {display:inline-flex; align-items:center; height:20px; padding:0 7px; border-radius:999px;
+  border:1px solid var(--line); color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; flex:none}
+.wf-empty, .wf-error {background:var(--card); border:1px dashed var(--line); border-radius:12px;
+  padding:24px; color:var(--muted); font-size:13px; line-height:1.7}
+.wf-error {border-color:var(--reason-red); color:var(--reason-red)}
+.wf-error .btn {margin-left:12px}
+
+.wf-detail-bar {display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px}
+.wf-detail-title {display:flex; align-items:center; gap:10px; min-width:0}
+.wf-detail-title h2 {margin:0; font-size:19px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.wf-detail-meta {color:var(--muted); font-size:12px; margin-left:auto}
+.wf-version-row {display:flex; align-items:center; gap:6px; flex-wrap:wrap; color:var(--muted); font-size:12px; margin:4px 0 14px}
+.wf-version {border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:999px;
+  height:24px; padding:0 10px; font-size:12px; cursor:pointer; font-variant-numeric:tabular-nums}
+.wf-version.on {border-color:var(--blue); color:var(--blue); background:var(--card)}
+
+.wf-steps {display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:10px}
+.wf-step {display:flex; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; min-width:0}
+.wf-step-id {flex:none; width:32px; height:32px; border-radius:8px; background:var(--panel); border:1px solid var(--line);
+  display:flex; align-items:center; justify-content:center; color:var(--blue); font-size:12px; font-weight:600; font-variant-numeric:tabular-nums}
+.wf-step-body {min-width:0; flex:1}
+.wf-step-name {font-size:14px; font-weight:600; color:var(--text); margin-bottom:3px}
+.wf-step-line {font-size:12px; color:var(--muted); line-height:1.7; word-break:break-word}
+.wf-step-line b {color:var(--text-soft); font-weight:600}
+.wf-step-line code {font-size:11px; color:var(--text-soft); background:var(--panel); border:1px solid var(--line);
+  border-radius:4px; padding:1px 5px; margin-right:4px}
+.wf-section {margin-top:16px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px}
+.wf-section h3 {margin:0 0 8px; font-size:14px; color:var(--text)}
+.wf-muted {margin:4px 0; color:var(--muted); font-size:12px; line-height:1.7}
+.wf-routes {border-collapse:collapse; font-size:12px; color:var(--muted)}
+.wf-routes td {padding:3px 10px 3px 0}
+.wf-routes td:nth-child(2) {color:var(--faint)}
+.wf-routes td:nth-child(3) {color:var(--text-soft)}
+
+/* 生成对话框 */
+dialog.wf-dialog {width:min(780px, calc(100vw - 48px)); max-height:86vh; overflow:auto; padding:0;
+  border:1px solid var(--line); border-radius:16px; background:var(--card); color:var(--text);
+  box-shadow:0 24px 80px rgba(0,0,0,.35)}
+dialog.wf-dialog::backdrop {background:rgba(0,0,0,.45)}
+.wf-dialog-head {display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:18px 22px 10px; position:sticky; top:0; background:var(--card); z-index:1}
+.wf-dialog-head h3 {margin:0; font-size:17px}
+.wf-dialog-head button {background:none; border:none; color:var(--muted); font-size:16px; cursor:pointer; padding:4px 8px}
+.wf-dialog-head button:hover {color:var(--text)}
+.wf-dialog-tip {margin:0; padding:0 22px; color:var(--muted); font-size:12px; line-height:1.6}
+#wf-text {display:block; width:calc(100% - 44px); margin:12px 22px 0; min-height:120px; resize:vertical;
+  background:var(--panel); border:1px solid var(--line); border-radius:10px; color:var(--text);
+  padding:12px 14px; font-size:13px; line-height:1.7; font-family:inherit}
+#wf-text:focus {outline:none; border-color:var(--blue)}
+.wf-dialog-actions {display:flex; justify-content:flex-end; align-items:center; gap:12px; padding:12px 22px 18px}
+.wf-dialog-actions .wf-hint {margin-right:auto; color:var(--muted); font-size:12px}
+#wf-result {border-top:1px solid var(--line); margin-top:6px; padding:16px 22px 4px}
+#wf-result h4 {margin:0 0 6px; font-size:13px; color:var(--text)}
+.wf-summary {margin:0 0 14px; padding:12px 14px; border-radius:10px; background:var(--panel);
+  border:1px solid var(--line); color:var(--text-soft); font-size:14px; line-height:1.8}
+.wf-missing {margin:0 0 14px; padding-left:20px; color:var(--muted); font-size:12px; line-height:1.8}
+.wf-missing .wf-ok {color:var(--green); list-style:none; margin-left:-20px}
+.wf-name-row {display:flex; align-items:center; gap:10px; margin-bottom:12px; font-size:13px; color:var(--muted)}
+.wf-name-row input {flex:1; max-width:360px}
+.wf-json {margin-bottom:8px; color:var(--muted); font-size:12px}
+.wf-json summary {cursor:pointer; padding:4px 0}
+.wf-json pre {max-height:260px; overflow:auto; background:var(--panel); border:1px solid var(--line);
+  border-radius:8px; padding:12px; font-size:11px; line-height:1.6; color:var(--text-soft)}
+/* 工作台全局的 .btn-secondary 是深底（#263548）+ 深字，只有工作台三栏能读；
+   设置页是浅底，这里把工作流页的次按钮还原成卡片底 + 正文色，避免深底深字。 */
+#page-workflow .btn-secondary, #wf-dialog .btn-secondary {
+  background-image: none; background-color: var(--card); border: 1px solid var(--line); color: var(--text);
+}
+
+@media (max-width: 1280px) {
+  .wf-steps {grid-template-columns:repeat(2, minmax(0, 1fr))}
+}
+@media (max-width: 760px) {
+  .wf-steps {grid-template-columns:1fr}
+  #page-workflow .page-heading {flex-direction:column; align-items:flex-start}
+}

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05b 开发报告：把 tasks 挂到工作流步骤上</title>
+<style>
+:root{--ink:#2B261F;--ink2:#4A4237;--ink3:#6E6557;--line:#E7E0D5;--bg:#F6F1EA;--card:#FEFCF9;--amber:#8A611D}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.75 "PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",sans-serif}
+.wrap{display:grid;grid-template-columns:260px minmax(0,1fr);gap:28px;max-width:1320px;margin:0 auto;padding:24px}
+nav{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+nav b{display:block;font-size:12px;color:var(--ink3);margin-bottom:6px;letter-spacing:.5px}
+nav a{display:block;color:var(--ink2);text-decoration:none;padding:4px 6px;border-radius:6px}
+nav a:hover{background:#F3EDE3;color:var(--amber)}
+nav .tools{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+nav button{font:inherit;font-size:12.5px;text-align:left;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:#FCFAF6;color:var(--ink2);cursor:pointer}
+nav button:hover{background:#F3EDE3}
+nav input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;width:100%}
+main{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px 36px 40px}
+h1{font-size:27px;line-height:1.35;margin:0 0 10px}
+h2{font-size:20px;margin:38px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+h3{font-size:16.5px;margin:24px 0 8px;color:var(--ink2)}
+p{margin:0 0 12px}
+blockquote{margin:0 0 16px;padding:10px 16px;border-left:3px solid var(--amber);background:#FFF9EC;border-radius:0 10px 10px 0;color:var(--ink2)}
+blockquote p{margin:0}
+code{font:13px/1.6 "Cascadia Mono",Consolas,"Microsoft YaHei UI",monospace;background:#F3EDE3;padding:1px 5px;border-radius:4px}
+pre{margin:0;padding:14px 16px;overflow:auto;background:#2B261F;color:#F3EDE3;border-radius:0 0 10px 10px;font:13px/1.65 "Cascadia Mono",Consolas,"Microsoft YaHei UI",monospace}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+details.code{margin:0 0 14px;border:1px solid var(--line);border-radius:10px;background:#FCFAF6}
+details.code summary{cursor:pointer;padding:7px 12px;font-size:12.5px;color:var(--ink3);user-select:none}
+details.code[open] summary{border-bottom:1px solid var(--line)}
+ul,ol{margin:0 0 14px;padding-left:24px}
+li{margin:4px 0}
+li.sub{list-style:disc;opacity:.92}
+.tw{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--card)}
+th,td{padding:8px 12px;border-bottom:1px solid #EEE8DE;text-align:left;vertical-align:top}
+th{background:#F3EDE3;color:var(--ink3);font-weight:600;white-space:nowrap}
+tr:nth-child(even) td{background:#FCFAF6}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+mark{background:#FBEBCB;color:inherit;padding:0 1px}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:12px 0 18px}
+.gal--rails{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+figure{margin:0;background:#FCFAF6;border:1px solid var(--line);border-radius:10px;padding:8px}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
+figcaption{font-size:12.5px;color:var(--ink3);margin-top:6px}
+#count{font-size:12.5px;color:var(--ink3)}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}nav{position:static;max-height:none}main{padding:20px}}
+@media print{nav{display:none}.wrap{display:block}main{border:0}}
+</style></head>
+<body><div class="wrap">
+<nav><b>目录</b><a href="#s-一-先看这三件事-5">一、先看这三件事</a><a href="#s-二-改动文件清单-19">二、改动文件清单</a><a href="#s-三-数据模型与迁移-v9-24">三、数据模型与迁移 v9</a><a href="#s-四-api-行为-34">四、API 行为</a><a href="#s-五-界面-web-board-cromma-40">五、界面（web/board-cromma.*）</a><a href="#s-六-b1-b11-逐条结果-44">六、B1–B11 逐条结果</a><a href="#s-七-定向测试真实输出-47">七、定向测试真实输出</a><a href="#s-八-全量回归-临时库-与那条偶发失败-59">八、全量回归（临时库）与那条偶发失败</a><a href="#s-九-截图与自查-72">九、截图与自查</a><a href="#s-十-技术选择-自己判断的-说明理由-80">十、技术选择（自己判断的，说明理由）</a><a href="#s-十一-达到目标没有-还差哪些-83">十一、达到目标没有，还差哪些</a><a href="#s-十二-需求层面要问-leo-的-91">十二、需求层面要问 Leo 的</a><a href="#s-十三-复现命令-94">十三、复现命令</a>
+<div class="tools"><input id="q" type="search" placeholder="页内搜索（高亮）"><span id="count"></span>
+<button id="collapse" type="button">折叠所有代码块</button><button id="expand" type="button">展开所有代码块</button></div></nav>
+<main><h1 id="s-05b-开发报告-把-tasks-挂到工作流步骤上-0">05b 开发报告：把 tasks 挂到工作流步骤上</h1>
+<blockquote><p>run: <code>3d22e663-a27f-417c-829b-b6b7fbcc5fad</code> · 步骤 05 实现与自测（第二批：tasks → workflow_run / run_step）</p><p>开工 2026-11-24 22:06，报告写于 23:20 前后 · 会话 <code>soda-office-b0</code></p></blockquote>
+<p><strong>结论先说：</strong> B1–B11 共 11 条，<strong>11 条通过</strong>；其中 <strong>B1、B10 各带一处你必须知道的说明</strong>（见第一节）。定向测试 17/17；上一版测试 12/12；全量（临时库）跑了 3 次：354/11、355/10、355/10，稳定失败的是上一轮就有的 10 条。截图 11 张，逐张看过。</p>
+<p><strong>但功能还没上线：</strong> 8090 上的服务进程我<strong>没有重启</strong>，它跑的还是内存里的旧后端代码，生产库仍是 v8。重启会把生产库迁到 v9，这一步该你拍板。</p>
+<hr>
+<h2 id="s-一-先看这三件事-5">一、先看这三件事</h2>
+<h3 id="s-1-8090-没重启-新功能在线上不生效-而且现在是-半新半旧-6">1. 8090 没重启 → 新功能在线上不生效，而且现在是「半新半旧」</h3>
+<ul class="ul"><li><code>web/server.js</code> 的静态文件（<code>board-cromma.html/js/css</code>）是<strong>每次请求从磁盘读</strong>的。所以我一改前端，8090 上的看板<strong>立刻</strong>就是新界面了（我用只读 GET 核对过：8090 返回的 html 里已有 <code>task-run-select</code>）。</li><li>但 8090 进程里的后端还是 20:28 启动时的旧代码（PID 54844，没动过），不认 <code>workflow_run_id</code>。</li><li>结果：线上看板会多出一个「工作流」下拉，选了却不会过滤。这个看板的规矩是「按钮必须有真实行为」，所以我加了一个<strong>降级保护</strong>：前端发现 <code>/api/tasks</code> 响应里没有 <code>workflow_run_id</code> 回显（= 后端是旧代码），就把下拉<strong>禁用</strong>并提示「服务端未重启」。截图 07 就是这个状态。</li><li><strong>重启 8090 才算上线。</strong> 重启时 <code>openDb</code> 会把 <code>data/agent-office.db</code> 从 v8 迁到 v9（只加两列 + 一个索引）。我没有擅自重启。</li></ul>
+<h3 id="s-2-我改了上一轮测试文件里的-2-行断言-test-tasks-archive-test-js-的-m1-8">2. 我改了上一轮测试文件里的 2 行断言（<code>test/tasks-archive.test.js</code> 的 M1）</h3>
+<p>任务书要求「迁移版本 +1」且「上一版 12/12」。这两条在 M1 上直接冲突：M1 把版本写死成 <code>=== 8</code>。我用<strong>未改动的</strong>原文件对着 v9 代码跑了一遍，如实结果是 <strong>11/12</strong>——A1–A10 和 A9b 共 11 条全过，只有 M1 挂在 <code>9 !== 8</code>（原文存档：<code>tasks-archive-test-v9-before-m1-adjust.log</code>）。</p>
+<p>我把 M1 的两行从「恰好等于 8」改成「至少是 8」，断言的意思（v8 迁移已跑过、三列还在）没变，其余 11 条用例一字未动：</p>
+<details class="code" open><summary>diff · 点击折叠</summary><pre><code>-    assert.equal(Number(ver.value), 8);
+-    assert.equal(SCHEMA_VERSION, 8);
++    assert.ok(Number(ver.value) &gt;= 8, `schema_version 至少是 8（v8 已迁移），实际 ${ver.value}`);
++    assert.ok(SCHEMA_VERSION &gt;= 8, `SCHEMA_VERSION 至少是 8，实际 ${SCHEMA_VERSION}`);</code></pre></details>
+<p>如果你认为上一轮的测试文件不该动，把这两行改回去即可，届时结果是 11/12（M1），归档功能本身不受影响。</p>
+<h3 id="s-3-生产库-tasks-表现在是-0-行-b1-的-旧行-不是生产数据-13">3. 生产库 <code>tasks</code> 表现在是 0 行 → B1 的「旧行」不是生产数据</h3>
+<p>B1 要求「生产库副本跑迁移，旧行还在」。我拷副本去查，发现 <strong>生产库 <code>tasks</code> 是 0 行</strong>（<code>events / task_steps / attempts / checkpoints / deliverables</code> 也都是 0）。查到的时间线：</p>
+<div class="tw"><table><thead><tr><th>时点</th><th>schema</th><th>tasks 行数</th><th>来源</th></tr></thead><tbody><tr><td>18:03 的备份</td><td>v5</td><td>24</td><td>只读查备份的副本</td></tr><tr><td>上一轮记录（约 20:00）</td><td>v7</td><td>1</td><td><code>05-dev-report.md</code> 第二节</td></tr><tr><td>现在</td><td>v8</td><td><strong>0</strong></td><td>只读查生产库副本</td></tr></tbody></table></div>
+<p><code>docs/需求E-Hermes集成进页面.md</code> 第 86 行写着「① 清空任务列表历史数据 ✅ 已做（27 任务 / 490 交付物 / 2917 工具事件 全清）」，应该是有意清的。<strong>不是我这次弄丢的</strong>：生产库主文件自 18:03 没变过（sha256 与上一轮 20:08 记录的一致），WAL 最后写入是 20:28，都早于我 22:06 开工；我的脚本只做文件拷贝，每次跑前跑后三个文件的 sha256 都一致。</p>
+<p>所以生产库副本上没有真实旧行可验。我的做法：先原样记录生产库现状（0 行），再<strong>只在副本里</strong>补 3 行 v8 形状的任务行去迁。补行在截图和文本里都标了「副本补行·非生产数据」。「旧行不丢」另有一份单测（自己造的 v8 形状库文件）覆盖。</p>
+<hr>
+<h2 id="s-二-改动文件清单-19">二、改动文件清单</h2>
+<div class="tw"><table><thead><tr><th>文件</th><th>类型</th><th>改了什么</th></tr></thead><tbody><tr><td><code>web/lib/db.mjs</code></td><td>改</td><td><code>SCHEMA_VERSION</code> 8 → <strong>9</strong>；v9 迁移：<code>tasks</code> 用 <code>ALTER TABLE ADD COLUMN</code> 加 <code>workflow_run_id</code> / <code>workflow_step_id</code> + 联合索引 <code>idx_tasks_workflow</code>（<code>web/lib/db.mjs:418</code>）</td></tr><tr><td><code>web/lib/tasks.mjs</code></td><td>改</td><td><code>createTask</code> 接受挂点；<code>listTasks</code> 支持 run / step 过滤（SQL 里）；新增 <code>createTasksForWorkflowStep</code>（整批原子，<code>web/lib/tasks.mjs:156</code>）；把写步骤行抽成 <code>insertStepRows</code>、写任务抽成 <code>insertTaskRecord</code>（行为不变，为了能被外层事务包住）；导出 <code>DEFAULT_TASK_STEPS</code></td></tr><tr><td><code>web/api-tasks.mjs</code></td><td>改</td><td><code>taskView</code> 多 3 个字段；<code>GET /api/tasks</code> 支持 <code>workflow_run_id</code> / <code>workflow_step_id</code> 并回显；<code>POST /api/tasks</code> 接受挂点并校验；新增导出 <code>createWorkflowStepTasks</code>（<code>web/api-tasks.mjs:1009</code>）</td></tr><tr><td><code>web/api-workflow-runs.mjs</code></td><td>改</td><td>加一条路由匹配 <code>POST /api/workflow/runs/:runId/steps/:stepId/tasks</code> → 调 <code>api-tasks.mjs</code> 的处理函数（<code>web/api-workflow-runs.mjs:99</code>、<code>:188</code>）。<strong>不碰状态机</strong></td></tr><tr><td><code>web/board-cromma.html</code></td><td>改</td><td>任务区加一行「工作流」下拉（<code>web/board-cromma.html:78</code>）；页脚数据源说明加 <code>/api/workflow/runs</code></td></tr><tr><td><code>web/board-cromma.css</code></td><td>改</td><td><code>.task-runbar</code>、<code>.task-tag--step</code>（含禁用态）</td></tr><tr><td><code>web/board-cromma.js</code></td><td>改</td><td>按 run 过滤（真请求）、步骤标签、下拉渲染、旧后端降级保护、任务详情多一行「工作流」归属（<code>web/board-cromma.js:856</code> 起）</td></tr><tr><td><code>test/tasks-workflow-link.test.js</code></td><td>新增</td><td>B1–B10 逐条 + 边界，共 17 条</td></tr><tr><td><code>test/tasks-archive.test.js</code></td><td>改</td><td>仅 M1 的 2 行断言（见第一节第 2 点）</td></tr><tr><td><code>scripts/tasks-workflow-link-shots.mjs</code></td><td>新增</td><td>生产库副本迁移实证 + 真实服务 + 真实 Chrome 截图与断言</td></tr><tr><td><code>docs/screenshots/tasks-workflow-link/</code></td><td>新增</td><td>11 张截图 + <code>shot-evidence.json</code> / <code>migration-before.txt</code> / <code>migration-after.txt</code> / <code>batch-response.json</code></td></tr><tr><td><code>docs/runs/run-3d22e663/*.log</code></td><td>新增</td><td>测试与实验的真实输出（见第七、八节）</td></tr><tr><td><code>docs/runs/run-3d22e663/probes/</code></td><td>新增</td><td>第八节两个实验的探针脚本原件：<code>canary.mjs</code>（金丝雀）、<code>first-open-race.mjs</code>（并发首开复现）</td></tr><tr><td><code>docs/runs/run-3d22e663/05b-dev-report.html</code>、<code>05b-md2html.mjs</code></td><td>新增</td><td>本报告的 HTML 版（给人看，内嵌截图、可搜索 / 折叠），由这份 <code>.md</code> 经 <code>05b-md2html.mjs</code> 生成——同一份源，改了 <code>.md</code> 重新生成一次即可</td></tr></tbody></table></div>
+<p><strong>没动的：</strong> <code>web/lib/workflow-engine.mjs</code>（mtime 仍是 17:35:44）、<code>web/server-api.mjs</code>、<code>web/server.js</code>、<code>web/lib/workflow-db.mjs</code>、<code>workflow_runs.requirement_baseline</code>。</p>
+<p>为什么路由匹配放在 <code>api-workflow-runs.mjs</code> 而不是任务书说的「都在 <code>api-tasks.mjs</code>」：<code>server-api.mjs:1348</code> 把 <code>/api/workflow/runs*</code> 先分给 <code>handleWorkflowRunsApi</code>，排在 <code>handleTasksApi</code>（<code>:1370</code>）之前；放进 <code>handleTasksApi</code> 永远走不到。建任务的逻辑仍在 <code>api-tasks.mjs</code>（所有写 <code>tasks</code> 表的入口放在一起）。</p>
+<hr>
+<h2 id="s-三-数据模型与迁移-v9-24">三、数据模型与迁移 v9</h2>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>workflow_run（一次需求，跑九步）
+  └── workflow_run_steps（九步之一，如 05）
+        └── tasks.workflow_run_id + tasks.workflow_step_id   ← 这一列关系就是本次加的</code></pre></details>
+<p>一个任务只属于一次需求的一步；两列为 NULL = 不属于任何工作流（老任务就是这样）。没加外键——run / 步骤是否存在由 API 在建任务时校验，这样 run 归档、模板升级不会反过来卡住任务表写入。</p>
+<p>迁移（<code>web/lib/db.mjs</code>）：</p>
+<details class="code" open><summary>js · 点击折叠</summary><pre><code>{
+  version: 9,
+  up(db) {
+    const cols = new Set(allRows(db, &#39;PRAGMA table_info(tasks)&#39;).map((c) =&gt; c.name));
+    if (!cols.has(&#39;workflow_run_id&#39;)) db.exec(&#39;ALTER TABLE tasks ADD COLUMN workflow_run_id TEXT&#39;);
+    if (!cols.has(&#39;workflow_step_id&#39;)) db.exec(&#39;ALTER TABLE tasks ADD COLUMN workflow_step_id TEXT&#39;);
+    db.exec(&#39;CREATE INDEX IF NOT EXISTS idx_tasks_workflow ON tasks(workflow_run_id, workflow_step_id)&#39;);
+  },
+}</code></pre></details>
+<p><strong>生产库副本实证</strong>（<code>scripts/tasks-workflow-link-shots.mjs</code> 第一段；只拷文件，原库从不被打开）：</p>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>BEFORE  schema_version 8 · integrity ok · tasks 0 行（生产库现状）→ 副本里补 3 行 v8 形状的旧行
+AFTER   schema_version 9 · integrity ok
+  [OK] schema_version  8 → 9（v8 → v9）
+  [OK] 任务行数        3 → 3（都是副本补的旧行；生产库本身 0 行）
+  [OK] 老列逐列比对    3 行 × 15 列（迁移前全部列）全部一致
+  [OK] rowid           [431, 902, 1500] → [431, 902, 1500]（表没有被重建）
+  [OK] 新列            workflow_run_id / workflow_step_id 全部为 NULL
+  [OK] 新列存在        workflow_run_id / workflow_step_id
+  [OK] 索引            idx_tasks_workflow (workflow_run_id, workflow_step_id)</code></pre></details>
+<p>两点说明：</p>
+<ul class="ul"><li>生产库的 <code>tasks</code> 实际有 15 列，比当前建表语句多 <code>claim_token / lease_expires_at / attempt / current_run_id</code> 四列（更早版本留下的）。核对按<strong>迁移前全部列</strong>比，不是我认识的列。</li><li>rowid 故意不从 1 开始：删表重建会重新编号，迁移后不变才能说明没重建。</li></ul>
+<hr>
+<h2 id="s-四-api-行为-34">四、API 行为</h2>
+<div class="tw"><table><thead><tr><th>方法与路径</th><th>行为</th></tr></thead><tbody><tr><td><code>POST /api/tasks</code></td><td>可带 <code>workflow_run_id</code> / <code>workflow_step_id</code>；带了就校验：run 不存在 → <strong>404 <code>RUN_NOT_FOUND</code></strong>，run 里没这步 → <strong>404 <code>STEP_NOT_FOUND</code></strong>，只给步骤不给 run → <strong>400 <code>BAD_WORKFLOW_LINK</code></strong>；三种情况都不建任务</td></tr><tr><td><code>GET /api/tasks?workflow_run_id=X</code></td><td>只返回这次需求的任务（SQL 过滤，走联合索引）；响应回显 <code>workflow_run_id</code> / <code>workflow_step_id</code></td></tr><tr><td><code>GET /api/tasks?workflow_run_id=X&amp;amp;workflow_step_id=05</code></td><td>只要这一步的；可与 <code>include_archived=1</code> 叠加</td></tr><tr><td><code>GET /api/tasks</code>（不带参数）</td><td>原行为不变：全量列表，没挂工作流的老任务照常返回</td></tr><tr><td><code>GET /api/tasks</code> 每一项</td><td>多三个字段：<code>workflow_run_id</code>、<code>workflow_step_id</code>、<code>workflow_step_name</code>（服务端按 run 的模板版本查出，查不到为 null）</td></tr><tr><td><code>POST /api/workflow/runs/:runId/steps/:stepId/tasks</code></td><td><strong>新增。</strong> body <code>{ tasks: [{ title, acceptance? }, ...] }</code> → <strong>201</strong> <code>{ ok, created, tasks: [...], workflow_run_id, workflow_step_id, workflow_step_name, actor }</code></td></tr></tbody></table></div>
+<p>批量建任务的语义：</p>
+<ul class="ul"><li><strong>整批全建或全不建。</strong> 先把每一项校验完（任一项没有 title → 400 <code>BAD_TITLE</code>，指明 <code>tasks[i]</code>），再在一个事务里写入，中途出错整批回滚。理由：任务书是一个整体，半批任务 + 调用方重试 = 重复任务。这和上一轮的 <code>/api/tasks/batch</code>（归档 / 删除，逐条独立、允许部分失败）刻意不同。</li><li><code>tasks</code> 不是非空数组 → 400 <code>BAD_TASKS</code>；路径对但方法不是 POST → 405。</li><li>路径上的 run / 步骤先校验（不看 body）：run 不存在 → 404 <code>RUN_NOT_FOUND</code>；run 里没有这一步 → 404 <code>STEP_NOT_FOUND</code>。错误码沿用 <code>/api/workflow/runs*</code> 引擎里已有的那两个。</li><li>建任务不推进步骤、不碰状态机。</li><li>同一批的时间戳逐条 +1ms：列表按 <code>updated_at</code> 倒序，这样整批顺序确定（后建的在上），不会因为时间戳全相同而退化成按随机 task_id 排。</li></ul>
+<p><strong>归档 / 删除 / 恢复 / 批量的代码路径一行没改</strong>，并且用挂了工作流的任务重新验过（<code>B10</code> 用例 + 截图脚本里真点了一次归档再恢复）。</p>
+<hr>
+<h2 id="s-五-界面-web-board-cromma-40">五、界面（<code>web/board-cromma.*</code>）</h2>
+<ul class="ul"><li><strong>任务区多一行「工作流」下拉。</strong> 选项来自 <code>GET /api/workflow/runs</code>；选中哪次需求，任务列表就真请求 <code>/api/tasks?workflow_run_id=…</code>（服务端过滤，不是前端筛），和「显示已归档」是同一个做法。选「全部任务」回到不过滤。</li><li><strong>每个挂了工作流的任务显示步骤标签</strong>，如「05 开发执行」，画在每行下方的操作行左端（右端还是归档 / 删除）。步骤名取模板里的真名（05 开发执行、06 开发者自测、07 独立验证与评审），查不到就只显示步骤号，不编名字。没挂工作流的老任务没有标签。</li><li><strong>任务详情面板</strong>（右侧）多一行「工作流：这次需求的标题 · 第 05 步 开发执行」。</li><li><strong>现有按钮行为不变</strong>：归档 / 删除 / 恢复 / 批量 / 全选 / 状态筛选页签 / 显示已归档，都照常作用于过滤后的可见行。</li><li><strong>旧后端降级保护</strong>：见第一节第 1 点。</li></ul>
+<p>一处我做了又改掉的：第一版把步骤标签放在标题前面，断言全过，但我看截图发现它把标题挤成三四个字（「目标…」「交付物时…」）。标签是次要信息，标题才是主要的，所以挪到了操作行。脚本里加了断言锁住这一点：带标签的行，标题行宽度必须等于无标签的行（实测都是 144.2px）。</p>
+<hr>
+<h2 id="s-六-b1-b11-逐条结果-44">六、B1–B11 逐条结果</h2>
+<div class="tw"><table><thead><tr><th>#</th><th>标准</th><th>结果</th><th>证据</th></tr></thead><tbody><tr><td>B1</td><td>迁移 v9 加两列，旧行不丢</td><td><strong>过（带说明）</strong></td><td>生产库副本：v8 → v9、两列 + 索引、3 行 × 15 列全等、rowid 不变、新列 NULL。<strong>这 3 行是副本里补的，生产库本身 0 行</strong>；另单测 <code>B1</code> 用自造 v8 库文件验旧行保留</td></tr><tr><td>B2</td><td>不删表重建</td><td><strong>过</strong></td><td><code>web/</code> 下无 <code>DROP TABLE</code>；v9 只 <code>ALTER TABLE ADD COLUMN</code>；rowid 不变</td></tr><tr><td>B3</td><td>POST /api/tasks 能带 workflow_run_id</td><td><strong>过</strong></td><td><code>B3</code>：查库两列有值；<code>B3b</code> 只给 run；<code>B3c</code> 三种非法挂点都拒且不建</td></tr><tr><td>B4</td><td>GET 按 run 过滤</td><td><strong>过</strong></td><td><code>B4</code>：2 个 run 各 3 条，各查各的 3 条</td></tr><tr><td>B5</td><td>GET 按 run + step 过滤</td><td><strong>过</strong></td><td><code>B5</code>：05 步 2 条、06 步 1 条，不相交；别的 run 的同号步骤不混入</td></tr><tr><td>B6</td><td>不带 run 的老任务仍能查到</td><td><strong>过</strong></td><td><code>B6</code>：默认列表包含、挂点字段为 null、按 run 过滤时不出现；<code>B6b</code> 只给步骤 → 400</td></tr><tr><td>B7</td><td>批量建 N 条并自动填两字段</td><td><strong>过</strong></td><td><code>B7</code>：一次 5 条，库里全对、顺序 = 任务书顺序；<code>B7b</code> 整批回滚；<code>B7c</code> 400 / 405</td></tr><tr><td>B8</td><td>不存在的 run_id → 404</td><td><strong>过</strong></td><td><code>B8</code>：真实服务返回 404 <code>RUN_NOT_FOUND</code>，没建任务</td></tr><tr><td>B9</td><td>run 里没这步 → 404</td><td><strong>过</strong></td><td><code>B9</code>：404 <code>STEP_NOT_FOUND</code>，没建任务</td></tr><tr><td>B10</td><td>上一版 A1–A10 仍通过，12/12</td><td><strong>过（带说明）</strong></td><td>原文件 11/12（仅 M1 版本写死）；M1 改 2 行后 12/12。详见第一节第 2 点</td></tr><tr><td>B11</td><td>界面按 run 过滤生效、显示步骤标签</td><td><strong>过</strong></td><td>截图 03 / 03b / 04 / 04b / 05 / 05b；脚本抓到真实请求 <code>GET /api/tasks?workflow_run_id=…</code> 200，返回的 3 条全属该 run</td></tr></tbody></table></div>
+<hr>
+<h2 id="s-七-定向测试真实输出-47">七、定向测试真实输出</h2>
+<h3 id="s-7-1-新测试-48">7.1 新测试</h3>
+<details class="code" open><summary>bash · 点击折叠</summary><pre><code>node --no-warnings --test test/tasks-workflow-link.test.js</code></pre></details>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>✔ B1 迁移 v9：v8 库加 workflow_run_id / workflow_step_id 两列，旧行还在、新列为 NULL
+✔ B2 不删表重建：迁移代码里没有 DROP TABLE，v9 只 ALTER TABLE ADD COLUMN
+✔ B1b 全新库直接建到 v9：tasks 表自带两列
+✔ B3 POST /api/tasks 带 workflow_run_id + workflow_step_id：库里两列都有值
+✔ B3b 只给 run 不给步骤：允许（属于这次需求，没挂到具体某步）
+✔ B3c 挂点校验：run 不存在 404、run 里没这步 404、只给步骤 400，且都不建任务
+✔ B4 GET /api/tasks?workflow_run_id=X：2 个 run 各 3 条，查询只返回该 run 的 3 条
+✔ B5 GET 按 run + step 过滤：05 步 2 条、06 步 1 条，各查各的
+✔ B6 不带 workflow_run_id 的老任务：默认列表仍然能查到，挂点字段为 null
+✔ B6b GET 只给 workflow_step_id 不给 run：400，不猜是哪次需求
+✔ B7 批量建任务：一次建 5 条，自动填 run + step，库里全对
+✔ B7b 批量是原子的：5 条里 1 条没有 title → 400，一条都不建
+✔ B7c 批量入参：tasks 不是数组 / 空数组 → 400；路径对但方法不对 → 405
+✔ B8 传不存在的 run_id：404，且不建任务
+✔ B9 传 run 里没有的 step_id：404，且不建任务
+✔ B10 挂了工作流的任务，归档 / 恢复 / 删除 / 批量的行为与上一版一致，挂点不丢
+✔ B10 上一版 A1-A10：node --test test/tasks-archive.test.js 必须 12/12
+ℹ tests 17
+ℹ pass 17
+ℹ fail 0</code></pre></details>
+<p>HTTP 用例复用 <code>test/chat-harness.mjs</code> 起真实的 <code>web/server.js</code>（临时库 + stub 中台 + 随机端口），状态码是真实服务给的；「查库」用的是这个临时库的第二个连接。完整输出：<code>docs/runs/run-3d22e663/tasks-workflow-link-test.log</code>。</p>
+<h3 id="s-7-2-上一版测试-改动前-后-52">7.2 上一版测试：改动前 / 后</h3>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>原文件（未改）对着 v9 代码：          M1 改 2 行断言之后：
+✖ M1 迁移 v8：…                      ✔ M1 迁移 v8：…
+✔ A1 … ✔ A10（含 A9b，共 11 条）      ✔ A1 … ✔ A10（含 A9b，共 11 条）
+ℹ tests 12  pass 11  fail 1          ℹ tests 12  pass 12  fail 0
+  AssertionError: 9 !== 8
+  at test/tasks-archive.test.js:137:12</code></pre></details>
+<p>原文：<code>tasks-archive-test-v9-before-m1-adjust.log</code>（改前）、<code>tasks-archive-test-v9.log</code>（改后）。</p>
+<h3 id="s-7-3-额外的两个窄回归-55">7.3 额外的两个窄回归</h3>
+<p>我改的两处——<code>api-workflow-runs.mjs</code> 的路由、<code>createTask</code> / <code>listTasks</code> 的内部实现——在 HTTP 级和端到端的覆盖主要在这两个脚本里，所以单独跑了一遍。两个脚本都自带隔离（系统临时目录建库、独立端口），不碰生产库和 8090。</p>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>node --no-warnings scripts/verify-workflow-engine.mjs   →  通过 15/15（W1–W14 + EXTRA，真实 HTTP）
+node --no-warnings scripts/selftest-p0.mjs              →  规定测试 8/8 通过 · 附加必验 3/3 通过 · P0 SELFTEST PASS</code></pre></details>
+<hr>
+<h2 id="s-八-全量回归-临时库-与那条偶发失败-59">八、全量回归（临时库）与那条偶发失败</h2>
+<p><strong>隔离方式：</strong> <code>AGENT_OFFICE_DB</code> 指向系统临时目录下的新库；G07 夹具 spawn 的 <code>server.js</code> 继承同一环境变量。跑前跑后对 <code>data/agent-office.db</code>、<code>-wal</code>、<code>-shm</code> 做 sha256，<strong>每一次都一致</strong>：</p>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>5d77e7b1565a5c8e221727639dbc0e0ab39adbb13a4c9e82ae15283187cb2d34 *data/agent-office.db
+93101e9c579d8841e52f57b15318360d3e6719ec06ad3fe863c5d5cce1519063 *data/agent-office.db-wal
+f535fb3713282d3b8c0a6de548a1cf1446da295563b111d08e5b5c591f3b1fa0 *data/agent-office.db-shm</code></pre></details>
+<details class="code" open><summary>bash · 点击折叠</summary><pre><code>AGENT_OFFICE_DB=&quot;&lt;临时目录&gt;/full-suite.db&quot; node --no-warnings --test test/*.test.js</code></pre></details>
+<div class="tw"><table><thead><tr><th>次</th><th>tests</th><th>pass</th><th>fail</th><th>说明</th></tr></thead><tbody><tr><td>上一轮基线</td><td>348</td><td>338</td><td>10</td><td><code>full-suite-tempdb.log</code></td></tr><tr><td>第 1 次</td><td>365</td><td>354</td><td><strong>11</strong></td><td>348 + 我新增的 17。10 条同基线，<strong>多 1 条</strong> <code>g07-pages</code> A1</td></tr><tr><td>第 2 次（带金丝雀）</td><td>365</td><td>355</td><td>10</td><td>正好是基线那 10 条</td></tr><tr><td>第 3 次（带金丝雀，存档）</td><td>365</td><td>355</td><td>10</td><td>同上；<code>full-suite-canary-v9.log</code></td></tr></tbody></table></div>
+<p>稳定失败的 10 条全部在本次未改动的旧 UI 回归文件里（<code>g02-flows</code> 1 条、<code>g07-r72</code> 3 条、<code>g07-r73</code> 6 条），与上一轮报告第七节列的完全相同。</p>
+<p><strong>多出来的那条是什么（第 1 次）：</strong> <code>test/g07-pages.test.js</code> 的 A1「首页驾驶舱首屏」挂在 <code>consoleErrs</code> 断言——首页加载时有一个请求拿到 500。查证过程：</p>
+<ul class="ol"><li>这个文件不引用我改的任何东西（<code>api/tasks</code>、<code>board-cromma</code>、<code>workflow</code>、<code>lib/tasks</code> 均无）。</li><li>单独复跑该文件 2 次，都是 4/4。</li><li>写了个「金丝雀」：全量套件并行跑的同时，用同一个 G07 夹具反复加载首页（共用同一个临时库）。57 次加载，0 个 5xx，0 条服务端错误。（脚本：<code>docs/runs/run-3d22e663/probes/canary.mjs</code>）</li><li>怀疑是「多个进程同时第一次打开同一个还不存在的库」。单独做实验：10 个真实 <code>web/server.js</code> 同时第一次打开同一个新库、同时各发 2 个首个请求。<strong>3 轮分别有 18/20、18/20、5/20 个请求 500</strong>，服务端 stderr 是（脚本：<code>probes/first-open-race.mjs</code>）：</li></ul>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>[错误] GET /api/workflow/runs → ERR_SQLITE_ERROR: database is locked
+[错误] GET /api/tasks → ERR_SQLITE_ERROR: database is locked</code></pre></details>
+<p>（存档：<code>first-open-race.log</code>。）</p>
+<p><strong>结论与边界：</strong></p>
+<ul class="ul"><li>这是 <code>openDb</code> / <code>applyMigrations</code> 的<strong>既有并发缺陷</strong>：没有任何跨进程串行化，多个进程同时首次创建并迁移同一个库时会锁冲突。不是 v9 引入的，也不是这次任务范围内的东西，我<strong>没有改</strong>它。</li><li>我<strong>没有定位到</strong>真实流程里具体是哪条语句锁住。我另做了一个简化复刻，撞出来的是 <code>duplicate column name</code>（那个复刻没有「先查列再 ALTER」），和真实服务里的 <code>database is locked</code> 不是同一条语句——所以这里只能说清现象和出错层级，说不清具体语句。</li><li>对线上的影响：只发生在「多个进程同时首次创建一个新库」时。生产库已存在（WAL 模式），8090 是单进程，重启不会触发。</li><li>建议的修法（另开一个小改动做，配并发打开的测试）：<code>applyMigrations</code> 每个版本用 <code>BEGIN IMMEDIATE</code> 包住，进事务后重读 <code>schema_version</code>，别人迁过就跳过；<code>busy_timeout</code> 提到 <code>journal_mode</code> 之前设。</li></ul>
+<hr>
+<h2 id="s-九-截图与自查-72">九、截图与自查</h2>
+<p>脚本：<code>node --no-warnings scripts/tasks-workflow-link-shots.mjs</code>（临时库 + stub 中台 + 随机端口 + 真实 Chrome；不连 <code>data/agent-office.db</code>、不碰 8090）。断言全部通过，<code>pageErrors</code> 为空。<strong>每一张我都打开看过。</strong></p>
+<div class="tw"><table><thead><tr><th>截图</th><th>我看到了什么</th></tr></thead><tbody><tr><td><code>01-db-copy-before-migration.png</code></td><td>迁移前：版本 8，15 列、没有新列；3 行带「【副本补行·非生产数据】」标注；底部写明「生产库 tasks 当前 0 行」「生产库未被打开、未改动」</td></tr><tr><td><code>02-db-copy-after-migration.png</code></td><td>迁移后：版本 9，第 15 / 16 列标「← 新增」，三行新列是 <code>NULL NULL</code>，索引列表里有 <code>idx_tasks_workflow</code>，7 项核对全 <code>[OK]</code></td></tr><tr><td><code>03-board-all-tasks-step-tags-1440x900.png</code>、<code>03b-rail-all-tasks-step-tags-2x.png</code></td><td>「全部任务（不按工作流过滤）」，7 条；两条老任务没有标签；挂了工作流的任务标题完整（「目标达成卡片」等），下方操作行左端是「07 独立验证与评审」「05 开发执行」「06 开发者自测」</td></tr><tr><td><code>04-board-filter-by-run-1440x900.png</code>、<code>04b-rail-filter-by-run-2x.png</code></td><td>选中 run 后下拉变琥珀色，任务数 3，只剩这次需求的 3 条；底部 toast「按工作流过滤：看板：任务列表支持批量归档 · 3 个任务」</td></tr><tr><td><code>04c-task-detail-workflow-row.png</code></td><td>右侧任务详情「进度」里多一行「工作流　看板：任务列表支持批量归档 · 第 05 步 开发执行」</td></tr><tr><td><code>05-board-batch-created-1440x900.png</code>、<code>05b-rail-batch-created-2x.png</code></td><td>批量建 5 条后：任务数 8，新 5 条排在最前，每条带「05 开发执行」</td></tr><tr><td><code>06-batch-api-response.png</code></td><td>批量接口响应表：HTTP 201、<code>created = 5</code>、5 行的 <code>workflow_run_id</code> / <code>workflow_step_id</code> / <code>workflow_step_name</code> 全对</td></tr><tr><td><code>07-old-backend-guard-rail-2x.png</code></td><td>模拟后端没重启：下拉灰掉、斜体「全部任务（服务端未重启，…」，没有步骤标签——就是 8090 现在的状态</td></tr></tbody></table></div>
+<p>两点要说清：</p>
+<ul class="ul"><li><strong>01 / 02 不是终端截图。</strong> 页面里的文字是脚本用 <code>node:sqlite</code> 查副本得到的逐字输出，渲染成页面后截的图；原始文本在同目录的 <code>migration-before.txt</code> / <code>migration-after.txt</code>。</li><li><strong>06 是响应的投影</strong>，不是完整 JSON；完整原文在同目录 <code>batch-response.json</code>，一字未改。</li></ul>
+<p>脚本除了看图还验了这些（结果在 <code>shot-evidence.json</code>）：</p>
+<details class="code" open><summary>text · 点击折叠</summary><pre><code>全部任务：7 行，5 个步骤标签（05×3、06、07），老任务 0 个标签，初始不按工作流过滤
+标题行宽度：带标签 144.2px = 无标签 144.2px（标签不挤标题）
+按 run 过滤：抓到真实请求 GET /api/tasks?workflow_run_id=&lt;run A&gt; → 200，3 条全属 run A
+过滤后对挂了工作流的任务点「归档」：标签「05 开发执行」+「已归档」都在，opacity 0.55；点「恢复」回来
+批量建任务：201，created 5；库里 run A / 05 步 7 条（原 2 + 新 5）
+坏任务书（5 条里 1 条没 title）：400 BAD_TITLE「tasks[1] 需要非空字符串 title」，库里 0 条
+旧后端（模拟）：下拉 disabled，步骤标签 0 个
+生产库三个文件：跑前跑后 sha256 一致</code></pre></details>
+<hr>
+
+<h3 id="gallery">截图原图</h3>
+<div class="gal">
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/01-db-copy-before-migration.png" alt="01 迁移前 · 生产库副本（v8）"><figcaption>01 迁移前 · 生产库副本（v8）</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/02-db-copy-after-migration.png" alt="02 迁移后 · 同一副本（v9）"><figcaption>02 迁移后 · 同一副本（v9）</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/03-board-all-tasks-step-tags-1440x900.png" alt="03 全部任务 · 带步骤标签（1440×900）"><figcaption>03 全部任务 · 带步骤标签（1440×900）</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/04-board-filter-by-run-1440x900.png" alt="04 按选中的 run 过滤（1440×900）"><figcaption>04 按选中的 run 过滤（1440×900）</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/05-board-batch-created-1440x900.png" alt="05 批量建 5 条之后（1440×900）"><figcaption>05 批量建 5 条之后（1440×900）</figcaption></figure>
+</div>
+<div class="gal gal--rails">
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/03b-rail-all-tasks-step-tags-2x.png" alt="03b 左栏 2x · 全部任务"><figcaption>03b 左栏 2x · 全部任务</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/04b-rail-filter-by-run-2x.png" alt="04b 左栏 2x · 按 run 过滤"><figcaption>04b 左栏 2x · 按 run 过滤</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/05b-rail-batch-created-2x.png" alt="05b 左栏 2x · 批量之后"><figcaption>05b 左栏 2x · 批量之后</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/07-old-backend-guard-rail-2x.png" alt="07 左栏 2x · 旧后端降级（8090 现状）"><figcaption>07 左栏 2x · 旧后端降级（8090 现状）</figcaption></figure>
+</div>
+<div class="gal gal--wide">
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/04c-task-detail-workflow-row.png" alt="04c 任务详情的「工作流」行"><figcaption>04c 任务详情的「工作流」行</figcaption></figure>
+  <figure><img loading="lazy" src="../../screenshots/tasks-workflow-link/06-batch-api-response.png" alt="06 批量建任务接口响应"><figcaption>06 批量建任务接口响应</figcaption></figure>
+</div>
+<h2 id="s-十-技术选择-自己判断的-说明理由-80">十、技术选择（自己判断的，说明理由）</h2>
+<div class="tw"><table><thead><tr><th>选择</th><th>理由</th><th>你可能想改的地方</th></tr></thead><tbody><tr><td>只给 <code>workflow_step_id</code> 不给 <code>workflow_run_id</code> → 400（写入和查询都这样）</td><td>「05」这种步骤号只在一次 run 里有意义，半截挂点没法追溯是哪次需求</td><td>如果想要「跨所有 run 看第 05 步的任务」，放开查询侧是一行的事</td></tr><tr><td><code>POST /api/tasks</code> 带了 run 就校验存在性（404）</td><td>不让任务挂到不存在的 run / 步骤上，和批量接口口径一致</td><td>任务书只写了「接受」这两个字段，没写校验</td></tr><tr><td>批量建任务整批原子</td><td>任务书是一个整体；部分成功 + 重试 = 重复任务</td><td>如果更想要「逐条结果、允许部分失败」，要另定口径</td></tr><tr><td>同批时间戳逐条 +1ms</td><td>列表按 <code>updated_at</code> 倒序，整批顺序才确定</td><td>副作用：后建的几条 <code>created_at</code> 比请求时刻晚几毫秒</td></tr><tr><td>两列不加外键</td><td>run 归档 / 模板升级不该反过来卡住任务表写入</td><td>—</td></tr><tr><td>响应多给一个派生字段 <code>workflow_step_name</code></td><td>步骤名不在 <code>workflow_run_steps</code> 里，要按 run 的模板版本取；服务端查一次比前端硬编码九步名可靠（模板可改）</td><td>—</td></tr><tr><td>GET 过滤时不校验 run 是否存在（不存在的 run 返回空列表）</td><td>列表接口的常规语义；404 只用在写入上</td><td>如果想要「查一个不存在的 run 报 404」可以加</td></tr><tr><td>没限制 run 的状态</td><td>已完成 / 已归档的 run 下也能补建任务；任务书没说</td><td>见第十二节 Q2</td></tr><tr><td>404 沿用 <code>RUN_NOT_FOUND</code> / <code>STEP_NOT_FOUND</code></td><td>和 <code>/api/workflow/runs*</code> 引擎里已有的错误码保持同一套</td><td>—</td></tr><tr><td>没加每批条数上限</td><td>与上一轮 <code>/api/tasks/batch</code> 一致；1MB 请求体是天然上限</td><td>—</td></tr></tbody></table></div>
+<hr>
+<h2 id="s-十一-达到目标没有-还差哪些-83">十一、达到目标没有，还差哪些</h2>
+<p><strong>目标</strong>：建立 <code>workflow_run → run_step → tasks</code> 的关系，能按步骤挂任务、按需求过滤、界面上看得见。</p>
+<p><strong>在临时环境里达成了</strong>：库有关系（v9 两列 + 索引）、API 能挂能滤能批量建、界面能按 run 过滤并显示步骤标签，B1–B11 都有证据。</p>
+<p><strong>没达成 / 还差的：</strong></p>
+<ul class="ol"><li><strong>线上没生效。</strong> 8090 没重启，生产库还是 v8，看板上的下拉是禁用状态。这是最大的一条。</li><li><strong>「当前选中的工作流 run」在这个看板里原本不存在。</strong> 工作流视图（<code>workflow-runs.js</code>）只挂在 <code>index.html</code> 上，<code>board-cromma</code> 从来不请求 <code>/api/workflow/runs</code>。我在左栏加了一个下拉当「选中」。如果你说的是 <code>index.html</code> 工作流视图里选中的那个 run，需要跨页面联动，是另一件事。</li><li><strong>界面上没有「从任务书批量建任务」的入口</strong>，目前只有 API。任务书的界面部分只点了过滤和标签，我没擅自加按钮。</li><li><strong>真实旧行的迁移验证做不了</strong>，因为生产库 <code>tasks</code> 是 0 行（第一节第 3 点）。</li><li><strong>既有的并发首次开库缺陷没修</strong>（第八节），只查了现象、留下了证据和修法建议。</li><li><strong>没测的</strong>：两个请求同时批量建任务；模板改版 / 换模板后旧任务的步骤名解析（现在查不到会退回只显示步骤号，逻辑在但没有用例压着）。</li><li><strong>全量里有 10 条上一轮就失败的旧 UI 回归</strong>，没修，与本次无关。</li></ul>
+<p><strong>过程中我自己出错又改掉的地方</strong>（免得看证据时被误导）：</p>
+<ul class="ul"><li>第一版截图脚本的「旧行不丢」核对是空过的：生产库 0 行，<code>0 → 0</code> 也判 OK。改成行数必须 &gt; 0，并在副本里补行。</li><li>核对一开始只比了我认识的 11 列，漏了生产库多出来的 4 列。改成按迁移前全部 15 列比。</li><li>嵌套跑 <code>node --test</code> 时子进程不输出汇总（环境里有 <code>NODE_TEST_CONTEXT</code>），第一次是靠「读不到汇总就判失败」拦住的，没让它空过。</li></ul>
+<hr>
+<h2 id="s-十二-需求层面要问-leo-的-91">十二、需求层面要问 Leo 的</h2>
+<ul class="ol"><li><strong>「当前选中的工作流 run」指哪里的选中？</strong> 看板 V2 原来没有这个概念，我做成了左栏下拉。要不要和 <code>index.html</code> 工作流视图里选中的 run 联动？</li><li><strong>任务能不能挂到已完成 / 已归档的 run 或步骤上？</strong> 现在允许。</li><li><strong>批量建任务要不要界面入口？</strong> 比如在九步视图的某一步上放一个「从任务书建任务」。</li><li><strong>一个任务只属于一次需求的一步</strong>（现在这样），够不够？有没有一个任务要跨多步的情况？</li><li><strong>生产库任务表被清空（需求E）</strong> 是预期的吧？我只是核对时发现的，文档里有记录。</li><li><strong>什么时候重启 8090？</strong> 重启后新功能才上线，同时会把生产库迁到 v9。</li><li>上一轮测试 M1 那 2 行断言的改法你认不认（第一节第 2 点）。</li></ul>
+<hr>
+<h2 id="s-十三-复现命令-94">十三、复现命令</h2>
+<details class="code" open><summary>bash · 点击折叠</summary><pre><code># 1. 定向验收
+node --no-warnings --test test/tasks-workflow-link.test.js     # 17/17
+node --no-warnings --test test/tasks-archive.test.js           # 12/12（M1 调整后）
+
+# 2. 全量（务必用临时库）
+AGENT_OFFICE_DB=&quot;&lt;临时目录&gt;/full-suite.db&quot; node --no-warnings --test test/*.test.js
+
+# 3. 迁移实证 + 截图（脚本自己拷生产库副本、建临时库与临时配置）
+node --no-warnings scripts/tasks-workflow-link-shots.mjs
+
+# 4. 第八节的两个实验（都会跑全量 / 起多个真实服务，各约 1 分钟；全部用临时库）
+node --no-warnings &quot;docs/runs/run-3d22e663/probes/canary.mjs&quot; &quot;&lt;仓库根&gt;&quot;
+node --no-warnings &quot;docs/runs/run-3d22e663/probes/first-open-race.mjs&quot; &quot;&lt;仓库根&gt;&quot; 10 3</code></pre></details></main>
+</div>
+<script>
+(function () {
+  var main = document.querySelector('main');
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  function clear() {
+    main.querySelectorAll('mark').forEach(function (m) {
+      var p = m.parentNode;
+      p.replaceChild(document.createTextNode(m.textContent), m);
+      p.normalize();
+    });
+  }
+  q.addEventListener('input', function () {
+    clear();
+    var v = q.value.trim();
+    if (!v) { count.textContent = ''; return; }
+    var n = 0;
+    var w = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+    var parts = [];
+    var node;
+    while ((node = w.nextNode())) {
+      if (node.parentNode.closest('script,style')) continue;
+      if (node.nodeValue.indexOf(v) >= 0) parts.push(node);
+    }
+    parts.forEach(function (textNode) {
+      var frag = document.createDocumentFragment();
+      var text = textNode.nodeValue;
+      var idx = 0;
+      for (;;) {
+        var at = text.indexOf(v, idx);
+        if (at < 0) { frag.appendChild(document.createTextNode(text.slice(idx))); break; }
+        frag.appendChild(document.createTextNode(text.slice(idx, at)));
+        var m = document.createElement('mark');
+        m.textContent = text.substr(at, v.length);
+        frag.appendChild(m);
+        n += 1;
+        idx = at + v.length;
+      }
+      textNode.parentNode.replaceChild(frag, textNode);
+    });
+    count.textContent = n ? ('匹配 ' + n + ' 处') : '无匹配';
+  });
+  function all(open) { main.querySelectorAll('details.code').forEach(function (d) { d.open = open; }); }
+  document.getElementById('collapse').addEventListener('click', function () { all(false); });
+  document.getElementById('expand').addEventListener('click', function () { all(true); });
+})();
+</script></body></html>

@@ -1,0 +1,111 @@
+{
+  "at": "2026-11-25T03:47:02.352Z",
+  "base": "http://127.0.0.1:59822",
+  "probe": "review-r3-verify",
+  "r2_1": {
+    "task": "t-20261125034703-348a7c",
+    "a": "a-e9c4a8a1-mwvl16qa",
+    "firstConfirm": {
+      "taskId": "t-20261125034703-348a7c",
+      "attemptId": "a-e9c4a8a1-mwvl16qa",
+      "at": 1795578424277,
+      "message": "执行实例 a-e9c4a8a1-mwvl16qa（dsh）不是本服务启动的，也没有登记进程号，本服务无法确认它是否还在运行。请先在启动它的地方停止它；确认已经停止后再点一次「确认已停止」（接口上是带 confirm=true 和这个实例的 attempt_id），本服务会把这次实例记为「用户停止」，不写任何验收结论。"
+    },
+    "b": "a-fc752ee2-mwvl179c",
+    "afterRefresh": {
+      "clearedConfirm": null,
+      "confirmText": "停止"
+    },
+    "unboundConfirm": {
+      "status": 400,
+      "code": "STOP_CONFIRM_REQUIRES_ATTEMPT"
+    },
+    "staleConfirm": {
+      "status": 409,
+      "code": "STOP_TARGET_CHANGED",
+      "message": "要停止的执行实例 a-e9c4a8a1-mwvl16qa 已经不在运行；当前运行中的是 a-fc752ee2-mwvl179c。你手里的确认对应的是已经结束的那次执行，不适用于现在的实例——请重新点「停止」走一遍确认。"
+    },
+    "deleteWhileBRunning": {
+      "status": 409,
+      "code": "TASK_RUNNING"
+    },
+    "externalWorker": {
+      "pid": 47628,
+      "alive": true,
+      "consistentWith": "B 仍为 running、删除被拒——口径一致"
+    },
+    "legitimateFlow": {
+      "stop": 200,
+      "remaining": 0,
+      "delete": 200
+    }
+  },
+  "r2_2": {
+    "task": "t-20261125034704-c62291",
+    "startStatuses": [
+      201,
+      409
+    ],
+    "secondStartCode": "ATTEMPT_ALREADY_RUNNING",
+    "legacy": {
+      "inserted": "a-r3legacy-mwvl17e9",
+      "running": [
+        "a-39978f99-mwvl17e5",
+        "a-r3legacy-mwvl17e9"
+      ]
+    },
+    "stopButtonsBefore": 1,
+    "firstStop": {
+      "status": 409,
+      "code": "STOP_UNVERIFIED",
+      "attempt_id": "a-r3legacy-mwvl17e9"
+    },
+    "confirmStop": {
+      "status": 200,
+      "remaining": {
+        "count": 1,
+        "attempts": [
+          {
+            "attempt_id": "a-39978f99-mwvl17e5",
+            "agent_id": "dsh",
+            "pid": null
+          }
+        ]
+      }
+    },
+    "stopButtonsAfterOneStop": 1,
+    "deleteWhileRemaining": {
+      "status": 409,
+      "code": "TASK_RUNNING"
+    },
+    "confirmStopRemaining": {
+      "status": 200,
+      "remaining": 0
+    },
+    "deleteAfterAllStopped": 200
+  },
+  "r2_3": {
+    "task": "t-20261125034706-4c41d5",
+    "before": {
+      "status": "running",
+      "status_reason": "任务已创建，尚未开始执行（等待派活）",
+      "updated_at": "2026-11-25T03:47:06.183Z"
+    },
+    "response": {
+      "status": 500,
+      "code": "ERR_SQLITE_ERROR"
+    },
+    "after": {
+      "status": "running",
+      "status_reason": "任务已创建，尚未开始执行（等待派活）",
+      "updated_at": "2026-11-25T03:47:06.183Z"
+    },
+    "events": 0,
+    "control": {
+      "status": 200,
+      "taskStatus": "waiting",
+      "dbStatus": "waiting",
+      "events": 1
+    }
+  }
+}

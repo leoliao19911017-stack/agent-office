@@ -35,6 +35,7 @@
     </nav>
 
     <div class="topbar__right">
+      <a class="btn-refresh" id="office-entry" href="/office" hidden>办公室 ↗</a>
       <span class="datasrc"><i class="live-dot" aria-hidden="true"></i>数据源 <b>127.0.0.1:8090</b></span>
       <span class="updated">观测 <b id="updated-at">—</b></span>
       <button class="btn-refresh" id="refresh-btn" type="button">
@@ -61,14 +62,39 @@
       <section class="tasks" aria-label="任务列表">
         <div class="tasks__head">
           <h2 class="eyebrow">任务 <span id="task-count">—</span></h2>
-          <span class="tasks__hint">点一行看详情</span>
+          <span class="tasks__hint" id="tasks-hint">点一行看详情</span>
         </div>
+        <!-- 除了「全部」，六个分类两两互斥、合起来覆盖所有任务状态（见 board-cromma.js 的 TASK_BUCKETS）：
+             以前没有「完成」「空闲」，已完成的任务只出现在「全部」里 -->
         <div class="filters" id="task-filters" role="group" aria-label="任务筛选">
           <button type="button" data-filter="all" class="filter is-active" aria-pressed="true">全部 <b>—</b></button>
           <button type="button" data-filter="running" class="filter" aria-pressed="false">执行 <b>—</b></button>
           <button type="button" data-filter="relay" class="filter" aria-pressed="false">接力 <b>—</b></button>
           <button type="button" data-filter="risk" class="filter" aria-pressed="false">异常 <b>—</b></button>
           <button type="button" data-filter="unknown" class="filter" aria-pressed="false">未知 <b>—</b></button>
+          <button type="button" data-filter="completed" class="filter" aria-pressed="false" title="已完成的任务">完成 <b>—</b></button>
+          <button type="button" data-filter="idle" class="filter filter--wide" aria-pressed="false" title="已关闭、没有待继续工作的任务">空闲 <b>—</b></button>
+        </div>
+        <div class="task-tools">
+          <label class="task-all"><input type="checkbox" id="task-select-all" aria-label="全选当前列表"><span>全选</span></label>
+          <!-- 归档 ≠ 删除：归档的任务在「显示已归档」里看；删除的任务进「回收站」，两边各自恢复 -->
+          <span class="task-tools__toggles">
+            <button type="button" class="task-arch-toggle" id="task-archived-toggle" aria-pressed="false" title="归档任务默认不返回；打开后显示并可恢复">显示已归档</button>
+            <button type="button" class="task-arch-toggle task-trash-toggle" id="task-trash-toggle" aria-pressed="false" title="回收站：只看已删除的任务（软删，可恢复）">回收站</button>
+          </span>
+        </div>
+        <!-- v9：任务挂在工作流步骤上。选中一次需求（run）= 只看它拆出来的任务；「全部任务」= 不过滤 -->
+        <label class="task-runbar" for="task-run-select" title="按工作流 run 过滤：只看这一次需求拆出来的任务（真请求 /api/tasks?workflow_run_id=…）">
+          <span>工作流</span>
+          <select id="task-run-select" aria-label="按工作流 run 过滤任务">
+            <option value="">全部任务（不按工作流过滤）</option>
+          </select>
+        </label>
+        <div class="task-batch" id="task-batch" hidden>
+          <span class="task-batch__count">已选 <b id="task-batch-count">0</b> 条</span>
+          <button type="button" data-batch="archive" title="归档选中任务（不改状态）">归档</button>
+          <button type="button" data-batch="delete" title="删除选中任务（运行中的会逐条失败并说明原因）">删除</button>
+          <button type="button" data-batch="restore" title="恢复选中任务的原状态">恢复</button>
         </div>
         <div class="task-list" id="task-list">
           <div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div>
@@ -80,7 +106,7 @@
 
       <footer class="rail-foot">
         <p><b>判定口径</b> 没有最新可信证据就保持 unknown，不兜底成 idle。</p>
-        <p class="rail-foot__src">状态：/api/agents/status-v2 · 任务：/api/tasks · 对话：/api/chat</p>
+        <p class="rail-foot__src">状态：/api/agents/status-v2 · 任务：/api/tasks · 工作流：/api/workflow/runs · 对话：/api/chat</p>
       </footer>
     </aside>
 
@@ -206,5 +232,12 @@
 <script src="/board-agent-admin.js"></script>
 <script src="/board-chat.js"></script>
 <script src="/board-cromma.js"></script>
+<script>
+  // 静态看板即时更新，服务进程加载办公室路由后，再显示入口。
+  const officeEntry = document.getElementById('office-entry');
+  fetch(officeEntry.href, { method: 'HEAD', cache: 'no-store' }).then((response) => {
+    officeEntry.hidden = !response.ok;
+  }).catch(() => {});
+</script>
 </body>
 </html>

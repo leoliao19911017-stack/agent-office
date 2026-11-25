@@ -1,0 +1,71 @@
+{
+  "at": "2026-11-24T17:51:41.919Z",
+  "base": "http://127.0.0.1:8090",
+  "backend": {
+    "hasApiFeatures": true,
+    "runListHasArchivedAt": false,
+    "verdict": "第一轮返工的代码（还没有第二轮的后端改动：completed→idle、进度、archived_at 都还在）"
+  },
+  "frontend": {
+    "hasCompletedFilter": true,
+    "hasIdleFilter": true,
+    "jsHasTaskBuckets": true,
+    "jsFiltersArchivedRuns": true
+  },
+  "api": {
+    "tasksStatus": 200,
+    "count": 10,
+    "byStatus": {
+      "idle": 10
+    },
+    "byProgress": {
+      "0/1": 10
+    },
+    "sampleReason": "任务已关闭，没有待继续的工作",
+    "runCount": 4,
+    "archivedRunsInApi": 0
+  },
+  "board": {
+    "rows": 10,
+    "filterCounts": {
+      "all": "10",
+      "running": "0",
+      "relay": "0",
+      "risk": "0",
+      "unknown": "0",
+      "completed": "0",
+      "idle": "10"
+    },
+    "rowProgress": [
+      "0/1"
+    ],
+    "rowStatusTitles": [
+      "空闲"
+    ],
+    "runOptions": [
+      {
+        "value": "",
+        "text": "全部任务（不按工作流过滤）"
+      },
+      {
+        "value": "3d22e663-a27f-417c-829b-b6b7fbcc5fad",
+        "text": "验证A：任务归档与删除（九步全流程实测） · 第 05 步 开发执行"
+      },
+      {
+        "value": "a7a5a683-2a09-4bd7-9629-086bfa63789f",
+        "text": "��֤������鵵��ɾ�����Ų�ȫ����ʵ�⣩ · 第 01 步 需求输入"
+      },
+      {
+        "value": "c556be13-a0cb-4717-8f65-6f637f74b6ef",
+        "text": "Agent Office 工作流编排（从定义到可执行） · 第 07 步 独立验证与评审"
+      },
+      {
+        "value": "ac42b1fc-8efa-4ea1-8898-33f8eac96b41",
+        "text": "测试：归档功能实战 · 第 02 步 需求澄清"
+      }
+    ],
+    "errors": [],
+    "nonGetRequests": [],
+    "specificSum": 10
+  }
+}

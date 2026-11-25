@@ -92,6 +92,16 @@ export function latestRunningAttempt(db, taskId = null) {
 }
 
 /**
+ * 这个任务还没结束的全部执行实例（不止最新一条）。
+ * latestRunningAttempt 只认「最新一条 running」——单活动实例约束上线前的遗留数据里
+ * 可能同时有多条 running：停止入口的按钮显隐、停止后的剩余数、启动约束的冲突提示都看全量，
+ * 不能只看最新的那个（R2-2）。
+ */
+export function listRunningAttempts(db, taskId = null) {
+  return listAttempts(db, { ...(taskId ? { taskId } : {}), status: 'running', limit: 50 });
+}
+
+/**
  * 结束一次执行实例。调用方负责在需要时另写 process_exit 等细节事件；
  * 本函数只改实例行 + 写 attempt_ended。
  */

@@ -52,10 +52,12 @@ function renderTopbar() {
   const t = currentTask();
   // G06：无任务且处于失败态时，顶部状态信息如实标注（不是空占位「—」）
   // R85·X03：顶栏任务名不带内部代号（代号收进任务「详细信息」）
-  document.getElementById('tb-task').textContent = t ? plainTitle(t)
+  // 工作流任务选中时，顶栏跟随显示 run 标题。
+  const wfTitle = (typeof workflowSelected === 'function' && workflowSelected()) ? workflowTopTitle() : '';
+  document.getElementById('tb-task').textContent = wfTitle || (t ? plainTitle(t)
     : initPhase === 'conn-fail' ? '连接失败'
     : initPhase === 'data-fail' ? '数据获取失败'
-    : '—';
+    : '—');
 
   // 待决策琥珀胶囊（TASK-R2，TASK-R5 评审 #5 修订）：入口同时看两件事——
   // 可拍板数 + 待重提数。之前只数可拍板，任务全在「已打回待重提」时入口整个
@@ -189,7 +191,14 @@ setInterval(() => {
 }, 1000);
 
 /* ---- 左：需求列表 ---- */
+// 普通 tasks 列表保持原逻辑（renderTaskReqList 原样搬名）；renderReqList 只在末尾
+// 追加 workflow_runs 区块。工作流数据由 workflow-runs.js 提供，不碰 tasks 表。
 function renderReqList() {
+  renderTaskReqList();
+  if (typeof renderWorkflowReqList === 'function') renderWorkflowReqList();
+}
+
+function renderTaskReqList() {
   const list = document.getElementById('reqs-list');
   const tasks = (lastFlow && lastFlow.tasks) || [];
   // TASK-R5（评审 #1）：「读取失败被当成没有数据」。服务端 flow 现在带 errors[]，
@@ -265,6 +274,14 @@ function renderCenter() {
   const chain = document.getElementById('center-chain');
   const overview = document.getElementById('center-overview');
   const btn = document.getElementById('btn-overview');
+  // 工作流任务被选中时，中间区换成九步进度（任务清单仍是 tasks 表自己的链路）。
+  if (typeof workflowSelected === 'function' && workflowSelected()) {
+    chain.hidden = false;
+    overview.hidden = true;
+    btn.classList.remove('on');
+    renderWorkflowCenter();
+    return;
+  }
   if (ui.view === 'overview') {
     chain.hidden = true;
     overview.hidden = false;
@@ -497,6 +514,14 @@ function renderInspector() {
   const body = document.getElementById('insp-body');
   const foot = document.getElementById('insp-foot');   // W01：审批操作固定底栏
   const hideFoot = () => { if (foot) { foot.innerHTML = ''; foot.hidden = true; } };
+  // 工作流任务被选中时，右侧栏展示这一步的详情（判据/执行者/交付物），
+  // 不再误显示 tasks 表里另一条需求的步骤。
+  if (typeof workflowSelected === 'function' && workflowSelected()) {
+    renderWorkflowInspector(body, foot);
+    return;
+  }
+  const inspHead = document.querySelector('#inspector .insp-head');
+  if (inspHead) inspHead.textContent = '步骤详情';
   const t = currentTask();
   if (!t) {
     body.innerHTML = '<div class="insp-empty">点左边任意一步看详情</div>';

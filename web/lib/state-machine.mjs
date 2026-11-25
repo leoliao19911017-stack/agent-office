@@ -15,6 +15,12 @@
 // 任务状态判定的优先级（从高到低）：
 //   完成（验收通过）> 阻塞 > 明确等待 > 自称完成待验收 > 外部证据（unknown）
 //   > 活动中的实例（running/interrupted/unknown）> 无实例时的中断/待验/待开始
+//
+// 硬规矩 3 的一条边界（2026-11-25）：「completed 必须绑定验收通过」管的是在本系统里跑过的任务。
+// 一条任务从来没有执行实例、也没有任何验收事件，却被记成 completed（迁移进来的历史任务、
+// 人工直接改库），那它不是在这里跑完的，状态列就是它唯一的记录——按 completed 显示，并在理由里写明
+// 凭什么。以前这种情况会落成 idle（「任务已关闭」），于是库里是 completed、接口和界面却是「空闲」。
+// 有执行实例的任务不适用：它们仍然只认验收事件。
 
 import { getRow } from './db.mjs';
 import {
@@ -421,6 +427,18 @@ export function deriveTaskState(input = {}) {
   }
 
   // ⑧ 从未有执行实例。
+  // 库里记着已完成、而这里既没有它的执行实例也没有验收事件：这条任务不是在本系统里跑完的
+  //（迁移进来的历史任务、人工直接记成完成的），状态列就是它唯一的记录，按它显示。
+  // 走到这一步说明前面没有悬而未决的阻塞 / 等待 / 自称完成（那些在 ②③④ 已经先返回了）。
+  // 执行过的任务不走这条——有 attempt 的仍然只认验收事件（硬规矩 3 不变）。
+  if (task.status === STATES.COMPLETED && !acceptance) {
+    return finish(
+      STATES.COMPLETED,
+      '任务记录为已完成（库里的状态；本系统没有它的执行实例，也没有验收事件）',
+      EVIDENCE.SYSTEM,
+      task.closed_at || task.updated_at,
+    );
+  }
   if (task.closed_at) {
     return finish(STATES.IDLE, '任务已关闭，没有待继续的工作', EVIDENCE.USER, task.updated_at);
   }
@@ -473,7 +491,8 @@ export function evaluateTaskState(db, taskId, opts = {}) {
   });
 
   const steps = getSteps(db, taskId);
-  return { ...state, ...summarizeSteps(steps) };
+  // 任务已完成时步骤按全部完成算：进度、剩余步骤要和状态说的是同一件事
+  return { ...state, ...summarizeSteps(steps, { completed: state.status === STATES.COMPLETED }) };
 }
 
 function nowIsoDefault(now) {
@@ -663,7 +682,7 @@ export function evaluateAgentStatuses(db, opts = {}) {
     let taskObj;
     if (taskState) {
       const steps = getSteps(db, lastAttempt.task_id);
-      const summary = summarizeSteps(steps);
+      const summary = summarizeSteps(steps, { completed: taskState.status === STATES.COMPLETED });
       taskObj = {
         agent_id: agentId,
         task_id: lastAttempt.task_id,

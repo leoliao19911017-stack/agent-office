@@ -1,0 +1,781 @@
+{
+  "schema": {
+    "columns": [
+      {
+        "cid": 0,
+        "name": "task_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 1
+      },
+      {
+        "cid": 1,
+        "name": "title",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 2,
+        "name": "acceptance",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 3,
+        "name": "status",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 4,
+        "name": "status_reason",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 5,
+        "name": "created_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 6,
+        "name": "updated_at",
+        "type": "TEXT",
+        "notnull": 1,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 7,
+        "name": "closed_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 8,
+        "name": "archived_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 9,
+        "name": "archived_from",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 10,
+        "name": "deleted_at",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 11,
+        "name": "workflow_run_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      },
+      {
+        "cid": 12,
+        "name": "workflow_step_id",
+        "type": "TEXT",
+        "notnull": 0,
+        "dflt_value": null,
+        "pk": 0
+      }
+    ],
+    "indexes": [
+      {
+        "seq": 0,
+        "name": "idx_tasks_workflow",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 1,
+        "name": "idx_tasks_deleted",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 2,
+        "name": "idx_tasks_archived",
+        "unique": 0,
+        "origin": "c",
+        "partial": 0
+      },
+      {
+        "seq": 3,
+        "name": "sqlite_autoindex_tasks_1",
+        "unique": 1,
+        "origin": "pk",
+        "partial": 0
+      }
+    ],
+    "integrity": {
+      "integrity_check": "ok"
+    },
+    "version": {
+      "value": "9"
+    }
+  },
+  "deleteThenAttempt": {
+    "delete": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "action": "delete",
+        "task_id": "t-20261124153900-f26a80",
+        "actor": "user:local",
+        "observed_at": "2026-11-24T15:39:00.910Z",
+        "evidence_source": "user",
+        "deleted_at": "2026-11-24T15:39:00.910Z",
+        "status": "waiting",
+        "event": {
+          "event_id": 2,
+          "task_id": "t-20261124153900-f26a80",
+          "attempt_id": null,
+          "agent_id": "user:local",
+          "event_type": "task_deleted",
+          "payload": {
+            "status_before": "waiting",
+            "deleted_at": "2026-11-24T15:39:00.910Z",
+            "running_attempt_id": null,
+            "action": "delete",
+            "actor": "user:local",
+            "at": "2026-11-24T15:39:00.910Z"
+          },
+          "evidence_source": "user",
+          "observed_at": "2026-11-24T15:39:00.910Z"
+        },
+        "task": {
+          "task_id": "t-20261124153900-f26a80",
+          "title": "Review deleted execution",
+          "acceptance": null,
+          "status": "waiting",
+          "status_reason": "任务已创建，尚未开始执行（等待派活）",
+          "created_at": "2026-11-24T15:39:00.903Z",
+          "updated_at": "2026-11-24T15:39:00.910Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": "2026-11-24T15:39:00.910Z",
+          "workflow_run_id": null,
+          "workflow_step_id": null
+        }
+      }
+    },
+    "attempt": {
+      "status": 201,
+      "body": {
+        "ok": true,
+        "observed_at": "2026-11-24T15:39:00.913Z",
+        "evidence_source": "executor",
+        "attempt": {
+          "attempt_id": "a-5be9a1e2-mwuv0wxd",
+          "task_id": "t-20261124153900-f26a80",
+          "agent_id": "dsh",
+          "status": "running",
+          "worktree_path": null,
+          "checkpoint_id": null,
+          "started_at": "2026-11-24T15:39:00.913Z",
+          "ended_at": null,
+          "end_reason": null,
+          "pid": null,
+          "session_id": null,
+          "relay_pending": false,
+          "note": null,
+          "evidence_source": "executor",
+          "observed_at": "2026-11-24T15:39:00.913Z"
+        },
+        "write_owner": null,
+        "state": {
+          "task_id": "t-20261124153900-f26a80",
+          "status": "running",
+          "status_reason": "托管实例在运行，最近 0 秒有活动事件（进程探测不可用）",
+          "evidence_source": "executor",
+          "observed_at": "2026-11-24T15:39:00.913Z",
+          "evaluated_at": "2026-11-24T15:39:00.913Z",
+          "last_activity_at": "2026-11-24T15:39:00.913Z",
+          "last_progress_at": null,
+          "last_event_type": "attempt_started",
+          "attempt_id": "a-5be9a1e2-mwuv0wxd",
+          "attempt_status": "running",
+          "active_attempt_id": "a-5be9a1e2-mwuv0wxd",
+          "process_alive": null,
+          "relay_pending": false,
+          "blocked_reason": null,
+          "verification": {
+            "result": "none",
+            "code_sha": null,
+            "command": null,
+            "report": null,
+            "observed_at": null,
+            "evidence_source": null
+          },
+          "acceptance": null,
+          "current_step": {
+            "key": "deliverable",
+            "name": "交付",
+            "status": "pending"
+          },
+          "done": [],
+          "remaining": [
+            "deliverable"
+          ],
+          "done_count": 0,
+          "total": 1
+        }
+      }
+    },
+    "row": {
+      "status": "running",
+      "deleted_at": "2026-11-24T15:39:00.910Z"
+    }
+  },
+  "nonAtomic": {
+    "response": {
+      "status": 500,
+      "body": {
+        "error": "服务内部错误",
+        "code": "ERR_SQLITE_ERROR"
+      }
+    },
+    "row": {
+      "archived_at": "2026-11-24T15:39:00.926Z"
+    },
+    "events": {
+      "n": 0
+    }
+  },
+  "restoreDrift": {
+    "restore": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "action": "restore",
+        "task_id": "t-20261124153900-054bb0",
+        "actor": "user:local",
+        "observed_at": "2026-11-24T15:39:00.952Z",
+        "evidence_source": "user",
+        "archived_at": null,
+        "status": "running",
+        "event": {
+          "event_id": 13,
+          "task_id": "t-20261124153900-054bb0",
+          "attempt_id": null,
+          "agent_id": "user:local",
+          "event_type": "task_restored",
+          "payload": {
+            "status_after": "running",
+            "status_before": "completed",
+            "was_archived": true,
+            "was_deleted": false,
+            "action": "restore",
+            "actor": "user:local",
+            "at": "2026-11-24T15:39:00.952Z"
+          },
+          "evidence_source": "user",
+          "observed_at": "2026-11-24T15:39:00.952Z"
+        },
+        "task": {
+          "task_id": "t-20261124153900-054bb0",
+          "title": "Review archive finish restore",
+          "acceptance": null,
+          "status": "running",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "created_at": "2026-11-24T15:39:00.929Z",
+          "updated_at": "2026-11-24T15:39:00.952Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": null,
+          "workflow_run_id": null,
+          "workflow_step_id": null
+        }
+      }
+    },
+    "detail": {
+      "status": 200,
+      "body": {
+        "ok": true,
+        "generated_at": "2026-11-24T15:39:00.956Z",
+        "observed_at": "2026-11-24T15:39:00.945Z",
+        "evidence_source": "user",
+        "task": {
+          "task_id": "t-20261124153900-054bb0",
+          "title": "Review archive finish restore",
+          "acceptance": null,
+          "status": "running",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "created_at": "2026-11-24T15:39:00.929Z",
+          "updated_at": "2026-11-24T15:39:00.952Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": null,
+          "workflow_run_id": null,
+          "workflow_step_id": null,
+          "evidence_source": "user",
+          "observed_at": "2026-11-24T15:39:00.945Z"
+        },
+        "state": {
+          "task_id": "t-20261124153900-054bb0",
+          "status": "completed",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "evidence_source": "user",
+          "observed_at": "2026-11-24T15:39:00.945Z",
+          "evaluated_at": "2026-11-24T15:39:00.956Z",
+          "last_activity_at": "2026-11-24T15:39:00.933Z",
+          "last_progress_at": "2026-11-24T15:39:00.945Z",
+          "last_event_type": "task_restored",
+          "attempt_id": "a-372c9a08-mwuv0wxy",
+          "attempt_status": "completed",
+          "active_attempt_id": null,
+          "process_alive": null,
+          "relay_pending": false,
+          "blocked_reason": null,
+          "verification": {
+            "result": "passed",
+            "code_sha": null,
+            "command": null,
+            "report": "review-fixture",
+            "observed_at": "2026-11-24T15:39:00.945Z",
+            "evidence_source": "user"
+          },
+          "acceptance": {
+            "event_type": "acceptance_passed",
+            "observed_at": "2026-11-24T15:39:00.945Z",
+            "evidence_source": "user"
+          },
+          "current_step": null,
+          "done": [
+            "deliverable"
+          ],
+          "remaining": [],
+          "done_count": 1,
+          "total": 1
+        },
+        "view": {
+          "task_id": "t-20261124153900-054bb0",
+          "title": "Review archive finish restore",
+          "acceptance": null,
+          "status": "completed",
+          "status_reason": "验收通过（未绑定代码版本）",
+          "evidence_source": "user",
+          "observed_at": "2026-11-24T15:39:00.945Z",
+          "last_activity_at": "2026-11-24T15:39:00.933Z",
+          "last_progress_at": "2026-11-24T15:39:00.945Z",
+          "last_event_type": "task_restored",
+          "attempt_id": "a-372c9a08-mwuv0wxy",
+          "active_attempt_id": null,
+          "attempt_status": "completed",
+          "blocked_reason": null,
+          "relay_pending": false,
+          "verification": {
+            "result": "passed",
+            "code_sha": null,
+            "command": null,
+            "report": "review-fixture",
+            "observed_at": "2026-11-24T15:39:00.945Z",
+            "evidence_source": "user"
+          },
+          "current_step": null,
+          "done": [
+            "deliverable"
+          ],
+          "remaining": [],
+          "progress": {
+            "done": 1,
+            "total": 1
+          },
+          "artifact_count": 0,
+          "latest_artifacts": [],
+          "created_at": "2026-11-24T15:39:00.929Z",
+          "updated_at": "2026-11-24T15:39:00.952Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": null,
+          "is_archived": false,
+          "is_deleted": false,
+          "workflow_run_id": null,
+          "workflow_step_id": null,
+          "workflow_step_name": null
+        },
+        "steps": [
+          {
+            "key": "deliverable",
+            "name": "交付",
+            "seq": 0,
+            "status": "done",
+            "at": "2026-11-24T15:39:00.945Z",
+            "note": "",
+            "files": []
+          }
+        ],
+        "attempts": [
+          {
+            "attempt_id": "a-372c9a08-mwuv0wxy",
+            "task_id": "t-20261124153900-054bb0",
+            "agent_id": "dsh",
+            "status": "completed",
+            "worktree_path": null,
+            "checkpoint_id": null,
+            "started_at": "2026-11-24T15:39:00.933Z",
+            "ended_at": "2026-11-24T15:39:00.945Z",
+            "end_reason": "done",
+            "pid": null,
+            "session_id": null,
+            "relay_pending": false,
+            "note": null,
+            "evidence_source": "executor",
+            "observed_at": "2026-11-24T15:39:00.945Z"
+          }
+        ],
+        "checkpoints": [],
+        "events": [
+          {
+            "event_id": 6,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": null,
+            "agent_id": null,
+            "event_type": "task_created",
+            "payload": {
+              "title": "Review archive finish restore",
+              "acceptance": null,
+              "steps": [
+                "deliverable"
+              ],
+              "source": "api"
+            },
+            "evidence_source": "user",
+            "observed_at": "2026-11-24T15:39:00.929Z"
+          },
+          {
+            "event_id": 7,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": "a-372c9a08-mwuv0wxy",
+            "agent_id": "dsh",
+            "event_type": "attempt_started",
+            "payload": {
+              "agent_id": "dsh",
+              "worktree_path": null,
+              "pid": null,
+              "session_id": null
+            },
+            "evidence_source": "executor",
+            "observed_at": "2026-11-24T15:39:00.933Z"
+          },
+          {
+            "event_id": 8,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": "a-372c9a08-mwuv0wxy",
+            "agent_id": null,
+            "event_type": "status_changed",
+            "payload": {
+              "from": "waiting",
+              "to": "running",
+              "reason": "托管实例在运行，最近 0 秒有活动事件（进程探测不可用）",
+              "evidence_source": "executor",
+              "evidence_observed_at": "2026-11-24T15:39:00.933Z",
+              "blocked_reason": null
+            },
+            "evidence_source": "system",
+            "observed_at": "2026-11-24T15:39:00.933Z"
+          },
+          {
+            "event_id": 9,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": null,
+            "agent_id": "user:local",
+            "event_type": "task_archived",
+            "payload": {
+              "status_before": "running",
+              "archived_at": "2026-11-24T15:39:00.941Z",
+              "archived_from": "running",
+              "action": "archive",
+              "actor": "user:local",
+              "at": "2026-11-24T15:39:00.941Z"
+            },
+            "evidence_source": "user",
+            "observed_at": "2026-11-24T15:39:00.941Z"
+          },
+          {
+            "event_id": 10,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": "a-372c9a08-mwuv0wxy",
+            "agent_id": "dsh",
+            "event_type": "attempt_ended",
+            "payload": {
+              "status": "completed",
+              "end_reason": "done"
+            },
+            "evidence_source": "user",
+            "observed_at": "2026-11-24T15:39:00.945Z"
+          },
+          {
+            "event_id": 11,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": "a-372c9a08-mwuv0wxy",
+            "agent_id": null,
+            "event_type": "acceptance_passed",
+            "payload": {
+              "result": "passed",
+              "code_sha": null,
+              "command": null,
+              "report": "review-fixture",
+              "note": null
+            },
+            "evidence_source": "user",
+            "observed_at": "2026-11-24T15:39:00.945Z"
+          },
+          {
+            "event_id": 12,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": "a-372c9a08-mwuv0wxy",
+            "agent_id": null,
+            "event_type": "status_changed",
+            "payload": {
+              "from": "running",
+              "to": "completed",
+              "reason": "验收通过（未绑定代码版本）",
+              "evidence_source": "user",
+              "evidence_observed_at": "2026-11-24T15:39:00.945Z",
+              "blocked_reason": null
+            },
+            "evidence_source": "system",
+            "observed_at": "2026-11-24T15:39:00.945Z"
+          },
+          {
+            "event_id": 13,
+            "task_id": "t-20261124153900-054bb0",
+            "attempt_id": null,
+            "agent_id": "user:local",
+            "event_type": "task_restored",
+            "payload": {
+              "status_after": "running",
+              "status_before": "completed",
+              "was_archived": true,
+              "was_deleted": false,
+              "action": "restore",
+              "actor": "user:local",
+              "at": "2026-11-24T15:39:00.952Z"
+            },
+            "evidence_source": "user",
+            "observed_at": "2026-11-24T15:39:00.952Z"
+          }
+        ],
+        "write_owner": null,
+        "artifacts": {
+          "count": 0,
+          "paths": [],
+          "latest_at": null
+        }
+      }
+    },
+    "delete": {
+      "status": 409,
+      "body": {
+        "error": "任务正在运行，不能删除；请先停止再删：t-20261124153900-054bb0",
+        "code": "TASK_RUNNING"
+      }
+    }
+  },
+  "batchVisible": true,
+  "hiddenSelection": {
+    "hiddenRowCount": 0,
+    "barText": "已选 1 条\n归档\n删除\n恢复",
+    "response": {
+      "ok": true,
+      "action": "archive",
+      "actor": "board:ui",
+      "observed_at": "2026-11-24T15:39:02.511Z",
+      "evidence_source": "user",
+      "requested": 1,
+      "succeeded": 1,
+      "failed": 0,
+      "results": [
+        {
+          "task_id": "t-20261124153900-43c31b",
+          "ok": true,
+          "task": {
+            "task_id": "t-20261124153900-43c31b",
+            "title": "Review hidden waiting selection",
+            "acceptance": null,
+            "status": "waiting",
+            "status_reason": "任务已创建，尚未开始执行（等待派活）",
+            "created_at": "2026-11-24T15:39:00.961Z",
+            "updated_at": "2026-11-24T15:39:02.511Z",
+            "closed_at": null,
+            "archived_at": "2026-11-24T15:39:02.511Z",
+            "archived_from": "waiting",
+            "deleted_at": null,
+            "workflow_run_id": null,
+            "workflow_step_id": null
+          },
+          "event": {
+            "event_id": 18,
+            "task_id": "t-20261124153900-43c31b",
+            "attempt_id": null,
+            "agent_id": "board:ui",
+            "event_type": "task_archived",
+            "payload": {
+              "status_before": "waiting",
+              "archived_at": "2026-11-24T15:39:02.511Z",
+              "archived_from": "waiting",
+              "action": "archive",
+              "actor": "board:ui",
+              "at": "2026-11-24T15:39:02.511Z"
+            },
+            "evidence_source": "user",
+            "observed_at": "2026-11-24T15:39:02.511Z"
+          },
+          "archived_at": "2026-11-24T15:39:02.511Z",
+          "archived_from": "waiting"
+        }
+      ]
+    },
+    "row": {
+      "archived_at": "2026-11-24T15:39:02.511Z"
+    }
+  },
+  "uiRestore": {
+    "archived_at": null
+  },
+  "workflowBatch": {
+    "status": 201,
+    "body": {
+      "ok": true,
+      "created": 1,
+      "tasks": [
+        {
+          "task_id": "t-20261124153903-c7edc4",
+          "title": "Review workflow task",
+          "acceptance": null,
+          "status": "waiting",
+          "status_reason": "任务已创建，尚未开始执行（等待派活）",
+          "evidence_source": "system",
+          "observed_at": "2026-11-24T15:39:03.374Z",
+          "last_activity_at": null,
+          "last_progress_at": null,
+          "last_event_type": null,
+          "attempt_id": null,
+          "active_attempt_id": null,
+          "attempt_status": null,
+          "blocked_reason": null,
+          "relay_pending": false,
+          "verification": {
+            "result": "none",
+            "code_sha": null,
+            "command": null,
+            "report": null,
+            "observed_at": null,
+            "evidence_source": null
+          },
+          "current_step": {
+            "key": "deliverable",
+            "name": "交付",
+            "status": "pending"
+          },
+          "done": [],
+          "remaining": [
+            "deliverable"
+          ],
+          "progress": {
+            "done": 0,
+            "total": 1
+          },
+          "artifact_count": 0,
+          "latest_artifacts": [],
+          "created_at": "2026-11-24T15:39:03.374Z",
+          "updated_at": "2026-11-24T15:39:03.374Z",
+          "closed_at": null,
+          "archived_at": null,
+          "archived_from": null,
+          "deleted_at": null,
+          "is_archived": false,
+          "is_deleted": false,
+          "workflow_run_id": "bdac5c16-c6da-4f72-91c7-efbcf56fa250",
+          "workflow_step_id": "05",
+          "workflow_step_name": "开发执行"
+        }
+      ],
+      "workflow_run_id": "bdac5c16-c6da-4f72-91c7-efbcf56fa250",
+      "workflow_step_id": "05",
+      "workflow_step_name": "开发执行",
+      "actor": "user:local",
+      "observed_at": "2026-11-24T15:39:03.374Z",
+      "evidence_source": "user"
+    }
+  },
+  "workflowUi": {
+    "count": 1,
+    "tags": [
+      "05 开发执行"
+    ]
+  },
+  "migration": {
+    "before": [
+      {
+        "rowid": 1,
+        "task_id": "old-review",
+        "title": "旧任务",
+        "acceptance": null,
+        "status": "waiting",
+        "status_reason": null,
+        "created_at": "2020-01-01",
+        "updated_at": "2020-01-01",
+        "closed_at": null
+      }
+    ],
+    "after": [
+      {
+        "rowid": 1,
+        "task_id": "old-review",
+        "title": "旧任务",
+        "acceptance": null,
+        "status": "waiting",
+        "status_reason": null,
+        "created_at": "2020-01-01",
+        "updated_at": "2020-01-01",
+        "closed_at": null,
+        "archived_at": null,
+        "archived_from": null,
+        "deleted_at": null,
+        "workflow_run_id": null,
+        "workflow_step_id": null
+      }
+    ],
+    "integrity": {
+      "integrity_check": "ok"
+    },
+    "version": {
+      "value": "9"
+    }
+  }
+}

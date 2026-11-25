@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05c 返工报告：任务归档 / 删除 / 恢复（Codex 评审 6.9 分 → 返工）</title>
+<style>
+:root{--ink:#2B261F;--ink2:#4A4237;--ink3:#6E6557;--line:#E7E0D5;--bg:#F6F1EA;--card:#FEFCF9;--amber:#8A611D;--bad:#A8543F;--ok:#46603A}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.75 "PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",sans-serif}
+.wrap{display:grid;grid-template-columns:270px minmax(0,1fr);gap:28px;max-width:1340px;margin:0 auto;padding:24px}
+nav{position:sticky;top:16px;align-self:start;max-height:calc(100vh - 32px);overflow:auto;font-size:13.5px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+nav b{display:block;font-size:12px;color:var(--ink3);margin-bottom:6px;letter-spacing:.5px}
+nav a{display:block;color:var(--ink2);text-decoration:none;padding:4px 6px;border-radius:6px}
+nav a:hover{background:#F3EDE3;color:var(--amber)}
+nav .tools{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+nav button{font:inherit;font-size:12.5px;text-align:left;padding:5px 8px;border:1px solid var(--line);border-radius:7px;background:#FCFAF6;color:var(--ink2);cursor:pointer}
+nav button:hover{background:#F3EDE3}
+nav input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;width:100%}
+main{min-width:0;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:30px 36px 40px}
+h1{font-size:27px;line-height:1.35;margin:0 0 10px}
+h2{font-size:20px;margin:38px 0 12px;padding-top:14px;border-top:1px solid var(--line)}
+h3{font-size:16.5px;margin:24px 0 8px;color:var(--ink2)}
+p{margin:0 0 12px}
+blockquote{margin:0 0 16px;padding:10px 16px;border-left:3px solid var(--amber);background:#FFF9EC;border-radius:0 10px 10px 0;color:var(--ink2)}
+blockquote p{margin:0}
+code{font:13px/1.6 "Cascadia Mono",Consolas,"Microsoft YaHei UI",monospace;background:#F3EDE3;padding:1px 5px;border-radius:4px}
+pre{margin:0;padding:14px 16px;overflow:auto;background:#2B261F;color:#F3EDE3;border-radius:0 0 10px 10px;font:12.5px/1.65 "Cascadia Mono",Consolas,"Microsoft YaHei UI",monospace}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+details.code{margin:0 0 14px;border:1px solid var(--line);border-radius:10px;background:#FCFAF6}
+details.code summary{cursor:pointer;padding:7px 12px;font-size:12.5px;color:var(--ink3);user-select:none}
+details.code[open] summary{border-bottom:1px solid var(--line)}
+ul,ol{margin:0 0 14px;padding-left:24px}
+li{margin:4px 0}
+li.sub{list-style:disc;opacity:.92}
+.tw{overflow-x:auto;margin:0 0 16px;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14px;background:var(--card)}
+th,td{padding:8px 12px;border-bottom:1px solid #EEE8DE;text-align:left;vertical-align:top}
+th{background:#F3EDE3;color:var(--ink3);font-weight:600;white-space:nowrap}
+tr:nth-child(even) td{background:#FCFAF6}
+hr{border:0;border-top:1px solid var(--line);margin:28px 0}
+mark{background:#FBEBCB;color:inherit;padding:0 1px}
+.gal{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin:12px 0 18px}
+.gal--rails{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+figure{margin:0;background:#FCFAF6;border:1px solid var(--line);border-radius:10px;padding:8px}
+figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
+figcaption{font-size:12.5px;color:var(--ink3);margin-top:6px}
+#count{font-size:12.5px;color:var(--ink3)}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}nav{position:static;max-height:none}main{padding:20px}}
+@media print{nav{display:none}.wrap{display:block}main{border:0}}
+</style></head>
+<body><div class="wrap">
+<nav><b>目录</b><a href="#s-〇-验收标准-c1-c8-逐条结果-6">〇、验收标准 C1–C8 逐条结果</a><a href="#s-一-开工前的现场核对-11">一、开工前的现场核对</a><a href="#s-二-逐项-为什么是问题-怎么修的-怎么验的-14">二、逐项：为什么是问题、怎么修的、怎么验的</a><a href="#s-三-真实测试输出-45">三、真实测试输出</a><a href="#s-四-截图-逐张打开看过-69">四、截图，逐张打开看过</a><a href="#s-五-线上现状-前端已是新的-后端还是旧进程-92">五、线上现状：前端已是新的，后端还是旧进程</a><a href="#s-六-还差什么-100">六、还差什么</a><a href="#s-七-改了但不确定的地方-需要老板拍板的-103">七、改了但不确定的地方、需要老板拍板的</a><a href="#s-八-改动清单-108">八、改动清单</a><a href="#s-九-追问-显示层四个问题-d1-d5-116">九、追问：显示层四个问题（D1–D5）</a>
+<div class="tools"><input id="q" type="search" placeholder="页内搜索（高亮）"><span id="count"></span>
+<button id="collapse" type="button">折叠所有代码块</button><button id="expand" type="button">展开所有代码块</button></div></nav>
+<main><h1 id="s-05c-返工报告-任务归档-删除-恢复-codex-评审-6-9-分-返工-0">05c 返工报告：任务归档 / 删除 / 恢复（Codex 评审 6.9 分 → 返工）</h1>
+<blockquote><p>run: <code>3d22e663-a27f-417c-829b-b6b7fbcc5fad</code> · 步骤 05c 返工</p><p>依据：<code>docs/runs/run-3d22e663/07-review.md</code>（P1-1 ~ P1-4、P2-1 ~ P2-3）与任务书的 C1–C8</p><p>执行：2026-11-24 23:44 ~ 2026-11-25 01:30，Claude（会话 <code>claude.exe -p</code>，PID 29908）</p><p>追问：2026-11-25 01:35 ~ 02:10，同一会话，显示层四个问题（D1–D5）。<strong>结果在第九节</strong>；第一节到第八节是第一轮返工的内容，原样保留（其中「线上现状」一节写的是 01:30 那一刻的情况，之后 8090 已被重启过一次，现状以第九节为准）。08:17 任务书被原样重新派发了一次，复查过现场并补跑了一遍，记在 9.5 末尾。</p></blockquote>
+<p><strong>先说结论，逐条，不写「全部修复」：</strong></p>
+<ul class="ul"><li><strong>追问的四个显示层问题都改了，D1–D5 都过（各 5 次 5 过）；但只有「筛选分类」已经在线上生效，另外三个要再重启一次 8090。</strong> 详见第九节。</li></ul>
+<ul class="ul"><li><strong>P1-1 修了</strong>。切状态筛选即清空选择；提交前再和可见行取交集；列表刷新后不再可见的行自动摘掉勾选。C1 过（5 次全过）。</li><li><strong>P1-2 修了</strong>。已软删的任务 attempt / handoff / checkpoint / finish 一律 409 <code>TASK_DELETED</code>；检查与建实例行同一个事务。C2 过（5 次全过，多进程竞态 300 轮无一例「已删除却在运行」）。</li><li><strong>P1-3 修了</strong>。恢复仍写回 <code>archived_from</code>，然后按最新执行证据重算并落库；删除守卫改看执行证据。A5 的断言一字未动。C3 过（5 次全过）。</li><li><strong>P1-4 修了</strong>。归档 / 恢复 / 删除各自一个事务；批量仍逐条事务。C4 过（5 次全过）。</li><li><strong>P2-1 修了，但有一个前提没满足</strong>：停止已接真实执行器的停止路径并等进程退出；<strong>可线上没有任何入口会在服务进程内启动托管执行</strong>，所以这条路目前只有测试走得到。真实任务走的是另外两条（见第二节）。C5 过（5 次全过）。</li><li><strong>P2-2 修了</strong>。左栏加了「回收站」，单条恢复 + 批量恢复。C6 过（5 次全过）。</li><li><strong>P2-3 修了</strong>。C8 过（5 次全过；评审自己的并发探针复跑 108 个首请求 0 失败）。</li><li><strong>C7 过</strong>：上一版 12/12、17/17，5 次都是。</li><li><strong>没做到 / 线上还没生效的</strong>：① 8090 <strong>没有重启</strong>，后端修复线上未生效（前端已经是新的，相关按钮已做禁用降级）；② 上面 P2-1 的前提；③ 非本服务启动、进程还活着的执行，本服务不代杀（有意为之）；④ g02 / g07 的 10 条历史失败没动。</li></ul>
+<hr>
+<h2 id="s-〇-验收标准-c1-c8-逐条结果-6">〇、验收标准 C1–C8 逐条结果</h2>
+<div class="tw"><table><thead><tr><th>#</th><th>标准</th><th>过没过</th><th>测了几次、过几次</th><th>证据</th></tr></thead><tbody><tr><td>C1</td><td>切筛选后选择被清空，或提交的 ids 只有可见的</td><td>过</td><td>5 次全过（真实 Chrome 点击 + 抓批量请求的 ids）</td><td><code>tasks-rework-after-run1..5.log</code>，截图 01 / 02 / 02b</td></tr><tr><td>C2</td><td>已删除任务不能创建 attempt</td><td>过</td><td>5 次全过；另有 2 个真实服务进程各 60 轮并发「删除 vs 启动」，5 次共 300 轮</td><td>同上，<code>C2</code> / <code>C2b</code></td></tr><tr><td>C3</td><td>归档期间完成后恢复，状态 / 实例 / 可删除性一致</td><td>过</td><td>5 次全过（4 个场景：完成、停止、进程消失、状态列已过期的坏行）</td><td>同上，<code>C3</code> / <code>C3b</code> / <code>C3c</code> / <code>C3d</code></td></tr><tr><td>C4</td><td>事件写失败时主记录必须回滚</td><td>过</td><td>5 次全过（归档 / 恢复 / 删除各一次 + 批量部分失败 + 托管停止的审计写失败）</td><td>同上，<code>C4</code> / <code>C4b</code></td></tr><tr><td>C5</td><td>停止动作能终止真实执行</td><td>过，带说明</td><td>5 次全过。说明：「界面点停止 → 托管进程真的退出」这一段是在<strong>进程内夹具</strong>上验的（夹具挂的是同一份生产路由和同一个生产执行器），因为线上服务进程里没有启动托管执行的入口</td><td>同上，<code>C5</code> / <code>C5b</code> / <code>C5c</code> / <code>C5d</code>，截图 03 ~ 10</td></tr><tr><td>C6</td><td>删除后可重新列出并恢复</td><td>过</td><td>5 次全过（接口 + 界面：回收站、批量恢复、单条恢复）</td><td>同上，<code>C6 接口</code> / <code>C6 界面</code>，截图 11 ~ 14</td></tr><tr><td>C7</td><td>上一版 29 条（12 + 17）仍全过</td><td>过</td><td>5 次都是 12/12、17/17</td><td>同上，<code>C7</code> 的两行 diagnostic</td></tr><tr><td>C8</td><td>P2-3 并发锁：明确说明修没修；修了给并发验证</td><td>修了，过</td><td>5 次全过：8 个真实服务并发首开新库 ×3 轮、并发升级 v7 库 ×2 轮，每次 0 个失败；评审的原探针复跑 108 个首请求 0 失败</td><td>同上，<code>C8</code> / <code>C8b</code>；<code>rework-race.log</code></td></tr></tbody></table></div>
+<p>另外自己加了三条不在任务书里的护栏用例，也都过（5 次全过）：<code>C1b</code>（在「执行」筛选下停掉一条已勾选的任务，勾选跟着消失）、<code>C4b</code>（托管停止的审计事件写失败 → 进程不动）、<code>C10</code>（服务端没重启时「停止」「回收站」禁用并说明）；<code>C9</code> 是界面用例全程无未捕获 JS 异常。</p>
+<p><strong>修之前先拿同一套用例打了一遍旧代码</strong>（<code>tasks-rework-before.log</code>，当时 18 条）：18 条里 16 条失败，只有 C7、C9 过。每一条都失败在它要验的那个缺陷上（例如 C2b 60 轮里 57 轮「删除和启动同时成功」、C4 归档报 500 但 <code>archived_at</code> 已落库、C8 首轮 16 个首请求 7 个 500）。原始输出见第三节。</p>
+<hr>
+<h2 id="s-一-开工前的现场核对-11">一、开工前的现场核对</h2>
+<ul class="ul"><li><strong>同行</strong>：<code>ListAgents</code> 看到 4 个 Claude 会话（中途变成 5 个，新来的那个名字带 engvm，不是这个仓库的），全部 idle / waiting；进程表里带本仓库路径的只有我这个会话和 8090。要改的 7 个文件 mtime 都停在 22:16 ~ 22:53（上一个会话留下的），开工时已 50 分钟没人动。全程没有发现别人同时改这些文件。</li><li><strong>8090</strong>：PID 47292，2026-11-24 23:32:14 启动，跑的是<strong>返工前</strong>的后端代码。本次没有重启（见第五、六节）。</li><li>开工 4 分钟后（23:48）有另一个会话往这个 run 目录写了 <code>04-task-specs-ALL.md</code>（「本轮全部任务书，待 Leo 确认」）。它没有碰任何代码文件；我改的 7 个文件在 23:44 之后只有我写过（逐个核对了 mtime）。</li><li><strong>Memorix</strong>：<code>memorix_project_context</code> 的调用权限被拒，没有拿到项目记忆简报，直接按评审报告做。</li><li><strong>上一版的约束先弄清楚</strong>：<code>test/tasks-workflow-link.test.js</code> 的 B1 断言 <code>SCHEMA_VERSION === 9</code>，B10 断言 <code>tasks-archive.test.js</code> 恰好 12 条。所以这次<strong>没有加数据库迁移</strong>（版本仍是 9），新用例全部放进新文件 <code>test/tasks-rework.test.js</code>，<code>tasks-archive.test.js</code> 一字未动。</li></ul>
+<hr>
+<h2 id="s-二-逐项-为什么是问题-怎么修的-怎么验的-14">二、逐项：为什么是问题、怎么修的、怎么验的</h2>
+<h3 id="s-p1-1-状态筛选后批量操作会作用到不可见任务-15">P1-1 状态筛选后批量操作会作用到不可见任务</h3>
+<p><strong>为什么是问题</strong>：行被筛走了，勾选还留在集合里，批量条照常显示「已选 N 条」，点下去发的是整个集合。</p>
+<p><strong>修法（两个选项都做了，外加一层）</strong>：</p>
+<ul class="ol"><li>切状态筛选时清空选择 —— <code>web/board-cromma.js:1981</code>（点击筛选按钮的处理）。切的是同一个筛选则不动。提示语会写「已清空之前的选择」。</li><li>提交前与当前可见行取交集 —— <code>web/board-cromma.js:1240</code>（<code>runBatchAction</code>）。被排除的条数会在提示里说明。</li><li>渲染时把不在当前可见行里的 id 从集合里摘掉 —— <code>web/board-cromma.js:891</code>（<code>syncTaskSelectionUi</code>）。这是同一类问题的另一个来路：不是用户切筛选，而是列表刷新后某一行不再符合当前筛选（比如在「执行」下把它停掉了）。</li></ul>
+<p>选「清空」而不是「展示已选清单」：清空之后用户看到的就是自己选的，不需要再解释一份看不见的清单。</p>
+<p><strong>怎么验的</strong>：C1 在真实 Chrome 里勾两条 → 切「执行」→ 断言看不见的那行 gone、批量条收起、<code>selectedTaskIds.size === 0</code> → 重新勾可见的那条 → 再往集合里硬塞一条不可见的 id → 点批量归档 → 抓到的请求体 <code>ids</code> 恰好只有可见那条，库里看不见那条 <code>archived_at</code> 仍是 NULL。C1b 验第 3 层。</p>
+<h3 id="s-p1-2-已软删任务仍可开始执行-21">P1-2 已软删任务仍可开始执行</h3>
+<p><strong>修法</strong>：</p>
+<ul class="ul"><li>新增 <code>requireNotDeletedTask</code>（<code>web/lib/tasks.mjs:253</code>），执行入口统一用它。</li><li><code>POST /api/tasks/:id/attempt</code>（<code>web/api-tasks.mjs:1090</code>）：检查没被删 → 抢写入权 → 建实例行，三步在同一个事务里。</li><li>删除端（<code>web/api-tasks.mjs:404</code> 的 <code>deleteOne</code>）同样在事务里查有没有 running 的实例。</li><li>「执行入口」我按字面理解成四个：<code>attempt</code>、<code>handoff</code>（会新建一个 running 实例）、<code>checkpoint</code>、<code>finish</code>，四个都对已删除任务返回 409 <code>TASK_DELETED</code>。恢复之后可以重新执行。执行器本身 <code>startDshAttempt</code> 也拒绝对已删除任务起实例（<code>web/adapters/dsh.mjs:277</code>）。</li><li>为了能「检查 + 调一个自己会开事务的函数 + 自己的写入」放进一层事务，<code>web/lib/db.mjs:604</code> 的 <code>transaction()</code> 改成可嵌套（内层落成 SAVEPOINT）。不嵌套时行为和以前完全一样。</li></ul>
+<p><strong>怎么验的</strong>：C2 走完整序列（删 → attempt 409；有过执行且已完成的任务删掉后 handoff / finish / checkpoint / attempt 四个都 409，库里不许多出实例、检查点、写入权记录；恢复后 attempt 201）。C2b 起两个真实服务进程指向同一个库，60 轮同时发 <code>DELETE</code> 和 <code>POST attempt</code>，断言每轮恰好一方成功，另一方拿到对应错误码，库和响应一致。</p>
+<h3 id="s-p1-3-恢复旧状态导致-已完成却不能删-25">P1-3 恢复旧状态导致「已完成却不能删」</h3>
+<p><strong>修法</strong>：</p>
+<ul class="ul"><li><code>restoreOne</code>（<code>web/api-tasks.mjs:368</code>）：仍然写回 <code>archived_from</code>（基线要求），<strong>紧接着</strong>调用状态机按最新执行证据重算并落库。实例还活着时（A5 那种）重算结果就是原状态，什么都不变。事件 <code>task_restored</code> 里同时记下 <code>status_restored</code>（写回的）和 <code>status_after</code>（重算后落库的）。</li><li><code>deleteOne</code>（<code>web/api-tasks.mjs:404</code>）：不再看 <code>tasks.status</code> 这一列。先让状态机对齐（进程已经没了的 running 实例会在这一步落成 interrupted），再问「还有没有 running 的执行实例」，有才 409。</li><li><code>GET /api/tasks/:id</code>（<code>web/api-tasks.mjs:936</code>）：状态列落后于证据时，读一次详情就对齐一次；只在确实不一致时才写。</li></ul>
+<p><strong>A5 的断言一字未改</strong>（<code>tasks-archive.test.js</code> 没动），它仍然是过的。</p>
+<p><strong>怎么验的</strong>：C3 走评审给的那条序列 running → 归档 → finish passed → restore，断言响应、库里状态列、详情的 state / view / task 三处都是 completed，没有活跃实例，<code>DELETE</code> 200。C3b（归档期间停止）、C3c（归档期间进程消失）、C3d（模拟返工前留下的坏行：状态列写着 running、没有任何实例 → 能删）。</p>
+<h3 id="s-p1-4-主记录与审计事件非原子-30">P1-4 主记录与审计事件非原子</h3>
+<p><strong>修法</strong>：<code>archiveOne</code> / <code>restoreOne</code> / <code>deleteOne</code> 各自包进一个事务（读取、校验、更新、事件）。批量接口不变，仍是逐条调用、逐条事务、允许部分失败。停止的审计也一样：托管停止是「先把停止请求记进审计，再去停」，审计写不进去就不停（<code>web/api-tasks.mjs:470</code> 的 <code>stopOne</code>）。</p>
+<p><strong>怎么验的</strong>：C4 用评审同款的故障注入（<code>BEFORE INSERT ON events ... RAISE(ABORT)</code>）：归档 / 恢复 / 删除各 500，主记录逐字段和操作前一致，被拒的事件数为 0；批量只拦其中一条 → 那条报失败且没写，另一条成功且真写了。C4b：托管停止的 <code>task_stopped</code> 事件被拦 → 500，进程还活着、实例仍是 running、没有事件；拿掉注入后同样的停止成功。</p>
+<h3 id="s-p2-1-界面上没有-停止-33">P2-1 界面上没有「停止」</h3>
+<p><strong>修法</strong>：</p>
+<ul class="ul"><li>执行器 <code>startDshAttempt</code> 起的实例登记进一张进程内的表（<code>web/adapters/dsh.mjs:231</code>），进程退出时注销（<code>:481</code>）。</li><li>新路由 <code>POST /api/tasks/:id/stop</code>（<code>web/api-tasks.mjs:1022</code> → <code>stopOne</code>）。按「本服务能确认到什么程度」分三种：</li><li class="sub"><strong>托管</strong>（本进程用执行器起的）：先记审计 → 调执行器的 <code>stop(&amp;#39;user_stop&amp;#39;)</code> → 等到进程退出 → 回库核对实例行和 pid → 才回「已停止」。</li><li class="sub"><strong>别处启动、登记了 pid</strong>：pid 还活着 → 409 <code>STOP_NOT_MANAGED</code>，本服务不代为结束别人的进程，告诉用户去哪里停、停完再点一次。那时请求开头的对账会发现进程已退出，把实例落成中断，停止路由回「已停止」。</li><li class="sub"><strong>别处启动、没登记 pid</strong>：本服务没有任何可观测的进程 → 409 <code>STOP_UNVERIFIED</code>，必须带 <code>confirm=true</code> 再调一次；确认后把实例记为 interrupted / user_stop，事件里写明「用户确认，未经系统验证」。</li><li class="sub">三种都不写验收结论，任务不会因为停止变成 completed。</li><li>界面：有执行实例在跑的行上出现「停止」；第二种情形按钮变成「确认已停止」，再点一次才带 confirm（<code>web/board-cromma.js:942</code>、<code>:1193</code>）。</li><li>服务端没重启时「停止」禁用，悬停提示写明原因（见 C10）。</li></ul>
+<p><strong>怎么验的</strong>：C5 用生产执行器 <code>startDshAttempt</code> 起一个真实的长跑进程（<code>test/fixtures/tasks-longrun-worker.mjs</code>，一个真的操作系统进程，不调用模型），<code>POST stop</code> 之后断言：pid 已不存在、进程的输出计数不再增长、实例 <code>interrupted / user_stop</code>、有 <code>process_exit</code>、执行器登记表里没有它、没有验收事件；停之前 <code>DELETE</code> 409，停之后 200。C5d 是同一条链路从界面点「停止」走一遍。C5b / C5c 验另外两种情形在界面上的表现。</p>
+<h3 id="s-p2-2-软删后界面找不回-37">P2-2 软删后界面找不回</h3>
+<p><strong>修法</strong>：左栏加「回收站」开关，真请求 <code>GET /api/tasks?only_deleted=1</code>（服务端 SQL 过滤，<code>web/lib/tasks.mjs:285</code> 的 <code>visibility = &amp;#39;deleted&amp;#39;</code>）。回收站里每行「已删除」标签 + 「恢复」；批量条只剩「恢复」；「显示已归档」在回收站里禁用。归档和删除是两个入口，各自恢复。</p>
+<p><strong>怎么验的</strong>：C6 接口 + C6 界面（行内删除 → 进回收站看到 3 条 → 批量恢复 1 条 → 批量恢复 2 条 → 删一条再用行内「恢复」→ 退出回收站四条都回到普通列表，逐条查库 <code>deleted_at</code> 为 NULL）。</p>
+<h3 id="s-p2-3-多进程首开库锁冲突-40">P2-3 多进程首开库锁冲突</h3>
+<p><strong>根因有两层，第一层修完探针还是红</strong>：</p>
+<ul class="ol"><li><code>busy_timeout</code> 设在 <code>journal_mode = WAL</code> 之后 —— 挪到最前面（<code>web/lib/db.mjs:510</code>）。</li><li>挪完之后复跑评审的探针仍然是 6/20、10/20、7/20 个 500。挂了个诊断钩子把出错的 SQL 打出来，全部出在 <code>PRAGMA journal_mode = WAL</code> 这一句：切 WAL 要改文件头，SQLite 会在「自己已经拿着读锁」的状态下去拿写锁，这时如果别的进程正拿着写锁，它为了避开死锁<strong>直接</strong>返回 SQLITE_BUSY，不调用 busy handler，<code>busy_timeout</code> 设多大都没用。处理（<code>web/lib/db.mjs:485</code> 的 <code>enableWal</code>）：文件已经是 WAL 就不碰这条 PRAGMA（看文件头第 18 / 19 字节）；确实要切又撞上了就退让重试，最多等 5 秒。</li><li>迁移本身：每个版本各占一个 <code>BEGIN IMMEDIATE</code> 事务，拿到写锁后在事务里重读版本，别人迁过就跳过（<code>web/lib/db.mjs:566</code>）。已经是最新版本的库只读一次版本号就返回，不写任何东西。</li></ul>
+<p><strong>怎么验的</strong>：C8（8 个真实服务同时首开同一个新库 ×3 轮）、C8b（8 个真实服务同时升级一个 v7 形状、带旧行的库 ×2 轮，断言版本到 9、旧行逐列不变、rowid 不变、三个索引都在）。评审的原探针 <code>first-open-race.mjs</code> 原样复跑：10 个服务 ×3 轮 + 12 个服务 ×2 轮，全部 0 个失败。</p>
+<hr>
+<h2 id="s-三-真实测试输出-45">三、真实测试输出</h2>
+<h3 id="s-3-1-修之前-同一套用例打旧代码-tasks-rework-before-log-46">3.1 修之前：同一套用例打旧代码（<code>tasks-rework-before.log</code>）</h3>
+<details class="code" open><summary>text · 11 行 · 点击展开 / 折叠</summary><pre><code>✔ C7 上一版两个测试文件仍全过：tasks-archive 12/12、tasks-workflow-link 17/17 (8432.1942ms)
+✔ C9 界面用例全程没有未捕获的 JS 异常（pageerror / console error） (0.375ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 2
+ℹ fail 16
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 47199.4379
+exit=1</code></pre></details>
+<p>（这是 2026-11-25 00:12 跑的，当时测试文件是 18 条；之后又加了 C1b、C4b、C10 三条，这三条没有在旧代码上跑过。）</p>
+<p>失败的 16 条各自卡在（下面是<strong>整理</strong>：每条取它那句断言和实测值，不是逐字原文；逐字的在日志里）：</p>
+<details class="code"><summary>text · 16 行 · 点击展开 / 折叠</summary><pre><code>C1   切筛选后批量条必须收起            false !== true
+C2   已删除任务 POST attempt 必须 409    实际 201
+C2b  库里不许有「已删除却在运行」的执行实例   57 !== 0        （60 轮）
+C3   恢复响应里的当前状态应是 completed    实际 running
+C3b  POST /api/tasks/…/stop 不存在        404 !== 409      （路由不存在）
+C3c  进程已经没了，恢复后应是 interrupted  实际 running
+C3d  读详情时把过期的状态列对齐到证据      running !== completed
+C4   archive：事件写失败后主记录必须原样    archived_at: null → &#39;2026-11-24T16:12:13.430Z&#39;
+C5   POST /api/tasks/…/stop 不存在         404 !== 200
+C5b  有执行实例在跑的行必须有「停止」按钮   0 !== 1
+C5c  （没有停止按钮可点）
+C5d  托管执行在跑的行必须有「停止」        0 !== 1
+C6 接口  响应回显 only_deleted             undefined !== true
+C6 界面  删除后的提示里等不到「回收站」字样   Timeout 15000ms
+C8   第 1 轮有请求失败：16 个首请求里 7 个 500
+C8b  第 1 轮有请求失败：16 个首请求里 10 个 500</code></pre></details>
+<h3 id="s-3-2-修之后-连跑-5-次-tasks-rework-after-run1-5-log-51">3.2 修之后：连跑 5 次（<code>tasks-rework-after-run1..5.log</code>）</h3>
+<p>第 1 次的原文（<code>tasks-rework-after-run1.log</code> 前 39 行，未删减；中间那行 <code>[错误]</code> 是 C4b 故意注入的失败，夹具按 <code>server.js</code> 的格式把它打出来）：</p>
+<details class="code"><summary>text · 39 行 · 点击展开 / 折叠</summary><pre><code># 返工后 · 第 1 次 · 2026-11-25 01:06:36
+# 命令：node --no-warnings --test test/tasks-rework.test.js（临时库；接口用例打真实 web/server.js 子进程；界面用例打真实服务 + web/ 下的前端；C5 托管走进程内夹具）
+✔ C1 切换状态筛选后选择被清空，批量归档只提交当前可见的 ids (1628.115ms)
+✔ C1b 在「执行」筛选下停掉一条已勾选的任务：它被筛出列表后，勾选跟着消失 (999.1276ms)
+✔ C2 已软删的任务不能再开始执行：attempt / handoff / finish / checkpoint 一律 409 TASK_DELETED (58.4318ms)
+✔ C2b 先删后启动的多进程竞态：删除与启动同时到达，恰好一方成功，不留「已删除却在运行」的任务 (1051.5195ms)
+ℹ C2b 60 轮：删除先赢 49，启动先赢 11，同时成功 0，都失败 0；库里「已删除却在运行」0 条
+✔ C3 running → 归档 → finish passed → restore：状态、实例、可删除性一致，恢复不伪造活跃实例 (35.8564ms)
+✔ C3b running → 归档 → 停止 → restore：恢复后是「已中断」，不是「执行中」，可以删除 (18.8814ms)
+✔ C3c 归档期间进程消失 → restore：恢复后不是 running，可以删除 (39.8115ms)
+✔ C3d 删除守卫读执行证据，不读可能过期的 status 列：status=running 但没有运行中的实例 → 能删 (16.9871ms)
+✔ C4 归档 / 恢复 / 删除的事件写失败 → 500，且主记录一行都不变；批量仍逐条事务、允许部分失败 (39.8558ms)
+[错误] POST /api/tasks/t-20261124170640-34f183/stop → ERR_SQLITE_ERROR: rework: injected stop audit failure
+✔ C4b 托管停止：停止请求的审计事件写不进去 → 500，进程不动、实例仍是 running、没有事件 (600.4905ms)
+✔ C5 托管执行：POST stop 走执行器的停止路径，进程真的退出、实例落成 user_stop，之后才能删 (1687.5194ms)
+ℹ C5 托管执行 pid=34944 attempt=a-eebec37b-mwuy5o0b：停止后 600ms 内输出计数停在 4；实例 interrupted/user_stop
+✔ C5b 界面：别处启动、登记了 pid 的执行 → 本服务不代杀，给出可操作的停止路径；进程退出后确认并允许删除 (1032.9427ms)
+✔ C5c 界面：别处启动、没登记 pid 的执行 → 必须二次确认才记为「用户停止」（不写验收），之后才能删 (950.1878ms)
+✔ C5d 界面：点「停止」真的结束一个托管执行（进程退出 + 实例结束），然后才能删 (1977.9359ms)
+✔ C6 接口：GET /api/tasks?only_deleted=1 只返回已删除的；单条 / 批量 restore 清掉 deleted_at (82.3992ms)
+✔ C6 界面：回收站入口列出已删除任务，批量恢复 + 单条恢复 (1395.7442ms)
+✔ C7 上一版两个测试文件仍全过：tasks-archive 12/12、tasks-workflow-link 17/17 (6688.1731ms)
+ℹ test/tasks-archive.test.js：tests 12，pass 12，fail 0，exit 0
+ℹ test/tasks-workflow-link.test.js：tests 17，pass 17，fail 0，exit 0
+✔ C8 多进程并发首开同一个「还不存在」的新库：全部 200，无 database is locked (1466.9916ms)
+ℹ C8 新库 第 1 轮：8 个服务 × 2 个首请求，non-200 = 0/16
+ℹ C8 新库 第 2 轮：8 个服务 × 2 个首请求，non-200 = 0/16
+ℹ C8 新库 第 3 轮：8 个服务 × 2 个首请求，non-200 = 0/16
+ℹ C8 新库 合计 3 轮：48 个首请求，失败 0 个
+✔ C8b 多进程并发升级 v7 形状的旧库（v8、v9 两个迁移一起抢）：全部 200，旧行逐列不变、rowid 不变 (980.5187ms)
+ℹ C8b 升级 第 1 轮：8 个服务 × 2 个首请求，non-200 = 0/16
+ℹ C8b 升级 第 2 轮：8 个服务 × 2 个首请求，non-200 = 0/16
+✔ C10 旧后端保护：服务端进程没重启（/api/tasks 响应里没有 api_features）时，「停止」「回收站」禁用并说明原因 (1336.4144ms)
+✔ C9 界面用例全程没有未捕获的 JS 异常（pageerror / console error） (0.2405ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0</code></pre></details>
+<p>（后面还有 <code>ℹ skipped 0</code>、<code>ℹ todo 0</code>、<code>ℹ duration_ms …</code>、<code>exit=0</code> 四行。）</p>
+<p>5 次的汇总（整理自 5 个日志：每条的 <code>ℹ tests / pass / fail</code> 和 <code>C2b</code> 那一行 diagnostic）：</p>
+<details class="code" open><summary>text · 5 行 · 点击展开 / 折叠</summary><pre><code>run 1 | tests 21 pass 21 fail 0 | C2b 60 轮：删除先赢 49，启动先赢 11，同时成功 0，都失败 0；库里「已删除却在运行」0 条
+run 2 | tests 21 pass 21 fail 0 | C2b 60 轮：删除先赢 47，启动先赢 13，同时成功 0，都失败 0；库里「已删除却在运行」0 条
+run 3 | tests 21 pass 21 fail 0 | C2b 60 轮：删除先赢 52，启动先赢 8，同时成功 0，都失败 0；库里「已删除却在运行」0 条
+run 4 | tests 21 pass 21 fail 0 | C2b 60 轮：删除先赢 50，启动先赢 10，同时成功 0，都失败 0；库里「已删除却在运行」0 条
+run 5 | tests 21 pass 21 fail 0 | C2b 60 轮：删除先赢 46，启动先赢 14，同时成功 0，都失败 0；库里「已删除却在运行」0 条</code></pre></details>
+<p>21 条用例 × 5 次 = 105 次执行，逐条统计每一条都是「过 5、败 0」。</p>
+<h3 id="s-3-3-全量回归-临时库-3-次-full-suite-tempdb-05c-run1-3-log-58">3.3 全量回归（临时库，3 次；<code>full-suite-tempdb-05c-run1..3.log</code>）</h3>
+<details class="code"><summary>text · 23 行 · 点击展开 / 折叠</summary><pre><code># 全量回归 · 返工后（05c）· 第 1 次
+ℹ tests 386
+ℹ pass 376
+ℹ fail 10
+ℹ duration_ms 39097.0234
+
+# 全量回归 · 返工后（05c）· 第 2 次
+ℹ tests 386
+ℹ pass 376
+ℹ fail 10
+ℹ duration_ms 40457.3613
+
+# 全量回归 · 返工后（05c）· 第 3 次
+ℹ tests 386
+ℹ pass 376
+ℹ fail 10
+ℹ duration_ms 39642.207
+
+# 返工前基线（full-suite-tempdb-v9.log）
+ℹ tests 365
+ℹ pass 354
+ℹ fail 11
+ℹ duration_ms 39923.3908</code></pre></details>
+<ul class="ul"><li>多出来的 21 条是新增的 <code>test/tasks-rework.test.js</code>，3 次全量里都全过。</li><li>10 条失败 3 次都是同一组，位置：<code>g02-flows.test.js:27</code>、<code>g07-r72.test.js:41/126/204</code>、<code>g07-r73.test.js:158/238/380/540/651/691</code> —— 和返工前基线里的 10 条逐条对得上，都是旧工作台（index.html）的颜色 / 布局断言，这三个文件里没有任何一处引用本次改过的文件。</li><li>基线里的第 11 条 <code>g07-pages.test.js:66</code>（首页首屏 ≤3000ms）在返工后的 3 次全量里没有再出现。它是之前记录过的「多进程首开同一个临时库偶发 500」的受害者，这次把首开竞态修了；但这是时序型的偶发，3 次没出现<strong>不等于</strong>证明了它再也不会出现。</li></ul>
+<h3 id="s-3-4-评审自己的探针-原样复跑-61">3.4 评审自己的探针，原样复跑</h3>
+<p><code>first-open-race.mjs</code>（脚本未改，输出存 <code>rework-race.log</code>）：</p>
+<details class="code" open><summary>text · 9 行 · 点击展开 / 折叠</summary><pre><code># 返工后复跑评审的并发探针（脚本原件未改）：node --no-warnings docs/runs/run-3d22e663/probes/first-open-race.mjs &quot;&lt;仓库根&gt;&quot; 10 3
+# 时间：2026-11-25 01:12:31
+# 返工前同一探针：18/20、18/20、5/20 个首请求 500（见 first-open-race.log）；评审复核 4 个服务时 6/8（见 review-race.log）
+round 1: 10 servers × 2 requests, non-200 = 0/20 []
+round 2: 10 servers × 2 requests, non-200 = 0/20 []
+round 3: 10 servers × 2 requests, non-200 = 0/20 []
+# 再跑一遍 12 个服务 × 2 轮
+round 1: 12 servers × 2 requests, non-200 = 0/24 []
+round 2: 12 servers × 2 requests, non-200 = 0/24 []</code></pre></details>
+<p><code>independent-review.mjs</code> 我没有改原件，另存了一份只改输出目录的副本 <code>probes/independent-review-after-rework.mjs</code>（原件里「切筛选后点批量归档」那一步，返工后批量条已收起、没有东西可点，副本在这里先记下「批量条是否收起」，收起就不再点）。结果在 <code>rework-evidence/probe.json</code>，和评审原来的 <code>review-evidence/probe.json</code> 对照：</p>
+<div class="tw"><table><thead><tr><th>探针项</th><th>评审原件（返工前）</th><th>复跑（返工后）</th></tr></thead><tbody><tr><td>deleteThenAttempt</td><td>删除 200，attempt <strong>201</strong>，库里 <code>status=running</code> 且 <code>deleted_at</code> 非空</td><td>删除 200，attempt <strong>409 TASK_DELETED</strong>，库里 <code>status=waiting</code></td></tr><tr><td>nonAtomic</td><td>归档 500，<code>archived_at</code> <strong>已落库</strong>，事件 0</td><td>归档 500，<code>archived_at</code> 为 <strong>NULL</strong>，事件 0</td></tr><tr><td>restoreDrift</td><td>恢复回 <strong>running</strong>，详情 completed，<code>DELETE</code> <strong>409</strong></td><td>恢复回 <strong>completed</strong>，详情 / 状态列都是 completed，活跃实例 null，<code>DELETE</code> <strong>200</strong></td></tr><tr><td>hiddenSelection</td><td>批量条「已选 1 条」，请求 <code>requested=1, succeeded=1</code>，看不见的那条被归档</td><td>批量条<strong>收起</strong>，已选 0，没有批量请求，看不见的那条 <code>archived_at</code> 为 NULL</td></tr><tr><td>uiRestore / workflowBatch / workflowUi / 迁移（与本次缺陷无关的几项）</td><td><code>archived_at</code> 为 NULL；201，created=1；1 行、「05 开发执行」；版本 9、integrity ok、1 → 1 行</td><td>逐项相同</td></tr></tbody></table></div>
+<h3 id="s-3-5-窄回归-66">3.5 窄回归</h3>
+<ul class="ul"><li><code>scripts/selftest-p0.mjs</code>（改过执行器 <code>startDshAttempt</code>，必须跑）：规定测试 8/8，附加必验 3/3，<code>P0 SELFTEST PASS</code>（<code>rework-selftest-p0.log</code>）。</li><li>与改动相关的既有测试文件一起跑（tasks-archive、tasks-workflow-link、chat-http、api.events、db、cross-process、workflow-db、workflow-engine、chat-engine、tool-events、agents）：118 条，118 过，0 失败（<code>rework-related-tests.log</code>）。</li><li><code>scripts/verify-workflow-engine.mjs</code> 这次<strong>没有重跑</strong>：它会把证据覆盖写进 <code>docs/evidence/workflow-engine/</code>，而工作流引擎这次没动（它的单测在全量里是过的）。</li></ul>
+<hr>
+<h2 id="s-四-截图-逐张打开看过-69">四、截图，逐张打开看过</h2>
+<p>目录 <code>docs/screenshots/tasks-rework/</code>，每张两个文件：整页 1440×900@2x，和左栏裁切（文件名带 <code>-rail</code>）。01 ~ 07、11 ~ 15 打的是真实 <code>web/server.js</code>（临时库）+ <code>web/</code> 下的前端；08 ~ 10 出自进程内夹具（只有任务 API，所以那三张整页图里工具面板和右列对话是 404 的读取失败提示，那是夹具没挂那些接口，不是看板坏了）。</p>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/01-c1-selected-two-in-all-1440x900@2x-rail.png" alt="01 全部下勾选两条：批量条已选 2 条，执行中那行有停止"><figcaption>01 全部下勾选两条：批量条已选 2 条，执行中那行有停止</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/02-c1-after-filter-switch-selection-cleared-1440x900@2x-rail.png" alt="02 切到执行后：只剩可见的一条，勾选清空，批量条收起"><figcaption>02 切到执行后：只剩可见的一条，勾选清空，批量条收起</figcaption></figure></div>
+<div class="tw"><table><thead><tr><th>文件</th><th>画面里看到了什么</th><th>自查</th></tr></thead><tbody><tr><td>01</td><td>「全部 2」下两条都勾着，批量条「已选 2 条 / 归档 / 删除 / 恢复」；执行中那行有「停止 归档 删除」，另一行只有「归档 删除」；「显示已归档」「回收站」两个开关排在同一行，没有换行溢出</td><td>对</td></tr><tr><td>02</td><td>切「执行」后只剩执行中那条，勾选框是空的，批量条没了；整页图底部提示「筛选：执行 · 1 个任务（已清空之前的选择）」</td><td>对</td></tr><tr><td>02b</td><td>在「执行」下停掉唯一一条之后：执行 0、异常 1，空列表，批量条没了</td><td>对</td></tr><tr><td>03</td><td>别处启动、登记了 pid 的执行：行上有红框「停止」</td><td>对</td></tr><tr><td>04</td><td>点停止被拒后的提示：「…不是本服务启动的，进程仍在运行；本服务不代为结束别人的进程。请先在启动它的那个终端 / 会话里停止它，再回来点一次「停止」，本服务会确认进程已经退出。」按钮仍是「停止」，没有变成确认态</td><td>对</td></tr><tr><td>05</td><td>进程退出后再点停止：那行只剩「归档 删除」</td><td>对</td></tr><tr><td>06</td><td>没登记 pid 的执行：第一次点后按钮变成实心红的「确认已停止」，提示「本服务无法确认这个执行实例是否还在跑…请先在启动它的地方停掉它，再点一次「确认已停止」」</td><td>对</td></tr><tr><td>07</td><td>确认之后：那行只剩「归档 删除」</td><td>对</td></tr><tr><td>08</td><td>托管执行在跑（夹具）：执行 1，行上有「停止」</td><td>对</td></tr><tr><td>09</td><td>点停止后：红点、「异常 1」，行上只剩「归档 删除」，提示「已停止 · 进程 … 已退出，实例记为「用户停止」；现在可以删除」</td><td>对</td></tr><tr><td>10</td><td>停止后删除：列表空</td><td>对</td></tr><tr><td>11</td><td>回收站：标题行红字「回收站 · 只显示已删除的任务」，「显示已归档」灰掉，「退出回收站」，三条各带「已删除」标签和「恢复」；标题整行可见，没有被标签挤短</td><td>对</td></tr><tr><td>11b</td><td>回收站里勾一条：批量条只有「已选 1 条 / 恢复」</td><td>对</td></tr><tr><td>12 / 13 / 14</td><td>批量恢复一条后剩两条 → 回收站空（「回收站是空的。删除的任务会出现在这里，可以恢复。」）→ 退出后四条都回到普通列表</td><td>对</td></tr><tr><td>15</td><td>模拟服务端没重启：「回收站」和「停止」都是灰的，「归档」「删除」照常可点</td><td>对</td></tr></tbody></table></div>
+<p>发现过一次问题并改了：回收站第一版把「已删除」标签放在标题那一行，左栏只有 272px，标题被挤成「C6 界面 早先…」，两条只差最后一个字的任务在回收站里分不清。改成把标签放到下面操作行的左端（步骤标签原来的位置），标题整行留给标题。上面 11 是改后的样子。</p>
+<p>其余各张（左栏裁切；04 是整页，因为提示文字在页面底部）：</p>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/02b-c1b-stopped-under-running-filter-selection-pruned-1440x900@2x-rail.png" alt="02b 在「执行」下停掉唯一一条之后：执行 0、异常 1，批量条没了"><figcaption>02b 在「执行」下停掉唯一一条之后：执行 0、异常 1，批量条没了</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/03-c5b-row-with-stop-button-1440x900@2x-rail.png" alt="03 别处启动、登记了 pid 的执行：行上有「停止」"><figcaption>03 别处启动、登记了 pid 的执行：行上有「停止」</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/04-c5b-stop-refused-not-managed-1440x900@2x.png" alt="04 点停止被拒：提示里写明不是本服务启动的、该去哪里停"><figcaption>04 点停止被拒：提示里写明不是本服务启动的、该去哪里停</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/05-c5b-after-process-exited-1440x900@2x-rail.png" alt="05 进程退出后再点停止：那行只剩归档 / 删除"><figcaption>05 进程退出后再点停止：那行只剩归档 / 删除</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/06-c5c-stop-needs-confirm-1440x900@2x.png" alt="06 没登记 pid：按钮变成「确认已停止」"><figcaption>06 没登记 pid：按钮变成「确认已停止」</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/07-c5c-after-confirmed-stop-1440x900@2x-rail.png" alt="07 确认之后：那行只剩归档 / 删除"><figcaption>07 确认之后：那行只剩归档 / 删除</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/08-c5d-managed-running-with-stop-1440x900@2x-rail.png" alt="08 托管执行在跑（夹具）：行上有「停止」"><figcaption>08 托管执行在跑（夹具）：行上有「停止」</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/09-c5d-managed-stopped-1440x900@2x.png" alt="09 点停止后：红点，行上只剩归档 / 删除，提示进程已退出"><figcaption>09 点停止后：红点，行上只剩归档 / 删除，提示进程已退出</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/10-c5d-managed-deleted-after-stop-1440x900@2x-rail.png" alt="10 停止后删除：列表空"><figcaption>10 停止后删除：列表空</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/11-c6-trash-list-1440x900@2x.png" alt="11 回收站：三条已删除的任务，各带「恢复」"><figcaption>11 回收站：三条已删除的任务，各带「恢复」</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/11b-c6-trash-batch-bar-restore-only-1440x900@2x-rail.png" alt="11b 回收站里勾一条：批量条只有「恢复」"><figcaption>11b 回收站里勾一条：批量条只有「恢复」</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/12-c6-trash-after-batch-restore-1440x900@2x-rail.png" alt="12 批量恢复一条后剩两条"><figcaption>12 批量恢复一条后剩两条</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/13-c6-trash-empty-1440x900@2x-rail.png" alt="13 回收站空"><figcaption>13 回收站空</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/14-c6-back-to-normal-list-1440x900@2x-rail.png" alt="14 退出回收站：四条都回到普通列表"><figcaption>14 退出回收站：四条都回到普通列表</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/15-c10-old-backend-disabled-stop-and-trash-1440x900@2x-rail.png" alt="15 模拟服务端没重启：回收站和停止灰掉"><figcaption>15 模拟服务端没重启：回收站和停止灰掉</figcaption></figure></div>
+<hr>
+<h2 id="s-五-线上现状-前端已是新的-后端还是旧进程-92">五、线上现状：前端已是新的，后端还是旧进程</h2>
+<p>8090 的静态文件是每次请求从磁盘读的，后端要重启才换。所以现在是「新前端 + 旧后端」。我没有重启 8090（重启该老板拍板）。只读核对脚本 <code>probes/live-8090-readonly.mjs</code>（只发 GET，结果 <code>rework-evidence/live-8090-readonly.json</code>，下面是整理过的要点）：</p>
+<details class="code" open><summary>text · 5 行 · 点击展开 / 折叠</summary><pre><code>backend:  旧代码（进程还没重启：响应里没有 api_features）
+frontend: htmlHasTrashToggle true · jsHasStopHandler true
+board:    回收站按钮 disabled=true，title=「服务端进程还是旧代码（没重启）：回收站要重启 8090 后才生效」
+          停止按钮 0 个（线上没有在跑的执行实例）· 页面异常 0 · 非 GET 请求 0
+tasks:    10 条，没有活跃实例</code></pre></details>
+<div class="gal gal--rails"><figure><img loading="lazy" src="rework-evidence/16-live-8090-rail-2x.png" alt="线上 8090 现状：回收站灰掉，其余照常"><figcaption>线上 8090 现状：回收站灰掉，其余照常</figcaption></figure></div>
+<p>为什么必须这样降级：实测旧后端收到 <code>?only_deleted=1</code> 会<strong>忽略这个参数</strong>、返回普通列表（<code>count: 10</code>，全是 <code>is_deleted: false</code>）；<code>POST /api/tasks/:id/stop</code> 在旧后端上是 404。前端靠 <code>GET /api/tasks</code> 响应里有没有 <code>api_features</code> 这个键来识别，没有就把依赖新后端的两个按钮禁用并写明原因（C10 验的就是这个）。</p>
+<p><strong>重启不会改库结构</strong>：这次没有新增迁移，<code>SCHEMA_VERSION</code> 仍是 9。</p>
+<p>线上库现状（开工时只读查的，之后没有写过）：<code>tasks</code> 32 行 —— 10 条在列表里，22 条是软删的（其中 2 条状态列写着 running 但没有任何执行实例）。重启之后那 22 条会出现在回收站里。</p>
+<hr>
+<h2 id="s-六-还差什么-100">六、还差什么</h2>
+<ul class="ol"><li><strong>8090 要重启，后端修复才线上生效。</strong> 在那之前 P1-2 / P1-3 / P1-4 / 停止 / 回收站在线上都还是旧行为，界面上只是把两个按钮禁用了。</li><li><strong>线上没有任何入口会在服务进程内启动托管执行。</strong> 除了测试夹具，全仓库调用 <code>startDshAttempt</code> 的只有 <code>scripts/selftest-p0.mjs</code>；<code>web/server.js</code> 里没有。也就是说重启之后，看板上的「停止」对真实任务只会走「有 pid 的外部进程」和「没 pid 的外部声明」两条路；「等进程真的退出」那条托管路径目前只有测试走得到。要让它在真实使用里发生，得先有一个「从看板 / API 启动托管执行」的入口，那是新功能，需要先定要不要做、用什么提示词、花不花额度。</li><li><strong>非本服务启动、进程还活着的执行，本服务不代杀。</strong> 用户得自己去它的终端里停，再回来点一次。</li><li><strong>服务重启之后，之前托管的子进程不在登记表里</strong>（句柄只存在于原来那个进程）。而且 <code>web/server.js</code> 的 SIGINT 处理没有顺手停掉托管的子进程。真要长期用托管执行，这两处要补。</li><li><strong>回收站只有恢复，没有「彻底删除」。</strong> 软删的库设计没改，22 条软删任务会一直留在库里。</li><li>g02 / g07 的 10 条历史失败没动，不在这次范围。</li><li>代码没有提交（任务没让提交；也没有 <code>git add -A</code>）。</li></ul>
+<hr>
+<h2 id="s-七-改了但不确定的地方-需要老板拍板的-103">七、改了但不确定的地方、需要老板拍板的</h2>
+<ul class="ol"><li><strong>没登记 pid 的外部执行，用户点「确认已停止」之后就记为停止、允许删除。</strong> 本服务在这种情况下没有任何可核对的进程，只能信用户。响应和事件里都标了 <code>verified: false</code>、「未经系统验证」。另一种做法是 refuses 到底（必须由声明方来结束实例），但那样声明方一旦跑了，这条任务就永远删不掉，和「正在跑的不能删，需要先停」对不上。我选了前者，<strong>这个取舍需要确认</strong>。</li><li><strong>「执行入口」我按四个理解</strong>：除了评审点名的 attempt，handoff（会新建 running 实例）、checkpoint、finish 对已删除任务也返回 409。如果只想拦 attempt，改回来是三行的事。</li><li><strong><code>GET /api/tasks/:id</code> 现在可能写库</strong>：状态列和证据不一致时读一次详情会对齐一次。只在确实不一致时写，不会每看一眼就刷 <code>updated_at</code>。</li><li><strong><code>transaction()</code> 变成可嵌套</strong>（内层是 SAVEPOINT）。不嵌套时行为和以前一样，全仓库现有调用点都没有嵌套；但这是公共助手，别的会话之后如果嵌套使用，语义是「内层出错只撤内层、错误继续抛给外层」。手写 <code>BEGIN</code> 之后再调它仍然会报错，和以前一样。</li><li><strong><code>web/adapters/dsh.mjs</code> 的 <code>startDshAttempt</code> 改了两点</strong>：拒绝已删除任务；「检查 → 抢写入权 → 建实例行」放进一个事务（建行失败时写入权自动回滚）。selftest-p0 的 8 + 3 条都过。</li><li><strong>handoff / finish 也顺手包进了事务。</strong> 评审的 P1-4 只点了归档 / 恢复 / 删除；这两个是同一类问题（半路失败会留下半截），包进去只是加一层、逻辑行没动，但让 <code>api-tasks.mjs</code> 的 diff 看起来大（主要是缩进）。不需要的话可以撤。</li><li><strong>归档不去动状态列</strong>。评审说「后续当前状态判定、展示和删除守卫要刷新派生状态」，我理解「后续」是指恢复之后，所以归档保持「一个字都不改」；<code>archived_from</code> 记的仍是归档前状态列的值，就算它已经过期，恢复那一步也会重算。如果希望归档时也先把状态列对齐，是一行事。</li><li><strong>C2b 的竞态用例是时序型的</strong>。它断言的不变量是确定的（每轮恰好一方成功、库里没有「已删除却在运行」），但在特别慢的机器上可能 60 轮全部是「删除先赢」，覆盖面会小一些。旧代码上它是 60 轮里 57 轮出问题。</li><li><strong>测试会留下孤儿进程</strong>：<code>test/chat-http.test.js</code> 等跑完会留下 <code>test/fixtures/chat-fake-claude.mjs</code> 进程。这是既有现象，不是这次引入的。我自己这几轮留下的 7 个已经清掉；更早的 3 个（22:55、23:01、23:04 起的）是别的会话留下的，没动。</li><li><strong>前端是分三步放到线上的</strong>（00:36:08 HTML + CSS，00:42:26 和 00:54:18 两次 JS 小改）。每一步之前都先在暂存目录对着进程内夹具跑过界面用例。中间那十几分钟线上是「新前端 + 旧后端」，就是第五节那个降级状态。</li></ul>
+<p>需要老板 / Leo 定的：</p>
+<ul class="ul"><li>要不要现在重启 8090。</li><li>要不要做「从看板启动托管执行」的入口（不做的话，托管停止在线上永远用不上）。</li><li>第 1 条的取舍（没 pid 的外部执行，用户确认即可）能不能接受。</li><li>回收站要不要「彻底删除」。</li></ul>
+<hr>
+<h2 id="s-八-改动清单-108">八、改动清单</h2>
+<p>改动的文件（行数是和我开工时的工作目录比，不是和 git 的上一个提交比 —— 这个工作树里本来就有上一轮未提交的改动）：</p>
+<div class="tw"><table><thead><tr><th>文件</th><th>增 / 删</th><th>改了什么</th></tr></thead><tbody><tr><td><code>web/lib/db.mjs</code></td><td>+120 / −18</td><td><code>busy_timeout</code> 提到最前；<code>enableWal</code>（已是 WAL 不切、撞锁退让重试）；迁移逐版本事务 + 事务内重读版本 + 最新版本快速返回；<code>transaction()</code> 可嵌套</td></tr><tr><td><code>web/lib/tasks.mjs</code></td><td>+19 / −0</td><td><code>requireNotDeletedTask</code>；<code>listTasks</code> 的 <code>visibility = &amp;#39;deleted&amp;#39;</code></td></tr><tr><td><code>web/adapters/dsh.mjs</code></td><td>+45 / −15</td><td>托管实例登记表（<code>getLiveAttempt</code> / <code>listLiveAttempts</code>）；<code>startDshAttempt</code> 拒绝已删除任务 + 起实例前半段放进事务；进程退出时注销</td></tr><tr><td><code>web/api-tasks.mjs</code></td><td>+473 / −169</td><td>归档 / 恢复 / 删除事务化；恢复后重算；删除守卫改看证据；<code>stop</code> 路由；<code>only_deleted</code>；<code>api_features</code> 回显；四个执行入口拒绝已删除任务；详情读时对齐状态列</td></tr><tr><td><code>web/board-cromma.html</code></td><td>+6 / −2</td><td>「回收站」按钮；提示文字加了 id</td></tr><tr><td><code>web/board-cromma.css</code></td><td>+24 / −1</td><td>回收站开关、已删除行和标签、停止按钮及确认态、禁用态、详情里的状态行</td></tr><tr><td><code>web/board-cromma.js</code></td><td>+250 / −37</td><td>切筛选清空选择、提交取交集、渲染时剪掉不可见；回收站；停止按钮与二次确认；识别旧后端；错误提示显示服务端原话</td></tr></tbody></table></div>
+<p>新增的文件：</p>
+<div class="tw"><table><thead><tr><th>文件</th><th>是什么</th></tr></thead><tbody><tr><td><code>test/tasks-rework.test.js</code></td><td>C1–C10 共 21 条（1233 行）</td></tr><tr><td><code>test/fixtures/tasks-rework-harness.mjs</code></td><td>进程内夹具：挂生产路由 + 调生产执行器起真实进程；也能当预演服务器（静态文件从指定目录读）</td></tr><tr><td><code>test/fixtures/tasks-longrun-worker.mjs</code></td><td>长跑的假 DSH 进程（真进程，不调用模型）</td></tr><tr><td><code>docs/runs/run-3d22e663/probes/independent-review-after-rework.mjs</code></td><td>评审探针的复跑副本（只改输出目录和一处不可点的步骤）</td></tr><tr><td><code>docs/runs/run-3d22e663/probes/live-8090-readonly.mjs</code></td><td>线上只读核对</td></tr><tr><td><code>docs/runs/run-3d22e663/05c-md2html.mjs</code></td><td>本报告的 Markdown → HTML</td></tr><tr><td><code>docs/screenshots/tasks-rework/</code></td><td>第一轮 17 组截图（整页 + 左栏）；第九节的追问又加了 18 ~ 25 共 8 组</td></tr><tr><td><code>docs/runs/run-3d22e663/rework-evidence/</code></td><td>评审探针复跑的结果、线上只读核对结果、线上截图；<code>05c-my-changes.patch</code> 是这次 7 个文件的改动（和开工时的工作目录比，方便只看这一轮的 diff）</td></tr><tr><td><code>docs/runs/run-3d22e663/tasks-rework-before.log</code>、<code>tasks-rework-after-run1..5.log</code>、<code>full-suite-tempdb-05c-run1..3.log</code>、<code>rework-related-tests.log</code>、<code>rework-race.log</code>、<code>rework-probe.log</code>、<code>rework-live-8090.log</code>、<code>rework-selftest-p0.log</code></td><td>真实输出</td></tr></tbody></table></div>
+<p>没动的：</p>
+<ul class="ul"><li><code>test/tasks-archive.test.js</code>、<code>test/tasks-workflow-link.test.js</code>（一条断言都没改）。</li><li><code>web/server.js</code>、<code>web/server-api.mjs</code>、<code>web/lib/attempts.mjs</code>、<code>web/lib/events.mjs</code>、<code>web/lib/write-owner.mjs</code>。</li><li><code>web/lib/state-machine.mjs</code> —— 第一轮没动；第九节的追问里改了（库里记成 completed 的任务不再被推导成 idle）。</li><li><code>docs/runs/run-3d22e663/01-requirement.md</code>、<code>07-review.md</code>、评审的 <code>review-evidence/</code> 和 <code>probes/independent-review.mjs</code>、<code>probes/first-open-race.mjs</code> 原件。</li><li><code>workflow_runs.requirement_baseline</code>、数据库结构（<code>SCHEMA_VERSION</code> 仍是 9）。</li><li><code>data/agent-office.db</code>（只做过只读查询）。</li></ul>
+<hr>
+<h2 id="s-九-追问-显示层四个问题-d1-d5-116">九、追问：显示层四个问题（D1–D5）</h2>
+<blockquote><p>2026-11-25 01:35 ~ 02:10，同一会话（08:17 任务书被原样重派，复查了现场并补跑一次，见 9.5 末尾）。背景（任务书原话）：库里 10 条任务都是 completed，接口返回 idle、界面进度 0/1、筛选标签「执行 0」全空、下拉里有已归档的乱码 run。</p></blockquote>
+<h3 id="s-9-1-逐条结果-118">9.1 逐条结果</h3>
+<div class="tw"><table><thead><tr><th>#</th><th>标准</th><th>过没过</th><th>测了几次、过几次</th><th>证据</th></tr></thead><tbody><tr><td>D1</td><td>存储 completed 的任务，接口返回也是 completed</td><td>过</td><td>5 次 5 过。按任务书给的那条查询 <code>GET /api/tasks?workflow_run_id=…</code> 验的</td><td><code>display-after-run1..5.log</code> 的 <code>D1</code></td></tr><tr><td>D2</td><td>无 task_steps 时 progress 按 status 算</td><td>过</td><td>5 次 5 过（completed 1/1，waiting 0/1）</td><td>同上 <code>D2</code></td></tr><tr><td>D3</td><td>有 task_steps 时仍按 step 计数</td><td>过</td><td>5 次 5 过（两步完成一步 1/2）</td><td>同上 <code>D3</code></td></tr><tr><td>D4</td><td>任务 status 全覆盖，不出现「有任务但所有分类都是 0」</td><td>过</td><td>5 次 5 过（七种状态各一条，各分类之和 7 = 全部 7）</td><td>同上 <code>D4</code>，截图 20 / 21</td></tr><tr><td>D5</td><td>下拉只列未归档的 run</td><td>过，<strong>线上要重启才生效</strong></td><td>5 次 5 过</td><td>同上 <code>D5</code>，截图 22 / 23</td></tr><tr><td>回归</td><td>上一轮 C1–C10 和之前的 29 条不回归</td><td>过</td><td>27 条连跑 5 次全过；29 条直接跑 29/29；全量 5 次</td><td>9.4 节</td></tr></tbody></table></div>
+<p><strong>只有问题 3（筛选分类）是纯前端改动，01:51:07 已经在线上生效。</strong> 问题 1、2、4 都要改后端，8090 得再重启一次才会生效——现在线上跑的是第一轮返工的代码（01:30:55 被重启过，不是我重启的）。详见 9.5。</p>
+<h3 id="s-9-2-先说三处和任务书描述不一样的地方-121">9.2 先说三处和任务书描述不一样的地方</h3>
+<p>这三处我都是先查了线上库和代码才动手的，按任务书字面去修的话修不好：</p>
+<ul class="ol"><li><strong>问题 2 的根因不是「task_steps 表是空的」。</strong> 只读查线上库：<code>task_steps</code> 有 28 行，全是 <code>pending</code>；那 10 条任务每条正好有一行 <code>deliverable / pending</code>。所以进度 0/1 是「有步骤行、但停在 pending」，不是没有行。任务书写的规则是「有 task_steps 记录时才用 step 计数」——照这条，这 10 条还是 0/1。所以我在任务书的规则之外多加了一条：<strong>任务已完成时，步骤全部按完成算</strong>。任务书的规则（没有步骤行：completed 1/1、其他 0/1）也照做了。</li><li><strong>问题 1 的位置不在 <code>taskView</code>。</strong> <code>taskView</code> 只是拿状态机的结论来用；把 completed 变成 idle 的是 <code>web/lib/state-machine.mjs</code> 里 <code>deriveTaskState</code> 的第 ⑧ 段：「没有执行实例 + <code>closed_at</code> 有值 → idle（任务已关闭）」。所以改在状态机里，列表、详情、Agent 状态三处用的是同一个结论。</li><li><strong>问题 4 光改前端做不到。</strong> 接口 <code>GET /api/workflow/runs</code> 以前根本没把 <code>archived_at</code> 带出来（只读核对线上：返回的键里没有它）；而且线上那条已归档的 run <code>status</code> 仍是 <code>running</code>、只有 <code>archived_at</code> 有值，按 <code>status</code> 判也不行。所以后端（<code>web/lib/workflow-engine.mjs</code>）加了这个字段的透传，前端再按它筛。</li></ul>
+<h3 id="s-9-3-逐个怎么修的-124">9.3 逐个怎么修的</h3>
+<p><strong>问题 1：接口把 completed 转成了 idle</strong></p>
+<ul class="ul"><li>修法（<code>web/lib/state-machine.mjs</code>，第 ⑧ 段）：任务从来没有执行实例、也没有任何验收事件，而库里的状态列是 completed —— 按completed 显示，理由写「任务记录为已完成（库里的状态；本系统没有它的执行实例，也没有验收事件）」，证据源 <code>system</code>。</li><li>不是把所有任务都标 completed。D1 里有三条反面断言：没开始做的仍是 waiting；在跑的仍是 running；<strong>跑过、实例结束、但没有验收，之后被人工改库记成 completed 的，仍然显示 waiting</strong>。最后这条是状态机原有的硬规矩 3（completed 必须绑定验收通过），我只给「从没在本系统里跑过」的任务开了口子。</li><li>顺手堵掉一个第一轮留下的隐患：第一轮我加的「读详情时把状态列对齐到证据」在旧规则下会把这 10 条任务库里的 completed 刷成 idle。D1 里断言「读一次详情之后，库里的状态列必须还是 completed」。<strong>线上现在的进程还是第一轮的代码，这个隐患在线上还在</strong>，见 9.5。</li></ul>
+<p><strong>问题 2：progress 永远是 0/1</strong></p>
+<ul class="ul"><li>修法（<code>web/lib/tasks.mjs</code> 的 <code>summarizeSteps</code> 加一个 <code>completed</code> 选项）：</li><li class="sub">没有步骤行：completed 1/1，其他 0/1。不编一个步骤出来，<code>done</code> / <code>remaining</code> 两个清单仍是空的。</li><li class="sub">有步骤行、任务没完成：照旧数步骤。</li><li class="sub">有步骤行、任务已完成：全部算完成，<code>current_step</code> 和 <code>remaining</code> 清空。<strong>只改显示口径，库里的步骤行一个字没动</strong>（D3 断言那两行仍是 pending）。</li><li>四处用的是同一个口径：任务列表、任务详情、Agent 状态里的任务对象、交付物视图的任务头（<code>web/api-tasks.mjs</code>、<code>web/api-deliverables.mjs</code>、状态机两处）。</li></ul>
+<p><strong>问题 3：筛选标签分类不对</strong></p>
+<ul class="ul"><li>修法（<code>web/board-cromma.js</code> 的 <code>TASK_BUCKETS</code>）：除了「全部」，六个分类两两互斥，每条任务按顺序落进第一个命中的，所以各分类之和恒等于「全部」。</li></ul>
+<p>| 分类 | 装哪些任务 |<br>|---|---|<br>| 接力 | 待接力的（<code>relay_pending</code>），或者状态是「等待」的 |<br>| 执行 | 执行中 |<br>| 异常 | 已阻塞 / 已中断 / 失败 |<br>| 未知 | 状态未知，以及任何不认识的状态值（将来新增的、缺失的） |<br>| 完成 | 已完成（新增） |<br>| 空闲 | 已关闭、没有待继续的工作（新增） |</p>
+<ul class="ul"><li>两个自己拿的主意：①「等待」状态的任务行上本来就标着「待接力」，以前却不在任何一个分类里，现在归到「接力」；②「空闲」（已关闭）没有并进「完成」——已关闭不等于已完成，单独一类。左栏因此多了一行，「空闲」占满整行。</li><li>「待接力的优先」：一条执行中或已阻塞的任务如果同时标着待接力，算「接力」不算「执行」/「异常」，因为它需要的是有人接手。</li></ul>
+<p><strong>问题 4：下拉里的已归档 run</strong></p>
+<ul class="ul"><li>后端：<code>getRunState</code> / <code>listRunStates</code> 多带一个 <code>archived_at</code>（纯透传）。</li><li>前端：下拉只列 <code>archived_at</code> 为空的 run。选中的 run 随后被归档，刷新时筛选自动退回「全部任务」。服务端进程要是还没重启到带这个字段的那一版，前端无从判断，照旧全列，悬停提示里写明。</li><li>乱码标题是历史数据，按任务书没动。</li></ul>
+<h3 id="s-9-4-真实输出-135">9.4 真实输出</h3>
+<p><strong>修之前</strong>：把 5 个后端文件临时换回这一轮开工时的版本，用新写的用例打一遍（<code>display-before-tests.log</code>；跑完立刻换回，逐个 <code>cmp</code> 核对过）：</p>
+<details class="code" open><summary>text · 10 行 · 点击展开 / 折叠</summary><pre><code>✖ D1 库里是 completed 的任务，接口返回的也是 completed，不是 idle (224.2892ms)
+✖ D2 没有 task_steps 时进度按任务状态算：completed → 1/1，waiting → 0/1 (11.1839ms)
+✖ D3 有 task_steps 时仍按步骤计数：两步完成一步 → 1/2；记成完成但步骤行还挂在 pending 的 → 满进度 (18.4896ms)
+✖ D4 筛选分类覆盖所有任务状态：七种状态各一条，分类之和 = 总数，completed 有自己的分类 (746.9352ms)
+✖ D5 工作流下拉只列未归档的 run；选中的 run 被归档后退回「全部任务」 (288.1216ms)
+✖ D1b 界面：十条人工记成完成的任务 → 左栏「完成 10」，每行进度 1/1，不再显示成「空闲 0/1」 (768.536ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6</code></pre></details>
+<p>各自卡在（整理）：D1「按 run 过滤的列表里状态应是 completed，实际 idle」；D2 <code>total: 0</code>（没有步骤行时是 0/0）；D3「任务已完成，进度就该是满的」（实际 0/2）；D4 那条已完成的在接口里是 idle；D5「run 列表必须带 archived_at」；D1b 筛选计数里没有 <code>completed</code> 这个键。</p>
+<p><strong>修之后</strong>：<code>display-after-run1.log</code> 第 34 ~ 50 行，逐字（上一轮的 C 用例也在同一个文件里，一起跑）：</p>
+<details class="code"><summary>text · 17 行 · 点击展开 / 折叠</summary><pre><code>✔ D1 库里是 completed 的任务，接口返回的也是 completed，不是 idle (44.9942ms)
+ℹ D1：库里 completed + 无执行实例 + 无验收事件 → 接口 completed（system：任务记录为已完成（库里的状态；本系统没有它的执行实例，也没有验收事件））；waiting → waiting；running → running；跑过没验收 + 库里 completed → waiting
+✔ D2 没有 task_steps 时进度按任务状态算：completed → 1/1，waiting → 0/1 (32.2018ms)
+ℹ D2：无步骤行 · waiting → 0/1；无步骤行 · completed → 列表 1/1、详情 1/1、交付物视图 1/1
+✔ D3 有 task_steps 时仍按步骤计数：两步完成一步 → 1/2；记成完成但步骤行还挂在 pending 的 → 满进度 (50.2803ms)
+ℹ D3：两步完成一步 → 1/2；completed + 步骤行停在 pending → 2/2（库里步骤行未改）；finish 验收通过 → 1/1（步骤行已是 done）
+✔ D4 筛选分类覆盖所有任务状态：七种状态各一条，分类之和 = 总数，completed 有自己的分类 (1048.2745ms)
+ℹ D4：筛选计数 {&quot;all&quot;:7,&quot;running&quot;:1,&quot;relay&quot;:1,&quot;risk&quot;:2,&quot;unknown&quot;:1,&quot;completed&quot;:1,&quot;idle&quot;:1}；各分类之和 7 = 全部 7
+✔ D5 工作流下拉只列未归档的 run；选中的 run 被归档后退回「全部任务」 (942.9316ms)
+ℹ D5：下拉 3 项（含「全部任务」）；已归档的 2 个 run 都不在里面；选中的 run 被归档后退回全部任务
+✔ D1b 界面：十条人工记成完成的任务 → 左栏「完成 10」，每行进度 1/1，不再显示成「空闲 0/1」 (853.8116ms)
+ℹ D1b 界面：筛选计数 {&quot;all&quot;:10,&quot;running&quot;:0,&quot;relay&quot;:0,&quot;risk&quot;:0,&quot;unknown&quot;:0,&quot;completed&quot;:10,&quot;idle&quot;:0}；十行进度 [&quot;1/1&quot;]
+✔ C9 界面用例全程没有未捕获的 JS 异常（pageerror / console error） (0.2422ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0</code></pre></details>
+<p>连跑 5 次，27 条里每一条都是「过 5、败 0」（C1–C10、D1–D5、D1b、C9）：</p>
+<details class="code" open><summary>text · 5 行 · 点击展开 / 折叠</summary><pre><code>run 1: tests 27 pass 27 fail 0
+run 2: tests 27 pass 27 fail 0
+run 3: tests 27 pass 27 fail 0
+run 4: tests 27 pass 27 fail 0
+run 5: tests 27 pass 27 fail 0</code></pre></details>
+<p><strong>回归</strong>：</p>
+<ul class="ul"><li>上一版两个测试文件直接各跑一次：<code>tests 29 pass 29 fail 0</code>（<code>display-29-direct.log</code>）。</li><li><code>scripts/selftest-p0.mjs</code>（状态机改过，必须跑）：规定测试 8/8，附加必验 3/3，<code>P0 SELFTEST PASS</code>（<code>display-selftest-p0.log</code>）。</li><li>与改动相关的 11 个既有测试文件：<code>tests 118 pass 118 fail 0</code>（<code>display-related-tests.log</code>）。</li><li>全量，临时库，5 次（<code>full-suite-tempdb-05c-display-run1..5.log</code>）：</li></ul>
+<details class="code" open><summary>text · 5 行 · 点击展开 / 折叠</summary><pre><code>run 1: tests 392 pass 382 fail 10
+run 2: tests 392 pass 382 fail 10
+run 3: tests 392 pass 381 fail 11
+run 4: tests 392 pass 382 fail 10
+run 5: tests 392 pass 382 fail 10</code></pre></details>
+<p>比上一轮多出来的 6 条是这一轮新增的用例，5 次全过。那 10 条失败还是 g02-flows / g07-r72 / g07-r73 的老面孔，位置和上一轮逐条对得上。<strong>第 3 次多出的 1 条是 <code>test/agent-client.test.js:267</code></strong>：「300ms 内 50ms 间隔应续约 3-8 次，实际 2」——那是 <code>src/</code> 下旧 SDK 的心跳节奏计时断言，<code>src/</code> 这次一个字没动；单独跑 5 次 5 过，和这次的测试文件并行跑 3 次 3 过，只在全量满载时出现过这 1 次。上一轮的 3 次全量里没有它。</p>
+<h3 id="s-9-5-截图和线上现状-147">9.5 截图和线上现状</h3>
+<p>截图都在 <code>docs/screenshots/tasks-rework/</code>（18 ~ 23 打的是临时起的真实 <code>web/server.js</code> + 新后端 + <code>web/</code> 下的前端；24、25 是线上 8090 的只读截图）。每张都打开看过。</p>
+<div class="tw"><table><thead><tr><th>文件</th><th>画面里看到了什么</th></tr></thead><tbody><tr><td>18</td><td>十条库里记成完成的任务：「全部 10 · 执行 0 · 接力 0 · 异常 0 · 未知 0 · 完成 10 · 空闲 0」；每行绿点、进度 1/1；中间液位 100%、任务推进 10 / 10 步</td></tr><tr><td>19</td><td>点开一条：右上「已完成」；进度 100%、1 / 1 步完成、当前步骤和剩余步骤都是「—」；证据源 system</td></tr><tr><td>20</td><td>七种状态各一条：「全部 7 · 执行 1 · 接力 1 · 异常 2 · 未知 1 · 完成 1 · 空闲 1」</td></tr><tr><td>21</td><td>点「完成」：只剩那条已完成的</td></tr><tr><td>22</td><td>工作流下拉的 option 清单（原生下拉展开的样子截不到，把 DOM 原文投在页面上）：3 项，两个已归档的都不在</td></tr><tr><td>23</td><td>选中的 run 被归档后点刷新：下拉退回「全部任务」，三条任务都在</td></tr><tr><td>24</td><td><strong>线上，01:40，这一轮之前</strong>：「全部 10 · 执行 0 · 接力 0 · 异常 0 · 未知 0」，没有「完成」这一类；每行 0/1、标着「空闲」——就是任务书说的样子</td></tr><tr><td>25</td><td><strong>线上，01:51，前端上线后、后端重启前</strong>：多了「完成 0 · 空闲 10」；行还是 0/1</td></tr></tbody></table></div>
+<p>原图：</p>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/18-d1b-ten-completed-tasks-shown-as-completed-1440x900@2x.png" alt="18 十条库里记成完成的任务：完成 10，每行 1/1，液位 100%（临时服务，新后端）"><figcaption>18 十条库里记成完成的任务：完成 10，每行 1/1，液位 100%（临时服务，新后端）</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/20-d4-filters-cover-every-status-1440x900@2x-rail.png" alt="20 七种状态各一条：全部 7 · 执行 1 · 接力 1 · 异常 2 · 未知 1 · 完成 1 · 空闲 1"><figcaption>20 七种状态各一条：全部 7 · 执行 1 · 接力 1 · 异常 2 · 未知 1 · 完成 1 · 空闲 1</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/21-d4-filter-completed-1440x900@2x-rail.png" alt="21 点「完成」：只剩那条已完成的"><figcaption>21 点「完成」：只剩那条已完成的</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/22-d5-run-dropdown-excludes-archived-1440x900@2x.png" alt="22 工作流下拉的 option 清单（DOM 原文投影）：3 项，没有已归档的"><figcaption>22 工作流下拉的 option 清单（DOM 原文投影）：3 项，没有已归档的</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/24-live-8090-before-all-categories-zero-1440x900@2x-rail.png" alt="24 线上 01:40，这一轮之前：所有分类都是 0，行 0/1「空闲」"><figcaption>24 线上 01:40，这一轮之前：所有分类都是 0，行 0/1「空闲」</figcaption></figure></div>
+<div class="gal gal--rails"><figure><img loading="lazy" src="../../screenshots/tasks-rework/25-live-8090-new-frontend-old-backend-idle-10-1440x900@2x-rail.png" alt="25 线上 01:51，前端上线后、后端重启前：完成 0 · 空闲 10，行还是 0/1"><figcaption>25 线上 01:51，前端上线后、后端重启前：完成 0 · 空闲 10，行还是 0/1</figcaption></figure></div>
+<p>线上现状，按时间：</p>
+<ul class="ul"><li>01:30:55 有人重启了 8090（不是我）。它现在跑的是<strong>第一轮返工</strong>的后端。</li><li>01:51:07 这一轮的前端放进了 <code>web/</code>，立刻生效。所以线上现在是：筛选条有了「完成」「空闲」，因为后端还把 completed 说成 idle，显示成「空闲 10 · 完成 0」；进度还是 0/1；下拉里那条已归档的乱码 run 还在（后端还没带 <code>archived_at</code>）。页面无异常（只读核对结果在 <code>rework-evidence/display-live-frontend-new-backend-old/</code>）。</li><li>问题 1、2、4 的后端改动要<strong>再重启一次 8090</strong> 才生效。没有新增迁移，重启不改库结构。重启后的样子就是截图 18 / 19 / 22（临时服务按线上数据的形状造的）。</li><li><strong>重启之前请别对那 10 条任务用详情接口（<code>GET /api/tasks/:id</code>）、删除或恢复</strong>：线上现在的第一轮代码会在这些操作里把库里的 completed 刷成 idle（9.3 的问题 1 里说的那个隐患）。我 02:00 只读查过，库里 10 条还是 completed，没被动过。</li></ul>
+<p><strong>08:17 复查</strong>（任务书被原样重新派发，先确认现场再交差）：</p>
+<ul class="ul"><li>代码和我 01:51 验过的那一版逐字节一致（8 个文件逐个 <code>cmp</code>），01:52 之后 <code>web/</code>、<code>test/</code>、<code>scripts/</code>、<code>src/</code> 没有任何文件被改过。</li><li>8090 还是 01:30:55 起的那个进程（PID 31084），<strong>没有被再重启</strong>。线上接口此刻仍然是 <code>idle</code> 10 条、进度 <code>0/1</code> 10 条、run 列表没有 <code>archived_at</code>。</li><li>库里那 10 条仍然是 completed；<code>events</code> 表最后一条还是 15:42:57 的，说明这 6 个小时没有人碰过这些任务。</li><li>补跑第 6 次：<code>tests 27 pass 27 fail 0</code>（<code>display-after-run6.log</code>）。</li></ul>
+<h3 id="s-9-6-还差什么-需要拍板的-161">9.6 还差什么、需要拍板的</h3>
+<ul class="ol"><li><strong>重启 8090</strong>，问题 1、2、4 才线上生效。</li><li><strong>硬规矩 3 的边界</strong>：跑过、没验收、之后被人工改库记成 completed 的任务，现在仍然显示「等待」（没验收）。要不要也认库里的 completed？我选了不认——否则「声称完成必须附证据」这条就能靠一句 SQL 绕过。如果 Leo 的实际用法是「人工改库就是验收」，这条要改。</li><li><strong>「接力」分类的含义变宽了</strong>（多了「等待」状态的任务）。新建、还没派活的任务行上标的是「待接力」，所以它们现在算在「接力」里。不认可的话改一行。</li><li>乱码 run 的标题没修（按任务书，只过滤）。</li><li><code>scripts/verify-workflow-engine.mjs</code> 没重跑（它会把证据覆盖写进工作流那一步的目录）；引擎这次只多带一个字段，它的单元测试在全量里是过的。</li><li>代码仍然没有提交。</li></ul>
+<p>这一轮的改动（和这一轮开工时比；完整 diff 在 <code>rework-evidence/05c-display-changes.patch</code>）：</p>
+<div class="tw"><table><thead><tr><th>文件</th><th>增 / 删</th><th>改了什么</th></tr></thead><tbody><tr><td><code>web/lib/state-machine.mjs</code></td><td>+21 / −2</td><td>第 ⑧ 段加了「库里 completed、没执行实例、没验收事件 → completed」；任务已完成时步骤按全部完成算</td></tr><tr><td><code>web/lib/tasks.mjs</code></td><td>+23 / −8</td><td><code>summarizeSteps</code> 加 <code>completed</code> 选项；没有步骤行时 0/1 或 1/1</td></tr><tr><td><code>web/lib/workflow-engine.mjs</code></td><td>+4 / −0</td><td>run 状态多带 <code>archived_at</code></td></tr><tr><td><code>web/api-tasks.mjs</code>、<code>web/api-deliverables.mjs</code></td><td>各 +2 / −1</td><td>算进度时把「任务是否已完成」传进去</td></tr><tr><td><code>web/board-cromma.html</code> / <code>.css</code> / <code>.js</code></td><td>+4 / +2 / +47（−17）</td><td>六个互斥分类、新按钮；下拉过滤已归档的 run、选中被归档后退回全部</td></tr><tr><td><code>test/tasks-rework.test.js</code></td><td>+278</td><td>新增 D1、D2、D3、D4、D5、D1b</td></tr><tr><td><code>test/fixtures/tasks-rework-harness.mjs</code></td><td>+6 / −2</td><td>夹具多挂了工作流 run 的路由（下拉要用）</td></tr><tr><td><code>docs/runs/run-3d22e663/probes/live-8090-display-readonly.mjs</code></td><td>新增</td><td>线上只读核对（四个现象各在哪一步）</td></tr></tbody></table></div>
+<p>这一轮没动的：<code>test/tasks-archive.test.js</code>、<code>test/tasks-workflow-link.test.js</code>、<code>web/server.js</code>、<code>web/server-api.mjs</code>、<code>src/</code>、<code>data/agent-office.db</code>（只读）。</p></main>
+</div>
+<script>
+(function () {
+  var main = document.querySelector('main');
+  var q = document.getElementById('q');
+  var count = document.getElementById('count');
+  function clear() {
+    main.querySelectorAll('mark').forEach(function (m) {
+      var p = m.parentNode;
+      p.replaceChild(document.createTextNode(m.textContent), m);
+      p.normalize();
+    });
+  }
+  q.addEventListener('input', function () {
+    clear();
+    var v = q.value.trim();
+    if (!v) { count.textContent = ''; return; }
+    var n = 0;
+    var w = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+    var parts = [];
+    var node;
+    while ((node = w.nextNode())) {
+      if (node.parentNode.closest('script,style')) continue;
+      if (node.nodeValue.indexOf(v) >= 0) parts.push(node);
+    }
+    parts.forEach(function (textNode) {
+      var frag = document.createDocumentFragment();
+      var text = textNode.nodeValue;
+      var idx = 0;
+      for (;;) {
+        var at = text.indexOf(v, idx);
+        if (at < 0) { frag.appendChild(document.createTextNode(text.slice(idx))); break; }
+        frag.appendChild(document.createTextNode(text.slice(idx, at)));
+        var m = document.createElement('mark');
+        m.textContent = text.substr(at, v.length);
+        frag.appendChild(m);
+        n += 1;
+        idx = at + v.length;
+      }
+      textNode.parentNode.replaceChild(frag, textNode);
+    });
+    count.textContent = n ? ('匹配 ' + n + ' 处') : '无匹配';
+  });
+  function all(open) { main.querySelectorAll('details.code').forEach(function (d) { d.open = open; }); }
+  document.getElementById('collapse').addEventListener('click', function () { all(false); });
+  document.getElementById('expand').addEventListener('click', function () { all(true); });
+})();
+</script></body></html>

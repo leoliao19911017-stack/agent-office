@@ -16,15 +16,16 @@
 // 整个项目只有本文件创建数据库连接；其它模块一律接收 db 参数，便于测试隔离。
 
 import { DatabaseSync } from 'node:sqlite';
-import { existsSync, mkdirSync } from 'node:fs';
+import { closeSync, existsSync, mkdirSync, openSync, readSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { WORKFLOW_SCHEMA, WORKFLOW_VERSION_SCHEMA, seedWorkflowTemplates } from './workflow-schema.mjs';
 
 export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 5;
+const SCHEMA_VERSION = 9;
 
 /**
  * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
@@ -380,13 +381,120 @@ const MIGRATIONS = [
   { version: 3, up(db) { db.exec(SCHEMA_V3_AGENTS); seedAgents(db); } },
   { version: 4, up(db) { db.exec(SCHEMA_V4_TOOL_EVENTS); } },
   { version: 5, up(db) { db.exec(SCHEMA_V5_DELIVERABLES); } },
+  // v6（P0 第一步数据层，docs/工作流定义-v3-定稿.md）：
+  // 工作流模板 / 运行实例 / 运行步骤三张表，并预置 coding-v1 模板。
+  // 表结构与预置内容在 web/lib/workflow-schema.mjs，读写函数在 workflow-db.mjs。
+  { version: 6, up(db) { db.exec(WORKFLOW_SCHEMA); seedWorkflowTemplates(db); } },
+  // v7（P0 第二步）：模板历史版本表。PUT 更新前把旧行抄进历史，旧版本可继续查。
+  { version: 7, up(db) { db.exec(WORKFLOW_VERSION_SCHEMA); } },
+  // v8（TASK-任务归档/删除/恢复）：tasks 加三列 + 两个索引。
+  //
+  // 铁律：只 ALTER TABLE ADD COLUMN，不删表重建，历史任务行一行不动。
+  //   archived_at   归档时间（NULL=未归档）；归档只写它，不改 status
+  //   archived_from 归档前的状态；恢复时用它还原（A5/A6）
+  //   deleted_at    软删时间（NULL=未删除）；行保留，列表默认不返回
+  // ADD COLUMN 不支持 IF NOT EXISTS，用 PRAGMA 判断列是否已在——旧库/半迁移库
+  // 重复执行也安全（迁移版本本身只跑一次，这里是第二道保险）。
+  {
+    version: 8,
+    up(db) {
+      const cols = new Set(allRows(db, 'PRAGMA table_info(tasks)').map((c) => c.name));
+      if (!cols.has('archived_at')) db.exec('ALTER TABLE tasks ADD COLUMN archived_at TEXT');
+      if (!cols.has('archived_from')) db.exec('ALTER TABLE tasks ADD COLUMN archived_from TEXT');
+      if (!cols.has('deleted_at')) db.exec('ALTER TABLE tasks ADD COLUMN deleted_at TEXT');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_archived ON tasks(archived_at)');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_deleted  ON tasks(deleted_at)');
+    },
+  },
+  // v9（TASK-tasks 挂到工作流步骤）：tasks 加两列 + 一个联合索引。
+  //
+  // Leo 的口径：工作流是固定的九步，任务每次不同。任务要能回答「属于哪次需求、九步里的哪一步」：
+  //   workflow_run_id   属于哪次需求（workflow_runs.run_id）；NULL = 不属于任何工作流
+  //   workflow_step_id  属于九步中的哪一步（workflow_run_steps.step_id，如 '05'）；NULL = 没挂到步骤
+  // 同 v8：只 ALTER TABLE ADD COLUMN，不删表重建，历史任务行一行不动、两列为 NULL。
+  // 两列不加外键——run / step 是否真实存在由 API 层在建任务时校验（web/api-tasks.mjs），
+  // 这样 run 的归档 / 模板升级不会反过来卡住任务表的写入。
+  {
+    version: 9,
+    up(db) {
+      const cols = new Set(allRows(db, 'PRAGMA table_info(tasks)').map((c) => c.name));
+      if (!cols.has('workflow_run_id')) db.exec('ALTER TABLE tasks ADD COLUMN workflow_run_id TEXT');
+      if (!cols.has('workflow_step_id')) db.exec('ALTER TABLE tasks ADD COLUMN workflow_step_id TEXT');
+      db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_workflow ON tasks(workflow_run_id, workflow_step_id)');
+    },
+  },
 ];
 
 /** 已打开的连接缓存：同一个 db 文件在一个进程里只建一个连接。 */
 const cache = new Map();
 
+/** 撞锁时最多等多久。busy_timeout 交给 SQLite 自己等；切 WAL 那一步 SQLite 不吃它，由 enableWal 自己等同样长。 */
+const BUSY_TIMEOUT_MS = 5000;
+
 export function resolveDbPath(p) {
   return resolve(p || process.env.AGENT_OFFICE_DB || DEFAULT_DB_PATH);
+}
+
+/** 同步睡一小会儿（openDb 是同步的，不能 await）。Node 的主线程允许 Atomics.wait。 */
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/** 是不是「撞锁」：SQLite 的 busy handler 没等到（或根本没被调用）时抛出来的那种错。 */
+function isLockedError(err) {
+  if (!err) return false;
+  // errcode 5 = SQLITE_BUSY，6 = SQLITE_LOCKED；拿不到 errcode（版本差异）时按消息文本判
+  if (err.errcode === 5 || err.errcode === 6) return true;
+  return /database is locked/i.test(String(err.message || ''));
+}
+
+/**
+ * 库文件是不是已经是 WAL 模式：看文件头第 18 / 19 字节（写 / 读格式版本，2 = WAL）。
+ * 空文件、文件不存在、读不到，一律当作「还不是」——宁可多跑一次切换，也不凭猜测跳过。
+ */
+function isWalFile(path) {
+  let fd = null;
+  try {
+    fd = openSync(path, 'r');
+    const head = Buffer.alloc(20);
+    if (readSync(fd, head, 0, 20, 0) < 20) return false;
+    return head[18] === 2 && head[19] === 2;
+  } catch {
+    return false;
+  } finally {
+    if (fd != null) {
+      try { closeSync(fd); } catch { /* 关不上不影响判断 */ }
+    }
+  }
+}
+
+/**
+ * 把库切到 WAL，并且在别的进程正好也在首开时等得起。
+ *
+ * 为什么不能只靠 busy_timeout：切 WAL 要改写文件头，SQLite 为此要在「自己已经拿着读锁」的
+ * 状态下去拿写锁。这时如果别的进程正拿着写锁，SQLite 为了避免死锁会**直接**返回 SQLITE_BUSY，
+ * 不调用 busy handler——busy_timeout 设多大都没用。多个进程同时第一次打开同一个（还不存在的）
+ * 库时，晚到一步的那个就会这样报 database is locked（实测 10 个服务同时首开：20 个首请求里
+ * 2 ~ 8 个 500，全部出在这一句）。
+ *
+ * 两道处理：
+ *   1. 文件已经是 WAL 就根本不碰 journal_mode（线上库、绝大多数测试打开的都是这种）；
+ *   2. 确实要切（新库 / 旧模式库）又撞上了，就退让重试，直到切成为止或超过 busy_timeout。
+ *      第一个切完之后，后面的进程再读文件头已经是 WAL，同一条 PRAGMA 立刻返回、不再要独占锁。
+ */
+function enableWal(db, path) {
+  if (isWalFile(path)) return;
+  const deadline = Date.now() + BUSY_TIMEOUT_MS;
+  for (;;) {
+    try {
+      db.exec('PRAGMA journal_mode = WAL');
+      return;
+    } catch (err) {
+      if (!isLockedError(err) || Date.now() >= deadline) throw err;
+      // 退让一小段再试（带一点随机，免得几个进程步调一致地反复同时撞）
+      sleepSync(15 + Math.floor(Math.random() * 40));
+    }
+  }
 }
 
 /**
@@ -398,10 +506,11 @@ export function openDb(opts = {}) {
   if (!opts.memory) mkdirSync(dirname(path), { recursive: true });
 
   const db = new DatabaseSync(path);
-  // WAL：读写不互相堵；busy_timeout 防止多进程（server / 迁移脚本）偶发锁冲突。
-  db.exec('PRAGMA journal_mode = WAL');
+  // busy_timeout 要在任何会抢锁的语句之前设：它是这条连接后面所有读写（包括迁移事务）的排队上限。
+  db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+  // WAL：读写不互相堵。
+  enableWal(db, path);
   db.exec('PRAGMA foreign_keys = ON');
-  db.exec('PRAGMA busy_timeout = 5000');
   applyMigrations(db);
 
   if (!opts.memory) cache.set(path, db);
@@ -440,31 +549,74 @@ export function getRow(db, sql, params = []) {
   return row ? { ...row } : null;
 }
 
-/** 建表版本；幂等：已经到版本 1 的库不会重复建表。 */
+/**
+ * 建表版本；幂等，并且跨进程串行。
+ *
+ * 已经是最新版本的库（线上库、绝大多数次打开）：只读一下版本号就返回，不写任何东西。
+ * 有版本要迁时，每个版本各占一个 BEGIN IMMEDIATE 事务（走下面的 transaction()）：拿到写锁之后
+ * 在事务里重读 schema_version，别的进程已经迁过这一版就什么都不做。不这样做的话，多个进程
+ * 同时首开同一个库会各跑一遍同样的迁移、互相撞出 database is locked。
+ * 按版本分事务、进事务后重读版本，而不是把整串迁移包成一个大事务：
+ *   - 别的进程迁到一半就退出了，接手的进程从它停下的那一版继续，不重跑也不漏跑；
+ *   - 迁移内容和「版本号 +1」永远一起提交，不会出现「表建了、版本没记」的半截库。
+ *
+ * 前提：MIGRATIONS 里任何一版的 up() 都不自己开事务（否则和这里的 BEGIN 嵌套会报错）。
+ * 现有 v1–v9 都只有 CREATE / ALTER / INSERT，满足这个前提。
+ */
 export function applyMigrations(db) {
+  // 表已经在了时这条语句不写库；新库上多个进程同时建它，靠前面设好的 busy_timeout 排队。
   db.exec('CREATE TABLE IF NOT EXISTS schema_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
-  const row = getRow(db, 'SELECT value FROM schema_meta WHERE key = ?', ['schema_version']);
-  const current = row ? Number(row.value) || 0 : 0;
+  const readVersion = () => {
+    const row = getRow(db, 'SELECT value FROM schema_meta WHERE key = ?', ['schema_version']);
+    return row ? Number(row.value) || 0 : 0;
+  };
+  const current = readVersion();
+  if (current >= SCHEMA_VERSION) return { version: current };
+
   for (const m of MIGRATIONS) {
-    if (m.version <= current) continue;
-    m.up(db);
-    db.prepare(
-      'INSERT INTO schema_meta (key, value) VALUES (?, ?) ' +
-      'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-    ).run('schema_version', String(m.version));
+    transaction(db, () => {
+      // 拿到写锁之后再读一次：别的进程可能刚刚迁过这一版。
+      if (m.version <= readVersion()) return;
+      m.up(db);
+      db.prepare(
+        'INSERT INTO schema_meta (key, value) VALUES (?, ?) ' +
+        'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      ).run('schema_version', String(m.version));
+    });
   }
-  return { version: Math.max(current, SCHEMA_VERSION) };
+  return { version: readVersion() };
 }
 
-/** 事务包装：BEGIN IMMEDIATE 保证抢锁语义；异常统一回滚。 */
+/** 每个连接当前嵌套在第几层事务里（弱引用：连接对象回收后这一项跟着没了）。 */
+const txDepth = new WeakMap();
+
+/**
+ * 事务包装：最外层 BEGIN IMMEDIATE 保证抢锁语义；嵌套调用落成 SAVEPOINT。
+ * 异常统一回滚（内层只撤自己那一段，并把错误原样抛给外层），不吞错。
+ *
+ * 可以嵌套：一个操作要原子地做「校验 → 调一个自己会开事务的函数 → 自己的写入」时，
+ * 外面直接再包一层就行，不用为了避开嵌套 BEGIN 把顺序拆开再写补偿代码。
+ * 例：声明一次执行 = 查任务是否已删除 → acquireWriteOwner（内部有事务）→ createAttempt，
+ * 三步必须同生同死（web/api-tasks.mjs 的 attempt 路由）。
+ * 注意：这里只认得出经本函数开的事务；别处手写 db.exec('BEGIN …') 之后再调它，
+ * 仍然会撞上 SQLite 的「不能在事务里开事务」——和以前一样。
+ */
 export function transaction(db, fn) {
-  db.exec('BEGIN IMMEDIATE');
+  const depth = txDepth.get(db) || 0;
+  const savepoint = `tx_sp_${depth}`;
+  db.exec(depth === 0 ? 'BEGIN IMMEDIATE' : `SAVEPOINT ${savepoint}`);
+  txDepth.set(db, depth + 1);
   try {
     const out = fn();
-    db.exec('COMMIT');
+    txDepth.set(db, depth);
+    db.exec(depth === 0 ? 'COMMIT' : `RELEASE ${savepoint}`);
     return out;
   } catch (err) {
-    try { db.exec('ROLLBACK'); } catch { /* 回滚失败不掩盖原错误 */ }
+    txDepth.set(db, depth);
+    try {
+      db.exec(depth === 0 ? 'ROLLBACK' : `ROLLBACK TO ${savepoint}`);
+      if (depth > 0) db.exec(`RELEASE ${savepoint}`);
+    } catch { /* 回滚失败不掩盖原错误 */ }
     throw err;
   }
 }
