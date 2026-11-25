@@ -1,29 +1,60 @@
 // TASK-COMPANY-D0 验收测试：A1-A4（迁移与预置）、A6-A11（任务链路 + 汇报铁律）。
+// R2 起 startExecution 会真建 git worktree：数据层测试统一把 proj-agent-office
+// 的 root_path 指到临时 git 仓库（mkdtemp + git init + 初始提交），after() 统一删。
 // 运行：node --no-warnings --test test/company.test.js
 //
 // 两层：
 //   数据层用内存 SQLite 直接调 web/lib/company.mjs（不 mock，真库真事务）；
 //   HTTP 层用 test/chat-harness.mjs 起真实 web/server.js 子进程（临时库 + 随机端口），
 //   与 tasks-rework 的隔离口径一致：不碰 data/agent-office.db、不抢 8090。
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { execFileSync } from 'node:child_process';
+import { join } from 'node:path';
 import { openDb, closeDb } from '../web/lib/db.mjs';
 import {
   acceptWork, archiveDepartment, archiveEmployee, assignWork, assistantReport,
   blockWork, createDepartment, createEmployee, createWork, deliverWork, getEmployee,
   getOrg, getWork, grantTool, listWorks, rejectWork, startExecution,
 } from '../web/lib/company.mjs';
-import { startChatServer, postJson, getJson } from './chat-harness.mjs';
+import { startChatServer, postJson, getJson, patchJson } from './chat-harness.mjs';
 
-/** 每个数据层测试独立一套内存库（迁移 v10 自动跑，预置 4 部门 / 2 员工 / 3 授权）。 */
+const tempRepos = [];
+after(() => {
+  for (const repo of tempRepos) {
+    try { rmSync(repo, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch { /* Windows 句柄延迟不挡断言 */ }
+  }
+});
+
+/** 建一个真 git 临时仓库（有初始提交，够 worktree add 用）。 */
+export function makeTempRepo() {
+  const repo = mkdtempSync(join(tmpdir(), 'soda-company-repo-'));
+  const git = (args) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', windowsHide: true });
+  git(['init', '-b', 'main']);
+  git(['config', 'user.email', 'test@example.com']);
+  git(['config', 'user.name', 'Soda Test']);
+  writeFileSync(join(repo, 'README.md'), '# temp repo\n');
+  git(['add', 'README.md']);
+  git(['commit', '-m', 'init']);
+  tempRepos.push(repo);
+  return repo;
+}
+
+/** 每个数据层测试独立一套内存库（迁移自动跑，预置 4 部门 / 2 员工 / 3 授权 / 1 项目），
+ *  项目 root_path 指向临时 git 仓库，worktree 全部落在外层 after() 会删的目录里。 */
 function freshDb() {
-  return openDb({ memory: true });
+  const db = openDb({ memory: true });
+  db.prepare("UPDATE projects SET root_path = ? WHERE project_id = 'proj-agent-office'").run(makeTempRepo());
+  return db;
 }
 
 /** 走完整链路到指定状态，返回 work_id。 */
 function makeWork(db, { to = 'pending', owner = 'emp-claude', outputRefs = ['docs/x.md'] } = {}) {
   const w = createWork(db, {
     title: '测试任务', what_to_deliver: '一份文档', acceptance: '覆盖全部点',
+    project_id: 'proj-agent-office',
     owner_employee_id: owner, assigned_by: 'leo',
   });
   if (to === 'pending') return w.work_id;
@@ -96,7 +127,7 @@ test('部门归档保护：有未完结任务 → 409', () => {
   const db = freshDb();
   try {
     const d = createDepartment(db, { name: '设计部', duty: '' });
-    const w = createWork(db, { title: 'x', owner_employee_id: 'emp-claude' });
+    const w = createWork(db, { title: 'x', owner_employee_id: 'emp-claude', project_id: 'proj-agent-office' });
     db.prepare('UPDATE work_items SET department_id = ? WHERE work_id = ?').run(d.department_id, w.work_id);
     assert.throws(() => archiveDepartment(db, d.department_id),
       (e) => e.statusCode === 409 && e.code === 'DEPARTMENT_HAS_ACTIVE_WORK');
@@ -118,7 +149,7 @@ test('员工：建 / 改 / 工具授权整组替换 / 归档保护（有 running
       (err) => err.statusCode === 400 && err.code === 'AGENT_NOT_FOUND');
 
     // 归档保护：pending 任务也算未完结
-    const w = createWork(db, { title: 'x', owner_employee_id: e.employee_id });
+    const w = createWork(db, { title: 'x', owner_employee_id: e.employee_id, project_id: 'proj-agent-office' });
     assert.throws(() => archiveEmployee(db, e.employee_id),
       (err) => err.statusCode === 409 && err.code === 'EMPLOYEE_HAS_RUNNING_WORK');
     // 任务验收后就能归档了
@@ -138,26 +169,35 @@ test('员工：建 / 改 / 工具授权整组替换 / 归档保护（有 running
 // 任务链路：A6-A9
 // ---------------------------------------------------------------------------
 
-test('A6 交办：校验负责人存在、在职、至少一个工具', () => {
+test('A6 交办：校验负责人存在、在职、至少一个工具；R2 起必须挂项目', () => {
   const db = freshDb();
   try {
     const w = createWork(db, {
       title: '整理 EaseDraw 功能介绍',
       what_to_deliver: '一份功能介绍文档',
       acceptance: '覆盖全部功能点',
+      project_id: 'proj-agent-office',
       owner_employee_id: 'emp-claude',
       assigned_by: 'leo',
     });
     assert.equal(w.status, 'pending');
     assert.equal(w.owner_name, 'Claude');
     assert.equal(w.department_id, 'dev', '不指定部门时默认负责人的部门');
+    assert.equal(w.project_id, 'proj-agent-office');
+    assert.equal(w.project_name, 'Agent Office');
 
     assert.throws(() => createWork(db, { title: 'x', owner_employee_id: 'emp-nobody' }),
       (e) => e.statusCode === 404 && e.code === 'EMPLOYEE_NOT_FOUND');
 
+    // R2 §2.6：缺 project_id → 400；挂不存在的项目 → 400
+    assert.throws(() => createWork(db, { title: 'x', owner_employee_id: 'emp-claude' }),
+      (e) => e.statusCode === 400 && e.code === 'PROJECT_REQUIRED');
+    assert.throws(() => createWork(db, { title: 'x', owner_employee_id: 'emp-claude', project_id: 'proj-nope' }),
+      (e) => e.statusCode === 400 && e.code === 'PROJECT_NOT_FOUND');
+
     // 没有工具授权的员工接不了活
     const e = createEmployee(db, { department_id: 'dev', name: '裸奔', role: '临时工' });
-    assert.throws(() => createWork(db, { title: 'x', owner_employee_id: e.employee_id }),
+    assert.throws(() => createWork(db, { title: 'x', owner_employee_id: e.employee_id, project_id: 'proj-agent-office' }),
       (err) => err.statusCode === 400 && err.code === 'OWNER_NO_TOOL');
   } finally { closeDb(db); }
 });
@@ -320,17 +360,28 @@ test('HTTP 全链路：org → 交办 → 派给 → 开始(409) → 交付 → 
     assert.equal(org.body.departments.length, 4);
     assert.equal(org.body.assistant.employee_id, 'emp-hermes');
 
+    // 项目根目录改到临时仓库：start 会真建 worktree，不许写进真仓库
+    const repo = makeTempRepo();
+    const patched = await patchJson(srv.base, '/api/projects/proj-agent-office', { root_path: repo });
+    assert.equal(patched.status, 200, `PATCH 项目根目录失败：${JSON.stringify(patched.body)}`);
+
     // 交办给助理（老板入口），再派给 Claude（点击路径 2 → 3）
     const created = await postJson(srv.base, '/api/work', {
       title: '整理 EaseDraw 功能介绍',
       what_to_deliver: '一份功能介绍文档',
       acceptance: '覆盖全部功能点',
+      project_id: 'proj-agent-office',
       owner_employee_id: 'emp-hermes',
       assigned_by: 'leo',
     });
     assert.equal(created.status, 201);
     assert.equal(created.body.work.status, 'pending');
     const wid = created.body.work.work_id;
+
+    // R5：缺 project_id → 400 PROJECT_REQUIRED
+    const noProj = await postJson(srv.base, '/api/work', { title: 'x', owner_employee_id: 'emp-hermes' });
+    assert.equal(noProj.status, 400);
+    assert.equal(noProj.body.code, 'PROJECT_REQUIRED');
 
     const assigned = await postJson(srv.base, `/api/work/${wid}/assign`, { owner_employee_id: 'emp-claude' });
     assert.equal(assigned.status, 200);

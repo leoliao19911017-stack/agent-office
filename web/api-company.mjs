@@ -10,26 +10,33 @@
 //         DELETE /api/employees/:id           软删（有未完结任务 → 409）
 //         POST   /api/employees/:id/tools     授权工具 { agent_id }
 //         DELETE /api/employees/:id/tools/:agentId   收回授权
-//   任务   POST   /api/work                   交办（校验负责人在职且有工具）
-//         GET    /api/work?status=&owner=&dept=   列表
+//   项目   GET    /api/projects               列表（带 requirement_count / task_count）
+//         POST   /api/projects                建项目（root_path 给了必须真实存在）
+//         GET    /api/projects/:id            详情（+ requirements / tasks）
+//         PATCH  /api/projects/:id            改项目
+//         DELETE /api/projects/:id            软删（未完结任务 / running run → 409）
+//   任务   POST   /api/work                   交办（R2 起 project_id 必填）
+//         GET    /api/work?status=&owner=&dept=&project=   列表
 //         GET    /api/work/:id                详情（负责人 + 执行记录 + 时间线）
 //         POST   /api/work/:id/assign         派给（改负责人；点击路径 3）
-//         POST   /api/work/:id/start          开始执行（已有 running → 409 WORK_ALREADY_RUNNING）
-//         POST   /api/work/:id/deliver        提交成果 → delivered
+//         POST   /api/work/:id/start          开始执行（建 worktree；已有 running → 409）
+//         POST   /api/work/:id/deliver        提交成果 → delivered（人工补录路径）
+//         POST   /api/work/:id/finish         执行收尾（commit + 释放锁；R2 §3.4）
 //         POST   /api/work/:id/accept         验收 → accepted
 //         POST   /api/work/:id/reject         退回 { reason } → rejected
 //         POST   /api/work/:id/block          受阻 { reason } → blocked
+//         POST   /api/work/:id/merge          人工合并执行分支（R2 §3.6，只对 accepted 开放）
 //   汇报   GET    /api/assistant/report       100% 库内聚合（铁律见 lib/company.mjs 头注）
 //
 // 挂载约定与 api-tasks / api-agents 一致：自己匹配路径、自己管 405，
 // 不认识的路径返回 false 交给后面的路由。
 import { getDb } from './lib/db.mjs';
 import {
-  acceptWork, archiveDepartment, archiveEmployee, assignWork, assistantReport,
-  blockWork, createDepartment, createEmployee, createWork, deliverWork,
-  getDepartment, getEmployee, getOrg, getToolLibrary, getWork, grantTool,
-  listDepartments, listEmployees, listWorks, rejectWork, revokeTool,
-  startExecution, updateDepartment, updateEmployee,
+  acceptWork, archiveDepartment, archiveEmployee, archiveProject, assignWork, assistantReport,
+  blockWork, createDepartment, createEmployee, createProject, createWork, deliverWork,
+  finishExecution, getDepartment, getEmployee, getOrg, getProjectDetail, getToolLibrary,
+  getWork, grantTool, listDepartments, listEmployees, listProjects, listWorks, mergeExecution,
+  rejectWork, revokeTool, startExecution, updateDepartment, updateEmployee, updateProject,
 } from './lib/company.mjs';
 
 function send(deps, res, statusCode, payload) {
@@ -135,6 +142,27 @@ export async function handleCompanyApi(req, res, path, method, deps = {}) {
     }
   }
 
+  // ---- 项目（TASK-COMPANY-D0-R2 §2.5）--------------------------------------
+  if (seg[0] === 'api' && seg[1] === 'projects') {
+    if (seg.length === 2) {
+      if (m === 'GET') { send(deps, res, 200, { ok: true, projects: listProjects(db) }); return true; }
+      if (m === 'POST') { send(deps, res, 201, { ok: true, project: createProject(db, await readBody(deps, req)) }); return true; }
+      throw httpErrorOf(deps)(405, 'METHOD_NOT_ALLOWED', `${m} ${path} 不支持`);
+    }
+    if (seg.length === 3) {
+      const id = decodeURIComponent(seg[2]);
+      if (m === 'GET') {
+        const p = getProjectDetail(db, id);
+        if (!p) throw httpErrorOf(deps)(404, 'PROJECT_NOT_FOUND', `项目不存在：${id}`);
+        send(deps, res, 200, { ok: true, project: p });
+        return true;
+      }
+      if (m === 'PATCH') { send(deps, res, 200, { ok: true, project: updateProject(db, id, await readBody(deps, req)) }); return true; }
+      if (m === 'DELETE') { send(deps, res, 200, { ok: true, project: archiveProject(db, id) }); return true; }
+      throw httpErrorOf(deps)(405, 'METHOD_NOT_ALLOWED', `${m} ${path} 不支持`);
+    }
+  }
+
   // ---- 任务 ---------------------------------------------------------------
   if (seg[0] === 'api' && seg[1] === 'work' && seg.length === 2) {
     if (m === 'GET') {
@@ -165,11 +193,13 @@ export async function handleCompanyApi(req, res, path, method, deps = {}) {
   if (seg[0] === 'api' && seg[1] === 'work' && seg.length === 4) {
     const id = decodeURIComponent(seg[2]);
     const action = seg[3];
-    const body = ['start', 'deliver', 'assign', 'reject', 'block'].includes(action)
+    const body = ['start', 'deliver', 'assign', 'reject', 'block', 'finish'].includes(action)
       ? await readBody(deps, req) : {};
     if (m !== 'POST') throw httpErrorOf(deps)(405, 'METHOD_NOT_ALLOWED', `${m} ${path} 不支持`);
     if (action === 'start') { send(deps, res, 201, { ok: true, ...startExecution(db, id, body) }); return true; }
     if (action === 'deliver') { send(deps, res, 200, { ok: true, work: deliverWork(db, id, body) }); return true; }
+    if (action === 'finish') { send(deps, res, 200, { ok: true, work: finishExecution(db, id, body) }); return true; }
+    if (action === 'merge') { send(deps, res, 200, { ok: true, ...mergeExecution(db, id) }); return true; }
     if (action === 'accept') { send(deps, res, 200, { ok: true, work: acceptWork(db, id) }); return true; }
     if (action === 'reject') { send(deps, res, 200, { ok: true, work: rejectWork(db, id, body) }); return true; }
     if (action === 'block') { send(deps, res, 200, { ok: true, work: blockWork(db, id, body) }); return true; }

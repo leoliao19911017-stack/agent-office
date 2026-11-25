@@ -178,6 +178,16 @@ export async function getJson(base, path) {
   return { status: res.status, body: await res.json().catch(() => null) };
 }
 
+export async function patchJson(base, path, body) {
+  const res = await fetch(base + path, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body || {}) });
+  return { status: res.status, body: await res.json().catch(() => null) };
+}
+
+export async function deleteJson(base, path) {
+  const res = await fetch(base + path, { method: 'DELETE' });
+  return { status: res.status, body: await res.json().catch(() => null) };
+}
+
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** 轮询到这一轮走到终态（或超时），返回轮次视图 */

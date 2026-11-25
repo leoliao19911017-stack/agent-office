@@ -75,6 +75,7 @@ function workCardHtml(w, { actions = '', extra = '' } = {}) {
   const statusTag = `<span class="tag status-tag ${STATUS_TAG[w.status] || ''}">${esc(w.status_label || w.status)}</span>`;
   const meta = [
     w.owner_name ? `负责人 ${esc(w.owner_name)}` : '',
+    w.project_name ? esc(w.project_name) : '',
     w.department_name ? esc(w.department_name) : '',
     w.deliverable_count ? `${w.deliverable_count} 份成果` : '',
   ].filter(Boolean).join(' · ');
@@ -86,9 +87,47 @@ function workCardHtml(w, { actions = '', extra = '' } = {}) {
   </article>`;
 }
 
+// ---------- 交付物显示（R2 §1：修 [object Object]） ----------
+
+/** 路径取 basename（Windows / POSIX 斜缝都吃）。 */
+function basename(p) {
+  const parts = String(p).split(/[\\/]/).filter(Boolean);
+  return parts.length ? parts[parts.length - 1] : String(p);
+}
+
+/** 交付物显示名：对象取 name，没有再取 path 的 basename；字符串直接取 basename。 */
+function refLabel(r) {
+  if (r == null) return '';
+  if (typeof r === 'string') return basename(r);
+  if (typeof r.name === 'string' && r.name.trim()) return r.name.trim();
+  if (typeof r.path === 'string' && r.path) return basename(r.path);
+  return '';
+}
+
+/** 交付物的完整路径（可点开看详情的依据）：字符串本身就是路径；对象取 path。 */
+function refPath(r) {
+  if (typeof r === 'string') return r;
+  return (r && typeof r.path === 'string' && r.path) || '';
+}
+
+/**
+ * 成果清单 HTML：每项显示文件名（R2 §1）——
+ *   ① 有 path → 可点（title 提示完整路径，点开 flash 全路径）
+ *   ② 没有 path → 纯文本
+ *   ③ 最多 3 个，多的折叠成「+N」（点 +N 展开全部清单）
+ *   ④ 空数组 → 不渲染任何东西
+ */
 function refsHtml(outputRefs) {
-  if (!outputRefs || !outputRefs.length) return '';
-  return `<ul class="refs">${outputRefs.map((r) => `<li data-action="show-refs">📄 ${esc(r)}</li>`).join('')}</ul>`;
+  const refs = (Array.isArray(outputRefs) ? outputRefs : []).filter((r) => refLabel(r));
+  if (!refs.length) return '';
+  const shown = refs.slice(0, 3).map((r, i) => {
+    const path = refPath(r);
+    return path
+      ? `<li data-action="show-ref" data-idx="${i}" title="${esc(path)}">📄 ${esc(refLabel(r))}</li>`
+      : `<li>📄 ${esc(refLabel(r))}</li>`;
+  });
+  const rest = refs.length - shown.length;
+  return `<ul class="refs">${shown.join('')}${rest > 0 ? `<li class="more" data-action="show-refs">+${rest}</li>` : ''}</ul>`;
 }
 
 function renderNeeds(items) {
@@ -375,12 +414,19 @@ document.addEventListener('click', async (ev) => {
         await loadAssistant();
         break;
       }
-      case 'show-refs': {
-        // 点击成果 → 展开这份交付的完整成果清单（数据来自 work 详情）
+      case 'show-ref': {
+        // 点单个成果 → 显示完整路径（数据来自 work 详情，不编造）
         const { work } = await api(`/api/work/${workId}`);
-        const li = el;
-        const title = li.textContent.replace('📄 ', '');
-        flash(`成果 ${title} · 共 ${work.output_refs.length} 份：${work.output_refs.join('、')}`);
+        const r = (work.output_refs || [])[Number(el.dataset.idx)];
+        const label = r != null ? refLabel(r) : '';
+        const path = r != null ? refPath(r) : '';
+        flash(path && path !== label ? `${label} · ${path}` : (label || '（无成果信息）'));
+        break;
+      }
+      case 'show-refs': {
+        // 点「+N」→ 展开这份交付的完整成果清单（显示名，不是 [object Object]）
+        const { work } = await api(`/api/work/${workId}`);
+        flash(`共 ${work.output_refs.length} 份：${work.output_refs.map(refLabel).join('、')}`);
         break;
       }
       case 'pick-dept': {
@@ -415,6 +461,26 @@ document.addEventListener('keydown', (ev) => {
 
 // ---------- 表单 ----------
 
+/** 交办框的项目下拉（R2 §2.6）：默认选上次用的（localStorage），没有记录选第一个。 */
+async function loadProjectOptions() {
+  const sel = $('#compose-project');
+  try {
+    const { projects } = await api('/api/projects');
+    if (!projects.length) { sel.hidden = true; return; }
+    sel.hidden = false;
+    sel.innerHTML = projects.map((p) => `<option value="${esc(p.project_id)}">${esc(p.name)}</option>`).join('');
+    const last = localStorage.getItem('compose-project');
+    sel.value = projects.some((p) => p.project_id === last) ? last : projects[0].project_id;
+  } catch (err) {
+    // 老进程还没挂 /api/projects（等重启）：下拉藏掉，交办会给出明确的 PROJECT_REQUIRED 报错
+    sel.hidden = true;
+  }
+}
+
+$('#compose-project')?.addEventListener('change', (ev) => {
+  localStorage.setItem('compose-project', ev.target.value);
+});
+
 $('#compose-toggle').addEventListener('click', () => {
   const more = $('#compose-more');
   more.hidden = !more.hidden;
@@ -430,6 +496,7 @@ $('#compose-form').addEventListener('submit', async (ev) => {
     what_to_deliver: $('#compose-deliver').value.trim() || undefined,
     acceptance: $('#compose-acceptance').value.trim() || undefined,
     input_refs: inputs ? inputs.split(/[,，]/).map((s) => s.trim()).filter(Boolean) : [],
+    project_id: $('#compose-project')?.value || undefined,
     owner_employee_id: state.org?.assistant?.employee_id || 'emp-hermes',
     assigned_by: 'leo',
   };
@@ -438,6 +505,10 @@ $('#compose-form').addEventListener('submit', async (ev) => {
     flash(`已交办（${r.work.status_label}），负责人 ${r.work.owner_name}`);
     $('#compose-form').reset();
     $('#compose-more').hidden = true;
+    // reset 会把下拉弹回第一项，恢复成「上次用的」
+    const sel = $('#compose-project');
+    const last = localStorage.getItem('compose-project');
+    if (sel && last && !sel.hidden) sel.value = last;
     await loadAssistant();
   } catch (err) {
     flash(`交办失败：${err.message}`);
@@ -474,6 +545,7 @@ $$('.nav-item').forEach((btn) => btn.addEventListener('click', () => {
 async function boot() {
   const view = (location.hash || '#assistant').slice(1);
   switchView(['assistant', 'company', 'resources'].includes(view) ? view : 'assistant');
+  loadProjectOptions();
   try {
     await loadAssistant();
   } catch (err) {

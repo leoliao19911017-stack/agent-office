@@ -17,7 +17,13 @@
 //      - 没有本周目标 → week_goals 为空数组，前端显示「尚无目标」，不显示 0%。
 
 import { randomBytes } from 'node:crypto';
+import { existsSync, rmSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { allRows, getRow, transaction } from './db.mjs';
+import {
+  commitAllIfDirty, currentBranch, deleteBranch, mergeNoFf, pruneWorktrees, removeWorktree,
+  worktreeAdd,
+} from './git-ops.mjs';
 
 /** work_items.status 的中文口径（列表 / 汇报 / 前端共用一份）。 */
 export const WORK_STATUS_LABEL = {
@@ -394,6 +400,146 @@ function safeParseObject(text) {
 }
 
 // ---------------------------------------------------------------------------
+// 项目（TASK-COMPANY-D0-R2 §2）：任务的归属容器；root_path 是 git 仓库根，
+// 执行的 worktree 建在 <root_path>/.worktrees/ 下（§3.2 目录规范）。
+// ---------------------------------------------------------------------------
+
+/** 项目状态枚举（任务书 §2.1：active | paused | done | archived）。 */
+const PROJECT_STATUSES = ['active', 'paused', 'done', 'archived'];
+
+/** root_path 校验（POST / PATCH 共用）：给了就必须真实存在且是目录，不许种假路径。 */
+function assertRootPathExists(rootPath) {
+  if (!existsSync(rootPath) || !statSync(rootPath).isDirectory()) {
+    throw fail(400, 'ROOT_NOT_FOUND', `root_path 不存在或不是目录：${rootPath}`);
+  }
+}
+
+const PROJECT_SELECT = `
+  SELECT p.*, d.name AS department_name,
+    (SELECT COUNT(*) FROM workflow_runs r WHERE r.project_id = p.project_id) AS requirement_count,
+    (SELECT COUNT(*) FROM work_items w WHERE w.project_id = p.project_id) AS task_count
+  FROM projects p LEFT JOIN departments d ON d.department_id = p.department_id`;
+
+function decorateProject(row) {
+  if (!row) return null;
+  return {
+    project_id: row.project_id,
+    name: row.name,
+    description: row.description || '',
+    department_id: row.department_id || null,
+    department_name: row.department_name || null,
+    root_path: row.root_path || '',
+    status: row.status,
+    archived_at: row.archived_at || null,
+    sort_index: row.sort_index,
+    requirement_count: row.requirement_count ?? 0,
+    task_count: row.task_count ?? 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+}
+
+export function listProjects(db) {
+  return allRows(db, `${PROJECT_SELECT} WHERE p.status != 'archived' ORDER BY p.sort_index, p.project_id`)
+    .map(decorateProject);
+}
+
+export function getProject(db, id) {
+  return decorateProject(getRow(db, `${PROJECT_SELECT} WHERE p.project_id = ?`, [id]));
+}
+
+/** GET /api/projects/:id 的载荷：项目 + 名下需求（workflow_runs）+ 任务（work_items）。 */
+export function getProjectDetail(db, id) {
+  const project = getProject(db, id);
+  if (!project) return null;
+  const requirements = allRows(db, `
+    SELECT run_id, title, status, current_step, created_at, updated_at
+    FROM workflow_runs WHERE project_id = ? ORDER BY updated_at DESC`, [id]);
+  return { ...project, requirements, tasks: listWorks(db, { project: id }) };
+}
+
+function nextSortIndex(db) {
+  const r = getRow(db, 'SELECT COALESCE(MAX(sort_index), -1) + 1 AS n FROM projects');
+  return r ? r.n : 0;
+}
+
+export function createProject(db, input) {
+  const name = isNonEmptyString(input.name) ? input.name.trim() : '';
+  if (!name) throw fail(400, 'MISSING_NAME', '项目名称不能为空');
+  if (getRow(db, 'SELECT project_id FROM projects WHERE name = ?', [name])) {
+    throw fail(409, 'PROJECT_NAME_TAKEN', `项目名称已存在：${name}`);
+  }
+  const deptId = isNonEmptyString(input.department_id) ? input.department_id.trim() : null;
+  if (deptId && !getRow(db, 'SELECT department_id FROM departments WHERE department_id = ? AND archived_at IS NULL', [deptId])) {
+    throw fail(400, 'DEPARTMENT_NOT_FOUND', `部门不存在或已归档：${deptId}`);
+  }
+  const rootPath = isNonEmptyString(input.root_path) ? input.root_path.trim() : '';
+  if (rootPath) assertRootPathExists(rootPath);
+
+  const id = makeId('proj');
+  const now = nowIso();
+  transaction(db, () => {
+    db.prepare(`INSERT INTO projects
+      (project_id, name, description, department_id, root_path, status, sort_index, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?)`)
+      .run(id, name,
+        isNonEmptyString(input.description) ? input.description.trim() : '',
+        deptId, rootPath, nextSortIndex(db), now, now);
+  });
+  return getProject(db, id);
+}
+
+export function updateProject(db, id, patch) {
+  const row = getRow(db, 'SELECT * FROM projects WHERE project_id = ?', [id]);
+  if (!row) throw fail(404, 'PROJECT_NOT_FOUND', `项目不存在：${id}`);
+  const next = {
+    name: isNonEmptyString(patch.name) ? patch.name.trim() : row.name,
+    description: isNonEmptyString(patch.description) ? patch.description.trim() : row.description,
+    department_id: patch.department_id !== undefined
+      ? (isNonEmptyString(patch.department_id) ? patch.department_id.trim() : null)
+      : row.department_id,
+    // root_path 只能换成真实存在的新路径（不给就保持原值；不支持清空——没有根就没法建 worktree）
+    root_path: isNonEmptyString(patch.root_path) ? patch.root_path.trim() : row.root_path,
+    status: isNonEmptyString(patch.status) ? patch.status.trim() : row.status,
+  };
+  if (getRow(db, 'SELECT project_id FROM projects WHERE name = ? AND project_id != ?', [next.name, id])) {
+    throw fail(409, 'PROJECT_NAME_TAKEN', `项目名称已存在：${next.name}`);
+  }
+  if (!PROJECT_STATUSES.includes(next.status)) {
+    throw fail(400, 'BAD_STATUS', `status 只能是 ${PROJECT_STATUSES.join(' / ')}：${next.status}`);
+  }
+  if (next.root_path) assertRootPathExists(next.root_path);
+
+  transaction(db, () => {
+    db.prepare('UPDATE projects SET name = ?, description = ?, department_id = ?, root_path = ?, status = ?, updated_at = ? WHERE project_id = ?')
+      .run(next.name, next.description, next.department_id, next.root_path, next.status, nowIso(), id);
+  });
+  return getProject(db, id);
+}
+
+/** DELETE /api/projects/:id：软删（status='archived'）。有未完结任务或 running 的 run → 409（任务书 §2.5）。 */
+export function archiveProject(db, id) {
+  const row = getRow(db, 'SELECT * FROM projects WHERE project_id = ?', [id]);
+  if (!row) throw fail(404, 'PROJECT_NOT_FOUND', `项目不存在：${id}`);
+  if (row.status === 'archived') return getProject(db, id);
+  const active = getRow(db,
+    `SELECT COUNT(*) AS n FROM work_items WHERE project_id = ? AND status IN ${UNFINISHED_WORK_SQL}`, [id]);
+  if (active.n > 0) {
+    throw fail(409, 'PROJECT_HAS_ACTIVE_WORK', `项目还有 ${active.n} 件未完结任务，先处理再归档`);
+  }
+  const runningRuns = getRow(db,
+    "SELECT COUNT(*) AS n FROM workflow_runs WHERE project_id = ? AND status = 'running'", [id]);
+  if (runningRuns.n > 0) {
+    throw fail(409, 'PROJECT_HAS_RUNNING_RUN', `项目还有 ${runningRuns.n} 个进行中的工作流运行，先处理再归档`);
+  }
+  transaction(db, () => {
+    db.prepare("UPDATE projects SET status = 'archived', archived_at = ?, updated_at = ? WHERE project_id = ?")
+      .run(nowIso(), nowIso(), id);
+  });
+  return getProject(db, id);
+}
+
+// ---------------------------------------------------------------------------
 // 任务：work_items / work_executions
 // ---------------------------------------------------------------------------
 
@@ -420,6 +566,7 @@ function decorateWork(db, row, { withDetail = false } = {}) {
     department_id: row.department_id || null,
     department_name: row.department_name || null,
     project_id: row.project_id || null,
+    project_name: row.project_name || null,
     owner_employee_id: row.owner_employee_id || null,
     owner_name: row.owner_name || null,
     owner_role: row.owner_role || null,
@@ -483,11 +630,13 @@ function buildTimeline(db, row) {
 
 const WORK_SELECT = `
   SELECT w.*, e.name AS owner_name, e.role AS owner_role, d.name AS department_name,
+    p.name AS project_name,
     (SELECT x.status FROM work_executions x WHERE x.work_id = w.work_id
       ORDER BY x.started_at DESC, x.execution_id DESC LIMIT 1) AS latest_exec_status
   FROM work_items w
   LEFT JOIN employees e ON e.employee_id = w.owner_employee_id
-  LEFT JOIN departments d ON d.department_id = w.department_id`;
+  LEFT JOIN departments d ON d.department_id = w.department_id
+  LEFT JOIN projects p ON p.project_id = w.project_id`;
 
 export function createWork(db, input) {
   const title = isNonEmptyString(input.title) ? input.title.trim() : '';
@@ -499,6 +648,12 @@ export function createWork(db, input) {
   const deptId = isNonEmptyString(input.department_id) ? input.department_id.trim() : ownerRow.department_id;
   const dept = getRow(db, 'SELECT * FROM departments WHERE department_id = ?', [deptId]);
   if (!dept || dept.archived_at) throw fail(400, 'DEPARTMENT_NOT_FOUND', `部门不存在或已归档：${deptId}`);
+  // R2 §2.6：新建任务必须挂项目（存量行 project_id 可空，这里只管新建）
+  const projectId = isNonEmptyString(input.project_id) ? input.project_id.trim() : '';
+  if (!projectId) throw fail(400, 'PROJECT_REQUIRED', '任务必须挂一个项目（缺 project_id）');
+  if (!getRow(db, 'SELECT project_id FROM projects WHERE project_id = ?', [projectId])) {
+    throw fail(400, 'PROJECT_NOT_FOUND', `项目不存在：${projectId}`);
+  }
   const inputRefs = Array.isArray(input.input_refs) ? input.input_refs : [];
 
   const id = makeId('work');
@@ -528,6 +683,7 @@ export function listWorks(db, filters = {}) {
   if (isNonEmptyString(filters.status)) { conds.push('w.status = ?'); params.push(filters.status.trim()); }
   if (isNonEmptyString(filters.owner)) { conds.push('w.owner_employee_id = ?'); params.push(filters.owner.trim()); }
   if (isNonEmptyString(filters.dept)) { conds.push('w.department_id = ?'); params.push(filters.dept.trim()); }
+  if (isNonEmptyString(filters.project)) { conds.push('w.project_id = ?'); params.push(filters.project.trim()); }
   const sql = WORK_SELECT + (conds.length ? ` WHERE ${conds.join(' AND ')}` : '')
     + ' ORDER BY w.updated_at DESC, w.work_id DESC';
   return allRows(db, sql, params).map((r) => decorateWork(db, r));
@@ -556,37 +712,216 @@ function runningExecution(db, workId) {
   return getRow(db, "SELECT * FROM work_executions WHERE work_id = ? AND status = 'running' ORDER BY started_at DESC LIMIT 1", [workId]);
 }
 
+/**
+ * 开始执行（R2 §3.3 改造：先物理 worktree 隔离，再写库）。
+ * 这一轮不 spawn 进程——worktree 建出来、记录写对即完成；进程调度是下一轮。
+ * 失败铁律：git 报错原样透出（500 WORKTREE_CREATE_FAILED + stderr），绝不静默
+ * 降级成「在项目根跑」。
+ */
 export function startExecution(db, workId, input = {}) {
+  // ① 任务存在 + 没有 running 执行
   const row = getRow(db, 'SELECT * FROM work_items WHERE work_id = ?', [workId]);
   if (!row) throw fail(404, 'WORK_NOT_FOUND', `任务不存在：${workId}`);
   if (!row.owner_employee_id) throw fail(400, 'NO_OWNER', '任务还没有负责人，先派给员工');
   if (runningExecution(db, workId)) {
     throw fail(409, 'WORK_ALREADY_RUNNING', '这个任务已有一条进行中的执行，不能重复开始');
   }
-  // 用哪个工具：显式指定优先（必须是负责人有授权的），否则负责人的默认工具
+  // ② 项目三连：挂着项目、项目存在、root_path 真实存在
+  const project = row.project_id
+    ? getRow(db, 'SELECT * FROM projects WHERE project_id = ?', [row.project_id]) : null;
+  if (!row.project_id) throw fail(400, 'PROJECT_REQUIRED', '任务没有挂项目，不能开始执行（先补 project_id）');
+  if (!project) throw fail(400, 'PROJECT_NOT_FOUND', `任务挂的项目不存在：${row.project_id}`);
+  if (!isNonEmptyString(project.root_path)) {
+    throw fail(400, 'PROJECT_NO_ROOT', `项目「${project.name}」没有配置 root_path，无法建 worktree`);
+  }
+  if (!existsSync(project.root_path) || !statSync(project.root_path).isDirectory()) {
+    throw fail(400, 'PROJECT_ROOT_NOT_FOUND', `项目目录不存在：${project.root_path}`);
+  }
+  // ③ 负责人有授权工具：显式指定优先，否则默认工具
   const { defaultAgentId } = assertOwnerAssignable(db, row.owner_employee_id);
   const tools = toolsOf(db, row.owner_employee_id).map((t) => t.agent_id);
   const agentId = isNonEmptyString(input.agent_id) ? input.agent_id.trim() : defaultAgentId;
   if (!tools.includes(agentId)) {
     throw fail(400, 'AGENT_NOT_AUTHORIZED', `负责人没有 ${agentId} 的授权（可用：${tools.join(', ') || '无'}）`);
   }
+  // ④ base_ref = 项目根当前分支（detached HEAD 时退回 commit sha，两样都能当 base）
+  let baseRef;
+  try {
+    baseRef = currentBranch(project.root_path);
+  } catch (err) {
+    const e = fail(500, 'WORKTREE_CREATE_FAILED', `读取项目当前分支失败：${err.message}`);
+    e.stderr = err.stderr || '';
+    throw e;
+  }
+  // ⑤⑥⑦ execution_id / exec 分支 / worktree 路径（§3.2：<root>/.worktrees/<work_id>/<execution_id>）
   const execId = makeId('exec');
+  const branchName = `exec/${execId}`;
+  const worktreePath = join(project.root_path, '.worktrees', workId, execId);
+  // ⑧ 真 worktree。失败（比如 checkout 撞 Windows 路径长度上限）时把半成品收掉：
+  // worktree add 失败常留下 exec 分支和半个目录，不收就成了孤儿。
+  try {
+    worktreeAdd(project.root_path, worktreePath, branchName, baseRef);
+  } catch (err) {
+    try { removeWorktree(project.root_path, worktreePath); } catch { /* 没注册成 worktree */ }
+    if (existsSync(worktreePath)) {
+      try { rmSync(worktreePath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }); } catch { /* 尽力 */ }
+    }
+    try { deleteBranch(project.root_path, branchName); } catch { /* 分支可能没建出来 */ }
+    const e = fail(500, 'WORKTREE_CREATE_FAILED', `git worktree add 失败：${err.message}`);
+    e.stderr = err.stderr || '';
+    throw e;
+  }
+  // ⑨⑩ lock + execution 行（一个事务）；DB 写失败时把刚建的 worktree 收掉再抛，不留孤儿
   const now = nowIso();
-  transaction(db, () => {
-    db.prepare(`INSERT INTO work_executions
-      (execution_id, work_id, employee_id, agent_id, status, command, log_path, started_at)
-      VALUES (?, ?, ?, ?, 'running', ?, NULL, ?)`)
-      .run(execId, workId, row.owner_employee_id, agentId,
-        isNonEmptyString(input.command) ? input.command.trim() : '', now);
-    // 启动即视为「进行中」，此前若被退回 / 受阻，理由清掉
-    db.prepare("UPDATE work_items SET status = 'running', status_reason = '', updated_at = ? WHERE work_id = ?")
-      .run(now, workId);
-  });
+  try {
+    transaction(db, () => {
+      db.prepare('INSERT INTO worktree_locks (worktree_path, execution_id, acquired_at) VALUES (?, ?, ?)')
+        .run(worktreePath, execId, now);
+      db.prepare(`INSERT INTO work_executions
+        (execution_id, work_id, employee_id, agent_id, status, command, log_path,
+         worktree_path, branch_name, base_ref, started_at)
+        VALUES (?, ?, ?, ?, 'running', ?, NULL, ?, ?, ?, ?)`)
+        .run(execId, workId, row.owner_employee_id, agentId,
+          isNonEmptyString(input.command) ? input.command.trim() : '',
+          worktreePath, branchName, baseRef, now);
+      // 启动即视为「进行中」，此前若被退回 / 受阻，理由清掉
+      db.prepare("UPDATE work_items SET status = 'running', status_reason = '', updated_at = ? WHERE work_id = ?")
+        .run(now, workId);
+    });
+  } catch (err) {
+    try {
+      removeWorktree(project.root_path, worktreePath);
+      deleteBranch(project.root_path, branchName);
+    } catch { /* 清理失败不掩盖原错误 */ }
+    throw err;
+  }
   return {
     execution_id: execId,
     work_id: workId,
     agent_id: agentId,
     started_at: now,
+    worktree_path: worktreePath,
+    branch_name: branchName,
+    base_ref: baseRef,
+    work: getWork(db, workId),
+  };
+}
+
+/**
+ * 执行收尾（R2 §3.4）：worktree 里 add -A → 有改动才 commit → 执行落定 → 释放锁。
+ *   - worktree 保留不删（§3.5：成功/失败都保留，验收后由 merge 清理）；
+ *   - commit_sha 只在有新提交时记录——没改动就没有可合并的东西；
+ *   - 有 output_refs → work 转 delivered；成功但没带 refs 也转 delivered（存 '[]'，
+ *     助理汇报会把它归入「待核验」，与 deliverWork 的既有口径一致，不冒充有成果）；
+ *   - failed=true → 执行记 failed，任务退回 pending（可再次 start），原因进 status_reason。
+ */
+export function finishExecution(db, workId, input = {}) {
+  const row = getRow(db, 'SELECT * FROM work_items WHERE work_id = ?', [workId]);
+  if (!row) throw fail(404, 'WORK_NOT_FOUND', `任务不存在：${workId}`);
+  const running = runningExecution(db, workId);
+  if (!running) {
+    throw fail(409, 'WORK_NOT_RUNNING',
+      `没有进行中的执行可收尾（当前：${WORK_STATUS_LABEL[row.status] || row.status}）`);
+  }
+  const failed = input.failed === true;
+  // ① ② ③ git 收尾（stderr 原样透出）
+  let commitSha = '';
+  try {
+    if (running.worktree_path) {
+      commitSha = commitAllIfDirty(running.worktree_path, `exec: ${running.execution_id} ${row.title}`);
+    }
+  } catch (err) {
+    const e = fail(500, 'WORKTREE_FINISH_FAILED', `git 提交失败：${err.message}`);
+    e.stderr = err.stderr || '';
+    throw e;
+  }
+  const summary = isNonEmptyString(input.result_summary) ? input.result_summary.trim() : '';
+  const errorText = isNonEmptyString(input.error) ? input.error.trim() : '';
+  const outRefs = Array.isArray(input.output_refs) ? input.output_refs : null;
+  const now = nowIso();
+  transaction(db, () => {
+    // ④⑤ 执行落定
+    db.prepare(`UPDATE work_executions
+      SET status = ?, result_summary = ?, error = ?, commit_sha = ?, ended_at = ?
+      WHERE execution_id = ?`)
+      .run(failed ? 'failed' : 'success', summary, failed ? errorText : '', commitSha, now, running.execution_id);
+    // ⑥ 释放锁（worktree 本身保留）
+    db.prepare('UPDATE worktree_locks SET released_at = ? WHERE execution_id = ? AND released_at IS NULL')
+      .run(now, running.execution_id);
+    // ⑧ 任务状态
+    if (failed) {
+      db.prepare("UPDATE work_items SET status = 'pending', status_reason = ?, updated_at = ? WHERE work_id = ?")
+        .run(errorText || '执行失败', now, workId);
+    } else if (outRefs) {
+      db.prepare("UPDATE work_items SET status = 'delivered', status_reason = '', output_refs = ?, updated_at = ? WHERE work_id = ?")
+        .run(JSON.stringify(outRefs), now, workId);
+    } else {
+      db.prepare("UPDATE work_items SET status = 'delivered', status_reason = '', output_refs = '[]', updated_at = ? WHERE work_id = ?")
+        .run(now, workId);
+    }
+  });
+  return getWork(db, workId);
+}
+
+/**
+ * 人工合并（R2 §3.6）：只对 accepted 且有 commit_sha 的任务开放，不会被别的流程自动调用。
+ * git -C <项目根> merge --no-ff <执行分支>；冲突 → 409 MERGE_CONFLICT，worktree 一律不动。
+ * 成功后清理：worktree remove --force + 删执行分支 + 释放锁。
+ */
+export function mergeExecution(db, workId) {
+  const row = getRow(db, 'SELECT * FROM work_items WHERE work_id = ?', [workId]);
+  if (!row) throw fail(404, 'WORK_NOT_FOUND', `任务不存在：${workId}`);
+  if (row.status !== 'accepted') {
+    throw fail(409, 'WORK_NOT_ACCEPTED', `只有已验收的任务能合并（当前：${WORK_STATUS_LABEL[row.status] || row.status}）`);
+  }
+  const exec = getRow(db, `
+    SELECT * FROM work_executions
+    WHERE work_id = ? AND commit_sha IS NOT NULL AND commit_sha != ''
+    ORDER BY started_at DESC, execution_id DESC LIMIT 1`, [workId]);
+  if (!exec) throw fail(409, 'NO_COMMIT_TO_MERGE', '没有可合并的执行（没有任何带 commit_sha 的执行）');
+  const project = row.project_id
+    ? getRow(db, 'SELECT * FROM projects WHERE project_id = ?', [row.project_id]) : null;
+  if (!project || !isNonEmptyString(project.root_path) || !existsSync(project.root_path)) {
+    throw fail(400, 'PROJECT_ROOT_NOT_FOUND', `项目目录不存在或未配置：${row.project_id || '（未挂项目）'}`);
+  }
+  try {
+    mergeNoFf(project.root_path, exec.branch_name);
+  } catch (err) {
+    // 冲突 / 脏工作区 → 409，worktree 不动，git 输出原样带回
+    const e = fail(409, 'MERGE_CONFLICT', `git merge 失败（worktree 未动）：${err.message}`);
+    e.stderr = err.stderr || '';
+    throw e;
+  }
+  // 成功 → 清理 worktree + 分支 + 锁。清理失败不回滚合并，如实把清理错误报出来。
+  // Windows 上 worktree remove 偶发因长路径半途失败（注册项摘了、目录没删干净），
+  // 兜底：rmSync 目录 + git worktree prune，别留半个目录在 .worktrees 下。
+  let cleanupError = null;
+  if (exec.worktree_path && existsSync(exec.worktree_path)) {
+    try {
+      removeWorktree(project.root_path, exec.worktree_path);
+    } catch (err) {
+      cleanupError = err;
+      try {
+        rmSync(exec.worktree_path, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+        pruneWorktrees(project.root_path);
+      } catch { /* 尽力而为，cleanupError 里已经有原始错误 */ }
+    }
+  }
+  try {
+    deleteBranch(project.root_path, exec.branch_name);
+  } catch (err) {
+    cleanupError = cleanupError || err;
+  }
+  const now = nowIso();
+  transaction(db, () => {
+    db.prepare('UPDATE worktree_locks SET released_at = ? WHERE execution_id = ? AND released_at IS NULL')
+      .run(now, exec.execution_id);
+  });
+  return {
+    ok: true,
+    merged_branch: exec.branch_name,
+    commit_sha: exec.commit_sha,
+    cleanup_error: cleanupError ? cleanupError.message : null,
     work: getWork(db, workId),
   };
 }

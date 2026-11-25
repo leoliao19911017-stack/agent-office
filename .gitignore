@@ -33,5 +33,6 @@ docs/backup-9.1/
 # 临时探针脚本和运行时产物
 .probe-*.mjs
 .work/
+.worktrees/
 web-8090.out
 web-8090.err

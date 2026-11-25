@@ -25,7 +25,7 @@ export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 
 /**
  * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
@@ -490,6 +490,50 @@ function seedCompany(db) {
   tt.run('emp-claude', 'dsh', 'use', now);
 }
 
+// v11（TASK-COMPANY-D0-R2 · 项目 + worktree 并发隔离）：
+//   projects        项目（任务的归属容器；root_path 是 git 仓库根，worktree 挂在它下面）
+//   worktree_locks  worktree 占用登记（一个 worktree 同时只属于一次执行）
+// 变更列：
+//   workflow_runs   +project_id（存量回填 'proj-agent-office'：目前的运行全部属于本仓库）
+//   work_executions +worktree_path / branch_name / base_ref / commit_sha / session_ref
+//   work_items.project_id v10 已建（可空列），R2 起新建必填——由 API 层校验，不动表。
+const SCHEMA_V11_PROJECTS = `
+CREATE TABLE IF NOT EXISTS projects (
+  project_id    TEXT PRIMARY KEY,
+  name          TEXT NOT NULL,
+  description   TEXT NOT NULL DEFAULT '',
+  department_id TEXT,
+  root_path     TEXT NOT NULL DEFAULT '',
+  status        TEXT NOT NULL DEFAULT 'active',
+  archived_at   TEXT,
+  sort_index    INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_proj_dept ON projects(department_id, status);
+
+CREATE TABLE IF NOT EXISTS worktree_locks (
+  worktree_path TEXT PRIMARY KEY,
+  execution_id  TEXT NOT NULL,
+  acquired_at   TEXT NOT NULL,
+  released_at   TEXT
+);
+`;
+
+/**
+ * v11 预置项目（任务书 §2.3）。铁律：root_path 必须真实存在才许入库。
+ * Agent Office = 本仓库（REPO_ROOT 一定存在）；EaseDraw 任务书给的路径
+ * `E:/DesktopProjects/Soda Intelligence - AI Native Thinking/逸刻EaseDraw`
+ * 实测不存在（只有 leo/lucky&ease/ 下一个 zip），不种，报告里说明。
+ */
+function seedProjects(db) {
+  const now = new Date().toISOString();
+  db.prepare('INSERT OR IGNORE INTO projects ' +
+    '(project_id, name, description, department_id, root_path, status, sort_index, created_at, updated_at) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    .run('proj-agent-office', 'Agent Office', 'AI 公司经营工作台', 'dev', REPO_ROOT, 'active', 0, now, now);
+}
+
 /** 迁移清单：以后加表/加列时追加一项，版本号递增，已有库只跑增量。 */
 const MIGRATIONS = [
   { version: 1, up(db) { db.exec(SCHEMA_V1); } },
@@ -552,6 +596,34 @@ const MIGRATIONS = [
       if (cols.size > 0 && !cols.has('department_id')) {
         db.exec('ALTER TABLE workflow_runs ADD COLUMN department_id TEXT');
         db.exec("UPDATE workflow_runs SET department_id = 'dev' WHERE department_id IS NULL");
+      }
+    },
+  },
+  // v11（TASK-COMPANY-D0-R2）：projects + worktree_locks 两张表，workflow_runs 挂项目
+  // （存量全部回填 'proj-agent-office'），work_executions 补 worktree 五列。
+  // 同 v8/v9/v10 口径：只 CREATE + ALTER ADD COLUMN + UPDATE 补值，不重建表，存量行不动。
+  // work_items.project_id v10 已有（可空），不重复 ALTER；新建必填走 API 层校验。
+  {
+    version: 11,
+    up(db) {
+      db.exec(SCHEMA_V11_PROJECTS);
+      seedProjects(db);
+      // 同 v10 口径：老库（比如 v8 夹具）可能还没有 workflow_runs / work_executions，
+      // 表不存在就整段跳过——表是别的版本建的，这里只负责已有表的增量。
+      const runCols = new Set(allRows(db, 'PRAGMA table_info(workflow_runs)').map((c) => c.name));
+      if (runCols.size > 0) {
+        if (!runCols.has('project_id')) {
+          db.exec("ALTER TABLE workflow_runs ADD COLUMN project_id TEXT NOT NULL DEFAULT ''");
+        }
+        db.exec("UPDATE workflow_runs SET project_id = 'proj-agent-office' WHERE project_id = ''");
+      }
+      const execCols = new Set(allRows(db, 'PRAGMA table_info(work_executions)').map((c) => c.name));
+      if (execCols.size > 0) {
+        for (const col of ['worktree_path', 'branch_name', 'base_ref', 'commit_sha', 'session_ref']) {
+          if (!execCols.has(col)) {
+            db.exec(`ALTER TABLE work_executions ADD COLUMN ${col} TEXT NOT NULL DEFAULT ''`);
+          }
+        }
       }
     },
   },

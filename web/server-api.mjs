@@ -1394,10 +1394,10 @@ export function createApiRouter(deps) {
     }
 
     // TASK-COMPANY-D0：公司组织（/api/company/*、/api/departments*、/api/employees*）
-    // + 任务（/api/work*）+ 助理汇报（/api/assistant/report）。
+    // + 项目（/api/projects*，R2）+ 任务（/api/work*）+ 助理汇报（/api/assistant/report）。
     if (path.startsWith('/api/company') || path.startsWith('/api/departments')
-        || path.startsWith('/api/employees') || path.startsWith('/api/work')
-        || path.startsWith('/api/assistant/')) {
+        || path.startsWith('/api/employees') || path.startsWith('/api/projects')
+        || path.startsWith('/api/work') || path.startsWith('/api/assistant/')) {
       const handled = await handleCompanyApi(req, res, path, method, ctx);
       if (handled) return;
     }
