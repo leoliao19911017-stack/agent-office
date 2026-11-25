@@ -34,6 +34,8 @@ const TEMPLATE_COLUMNS = [
 const RUN_COLUMNS = [
   'run_id', 'template_id', 'template_version', 'title', 'current_step', 'status', 'status_reason',
   'requirement_baseline', 'target_score', 'created_at', 'updated_at', 'archived_at',
+  // TASK-COMPANY-D0 迁移 v10 追加：run 归属部门
+  'department_id',
 ];
 const STEP_COLUMNS = [
   'run_step_id', 'run_id', 'step_id', 'status', 'entered_at', 'exited_at', 'gate_result', 'artifacts',

@@ -1,0 +1,231 @@
+/* TASK-COMPANY-D0 视觉规范（§4.4）：白底、细边框卡片、无渐变/无阴影/无动画。 */
+:root {
+  --background: #ffffff;
+  --foreground: #262626;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --border: #e5e5e5;
+  --accent: #2563eb;
+  --danger: #b91c1c;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font: 14px/1.6 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  border: 0;
+}
+
+/* ---- 顶栏 ---- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+}
+.brand { font-size: 14px; font-weight: 600; }
+.sync { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-foreground); }
+.lamp { width: 8px; height: 8px; border-radius: 50%; border: 1px solid var(--border); background: var(--muted); }
+.lamp.ok { background: var(--accent); border-color: var(--accent); }
+
+/* ---- 骨架：左导航 + 工作区 ---- */
+.shell { display: flex; min-height: calc(100vh - 48px); }
+
+.sidenav {
+  width: 180px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.sidenav nav { display: flex; flex-direction: column; gap: 4px; }
+.nav-item {
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.nav-item:hover { background: var(--muted); }
+.nav-item[aria-current="page"] { background: var(--muted); font-weight: 500; color: var(--accent); }
+.nav-foot { margin-top: auto; font-size: 11px; color: var(--muted-foreground); }
+
+.workspace { flex: 1; padding: 20px; min-width: 0; }
+
+/* ---- 卡片 ---- */
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  background: var(--background);
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.panel-head h1, .panel-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.muted { color: var(--muted-foreground); font-size: 12px; }
+.empty { color: var(--muted-foreground); font-size: 12px; margin: 4px 0; }
+
+.tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  background: var(--muted);
+}
+.tag.accent { color: var(--accent); border-color: var(--accent); }
+.tag.warn { color: var(--danger); border-color: var(--danger); }
+
+/* ---- 按钮（§4.4：圆角 8、高 32、14px/500） ---- */
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn:hover { background: var(--muted); }
+.btn.primary { border-color: var(--accent); background: var(--accent); color: #ffffff; }
+.btn.primary:hover { background: #1d4ed8; }
+.btn.ghost { border-color: transparent; color: var(--accent); }
+.btn.danger { color: var(--danger); }
+.btn.small { height: 26px; padding: 0 10px; font-size: 12px; }
+
+/* ---- 助理工作台 ---- */
+.workbench { display: flex; gap: 16px; align-items: flex-start; }
+.wb-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
+.wb-side { width: 260px; flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; }
+
+.card-list { display: flex; flex-direction: column; gap: 8px; }
+.work-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.work-card .row1 { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.work-card .title { font-size: 14px; font-weight: 500; margin: 0; }
+.work-card .meta { margin: 4px 0 8px; font-size: 12px; color: var(--muted-foreground); }
+.work-card .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.status-tag { flex-shrink: 0; }
+.reason { margin: 6px 0 0; font-size: 12px; color: var(--danger); }
+.note { margin: 6px 0 0; font-size: 12px; color: var(--muted-foreground); }
+.refs { margin: 6px 0 0; padding: 0; list-style: none; }
+.refs li { font-size: 12px; color: var(--accent); cursor: pointer; }
+.refs li:hover { text-decoration: underline; }
+.basis { margin: 6px 0 0; font-size: 11px; color: var(--muted-foreground); }
+
+.inline-form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+.recent-list { list-style: none; margin: 0; padding: 0; }
+.recent-list li { font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; gap: 8px; }
+.recent-list li:last-child { border-bottom: 0; }
+
+.kv { margin: 0; }
+.kv > div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.kv > div:last-child { border-bottom: 0; }
+.kv dt { font-size: 12px; color: var(--muted-foreground); }
+.kv dd { margin: 0; font-size: 14px; }
+
+.link-block { font-size: 14px; color: var(--accent); text-decoration: none; }
+.link-block:hover { text-decoration: underline; }
+
+/* ---- 底部交办栏 ---- */
+.compose {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+}
+.compose-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.compose textarea, .compose input, .inline-form input, .card-form input, .card-form textarea {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--foreground);
+  background: var(--background);
+}
+.compose textarea { resize: vertical; min-height: 44px; }
+.compose-actions { display: flex; gap: 8px; }
+.card-form { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+.card-form .form-row { display: flex; gap: 8px; }
+
+/* ---- 公司页 ---- */
+.company-grid { display: grid; grid-template-columns: 300px 1fr 1fr; gap: 16px; align-items: start; }
+.dept-list { display: flex; flex-direction: column; gap: 8px; }
+.dept-row {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: var(--background);
+}
+.dept-row:hover { background: var(--muted); }
+.dept-row.selected { border-color: var(--accent); }
+.dept-row .name { font-size: 14px; font-weight: 500; }
+.dept-row .sub { font-size: 11px; color: var(--muted-foreground); margin-top: 2px; }
+
+.emp-list { display: flex; flex-direction: column; gap: 8px; }
+.emp-row {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: var(--background);
+}
+.emp-row:hover { background: var(--muted); }
+.emp-row.selected { border-color: var(--accent); }
+.emp-row .name { font-size: 14px; font-weight: 500; }
+.emp-row .sub { font-size: 12px; color: var(--muted-foreground); margin-top: 2px; }
+
+.profile-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.profile-head .name { font-size: 14px; font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.work-history { margin-top: 12px; }
+.work-history li { font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--border); list-style: none; display: flex; justify-content: space-between; gap: 8px; }
+.work-history li:last-child { border-bottom: 0; }
+
+/* ---- 资源页 ---- */
+#view-resources .panel { margin-bottom: 16px; }
+.tool-card { border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+.tool-card .row1 { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tool-card .name { font-size: 14px; font-weight: 500; }
+.tool-card .kind { font-size: 11px; color: var(--muted-foreground); }
+.tool-card .who { margin-top: 6px; font-size: 12px; }
+.tool-card .cap { margin-top: 4px; font-size: 12px; color: var(--muted-foreground); }
+
+@media (max-width: 1100px) {
+  .workbench { flex-direction: column; }
+  .wb-side { width: 100%; flex-direction: row; flex-wrap: wrap; }
+  .company-grid { grid-template-columns: 1fr; }
+}

@@ -25,7 +25,7 @@ export const HERE = dirname(fileURLToPath(import.meta.url)); // web/lib
 export const REPO_ROOT = resolve(HERE, '..', '..');
 export const DEFAULT_DB_PATH = resolve(REPO_ROOT, 'data', 'agent-office.db');
 
-const SCHEMA_VERSION = 9;
+const SCHEMA_VERSION = 10;
 
 /**
  * v2（TASK-AgentChat V1）：聊天六张表，字段按任务书 §四，带 + 的为本实现补充的辅助列。
@@ -374,6 +374,122 @@ CREATE INDEX IF NOT EXISTS idx_deliverables_task ON deliverables(task_id, kind, 
 CREATE INDEX IF NOT EXISTS idx_deliverables_kind ON deliverables(kind, created_at);
 `;
 
+// v10（TASK-COMPANY-D0 · AI 公司组织架构骨架）：
+// 概念模型（Leo 定的，不许改）：员工 ≠ 工具。agents 表的 6 行是「工具」（能力 harness），
+// 员工是组织成员，靠 employee_tools 授权去调用工具。五张表：
+//   departments      部门（职能容器，负责人可空 = 助理兼任）
+//   employees        员工（is_assistant=1 是老板的助理；status 软删）
+//   employee_tools   员工能用哪些工具（授权，指向 agents 表）
+//   work_items       任务（D0 核心：交办 → 派给 → 执行 → 交付 → 验收）
+//   work_executions  执行记录（一任务多次执行；同时挂任务 + 员工 + 工具）
+// 另给 workflow_runs 补 department_id（存量全部填 'dev'，研发部）。
+// 读写函数在 web/lib/company.mjs；API 在 web/api-company.mjs。
+const SCHEMA_V10_COMPANY = `
+CREATE TABLE IF NOT EXISTS departments (
+  department_id TEXT PRIMARY KEY,
+  name          TEXT NOT NULL UNIQUE,
+  duty          TEXT NOT NULL DEFAULT '',
+  color         TEXT NOT NULL DEFAULT '#2563eb',
+  manager_employee_id TEXT,
+  sort_index    INTEGER NOT NULL DEFAULT 0,
+  archived_at   TEXT,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS employees (
+  employee_id   TEXT PRIMARY KEY,
+  department_id TEXT NOT NULL,
+  name          TEXT NOT NULL,
+  role          TEXT NOT NULL,
+  duty          TEXT NOT NULL DEFAULT '',
+  resume        TEXT NOT NULL DEFAULT '',
+  is_assistant  INTEGER NOT NULL DEFAULT 0,
+  status        TEXT NOT NULL DEFAULT 'active',
+  sort_index    INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL,
+  FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+CREATE TABLE IF NOT EXISTS employee_tools (
+  employee_id TEXT NOT NULL,
+  agent_id    TEXT NOT NULL,
+  permission  TEXT NOT NULL DEFAULT 'use',
+  created_at  TEXT NOT NULL,
+  PRIMARY KEY (employee_id, agent_id)
+);
+
+CREATE TABLE IF NOT EXISTS work_items (
+  work_id       TEXT PRIMARY KEY,
+  title         TEXT NOT NULL,
+  what_to_deliver TEXT NOT NULL DEFAULT '',
+  acceptance    TEXT NOT NULL DEFAULT '',
+  department_id TEXT,
+  project_id    TEXT,
+  owner_employee_id TEXT,
+  assigned_by   TEXT,
+  status        TEXT NOT NULL DEFAULT 'pending',
+  status_reason TEXT NOT NULL DEFAULT '',
+  input_refs    TEXT NOT NULL DEFAULT '[]',
+  output_refs   TEXT NOT NULL DEFAULT '[]',
+  due_at        TEXT,
+  created_at    TEXT NOT NULL,
+  updated_at    TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_work_owner ON work_items(owner_employee_id, status);
+CREATE INDEX IF NOT EXISTS idx_work_dept ON work_items(department_id, status);
+
+CREATE TABLE IF NOT EXISTS work_executions (
+  execution_id  TEXT PRIMARY KEY,
+  work_id       TEXT NOT NULL,
+  employee_id   TEXT NOT NULL,
+  agent_id      TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'running',
+  command       TEXT NOT NULL DEFAULT '',
+  log_path      TEXT,
+  result_summary TEXT NOT NULL DEFAULT '',
+  error         TEXT NOT NULL DEFAULT '',
+  started_at    TEXT NOT NULL,
+  ended_at      TEXT,
+  FOREIGN KEY (work_id) REFERENCES work_items(work_id)
+);
+CREATE INDEX IF NOT EXISTS idx_exec_work ON work_executions(work_id, started_at);
+`;
+
+/**
+ * v10 预置数据（任务书 §2.1 指定的真实初始状态）：
+ * 4 个部门（营销部 manager 为空 = 助理兼任）+ 2 名员工（Hermes 助理归人事部、Claude 工程师）
+ * + 3 条工具授权（Claude 能用 claude 和 dsh —— 体现「员工可以换工具」）。
+ * 固定主键 + INSERT OR IGNORE：重跑不重复、不覆盖后来改过的行。
+ */
+function seedCompany(db) {
+  const now = new Date().toISOString();
+  const tx = db.prepare('INSERT OR IGNORE INTO departments ' +
+    '(department_id, name, duty, color, manager_employee_id, sort_index, created_at, updated_at) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+  tx.run('dev', '研发部', '做项目、做产品', '#2563eb', 'emp-hermes', 0, now, now);
+  tx.run('mkt', '营销部', '推广、做视频、做内容', '#7c3aed', null, 1, now, now);
+  tx.run('hr', '人事部', '员工生命周期管理', '#059669', 'emp-hermes', 2, now, now);
+  tx.run('asset', '资产部', '资料、数据与成果管理', '#d97706', 'emp-hermes', 3, now, now);
+
+  const te = db.prepare('INSERT OR IGNORE INTO employees ' +
+    '(employee_id, department_id, name, role, duty, resume, is_assistant, status, sort_index, created_at, updated_at) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  // Hermes 归人事部（它兼任人事），但它是助理，不是普通人事员工
+  te.run('emp-hermes', 'hr', 'Hermes', '总经理助理',
+    '接收老板交办、拆解任务、派给员工、跟踪进度、汇报结果',
+    'Leo 的技术搭档，负责需求拆解、派活、验收汇总', 1, 'active', 0, now, now);
+  te.run('emp-claude', 'dev', 'Claude', '研发工程师',
+    '写代码、改代码、自测', '研发部执行工程师', 0, 'active', 1, now, now);
+
+  const tt = db.prepare('INSERT OR IGNORE INTO employee_tools (employee_id, agent_id, permission, created_at) ' +
+    'VALUES (?, ?, ?, ?)');
+  tt.run('emp-hermes', 'hermes', 'use', now);
+  tt.run('emp-claude', 'claude', 'use', now);
+  tt.run('emp-claude', 'dsh', 'use', now);
+}
+
 /** 迁移清单：以后加表/加列时追加一项，版本号递增，已有库只跑增量。 */
 const MIGRATIONS = [
   { version: 1, up(db) { db.exec(SCHEMA_V1); } },
@@ -421,6 +537,22 @@ const MIGRATIONS = [
       if (!cols.has('workflow_run_id')) db.exec('ALTER TABLE tasks ADD COLUMN workflow_run_id TEXT');
       if (!cols.has('workflow_step_id')) db.exec('ALTER TABLE tasks ADD COLUMN workflow_step_id TEXT');
       db.exec('CREATE INDEX IF NOT EXISTS idx_tasks_workflow ON tasks(workflow_run_id, workflow_step_id)');
+    },
+  },
+  // v10（TASK-COMPANY-D0）：公司五张表 + 预置 4 部门 / 2 员工 / 3 条工具授权；
+  // workflow_runs 补 department_id，存量 4 条全部挂研发部（dev）。
+  // 同 v8/v9 的口径：只 ALTER TABLE ADD COLUMN + UPDATE 补值，不重建表，存量行不动。
+  // 防御：极老库可能还没有 workflow_runs 表（v8 前的形状），跳过挂部门列而不是炸迁移。
+  {
+    version: 10,
+    up(db) {
+      db.exec(SCHEMA_V10_COMPANY);
+      seedCompany(db);
+      const cols = new Set(allRows(db, 'PRAGMA table_info(workflow_runs)').map((c) => c.name));
+      if (cols.size > 0 && !cols.has('department_id')) {
+        db.exec('ALTER TABLE workflow_runs ADD COLUMN department_id TEXT');
+        db.exec("UPDATE workflow_runs SET department_id = 'dev' WHERE department_id IS NULL");
+      }
     },
   },
 ];

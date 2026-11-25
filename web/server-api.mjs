@@ -45,6 +45,9 @@ import { handleWorkflowTemplatesApi } from './api-workflow-templates.mjs';
 // P0 第三步：执行状态机（/api/workflow/runs*）。路由体在 api-workflow-runs.mjs，
 // 状态判定在 workflow-engine.mjs。
 import { handleWorkflowRunsApi } from './api-workflow-runs.mjs';
+// TASK-COMPANY-D0：AI 公司组织架构（部门 / 员工 / 任务 / 执行 / 助理汇报）。
+// 数据层在 lib/company.mjs，路由体在 api-company.mjs，这里只做挂载。
+import { handleCompanyApi } from './api-company.mjs';
 
 // /api/health
 function makeHealthRoute(deps) {
@@ -1387,6 +1390,15 @@ export function createApiRouter(deps) {
     // 交接包：/api/handoffs（生成/列表）与 /api/handoffs/:id（读取）。
     if (path === '/api/handoffs' || path.startsWith('/api/handoffs/')) {
       const handled = await handleHandoffsApi(req, res, path, method, ctx);
+      if (handled) return;
+    }
+
+    // TASK-COMPANY-D0：公司组织（/api/company/*、/api/departments*、/api/employees*）
+    // + 任务（/api/work*）+ 助理汇报（/api/assistant/report）。
+    if (path.startsWith('/api/company') || path.startsWith('/api/departments')
+        || path.startsWith('/api/employees') || path.startsWith('/api/work')
+        || path.startsWith('/api/assistant/')) {
+      const handled = await handleCompanyApi(req, res, path, method, ctx);
       if (handled) return;
     }
 

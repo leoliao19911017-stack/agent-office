@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>公司 · Soda Office</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/company.css">
+  <script type="module" src="/company.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <span class="brand">Soda Office</span>
+    <span class="sync"><span class="lamp" id="sync-lamp" aria-hidden="true"></span><span id="sync-label" role="status">连接中</span></span>
+  </header>
+
+  <div class="shell">
+    <!-- 左栏三项：助理 / 公司 / 资源 -->
+    <aside class="sidenav">
+      <nav aria-label="主导航">
+        <button type="button" class="nav-item" data-view="assistant" aria-current="page">助理</button>
+        <button type="button" class="nav-item" data-view="company">公司</button>
+        <button type="button" class="nav-item" data-view="resources">资源</button>
+      </nav>
+      <p class="nav-foot">D0 骨架 · 部门 → 员工 → 任务 → 执行 → 成果 → 汇报</p>
+    </aside>
+
+    <!-- ============ 视图一：助理工作台（默认） ============ -->
+    <main class="workspace" id="view-assistant" data-view-panel="assistant">
+      <div class="workbench">
+        <div class="wb-main">
+          <section class="panel" aria-labelledby="assistant-title">
+            <div class="panel-head">
+              <h1 id="assistant-title">我的助理 · <span id="assistant-name">—</span></h1>
+              <span class="tag" id="assistant-dept">—</span>
+            </div>
+            <p class="muted">交办一件事，助理会安排员工执行，并把进度和成果如实汇报。</p>
+          </section>
+
+          <section class="panel" aria-labelledby="needs-title">
+            <div class="panel-head">
+              <h2 id="needs-title">需要你处理 · <span id="needs-count">—</span></h2>
+            </div>
+            <div id="needs-list" class="card-list"><p class="empty">正在读取…</p></div>
+          </section>
+
+          <section class="panel" aria-labelledby="delivered-title">
+            <div class="panel-head">
+              <h2 id="delivered-title">最新交付</h2>
+            </div>
+            <div id="delivered-list" class="card-list"><p class="empty">正在读取…</p></div>
+          </section>
+
+          <section class="panel" aria-labelledby="progress-title">
+            <div class="panel-head">
+              <h2 id="progress-title">正在推进</h2>
+            </div>
+            <div id="progress-list" class="card-list"><p class="empty">正在读取…</p></div>
+          </section>
+
+          <section class="panel" aria-labelledby="recent-title">
+            <div class="panel-head">
+              <h2 id="recent-title">最近交办</h2>
+            </div>
+            <ul id="recent-list" class="recent-list"><li class="empty">正在读取…</li></ul>
+          </section>
+        </div>
+
+        <aside class="wb-side">
+          <section class="panel" aria-labelledby="week-title">
+            <div class="panel-head"><h2 id="week-title">本周承诺</h2></div>
+            <dl class="kv" id="week-goals"><div><dt>目标</dt><dd>—</dd></div><div><dt>进度</dt><dd>—</dd></div></dl>
+          </section>
+
+          <section class="panel" aria-labelledby="today-title">
+            <div class="panel-head"><h2 id="today-title">今日安排</h2></div>
+            <dl class="kv" id="today-plan">
+              <div><dt>待启动</dt><dd>—</dd></div>
+              <div><dt>正在工作</dt><dd>—</dd></div>
+              <div><dt>待核验</dt><dd>—</dd></div>
+              <div><dt>待验收</dt><dd>—</dd></div>
+            </dl>
+          </section>
+
+          <section class="panel">
+            <a class="link-block" href="/board-cromma.html#board">展开看板 ↗</a>
+          </section>
+        </aside>
+      </div>
+
+      <!-- 底部交办栏（点击路径 2） -->
+      <form class="compose" id="compose-form">
+        <div class="compose-main">
+          <label class="sr-only" for="compose-title">交给助理一件事</label>
+          <textarea id="compose-title" rows="2" placeholder="交给助理一件事……" required></textarea>
+          <div class="compose-more" id="compose-more" hidden>
+            <input type="text" id="compose-deliver" placeholder="交付物（要交出什么，如：一份功能介绍文档）">
+            <input type="text" id="compose-acceptance" placeholder="验收标准（怎么算做完）">
+            <input type="text" id="compose-inputs" placeholder="资料（逗号分隔的路径或链接）">
+          </div>
+        </div>
+        <div class="compose-actions">
+          <button type="button" class="btn ghost" id="compose-toggle">添加资料</button>
+          <button type="submit" class="btn primary">交办</button>
+        </div>
+      </form>
+    </main>
+
+    <!-- ============ 视图二：公司（部门 → 员工 → 档案） ============ -->
+    <main class="workspace" id="view-company" data-view-panel="company" hidden>
+      <div class="company-grid">
+        <section class="panel" aria-labelledby="dept-title">
+          <div class="panel-head">
+            <h1 id="dept-title">部门</h1>
+            <button type="button" class="btn ghost" id="dept-new-toggle">新建部门</button>
+          </div>
+          <form class="inline-form" id="dept-form" hidden>
+            <input type="text" id="dept-name" placeholder="部门名称（如：设计部）" required>
+            <input type="text" id="dept-duty" placeholder="职责（做什么）">
+            <button type="submit" class="btn primary">创建</button>
+          </form>
+          <div id="dept-list" class="dept-list"><p class="empty">正在读取…</p></div>
+        </section>
+
+        <section class="panel" aria-labelledby="emp-title">
+          <div class="panel-head"><h2 id="emp-title">员工</h2></div>
+          <div id="emp-list"><p class="empty muted">点左侧部门查看员工。</p></div>
+        </section>
+
+        <section class="panel" aria-labelledby="profile-title">
+          <div class="panel-head"><h2 id="profile-title">员工档案</h2></div>
+          <div id="emp-profile"><p class="empty muted">点一名员工查看档案。</p></div>
+        </section>
+      </div>
+    </main>
+
+    <!-- ============ 视图三：资源（工具库） ============ -->
+    <main class="workspace" id="view-resources" data-view-panel="resources" hidden>
+      <section class="panel" aria-labelledby="tools-title">
+        <div class="panel-head">
+          <h1 id="tools-title">工具库</h1>
+          <span class="muted">员工 ≠ 工具：工具是 agents 表，谁能调用来自授权</span>
+        </div>
+        <div id="tool-list" class="card-list"><p class="empty">正在读取…</p></div>
+      </section>
+      <section class="panel" aria-labelledby="asset-title">
+        <div class="panel-head"><h2 id="asset-title">资产目录</h2></div>
+        <p class="empty muted">资产目录 D1 之后开放。</p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

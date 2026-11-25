@@ -307,6 +307,14 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    // TASK-COMPANY-D0：助理工作台（首页 = 助理工作台，不是看板）。
+    if ((method === 'GET' || method === 'HEAD') && (path === '/company' || path === '/company/')) {
+      const html = readFileSync(join(HERE, 'company.html'));
+      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
+      res.end(method === 'HEAD' ? undefined : html);
+      return;
+    }
+
     // 静态首页：只服务本目录的 index.html，不做目录列表
     if (method === 'GET' && (path === '/' || path === '/index.html')) {
       let html;
@@ -335,6 +343,9 @@ const server = createServer(async (req, res) => {
         '/workflow-runs.css': 'text/css; charset=utf-8',
         '/office.css': 'text/css; charset=utf-8',
         '/office.js': 'application/javascript; charset=utf-8',
+        // TASK-COMPANY-D0：助理工作台页面（company.html 由上面的 /company 精确路由服务）
+        '/company.css': 'text/css; charset=utf-8',
+        '/company.js': 'application/javascript; charset=utf-8',
         '/app.js': 'application/javascript; charset=utf-8',
         '/shared.js': 'application/javascript; charset=utf-8',
         '/version.js': 'application/javascript; charset=utf-8',

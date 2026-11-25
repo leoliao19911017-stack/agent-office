@@ -163,8 +163,9 @@ test('B1 迁移 v9：v8 库加 workflow_run_id / workflow_step_id 两列，旧�
     const db9 = openDb({ path });
     try {
       const verAfter = db9.prepare("SELECT value FROM schema_meta WHERE key = 'schema_version'").get().value;
-      assert.equal(Number(verAfter), 9, `迁移后版本必须是 9，实际 ${verAfter}`);
-      assert.equal(SCHEMA_VERSION, 9);
+      // TASK-COMPANY-D0 加了 v10（公司架构表 + workflow_runs.department_id），打开会一路迁到最新
+      assert.equal(Number(verAfter), 10, `迁移后版本必须是 10，实际 ${verAfter}`);
+      assert.equal(SCHEMA_VERSION, 10);
 
       const colsAfter = columnsOf(db9);
       assert.ok(colsAfter.includes('workflow_run_id'), `缺 workflow_run_id，实际列：${colsAfter.join(',')}`);
@@ -197,7 +198,7 @@ test('B1 迁移 v9：v8 库加 workflow_run_id / workflow_step_id 两列，旧�
     // 幂等：再开一次不报错、版本不跳、行不重复
     const again = openDb({ path });
     try {
-      assert.equal(Number(again.prepare("SELECT value FROM schema_meta WHERE key = 'schema_version'").get().value), 9);
+      assert.equal(Number(again.prepare("SELECT value FROM schema_meta WHERE key = 'schema_version'").get().value), 10);
       assert.equal(again.prepare('SELECT COUNT(*) AS n FROM tasks').get().n, 2);
     } finally {
       closeDb(again);
@@ -226,7 +227,7 @@ test('B2 不删表重建：迁移代码里没有 DROP TABLE，v9 只 ALTER TABLE
 test('B1b 全新库直接建到 v9：tasks 表自带两列', () => {
   const fresh = openDb({ memory: true });
   try {
-    assert.equal(Number(fresh.prepare("SELECT value FROM schema_meta WHERE key = 'schema_version'").get().value), 9);
+    assert.equal(Number(fresh.prepare("SELECT value FROM schema_meta WHERE key = 'schema_version'").get().value), 10);
     const cols = columnsOf(fresh);
     assert.ok(cols.includes('workflow_run_id') && cols.includes('workflow_step_id'));
   } finally {
